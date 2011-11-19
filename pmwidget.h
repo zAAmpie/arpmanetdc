@@ -47,6 +47,13 @@ private:
 	//GUI elements
 	QTextBrowser *chatBrowser;
 	QLineEdit *chatLineEdit;
+<<<<<<< HEAD
 };
 
 #endif
+=======
+
+};
+
+#endif
+>>>>>>> 387a057d93d6f845e75967367ee7a0b89a9a2de7
