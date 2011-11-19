@@ -33,7 +33,9 @@ QByteArray toQByteArray(quint32 n)
 QByteArray toQByteArray(quint64 n)
 {
     QByteArray a;
-    quint64 mask = 0xff << 56;
+    //n = 0xff00ff00ff00ff00;
+    quint64 mask = 0xff;
+    mask <<= 56;
     for (int i = 0; i < 64; i += 8)
     {
         QChar c = (char)((n & mask) >> (56 - i));

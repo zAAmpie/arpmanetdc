@@ -124,7 +124,7 @@ void HubConnection::processHubMessage()
                     {
                         sendData.append("$Version 1,0091|$GetNickList|$MyINFO $ALL ");
                         sendData.append(nick);
-						sendData.append(" [L:2.00 MiB/s]<ArpmanetDC V:0.1,M:A,H:");
+                        sendData.append(" [L:2.00 MiB/s]<ArpmanetDC V:0.1,M:A,H:");
                         if (registeredUser)
                             sendData.append("0/1/0");
                         else
@@ -147,19 +147,25 @@ void HubConnection::processHubMessage()
                 }
                 else if (msg.mid(0, 4).compare("$To:") == 0)
                 {
-					QString str = tr("%1 From: ").arg(nick);
+                    QString str = tr("%1 From: ").arg(nick);
                     int pos1 = msg.indexOf(str);
                     int pos2 = msg.indexOf(" ", pos1 + str.size());
                     QString otherNick = msg.mid(pos1 + str.size(), pos2 - pos1 - str.size());
                     QString message = msg.mid(pos2 + 2);
                     emit receivedPrivateMessage(otherNick, escapeDCProtocol(message));  // TODO: nie seker of indekse en offsets reg is nie, check!
                 }
-				else if (msg.mid(0,9).compare("$NickList") == 0)
-				{
-					msg = msg.mid(msg.indexOf("$$")+2);
-					QStringList nicks = msg.split("$$");
-					emit receivedNickList(nicks);
-				}
+                else if (msg.mid(0,9).compare("$NickList") == 0)
+                {
+                    msg = msg.mid(msg.indexOf("$$")+2);
+                    QStringList nicks = msg.split("$$");
+                    emit receivedNickList(nicks);
+                }
+                else if (msg.mid(0,7).compare("$OpList") == 0)
+                {
+                    msg = msg.mid(msg.indexOf("$$")+2);
+                    QStringList nicks = msg.split("$$");
+                    emit receivedOpList(nicks);
+                }
             }
             else
                 emit receivedChatMessage(unescapeDCProtocol(msg));

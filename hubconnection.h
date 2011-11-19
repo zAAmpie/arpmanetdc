@@ -28,7 +28,8 @@ signals:
     void receivedPrivateMessage(QString, QString);
     void userLoggedIn(QString);
     void userLoggedOut(QString);
-	void receivedNickList(QStringList);
+    void receivedNickList(QStringList);
+    void receivedOpList(QStringList);
     void receivedMyINFO(QString, QString, QString); // nick, description, mode
 
 private slots:

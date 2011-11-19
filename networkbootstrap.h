@@ -4,10 +4,17 @@
 #include <QObject>
 #include <QTimer>
 #include <QHostAddress>
+#include <QFile>
+#include <QHash>
+#include <QList>
 
 // bootstrap status definitions
-#define NETWORK_BCAST 1
-#define NETWORK_MCAST 2
+#define NETWORK_BOOTATTEMPT_NONE -2
+#define NETWORK_BOOTATTEMPT_MCAST -1
+#define NETWORK_BOOTATTEMPT_BCAST 0
+#define NETWORK_BCAST_ALONE 1
+#define NETWORK_BCAST 2
+#define NETWORK_MCAST 3
 
 
 class NetworkBootstrap : public QObject
@@ -23,17 +30,20 @@ signals:
     void bootstrapStatusChanged(int);
     void sendMulticastAnnounce();
     void sendBroadcastAnnounce();
+
+    // Keepalive signals
     void sendMulticastAnnounceNoReply();
     void sendBroadcastAnnounceNoReply();
-    void sendUnicastAnnounceForwardRequest(QHostAddress &toAddr, quint16 &toPort);
-    void announceReplyArrived(QHostAddress &hostAddr, quint16 &hostPort, QByteArray &cid, QByteArray &bucket);
+    void sendUnicastAnnounceForwardRequest(QHostAddress &toAddr);
+    void announceReplyArrived(QHostAddress &hostAddr, QByteArray &cid, QByteArray &bucket);
+
+    // Bucket exchange
+    void initiateBucketExchanges();
 
 public slots:
     // Bootstrapping
     void performBootstrap();
     void setBootstrapStatus(int status);
-    //void multicastAnnounceReplyArrived(QHostAddress &hostAddr, quint16 &hostPort, QByteArray &packet);
-    //void broadcastAnnounceReplyArrived(QHostAddress &hostAddr, quint16 &hostPort, QByteArray &packet);
 
 
 private slots:
@@ -42,8 +52,9 @@ private slots:
     void keepaliveTimerEvent();
 
 private:
-    // Bootstrap status
+    // Bootstrap
     int bootstrapStatus;
+    QList<QHostAddress> lastGoodNodes;
 
     // Timers
     QTimer *bootstrapTimer;

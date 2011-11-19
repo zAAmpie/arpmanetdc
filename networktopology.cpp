@@ -4,25 +4,68 @@ NetworkTopology::NetworkTopology(QObject *parent) :
     QObject(parent)
 {
     unbootstrapped = true;
+    not_multicast = true;
+    incomingAnnouncementCount = 0;
+    bootstrapTimeoutTimer = new QTimer();
+    bootstrapTimeoutTimer->setSingleShot(true);
+    connect(bootstrapTimeoutTimer, SIGNAL(timeout()), this, SLOT(bootstrapTimeoutEvent()));
+    bootstrapTimeoutTimer->start(32000);
 }
 
 NetworkTopology::~NetworkTopology()
 {
-    // TODO: save last known good hosts in ander buckets
+    delete bootstrapTimeoutTimer;
+    if (QDateTime::currentMSecsSinceEpoch() - startupTime > 120000)
+    {
+        QList<QHostAddress> activeNodes = getForwardingPeers(20);
+        QListIterator<QHostAddress> it(activeNodes);
+        QFile file("nodes.dat");
+        if (file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
+        {
+            while (it.hasNext())
+            {
+                QByteArray saveData;
+                saveData.append(it.next().toString());
+                saveData.append("\n");
+                file.write(saveData);
+            }
+        }
+        file.close();
+    }
 }
 
-
 // Hosts wat nie gebootstrap is nie reply met 'n empty bucket ID agteraan die packet, en kom dus nie hier uit nie a.g.v. die length check.
+// Dispatcher reply op die announce, ons hoef nie hier daaroor te worry nie.
 // Ons neem kennis van al die bucket id's wat ons hoor, en gebruik die een wat die meeste voorkom as ons container se id.
-void NetworkTopology::announceReplyArrived(bool isMulticast, QHostAddress &hostAddr, quint16 &hostPort, QByteArray &cid, QByteArray &bucketId)
+void NetworkTopology::announceReplyArrived(bool isMulticast, QHostAddress &hostAddr, QByteArray &cid, QByteArray &bucketId)
 {
+    // ignoreer onsself
+    if (cid == CID)
+        return;
+
+    // bootstrap status
     if (unbootstrapped)
     {
+        unbootstrapped = false;
         if (isMulticast)
-            emit bootstrapStatus(2);
+        {
+            emit bootstrapStatus(NETWORK_MCAST);
+            not_multicast = false;
+        }
         else
-            emit bootstrapStatus(1);
+            emit bootstrapStatus(NETWORK_BCAST);
     }
+    else if (not_multicast && isMulticast)
+    {
+        emit bootstrapStatus(NETWORK_MCAST);
+        not_multicast = false;
+    }
+
+    if (incomingAnnouncementCount < 20)
+        emit requestAllBuckets(hostAddr);
+    incomingAnnouncementCount++;
+
+    // determine own bucket id
     if (ownBucketId.contains(bucketId))
     {
         // ek is seker mens kan hierdie meer elegant doen.... iterator trick wil ook nie werk nie.
@@ -32,20 +75,59 @@ void NetworkTopology::announceReplyArrived(bool isMulticast, QHostAddress &hostA
     }
     else
         ownBucketId.insert(bucketId, 1);
+
+    // save cid-hostaddr relationship
+    // add to buckets
+    // all happens in announceForwardReplyArrived() - distinction made to not confuse own bucket ID during bootstrapping
+    announceForwardReplyArrived(hostAddr, cid, bucketId);
+}
+// also continues from announceReplyArrived()
+void NetworkTopology::announceForwardReplyArrived(QHostAddress &hostAddr, QByteArray &cid, QByteArray &bucket)
+{
+    // save cid-hostaddr relationship
+    if (cid.length() > 0)
+        setCIDHostAddress(cid, hostAddr);
+
+    // add to buckets
+    updateHostTimestamp(bucket, hostAddr);
 }
 
 void NetworkTopology::bucketContentsArrived(QByteArray bucket)
 {
-    // TODO
+    // TODO: vir nou doen ons nog die gullible ding, hier is potensiaal vir serious statistieke
+    if (bucket.length() < 28)
+        return;
+
+    QByteArray bucketID = bucket.mid(0, 24);
+    QByteArray bucketContents = bucket.mid(24);
+    while (bucketContents.length() >= 6)
+    {
+        QHostAddress addr = QHostAddress(bucketContents.mid(0,4).toUInt());
+        qint64 age = (qint64)(bucketContents.mid(6,2).toUInt() * 1000);
+        if (getHostAge(bucketID, addr) > age)
+            updateHostTimestamp(bucketID, addr, age);
+        bucketContents.remove(0, 6);
+    }
 }
 
-QHash<QHostAddress, quint16> NetworkTopology::getForwardingPeers(int peersPerBucket)
+void NetworkTopology::initiateBucketRequests()
+{
+    QList<QHostAddress> selectedPeers = getForwardingPeers(1);
+    QListIterator<QHostAddress> it(selectedPeers);
+    while (it.hasNext())
+    {
+        emit requestBucketContents(it.next());
+    }
+}
+
+QList<QHostAddress> NetworkTopology::getForwardingPeers(int peersPerBucket)
 {
     QByteArray ownBucket = getOwnBucketId();
-    QHash<QHostAddress, quint16> forwardingPeersList;
+    QList<QHostAddress> forwardingPeers;
     QHashIterator<QByteArray, HostIntPair*> bucketIterator(buckets);
     while (bucketIterator.hasNext())
     {
+        bucketIterator.next();
         if (bucketIterator.key() != ownBucket)
         {
             QListIterator<QHostAddress> listIterator(*bucketIterator.value()->first);
@@ -53,28 +135,45 @@ QHash<QHostAddress, quint16> NetworkTopology::getForwardingPeers(int peersPerBuc
             while (listIterator.hasNext() && count < peersPerBucket)
             {
                 count++;
-                QHostAddress addr = listIterator.next();
-                forwardingPeersList.insert(addr, getDispatchPort(addr));
+                forwardingPeers.append(listIterator.next());
             }
         }
     }
-    return forwardingPeersList;
+    return forwardingPeers;
 }
 
 QByteArray NetworkTopology::getOwnBucket()
 {
     QByteArray ownBucket = getOwnBucketId();
+    return getBucket(ownBucket);
+}
+
+QList<QByteArray> NetworkTopology::getAllBuckets()
+{
+    QList<QByteArray> bucketPackets;
+    QHashIterator<QByteArray, HostIntPair*> it(buckets);
+    while (it.hasNext())
+        bucketPackets.append(getBucket(it.next().key()));
+    return bucketPackets;
+}
+
+// helper for getOwnBucket() and getAllBuckets()
+QByteArray NetworkTopology::getBucket(QByteArray bucketid)
+{
     qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
-    int count = buckets.value(ownBucket)->first->count();
+    QByteArray bucket;
+    if (!buckets.contains(bucketid))
+        return bucket;
+
+    int count = buckets.value(bucketid)->first->count();
     if (count > 20)
         count = 20;
 
-    QByteArray bucket;
-    bucket.append(ownBucket);
+    bucket.append(bucketid);
     for (int i = 0; i < count; i++)
     {
-        QHostAddress host = buckets.value(ownBucket)->first->at(i);
-        quint64 tmp = currentTime - buckets.value(ownBucket)->second->at(i);
+        QHostAddress host = buckets.value(bucketid)->first->at(i);
+        quint64 tmp = (currentTime - buckets.value(bucketid)->second->at(i)) / 1000;
         quint16 age;
         if (tmp < 65536)
             age = (quint16)tmp;
@@ -82,25 +181,25 @@ QByteArray NetworkTopology::getOwnBucket()
             age = 65535;
 
         bucket.append(toQByteArray(host.toIPv4Address()));
-        bucket.append(toQByteArray(getDispatchPort(host)));
         bucket.append(toQByteArray(age));
     }
     return bucket;
 }
 
-quint16 NetworkTopology::getDispatchPort(QHostAddress &h)
+QHostAddress NetworkTopology::getCIDHostAddress(QByteArray &cid)
 {
-    return dispatchPorts.value(h);
+    return CIDHosts.value(cid);
 }
 
-void NetworkTopology::setDispatchPort(QHostAddress &h, quint16 &p)
+void NetworkTopology::setCIDHostAddress(QByteArray &cid, QHostAddress &host)
 {
-    dispatchPorts.insert(h, p);
+    CIDHosts.insert(cid, host);
 }
 
-void NetworkTopology::updateHostTimestamp(QByteArray &bucket, QHostAddress &host)
+void NetworkTopology::updateHostTimestamp(QByteArray &bucket, QHostAddress &host, qint64 age)
 {
-    qint64 time = QDateTime::currentMSecsSinceEpoch();
+    qint64 time = QDateTime::currentMSecsSinceEpoch() - age;
+
     if (buckets.contains(bucket))
     {
         int pos = buckets.value(bucket)->first->indexOf(host);
@@ -125,6 +224,19 @@ void NetworkTopology::updateHostTimestamp(QByteArray &bucket, QHostAddress &host
     }
 }
 
+qint64 NetworkTopology::getHostAge(QByteArray &bucket, QHostAddress &host)
+{
+    qint64 time = QDateTime::currentMSecsSinceEpoch();
+    qint64 age = -1;
+    if (buckets.contains(bucket))
+    {
+        int pos = buckets.value(bucket)->first->indexOf(host);
+        if (pos > -1)
+            age = time - buckets.value(bucket)->second->at(pos);
+    }
+    return age;
+}
+
 QByteArray NetworkTopology::getOwnBucketId()
 {
     QByteArray bucketId;
@@ -132,11 +244,67 @@ QByteArray NetworkTopology::getOwnBucketId()
     QHashIterator<QByteArray, int> it(ownBucketId);
     while (it.hasNext())
     {
-        if (it.value() > maxcount)
+        if (it.next().value() > maxcount)
         {
+            // QByteArray is COW, hierdie assignment behels net 'n pointer, so dis OK.
             bucketId = it.key();
             maxcount = it.value();
         }
     }
     return bucketId;
+}
+
+void NetworkTopology::bootstrapTimeoutEvent()
+{
+    quint64 time = QDateTime::currentMSecsSinceEpoch();
+    qsrand(time);
+    QByteArray bucketID;
+    for (int i = 0; i < 3; i++)
+        bucketID.append(toQByteArray((quint64)qrand()*qrand()));
+    ownBucketId.insert(bucketID, 2);
+    emit bootstrapStatus(NETWORK_BCAST_ALONE);
+}
+
+void NetworkTopology::setCID(QByteArray &cid)
+{
+    CID = cid;
+}
+
+// DEBUGGING
+QString NetworkTopology::getDebugBucketsContents()
+{
+    QString rstring;
+    QHashIterator<QByteArray, HostIntPair*> bucketIterator(buckets);
+    while (bucketIterator.hasNext())
+    {
+        bucketIterator.next();
+        rstring.append(bucketIterator.key().toBase64());
+        rstring.append("\n");
+        QListIterator<QHostAddress> ipIterator(*bucketIterator.value()->first);
+        QListIterator<qint64> lastseenIterator(*bucketIterator.value()->second);
+        while (ipIterator.hasNext() && lastseenIterator.hasNext())
+        {
+            rstring.append(ipIterator.next().toString());
+            rstring.append(" ");
+            rstring.append(QString::number(lastseenIterator.next()));
+            rstring.append("\n");
+        }
+        rstring.append("\n");
+    }
+    return rstring;
+}
+
+QString NetworkTopology::getDebugCIDHostContents()
+{
+    QString rstring;
+    QHashIterator<QByteArray, QHostAddress> it(CIDHosts);
+    while (it.hasNext())
+    {
+        it.next();
+        rstring.append(it.key().toBase64());
+        rstring.append(" ");
+        rstring.append(it.value().toString());
+        rstring.append("\n");
+    }
+    return rstring;
 }
