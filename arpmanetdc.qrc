@@ -1,0 +1,16 @@
+<RCC>
+    <qresource prefix="/ArpmanetDC">
+        <file>Resources/SearchIcon.png</file>
+        <file>Resources/QueueIcon.png</file>
+        <file>Resources/ShareIcon.png</file>
+        <file>Resources/UserIcon.png</file>
+        <file>Resources/FirewallIcon.png</file>
+        <file>Resources/HelpIcon.png</file>
+        <file>Resources/SettingsIcon.png</file>
+        <file>Resources/ServerIcon.png</file>
+        <file>Resources/HighPriorityIcon.png</file>
+        <file>Resources/RemoveIcon.png</file>
+        <file>Resources/LowPriorityIcon.png</file>
+        <file>Resources/DownloadFinishedIcon.png</file>
+    </qresource>
+</RCC>
