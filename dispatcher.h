@@ -43,15 +43,21 @@ class Dispatcher : public QObject
         DataPacketB=0x32,
         DataPacketC=0x33,
         DataPacketD=0x34,
+        TTHTreeRequestPacket=0x41,
+        TTHTreeReplyPacket=0x42,
         AnnouncePacket=0x71,
         AnnounceForwardRequestPacket=0x72,
-        AnnounceReplyPacket=0x73,
-        AnnounceNoReplyPacket=0x74,
+        AnnounceForwardedPacket=0x73,
+        AnnounceReplyPacket=0x74,
         RequestBucketPacket=0x81,
-        BucketExchangePacket=0x82,
+        RequestAllBucketsPacket=0x82,
+        BucketExchangePacket=0x83,
         CIDPingPacket=0x91,
         CIDPingForwardRequestPacket=0x92,
-        CIDPingReplyPacket=0x93
+        CIDPingForwardedPacket=0x93,
+        CIDPingReplyPacket=0x94,
+        RevConnectPacket=0xa1,
+        RevConnectReplyPacket=0xa2
     };
 
 public:
@@ -64,15 +70,17 @@ public:
 signals:
     // Bootstrap signals
     void bootstrapStatusChanged(int);
-    void announceReplyArrived(bool isMulticast, QHostAddress &hostAddr, quint16 &hostPort, QByteArray &cid, QByteArray &bucket);
-    //void multicastAnnounceReplyArrived(QHostAddress &senderHost, quint16 &senderPort, QByteArray &cid);
-    //void broadcastAnnounceReplyArrived(QHostAddress &senderHost, quint16 &senderPort, QByteArray &cid);
+    void announceReplyArrived(bool isMulticast, QHostAddress &hostAddr, QByteArray &cid, QByteArray &bucket);
+    void announceForwardArrived(QHostAddress &hostAddr, QByteArray &cid, QByteArray &bucket);
+    void announceArrived(QHostAddress &hostAddr, QByteArray &cid, QByteArray &bucket);
 
     // Search signals
-    void searchResultsReceived(QHostAddress &senderHost, quint16 &senderPort, QByteArray &senderCID, quint64 &searchID, QString &searchResult);
+    void searchResultsReceived(QHostAddress &senderHost, QByteArray &senderCID, quint64 &searchID, QByteArray &searchResult);
+    void searchQuestionReceived(QHostAddress &senderHost, quint64 &searchID, QByteArray &cid, QByteArray &searchData);
     void searchForwardReceived();  // for stats
 
-    // P2P network control data arrival signals (for stats/graphs)
+    // P2P network control data arrival signals
+    // These signals are intended to be used to generate statistics or graphs on control data throughput
     void multicastPacketReceived();
     void broadcastPacketReceived();
     void unicastPacketReceiced();
@@ -85,34 +93,52 @@ signals:
 
     // Bucket exchanges
     void bucketContentsArrived(QByteArray bucket);
-    //void bucketContentsRequested(QHostAddress &senderHost, quint16 &senderPort);
 
     // CID
-    void CIDReplyArrived(QHostAddress &fromAddr, quint16 &fromPort, QByteArray &cid);
+    void CIDReplyArrived(QHostAddress &fromAddr, QByteArray &cid);
+
+    // TTH Tree
+    void incomingTTHTreeDatagram(QByteArray &datagram);
+    void incomingTTHTreeRequest(QHostAddress &fromHost, QByteArray &datagram);
+
+    // Transfers
+    void incomingUploadRequest(quint8 protocolInstruction, QHostAddress &fromHost, QByteArray &tth, quint64 &offset, quint64 &length);
+    void incomingDataPacket(quint8 protocolInstruction, QByteArray &datagram);
 
 public slots:
     // Bootstrapping
     void sendMulticastAnnounce();
     void sendBroadcastAnnounce();
-    void sendMulticastAnnounceNoReply();
-    void sendBroadcastAnnounceNoReply();
-    void sendUnicastAnnounceForwardRequest(QHostAddress &toAddr, quint16 &toPort);
+    void sendMulticastAnnounceReply();
+    void sendBroadcastAnnounceReply();
+    void sendUnicastAnnounceReply(QHostAddress &dstHost);
+    void sendUnicastAnnounceForwardRequest(QHostAddress &dstAddr);
 
     // Search
-    bool initiateSearch(quint64&, QString&);
+    bool initiateSearch(quint64&, QByteArray&);
 
-    // Download
-    bool initiateDownload(QByteArray&, QString&);
-    void sendDownloadProtocolARequest(QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
-    void sendDownloadProtocolBRequest(QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
-    void sendDownloadProtocolCRequest(QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
-    void sendDownloadProtocolDRequest(QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
-    void sendTransferError(QHostAddress &dstHost, quint16 &dstPort, quint8 error);
+    // Transfers
+    void sendDownloadRequest(quint8 protocol, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
+    void sendTransferError(QHostAddress &dstHost, quint8 error);
+
+    // Buckets
+    void requestBucketContents(QHostAddress host);
+    void requestAllBuckets(QHostAddress host);
+
+    // TTH
+    void sendTTHTreeRequest(QHostAddress &host, QByteArray &tthRoot);
+
+    // CID
+    void dispatchCIDPing(QByteArray &cid);
 
     // Misc
-    void sendUnicastRawDatagram(QHostAddress &dstAddress, quint16 &dstPort, QByteArray &datagram);
+    void sendUnicastRawDatagram(QHostAddress &dstAddress, QByteArray &datagram);
     void sendBroadcastRawDatagram(QByteArray &datagram);
     void sendMulticastRawDatagram(QByteArray &datagram);
+
+    // debugging
+    QString getDebugBucketsContents();
+    QString getDebugCIDHostContents();
 
 private slots:
     void receiveP2PData();
@@ -131,31 +157,40 @@ private:
     QHostAddress dispatchIP;
 
     // Search network functions
-    QByteArray assembleSearchPacket(QHostAddress &searchingHost, quint16 &searchingPort, quint64 &searchID, QString &searchString);
+    QByteArray assembleSearchPacket(QHostAddress &searchingHost, quint64 &searchID, QByteArray &searchData);
     void sendSearchBroadcast(QByteArray &searchPacket);
     void sendSearchMulticast(QByteArray &searchPacket);
-    void sendSearchForwardRequest(QHostAddress &forwardingNode, quint16 &forwardingPort, QByteArray &searchPacket);
-    void handleReceivedSearchForwardRequest(QByteArray &datagram);
+    void sendSearchForwardRequest(QHostAddress &forwardingNode, QByteArray &searchPacket);
+    void handleReceivedSearchForwardRequest(QHostAddress &fromAddr, QByteArray &datagram);
     void parseArrivedSearchResult(QByteArray &datagram);
+    void handleReceivedSearchQuestion(QHostAddress &fromHost, QByteArray &datagram);
 
     // CID related network functions
     void sendBroadcastCIDPing(QByteArray &cid);
     void sendMulticastCIDPing(QByteArray &cid);
-    void sendCIDPingForwardRequest(QHostAddress &forwardingNode, quint16 &forwardingPort, QByteArray &cid);
-    void handleCIDPingReply(QByteArray &data, QHostAddress &dstHost, quint16 &dstPort);
-    void handleReceivedCIDPingForwardRequest(QByteArray &datagram);
-    void handleReceivedCIDReply(QHostAddress &fromAddr, quint16 &fromPort, QByteArray &datagram);
+    void sendCIDPingForwardRequest(QHostAddress &forwardingNode, QByteArray &cid);
+    void handleCIDPingReply(QByteArray &data, QHostAddress &dstHost);
+    void handleCIDPingForwardedReply(QByteArray &data);
+    void handleReceivedCIDPingForwardRequest(QHostAddress &fromAddr, QByteArray &datagram);
+    void handleReceivedCIDReply(QHostAddress &fromAddr, QByteArray &datagram);
 
     // P2P announcements
-    void handleReceivedAnnounceForwardRequest(QByteArray &datagram);
-    void handleReceivedAnnounceReply(quint8 &datagramType, QHostAddress &senderHost, quint16 &senderPort, QByteArray &datagram);
+    void handleReceivedAnnounceForwardRequest(QHostAddress &fromHost, QByteArray &datagram);
+    void handleReceivedAnnounce(quint8 &datagramType, QHostAddress &senderHost, QByteArray &datagram);
 
     // P2P protocol helper
     void handleProtocolInstruction(quint8 &quint8DatagramType, quint8 &quint8ProtocolInstruction, QByteArray &datagram,
-                                   QHostAddress &senderHost, quint16 &senderPort);
+                                   QHostAddress &senderHost);
 
     // Buckets
-    void sendLocalBucket(QHostAddress &host, quint16 &port);
+    void sendLocalBucket(QHostAddress &host);
+    void sendAllBuckets(QHostAddress &host);
+
+    // TTH
+    void processIncomingTTHTreeRequest(QHostAddress &host, QByteArray &datagram);
+
+    // Transfers
+    void handleIncomingUploadRequest(quint8 protocolInstruction, QHostAddress &fromHost, QByteArray &datagram);
 
     // Bootstrap object
     NetworkBootstrap *networkBootstrap;

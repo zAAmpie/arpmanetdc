@@ -3,8 +3,21 @@
 NetworkBootstrap::NetworkBootstrap(QObject *parent) :
     QObject(parent)
 {
-    // Init scanlist
-    // TODO: laai lys last known good ip's
+    // Init scanlist: Laai lys last known good ip's
+    QFile file("nodes.dat");
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        QString line;
+        line = file.readLine(64);
+        while (line.length() >= 8)
+        {
+            line = file.readLine(64);
+            QHostAddress ip;
+            if (!ip.setAddress(line.trimmed()))
+                continue;
+            lastGoodNodes.append(ip);
+        }
+    }
 
     // Init bootstrap
     setBootstrapStatus(-2);
@@ -48,16 +61,25 @@ void NetworkBootstrap::performBootstrap()
 
     switch(bootstrapStatus)
     {
-        case -2:  emit sendMulticastAnnounce();
-                 setBootstrapStatus(-1);
-                 break;
-        case -1: emit sendBroadcastAnnounce();
-                 setBootstrapStatus(0);
-                 break;
-        case  0: setBootstrapStatus(-2);
-
+    case NETWORK_BOOTATTEMPT_NONE:
+        emit sendMulticastAnnounce();
+        setBootstrapStatus(NETWORK_BOOTATTEMPT_MCAST);
+        bootstrapTimer->start(7000);
+        break;
+    case NETWORK_BOOTATTEMPT_MCAST:
+        emit sendBroadcastAnnounce();
+        setBootstrapStatus(NETWORK_BOOTATTEMPT_BCAST);
+        bootstrapTimer->start(8000);
+        break;
+    case  NETWORK_BOOTATTEMPT_BCAST:
+        setBootstrapStatus(NETWORK_BOOTATTEMPT_NONE);
+        bootstrapTimer->start(1000);
+        break;
+    case NETWORK_BCAST_ALONE:
+        emit sendMulticastAnnounce();
+        emit sendBroadcastAnnounce();
+        bootstrapTimer->start(5000);
     }
-    bootstrapTimer->start(30000);
 }
 
 void NetworkBootstrap::setBootstrapStatus(int status)
@@ -77,7 +99,10 @@ void NetworkBootstrap::networkScanTimerEvent()
     if (bootstrapStatus <= 0)
         networkScanTimer->start(2500);
     else
+    {
         networkScanTimer->start(60000);
+        emit initiateBucketExchanges();
+    }
 }
 
 void NetworkBootstrap::keepaliveTimerEvent()

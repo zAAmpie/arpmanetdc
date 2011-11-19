@@ -13,15 +13,16 @@
 #include "sharewidget.h"
 #include "sharesearch.h"
 #include "dispatcher.h"
-#include "sqlite/sqlite3.h"
+#include <sqlite/sqlite3.h>
+//#include "sqlite/sqlite3.h"
 
 #define DISPATCHER_PORT 4012
 
 #define DEFAULT_HUB_ADDRESS "172.31.65.115"
 #define DEFAULT_HUB_PORT 4012
 
-#define DEFAULT_NICK "Bassline"
-#define DEFAULT_PASSWORD "enilssab"
+#define DEFAULT_NICK "testuser"
+#define DEFAULT_PASSWORD ""
 
 #define SHARE_DATABASE_PATH "fileshares.sqlite"
 
@@ -81,7 +82,7 @@ private slots:
 	void showTransferListContextMenu(const QPoint&);
 
 	//Search widget slots
-	void searchButtonPressed(quint64, QString, SearchWidget *);
+        void searchButtonPressed(quint64, QByteArray, SearchWidget *);
 
 	//PM widget slots
 	void pmSent(QString otherNick, QString msg, PMWidget *);

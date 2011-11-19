@@ -603,12 +603,12 @@ void ArpmanetDC::tabChanged(int index)
 		tabs->tabBar()->setTabTextColor(index, tabTextColorNormal);
 }
 
-void ArpmanetDC::searchButtonPressed(quint64 id, QString search, SearchWidget *sWidget)
+void ArpmanetDC::searchButtonPressed(quint64 id, QByteArray search, SearchWidget *sWidget)
 {
 	//Search button was pressed on a search tab
 	pDispatcher->initiateSearch(id, search);
 
-	tabs->setTabText(tabs->indexOf(sWidget->widget()), tr("Search - %1").arg(search));
+        tabs->setTabText(tabs->indexOf(sWidget->widget()), tr("Search - %1").arg(QString(search)));
 }
 
 void ArpmanetDC::shareSaveButtonPressed()

@@ -458,7 +458,7 @@ bool ShareSearch::fileNotModified(QString filePath, QString rootDir)
 		queries.append(QByteArray().append(queryStr));
 	}
 
-	QList<QList<QString>> results;
+        QList<QList<QString> > results;
 	sqlite3 *db = pParent->database();	
 	sqlite3_stmt *statement;
 

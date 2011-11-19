@@ -9,7 +9,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QDateTime>
-#include "cryptlib/tiger.h"
+#include <cryptopp/tiger.h>
 #include "base32.h"
 
 using namespace CryptoPP;
