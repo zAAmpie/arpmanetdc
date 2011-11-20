@@ -31,29 +31,33 @@ ShareWidget::ShareWidget(ShareSearch *share, ArpmanetDC *parent)
 ShareWidget::~ShareWidget()
 {
 	//Destructor
+	fileTree->deleteLater();
+	fileModel->deleteLater();
+	checkProxyModel->deleteLater();
 }
 
 void ShareWidget::createWidgets()
 {
 	saveButton = new QPushButton(QIcon(""), tr("Save shares"));
 
-	fileModel = new QFileSystemModel((QObject *)pParent);
+	fileModel = new QFileSystemModel();
 	//fileModel->setFilter(QDir::Dirs | QDir::Drives | QDir::NoDotAndDotDot);
 	fileModel->setRootPath("c:/");
+	fileModel->setResolveSymlinks(false);
 
-	checkProxyModel = new CheckableProxyModel((QObject *)pParent);
+	checkProxyModel = new CheckableProxyModel();
 	checkProxyModel->setSourceModel(fileModel);
+	checkProxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
 		
-	fileTree = new QTreeView((QWidget *)pParent);
+	fileTree = new QTreeView();
 	fileTree->setModel(checkProxyModel);
-	fileTree->sortByColumn(0, Qt::AscendingOrder);
+	//fileTree->sortByColumn(0, Qt::AscendingOrder);
 	fileTree->setColumnWidth(0, 500);
-	//fileTree->hideColumn(1);
-	//fileTree->hideColumn(2);
-	//fileTree->hideColumn(3);
 	fileTree->setUniformRowHeights(true);
+	fileTree->setSortingEnabled(false);
 
 	checkProxyModel->setDefaultCheckState(Qt::Unchecked);	
+	//checkProxyModel->sort(0, Qt::AscendingOrder);
 }
 
 void ShareWidget::placeWidgets()

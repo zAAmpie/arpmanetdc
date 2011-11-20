@@ -9,25 +9,33 @@
 #include "customtableitems.h"
 #include "searchwidget.h"
 #include "downloadqueuewidget.h"
+#include "downloadfinishedwidget.h"
 #include "pmwidget.h"
+#include "settingswidget.h"
 #include "sharewidget.h"
 #include "sharesearch.h"
 #include "dispatcher.h"
-#include <sqlite/sqlite3.h>
-//#include "sqlite/sqlite3.h"
+#include "sqlite/sqlite3.h"
 
 #define DISPATCHER_PORT 4012
 
 #define DEFAULT_HUB_ADDRESS "172.16.8.1"
 #define DEFAULT_HUB_PORT 4012
 
+<<<<<<< HEAD
 #define DEFAULT_NICK "testuser1234"
 #define DEFAULT_PASSWORD ""
+=======
+#define DEFAULT_NICK "Testnick"
+#define DEFAULT_PASSWORD "test123"
+>>>>>>> 92c4b3899992ca2ffeed16ec25464c4d75433339
 
-#define SHARE_DATABASE_PATH "fileshares.sqlite"
+#define SHARE_DATABASE_PATH "arpmanetdc.sqlite"
 
 #define MAX_MAINCHAT_LINES 1000
 #define MAX_SEARCH_RESULTS 100
+
+#define VERSION_STRING "0.1"
 
 //Main GUI window class
 class ArpmanetDC : public QMainWindow
@@ -56,6 +64,11 @@ private slots:
 	void userListInfoReceived(QString nick, QString desc, QString mode);
 	void userListUserLoggedOut(QString nick);
 	void userListNickListReceived(QStringList list);
+	void hubOnline();
+	void hubOffline();
+
+	//Dispatcher slots
+	void bootstrapStatusChanged(int status);
 
 	//Sort user list
 	void sortUserList();
@@ -67,7 +80,7 @@ private slots:
 	void searchActionPressed();
 	void queueActionPressed();
 	void shareActionPressed();
-	void downloadFinishedPressed();
+	void downloadFinishedActionPressed();
 	void settingsActionPressed();
 	void helpActionPressed();
 	void privateMessageActionPressed();
@@ -82,7 +95,7 @@ private slots:
 	void showTransferListContextMenu(const QPoint&);
 
 	//Search widget slots
-        void searchButtonPressed(quint64, QByteArray, SearchWidget *);
+	void searchButtonPressed(quint64, QString, SearchWidget *);
 
 	//PM widget slots
 	void pmSent(QString otherNick, QString msg, PMWidget *);
@@ -91,11 +104,17 @@ private slots:
 	//Share widget slots
 	void shareSaveButtonPressed();
 
+	//Settings widget slots
+	void settingsSaved();
+
 	//ShareSearch slot
 	void fileHashed(QString fileName);
 	void directoryParsed(QString path);
 	void hashingDone(int msecs);
 	void parsingDone();
+
+signals:
+	void updateShares();
 
 private:
 	//GUI setup functions
@@ -113,10 +132,10 @@ private:
 	ShareSearch *pShare;
 
 	//Parameters
-	QString pNick;
-	QString pPassword;
-	QString pHubIP;
-	quint16 pHubPort;
+	SettingsStruct pSettings;
+
+	//Global lists
+	QList<QueueStruct> *pQueueList;
 
 	//===== Main GUI parameters =====
 
@@ -127,7 +146,7 @@ private:
 	quint32 mainChatLines;
 
 	//User list icons
-	QPixmap *userIcon, *userFirewallIcon;
+	QPixmap *userIcon, *userFirewallIcon, *bootstrappedIcon, *unbootstrappedIcon;
 
 	//Actions
 	QAction *reconnectAction, *shareAction, *searchAction, *queueAction, *downloadFinishedAction, *settingsAction, *helpAction, *privateMessageAction;
@@ -138,6 +157,8 @@ private:
 	QLabel *additionalInfoLabel;
 	QLabel *statusLabel;
 	QLabel *shareSizeLabel;
+	QLabel *connectionIconLabel;
+	QLabel *bootstrapStatusLabel;
 
 	//Progressbar
 	QProgressBar *hashingProgressBar;
@@ -170,6 +191,8 @@ private:
 	DownloadQueueWidget *downloadQueueWidget;
 	ShareWidget *shareWidget;
 	DownloadQueueWidget *queueWidget;
+	DownloadFinishedWidget *finishedWidget;
+	SettingsWidget *settingsWidget;
 
 	ExecThread *dbThread;
 };

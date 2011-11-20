@@ -2,42 +2,16 @@
 #include "customtableitems.h"
 #include "arpmanetdc.h"
 
-DownloadQueueWidget::DownloadQueueWidget(QList<QueueStruct> *queueList, ArpmanetDC *parent)
+DownloadQueueWidget::DownloadQueueWidget(ArpmanetDC *parent)
 {
 	//Constructor
-	pQueueList = queueList;
 	pParent = parent;
 
 	createWidgets();
 	placeWidgets();
 	connectWidgets();
 
-	//Populate model
-	//queueModel->clear();
-	for (int i = 0; i < pQueueList->size(); i++)
-	{
-		queueModel->appendRow(new QStandardItem());
-		queueModel->setItem(i, 0, new QStandardItem(pQueueList->at(i).fileName));
-		queueModel->setItem(i, 1, new QStandardItem(pQueueList->at(i).filePath));
-		queueModel->setItem(i, 2, new QStandardItem(tr("%1").arg(pQueueList->at(i).fileSize)));
-
-		QString priorityStr;
-		switch (pQueueList->at(i).priority)
-		{
-		case LowQueuePriority:
-			priorityStr = "Low";
-			break;
-		case NormalQueuePriority:
-			priorityStr = "Normal";
-			break;
-		case HighQueuePriority:
-			priorityStr = "High";
-			break;
-		}
-
-		queueModel->setItem(i, 3, new QStandardItem(priorityStr));
-		queueModel->setItem(i, 4, new QStandardItem(pQueueList->at(i).tthRoot->toBase64().data()));
-	}
+	emit requestQueueList();
 }
 
 DownloadQueueWidget::~DownloadQueueWidget()
@@ -67,6 +41,7 @@ void DownloadQueueWidget::createWidgets()
 	//Set model
 	queueTable->setModel(queueModel);
 	//queueTable->hideColumn(4);
+	queueTable->setSortingEnabled(true);
 
 	//===== Actions =====
 	setPriorityLowAction = new QAction(QIcon(":/ArpmanetDC/Resources/LowPriorityIcon.png"), tr("Low priority"), this);
@@ -110,7 +85,7 @@ void DownloadQueueWidget::showQueueTableContextMenu(const QPoint &point)
 	setPriorityMenu->addAction(setPriorityLowAction);
 
 	QMenu *queueMenu = new QMenu(pParent);
-	queueMenu->addAction(searchForAlternatesAction);
+	//queueMenu->addAction(searchForAlternatesAction);
 	queueMenu->addAction(deleteAction);
 	queueMenu->addSeparator();
 	queueMenu->addMenu(setPriorityMenu);
@@ -154,6 +129,66 @@ void DownloadQueueWidget::searchForAlternatesActionPressed()
 	emit searchForAlternates(tthRoot);
 }
 
+//Queue list has been received
+void DownloadQueueWidget::returnQueueList(QList<QueueStruct> *list)
+{
+	//Populate model
+	setQueueList(list);
+
+	//Remove all rows
+	queueModel->removeRows(0, queueModel->rowCount());
+
+	for (int i = 0; i < pQueueList->size(); i++)
+	{
+		queueModel->appendRow(new QStandardItem());
+		queueModel->setItem(i, 0, new QStandardItem(pQueueList->at(i).fileName));
+		queueModel->setItem(i, 1, new QStandardItem(pQueueList->at(i).filePath));
+		queueModel->setItem(i, 2, new QStandardItem(tr("%1").arg(pQueueList->at(i).fileSize)));
+
+		QString priorityStr;
+		switch (pQueueList->at(i).priority)
+		{
+		case LowQueuePriority:
+			priorityStr = "Low";
+			break;
+		case NormalQueuePriority:
+			priorityStr = "Normal";
+			break;
+		case HighQueuePriority:
+			priorityStr = "High";
+			break;
+		}
+
+		queueModel->setItem(i, 3, new QStandardItem(priorityStr));
+		queueModel->setItem(i, 4, new QStandardItem(pQueueList->at(i).tthRoot->toBase64().data()));
+	}
+}
+
+void DownloadQueueWidget::addQueuedDownload(QueueStruct file)
+{
+	queueModel->appendRow(new QStandardItem());
+	queueModel->setItem(queueModel->rowCount()-1, 0, new QStandardItem(file.fileName));
+	queueModel->setItem(queueModel->rowCount()-1, 1, new QStandardItem(file.filePath));
+	queueModel->setItem(queueModel->rowCount()-1, 2, new QStandardItem(tr("%1").arg(file.fileSize)));
+
+	QString priorityStr;
+	switch (file.priority)
+	{
+	case LowQueuePriority:
+		priorityStr = "Low";
+		break;
+	case NormalQueuePriority:
+		priorityStr = "Normal";
+		break;
+	case HighQueuePriority:
+		priorityStr = "High";
+		break;
+	}
+
+	queueModel->setItem(queueModel->rowCount()-1, 3, new QStandardItem(priorityStr));
+	queueModel->setItem(queueModel->rowCount()-1, 4, new QStandardItem(file.tthRoot->toBase64().data()));
+}
+
 QWidget *DownloadQueueWidget::widget()
 {
 	//TODO: Return widget containing all search widgets
@@ -167,6 +202,7 @@ QList<QueueStruct> *DownloadQueueWidget::queueList()
 
 void DownloadQueueWidget::setQueueList(QList<QueueStruct> *list)
 {
-	delete pQueueList;
+	if (pQueueList != list)
+		delete pQueueList;
 	pQueueList = list;
 }

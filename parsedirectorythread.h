@@ -5,6 +5,8 @@
 #include <QDir>
 #include <QList>
 
+#define RECURSION_LIMIT 100 //Ensure the parsing only reaches 100 levels deep
+
 class ParseDirectoryThread : public QObject
 {
 	Q_OBJECT
@@ -24,10 +26,12 @@ signals:
 
 private:
 	//Recursive private function
-	void parse(QDir directory);
+	void parse(QDir &directory);
 
 	QList<QString> *pFileList;
 	QDir pDir;
+
+	quint8 recursionLimit;
 };
 
 #endif

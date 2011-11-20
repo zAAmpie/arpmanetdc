@@ -11,7 +11,7 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
 	pTotalShare = 0;
 
 	//Commit transactions every minute
-	commitTimer = new QTimer();
+	commitTimer = new QTimer(this);
 	connect(commitTimer, SIGNAL(timeout()), this, SLOT(commitTransaction()));
 	commitTimer->setInterval(60000);
 
@@ -197,6 +197,12 @@ QList<QDir> *ShareSearch::getShares()
 		shares->append(QDir(results.takeFirst()));
 
 	return shares;
+}
+
+void ShareSearch::updateShares()
+{
+	//Convenience function to update existing shares
+	updateShares(getShares());
 }
 
 //Hash file thread completed
@@ -458,7 +464,7 @@ bool ShareSearch::fileNotModified(QString filePath, QString rootDir)
 		queries.append(QByteArray().append(queryStr));
 	}
 
-        QList<QList<QString> > results;
+	QList<QList<QString>> results;
 	sqlite3 *db = pParent->database();	
 	sqlite3_stmt *statement;
 
@@ -803,7 +809,7 @@ void ShareSearch::query1MBTTH(QByteArray tthRoot, qint64 offset)
 void ShareSearch::saveTTHSource(QByteArray *tthRoot, QHostAddress *peerAddress)
 {
 	//Insert a source for a particular TTH value
-	QString queryStr = tr("INSERT INTO TTHSources ([tthRoot], [source]) VALUES (?, ?)");
+	QString queryStr = tr("INSERT INTO TTHSources ([tthRoot], [source]) VALUES (?, ?);");
 
 	QByteArray results;
 	sqlite3 *db = pParent->database();	
@@ -816,7 +822,8 @@ void ShareSearch::saveTTHSource(QByteArray *tthRoot, QHostAddress *peerAddress)
 	{
 		//Bind parameters
 		int res = 0;
-		res = res | sqlite3_bind_text16(statement, 1, QString(tthRoot->data()).utf16(), tthRoot->size()*2, SQLITE_STATIC);
+		QString tthRootStr = QString(tthRoot->data());
+		res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size(), SQLITE_STATIC);
 		res = res | sqlite3_bind_text16(statement, 2, peerAddress->toString().utf16(), peerAddress->toString().size()*2, SQLITE_STATIC);
 
 		int cols = sqlite3_column_count(statement);
@@ -848,7 +855,8 @@ void ShareSearch::loadTTHSource(QByteArray *tthRoot)
 	{
 		//Bind parameters
 		int res = 0;
-		res = res | sqlite3_bind_text16(statement, 1, QString(tthRoot->data()).utf16(), tthRoot->size(), SQLITE_STATIC);
+		QString tthRootStr = QString(tthRoot->data());
+		res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size(), SQLITE_STATIC);
 
 		int cols = sqlite3_column_count(statement);
 		int result = 0;
@@ -885,7 +893,8 @@ void ShareSearch::requestFilePath(QByteArray *tthRoot)
 	{
 		//Bind parameters
 		int res = 0;
-		res = res | sqlite3_bind_text16(statement, 1, QString(tthRoot->data()).utf16(), tthRoot->size(), SQLITE_STATIC);
+		QString tthRootStr = QString(tthRoot->data());
+		res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size(), SQLITE_STATIC);
 
 		int cols = sqlite3_column_count(statement);
 		int result = 0;
@@ -904,14 +913,305 @@ void ShareSearch::requestFilePath(QByteArray *tthRoot)
 	emit filePathReply(tthRoot, results);
 }
 
-quint64 ShareSearch::totalShare()
+//Release all sources for a particular TTH
+void ShareSearch::deleteTTHSources(QByteArray *tthRoot)
 {
+	//Delete all sources for a TTH
+	QString queryStr = tr("DELETE FROM TTHSources WHERE [tthRoot] = ?;");
+
+	QByteArray results;
+	sqlite3 *db = pParent->database();	
+	sqlite3_stmt *statement;
+
+	//Prepare a query
+	QByteArray query;
+	query.append(queryStr);
+	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+	{
+		//Bind parameters
+		int res = 0;
+		QString tthRootStr = QString(tthRoot->data());
+		res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size(), SQLITE_STATIC);
+
+		int cols = sqlite3_column_count(statement);
+		int result = 0;
+		while (sqlite3_step(statement) == SQLITE_ROW);
+		sqlite3_finalize(statement);	
+	}
+
+	//Catch all error messages
+	QString error = sqlite3_errmsg(db);
+	if (error != "not an error")
+		QString error = "error";
+}
+
+//===== DOWNLOAD QUEUE =====
+//Save a new entry
+void ShareSearch::saveQueuedDownload(QueueStruct file)
+{
+	//Save a queued download
+	QString queryStr = tr("INSERT INTO QueuedDownloads ([fileName], [filePath], [fileSize], [priority], [tthRoot]) VALUES (?, ?, ?, ?, ?);");
+
+	QByteArray results;
+	sqlite3 *db = pParent->database();	
+	sqlite3_stmt *statement;
+
+	//Prepare a query
+	QByteArray query;
+	query.append(queryStr);
+	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+	{
+		//Bind parameters
+		int res = 0;
+		res = res | sqlite3_bind_text16(statement, 1, file.fileName.utf16(), file.fileName.size()*2, SQLITE_STATIC);
+		res = res | sqlite3_bind_text16(statement, 2, file.filePath.utf16(), file.filePath.size()*2, SQLITE_STATIC);
+		res = res | sqlite3_bind_int64(statement, 3, file.fileSize);
+		QString priority = QString((char)file.priority);
+		res = res | sqlite3_bind_text16(statement, 4, priority.utf16(), priority.size()*2, SQLITE_STATIC);
+		QString tthRoot = QString(file.tthRoot->data());
+		res = res | sqlite3_bind_text16(statement, 5, tthRoot.utf16(), tthRoot.size()*2, SQLITE_STATIC);
+
+		int cols = sqlite3_column_count(statement);
+		int result = 0;
+		while (sqlite3_step(statement) == SQLITE_ROW);
+		sqlite3_finalize(statement);	
+	}
+
+	//Catch all error messages
+	QString error = sqlite3_errmsg(db);
+	if (error != "not an error")
+		QString error = "error";
+
+	emit queuedDownloadAdded(file);
+}
+
+//Remove an entry
+void ShareSearch::removeQueuedDownload(QByteArray *tthRoot)
+{
+	//Delete an entry from the queued downloads list
+	QString queryStr = tr("DELETE FROM QueuedDownloads WHERE [tthRoot] = ?;");
+
+	QByteArray results;
+	sqlite3 *db = pParent->database();	
+	sqlite3_stmt *statement;
+
+	//Prepare a query
+	QByteArray query;
+	query.append(queryStr);
+	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+	{
+		//Bind parameters
+		int res = 0;
+		QString tthRootStr = QString(tthRoot->data());
+		res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size(), SQLITE_STATIC);
+
+		int cols = sqlite3_column_count(statement);
+		int result = 0;
+		while (sqlite3_step(statement) == SQLITE_ROW);
+		sqlite3_finalize(statement);	
+	}
+
+	//Catch all error messages
+	QString error = sqlite3_errmsg(db);
+	if (error != "not an error")
+		QString error = "error";
+}
+
+//Sets the priority of a queued download
+void ShareSearch::setQueuedDownloadPriority(QByteArray *tthRoot, QueuePriority priority)
+{
+	//Updates an entry in the queued downloads list
+	QString queryStr = tr("UPDATE QueuedDownloads SET [priority] = ? WHERE [tthRoot] = ?;");
+
+	QByteArray results;
+	sqlite3 *db = pParent->database();	
+	sqlite3_stmt *statement;
+
+	//Prepare a query
+	QByteArray query;
+	query.append(queryStr);
+	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+	{
+		//Bind parameters
+		int res = 0;
+		QString priorityStr = QString((char)priority);
+		res = res | sqlite3_bind_text16(statement, 1, priorityStr.utf16(), priorityStr.size()*2, SQLITE_STATIC);
+	
+		QString tthRootStr = QString(tthRoot->data());
+		res = res | sqlite3_bind_text16(statement, 2, tthRootStr.utf16(), tthRootStr.size()*2, SQLITE_STATIC);
+
+		int cols = sqlite3_column_count(statement);
+		int result = 0;
+		while (sqlite3_step(statement) == SQLITE_ROW);
+		sqlite3_finalize(statement);	
+	}
+
+	//Catch all error messages
+	QString error = sqlite3_errmsg(db);
+	if (error != "not an error")
+		QString error = "error";
+}
+
+//Request queued download list
+void ShareSearch::requestQueueList()
+{
+	//Return the list of queued downloads
+	QString queryStr = tr("SELECT [fileName], [filePath], [fileSize], [priority], [tthRoot] FROM QueuedDownloads;");
+
+	QList<QueueStruct> *results = new QList<QueueStruct>();
+	sqlite3 *db = pParent->database();	
+	sqlite3_stmt *statement;
+
+	//Prepare a query
+	QByteArray query;
+	query.append(queryStr);
+	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+	{
+		int cols = sqlite3_column_count(statement);
+		int result = 0;
+		while (sqlite3_step(statement) == SQLITE_ROW)
+		{
+			QueueStruct s;
+			s.fileName = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0));
+			s.filePath = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 1));
+			s.fileSize = sqlite3_column_int64(statement, 2);
+			s.priority = (QueuePriority)QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 3)).at(0).toAscii();
+			s.tthRoot = new QByteArray();
+			s.tthRoot->append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 4)));
+
+			results->append(s);
+		}
+		sqlite3_finalize(statement);	
+	}
+
+	//Catch all error messages
+	QString error = sqlite3_errmsg(db);
+	if (error != "not an error")
+		QString error = "error";
+
+	emit returnQueueList(results);
+}
+
+//===== FINISHED DOWNLOADS =====
+//Save an entry
+void ShareSearch::saveFinishedDownload(FinishedDownloadStruct file)
+{
+	//Inserts a finished download into the database
+	QString queryStr = tr("INSERT INTO FinishedDownloads ([fileName], [filePath], [fileSize], [tthRoot], [downloadedDate]) VALUES (?, ?, ?, ?, ?);");
+
+	QByteArray results;
+	sqlite3 *db = pParent->database();	
+	sqlite3_stmt *statement;
+
+	//Prepare a query
+	QByteArray query;
+	query.append(queryStr);
+	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+	{
+		//Bind parameters
+		int res = 0;
+		res = res | sqlite3_bind_text16(statement, 1, file.fileName.utf16(), file.fileName.size()*2, SQLITE_STATIC);
+		res = res | sqlite3_bind_text16(statement, 2, file.filePath.utf16(), file.filePath.size()*2, SQLITE_STATIC);
+		res = res | sqlite3_bind_int64(statement, 3, file.fileSize);
+		QString tthRoot = QString(file.tthRoot->data());
+		res = res | sqlite3_bind_text16(statement, 4, tthRoot.utf16(), tthRoot.size()*2, SQLITE_STATIC);
+		res = res | sqlite3_bind_text16(statement, 5, file.downloadedDate.utf16(), file.downloadedDate.size()*2, SQLITE_STATIC);
+
+		int cols = sqlite3_column_count(statement);
+		int result = 0;
+		while (sqlite3_step(statement) == SQLITE_ROW);
+		sqlite3_finalize(statement);	
+	}
+
+	//Catch all error messages
+	QString error = sqlite3_errmsg(db);
+	if (error != "not an error")
+		QString error = "error";
+
+	emit finishedDownloadAdded(file);
+}
+
+//Clear all entries
+void ShareSearch::clearFinishedDownloads()
+{
+	//Clear finished downloads
+	QString queryStr = tr("DELETE FROM FinishedDownloads;");
+
+	sqlite3 *db = pParent->database();	
+	sqlite3_stmt *statement;
+
+	//Prepare a query
+	QByteArray query;
+	query.append(queryStr);
+	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+	{
+		int cols = sqlite3_column_count(statement);
+		int result = 0;
+		while (sqlite3_step(statement) == SQLITE_ROW);
+		sqlite3_finalize(statement);	
+	}
+
+	//Catch all error messages
+	QString error = sqlite3_errmsg(db);
+	if (error != "not an error")
+		QString error = "error";
+}
+
+//Request list
+void ShareSearch::requestFinishedList()
+{
+	//Return the list of finished downloads
+	QString queryStr = tr("SELECT [fileName], [filePath], [fileSize], [tthRoot], [downloadDate] FROM FinishedDownloads;");
+
+	QList<FinishedDownloadStruct> *results = new QList<FinishedDownloadStruct>();
+	sqlite3 *db = pParent->database();	
+	sqlite3_stmt *statement;
+
+	//Prepare a query
+	QByteArray query;
+	query.append(queryStr);
+	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+	{
+		int cols = sqlite3_column_count(statement);
+		int result = 0;
+		while (sqlite3_step(statement) == SQLITE_ROW)
+		{
+			FinishedDownloadStruct s;
+			s.fileName = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0));
+			s.filePath = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 1));
+			s.fileSize = sqlite3_column_int64(statement, 2);
+			s.tthRoot = new QByteArray();
+			s.tthRoot->append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 3)));
+			s.downloadedDate = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 4));
+
+			results->append(s);
+		}
+		sqlite3_finalize(statement);	
+	}
+
+	//Catch all error messages
+	QString error = sqlite3_errmsg(db);
+	if (error != "not an error")
+		QString error = "error";
+
+	emit returnFinishedList(results);
+}
+
+
+quint64 ShareSearch::totalShare(bool fromDB)
+{
+	if (fromDB)
+		return getTotalShareFromDB();
 	return pTotalShare;
 }
 
-QString ShareSearch::totalShareStr()
+QString ShareSearch::totalShareStr(bool fromDB)
 {
-	double share = pTotalShare;
+	double share;
+	if (fromDB)
+		share = getTotalShareFromDB();
+	else
+		share = pTotalShare;
 	QString unit = "bytes";
 
 	if (share > 1024.0)

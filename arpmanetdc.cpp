@@ -5,32 +5,35 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 {
 	//QApplication::setStyle(new QCleanlooksStyle());
 
-	pNick = DEFAULT_NICK;
-	pPassword = DEFAULT_PASSWORD;
-	pHubIP = DEFAULT_HUB_ADDRESS;
-	pHubPort = DEFAULT_HUB_PORT;
+	pSettings.nick = DEFAULT_NICK;
+	pSettings.password = DEFAULT_PASSWORD;
+	pSettings.hubAddress = DEFAULT_HUB_ADDRESS;
+	pSettings.hubPort = DEFAULT_HUB_PORT;
+	pSettings.externalPort = DISPATCHER_PORT;
 	mainChatLines = 0;
 
+	//Set window title
+	setWindowTitle(tr("ArpmanetDC %1").arg(VERSION_STRING));
+
 	//Create and connect Hub Connection
-	pHub = new HubConnection(this);
+	pHub = new HubConnection(pSettings.hubAddress, pSettings.hubPort, pSettings.nick, pSettings.password, VERSION_STRING, this);
 
 	connect(pHub, SIGNAL(receivedChatMessage(QString)), this, SLOT(appendChatLine(QString)));
 	connect(pHub, SIGNAL(receivedMyINFO(QString, QString, QString)), this, SLOT(userListInfoReceived(QString, QString, QString)));
 	connect(pHub, SIGNAL(receivedNickList(QStringList)), this, SLOT(userListNickListReceived(QStringList)));
 	connect(pHub, SIGNAL(userLoggedOut(QString)), this, SLOT(userListUserLoggedOut(QString)));	
 	connect(pHub, SIGNAL(receivedPrivateMessage(QString, QString)), this, SLOT(receivedPrivateMessage(QString, QString)));
+	connect(pHub, SIGNAL(hubOnline()), this, SLOT(hubOnline()));
+	connect(pHub, SIGNAL(hubOffline()), this, SLOT(hubOffline()));
 
-	pHub->setHubAddress(pHubIP);
-	pHub->setHubPort(pHubPort);
-	pHub->setNick(pNick);
-	pHub->setPassword(pPassword);
 	pHub->connectHub();
 
+	//For jokes, get the actual IP of the computer and use the first one for the dispatcher
 	QList<QHostAddress> ips;
-	QList<QString> ipsStr;
 	QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
 	foreach (QNetworkInterface interf, interfaces)
 	{
+		//Only check the online interfaces capable of broadcasting that's not the local loopback
 		if (interf.flags().testFlag(QNetworkInterface::IsRunning) 
 			&& interf.flags().testFlag(QNetworkInterface::CanBroadcast) 
 			&& !interf.flags().testFlag(QNetworkInterface::IsLoopBack)
@@ -38,20 +41,24 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 		{
 			foreach (QNetworkAddressEntry entry, interf.addressEntries())
 			{
+				//Only add IPv4 addresses
 				if (entry.ip().protocol() == QAbstractSocket::IPv4Protocol)
 				{
 					ips.append(entry.ip());
-					ipsStr.append(entry.ip().toString());
 				}
 			}
 		}
 	}
 
 	//Create and connect Dispatcher connection
-	quint16 port = DISPATCHER_PORT;
-	pDispatcher = new Dispatcher(ips.first(), port);
+	if (!ips.isEmpty())
+	{
+		pSettings.externalIP = ips.first().toString();
+	}
+	pDispatcher = new Dispatcher(QHostAddress(pSettings.externalIP), pSettings.externalPort);
+	connect(pDispatcher, SIGNAL(bootstrapStatusChanged(int)), this, SLOT(bootstrapStatusChanged(int)));
 
-	//Set up thread
+	//Set up thread for database / ShareSearch
 	dbThread = new ExecThread();
 
 	pShare = new ShareSearch(MAX_SEARCH_RESULTS, this);
@@ -59,14 +66,13 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	connect(pShare, SIGNAL(directoryParsed(QString)), this, SLOT(directoryParsed(QString)), Qt::QueuedConnection);
 	connect(pShare, SIGNAL(hashingDone(int)), this, SLOT(hashingDone(int)), Qt::QueuedConnection);
 	connect(pShare, SIGNAL(parsingDone()), this, SLOT(parsingDone()), Qt::QueuedConnection);
+	connect(this, SIGNAL(updateShares()), pShare, SLOT(updateShares()), Qt::QueuedConnection);
 
 	pShare->moveToThread(dbThread);
 	dbThread->start();
 
-	//Set pointer to zero at start
+	//Set database pointer to zero at start
 	db = 0;
-
-	//TODO: CONNECT
 
 	//GUI setup
 	createWidgets();
@@ -75,11 +81,21 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 
 	setupDatabase();
 
+	downloadQueueWidget = 0;
+	shareWidget = 0;
+	queueWidget = 0;
+	finishedWidget = 0;
+	settingsWidget = 0;
+
 	//Icon generation
 	userIcon = new QPixmap();
 	*userIcon = QPixmap(":/ArpmanetDC/Resources/UserIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 	userFirewallIcon = new QPixmap();
 	*userFirewallIcon = QPixmap(":/ArpmanetDC/Resources/FirewallIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+	bootstrappedIcon = new QPixmap();
+	*bootstrappedIcon = QPixmap(":/ArpmanetDC/Resources/ServerIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+	unbootstrappedIcon = new QPixmap();
+	*unbootstrappedIcon = QPixmap(":/ArpmanetDC/Resources/ServerOfflineIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
 	//Set up timer to ensure each and every update doesn't signal a complete list sort!
 	sortDue = false;
@@ -113,20 +129,31 @@ bool ArpmanetDC::setupDatabase()
 	sqlite3_stmt *statement;
 
 	QList<QString> queries;
-	//queries.append("DROP TABLE FileShares;");
-	//queries.append("DROP TABLE OneMBTTH;");
-	//queries.append("DROP TABLE SharePaths;");
-	queries.append("PRAGMA synchronous = NORMAL;");
+
+	//Set full synchronicity
+	queries.append("PRAGMA synchronous = FULL;");
+
+	//Create FileShares table - list of all files hashed
 	queries.append("CREATE TABLE FileShares (rowID INTEGER PRIMARY KEY, tth TEXT, fileName TEXT, fileSize INTEGER, filePath TEXT, lastModified TEXT, shareDirID INTEGER, active INTEGER, FOREIGN KEY(shareDirID) REFERENCES SharePaths(rowID), UNIQUE(filePath));");
 	queries.append("CREATE INDEX IDX_SEARCH on FileShares(searchFileName);");
+
+	//Create 1MB TTH table - list of the 1MB bucket TTHs for every fileshare
 	queries.append("CREATE TABLE OneMBTTH (rowID INTEGER PRIMARY KEY, oneMBtth TEXT, tth TEXT, offset INTEGER, fileShareID INTEGER, FOREIGN KEY(fileShareID) REFERENCES FileShares(rowID));");
 	queries.append("CREATE INDEX IDX_TTH on OneMBTTH(tth);");
+
+	//Create SharePaths table - list of all the folders/files chosen in ShareWidget
 	queries.append("CREATE TABLE SharePaths (rowID INTEGER PRIMARY KEY, path TEXT, UNIQUE(path));");
+
+	//Create TTHSources table - list of all sources for a transfer
 	queries.append("CREATE TABLE TTHSources (rowID INTEGER PRIMARY KEY, tthRoot TEXT, source TEXT, UNIQUE(tthRoot, source));");
-	//queries.append("SELECT SUM(fileSize) FROM FileShares WHERE [active] = 1;");
+	
+	//Create QueuedDownloads table - saves all queued downloads to restart transfers after restart
+	queries.append("CREATE TABLE QueuedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, fileSize INTEGER, priority INTEGER, tthRoot TEXT, UNIQUE(filePath));");
+
+	//Create FinishedDownloads table - saves download paths that were downloaded for list
+	queries.append("CREATE TABLE FinishedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, fileSize INTEGER, tthRoot TEXT, downloadedDate TEXT, UNIQUE(filePath));");
 
 	QList<QString> queryErrors(queries);
-	qint64 shareSize;
 
 	//Loop through all queries
 	for (int i = 0; i < queries.size(); i++)
@@ -138,22 +165,7 @@ bool ArpmanetDC::setupDatabase()
 		{
 			int cols = sqlite3_column_count(statement);
 			int result = 0;
-			while (true)
-			{
-				//Step through query results
-				result = sqlite3_step(statement);
-
-				//If result is a row, add to results
-				if (result == SQLITE_ROW)
-				{
-					shareSize = sqlite3_column_int64(statement, 0);
-				}
-				//Otherwise, break - usually means SQLITE_DONE
-				else
-				{
-					break;
-				}
-			}
+			while (sqlite3_step(statement) == SQLITE_ROW);
 			sqlite3_finalize(statement);	
 		}
 
@@ -163,11 +175,8 @@ bool ArpmanetDC::setupDatabase()
 			queryErrors[i] = error;
 	}
 
-	//pShare->setTotalShare(shareSize);
-	//shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr()));
-
 	//Update shares
-	pShare->updateShares(pShare->getShares());
+	emit updateShares();
 
 	return true;
 }
@@ -180,6 +189,11 @@ void ArpmanetDC::createWidgets()
 
 	statusLabel = new QLabel(tr("Status"));
 	shareSizeLabel = new QLabel(tr("Share: 0 bytes"));
+
+	bootstrapStatusLabel = new QLabel();
+	//connectionIconLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+	connectionIconLabel = new QLabel();
+	//connectionIconLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
 	//Progress bar
 	hashingProgressBar = new QProgressBar(this);
@@ -275,6 +289,8 @@ void ArpmanetDC::createWidgets()
 	//Status bars
 	statusBar = new QStatusBar(this);
 	statusBar->addPermanentWidget(statusLabel,1);
+	statusBar->addPermanentWidget(connectionIconLabel);
+	statusBar->addPermanentWidget(bootstrapStatusLabel);
 	statusBar->addPermanentWidget(hashingProgressBar);
 	statusBar->addPermanentWidget(shareSizeLabel);
 
@@ -350,7 +366,7 @@ void ArpmanetDC::placeWidgets()
 	tabLayout->addWidget(layoutWidget);
 	tabWidget->setLayout(tabLayout);
 	
-	tabs->addTab(tabWidget, QIcon(":/ArpmanetDC/Resources/ServerIcon.png"), tr("Arpmanet Chat"));
+	tabs->addTab(tabWidget, QIcon(":/ArpmanetDC/Resources/ServerOfflineIcon.png"), tr("Arpmanet Chat"));
 	tabs->setTabPosition(QTabWidget::North);
 	tabTextColorNormal = tabs->tabBar()->tabTextColor(tabs->indexOf(tabWidget));
 
@@ -430,29 +446,43 @@ void ArpmanetDC::queueActionPressed()
 	}
 
 	//Otherwise, create it
-	QList<QueueStruct> *list = new QList<QueueStruct>();
-	for (int i = 0; i < 10; i++)
-	{
-		QueueStruct q;
-		q.fileName = tr("File #%1").arg(i+1);
-		q.filePath = tr("H:/%1").arg(q.fileName);
-		q.fileSize = i+1;
-		q.priority = NormalQueuePriority;
-		q.tthRoot = new QByteArray("12345");
-		list->append(q);
-	}
+	queueWidget = new DownloadQueueWidget(this);
 
-	queueWidget = new DownloadQueueWidget(list, this);
-	//connect(shareWidget, SIGNAL(saveButtonPressed()), this, SLOT(shareSaveButtonPressed()));
+	connect(queueWidget, SIGNAL(requestQueueList()), pShare, SLOT(requestQueueList()));
+	connect(pShare, SIGNAL(returnQueueList(QList<QueueStruct> *)), queueWidget, SLOT(returnQueueList(QList<QueueStruct> *)));
+	connect(queueWidget, SIGNAL(deleteFromQueue(QByteArray *)), pShare, SLOT(removeQueuedDownload(QByteArray *)));
+	connect(queueWidget, SIGNAL(setPriority(QByteArray *, QueuePriority)), pShare, SLOT(setQueuedDownloadPriority(QByteArray *, QueuePriority)));
+	connect(pShare, SIGNAL(queuedDownloadAdded(QueueStruct)), queueWidget, SLOT(addQueuedDownload(QueueStruct)));
 	
 	tabs->addTab(queueWidget->widget(), QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Download Queue"));
 
 	tabs->setCurrentIndex(tabs->indexOf(queueWidget->widget()));
 }
 
-void ArpmanetDC::downloadFinishedPressed()
+void ArpmanetDC::downloadFinishedActionPressed()
 {
-	//TODO: Download finished widget
+	//Check if widget exists already
+	if (finishedWidget)
+	{
+		//If it does, select it and return
+		if (tabs->indexOf(finishedWidget->widget()) != -1)
+		{
+			tabs->setCurrentIndex(tabs->indexOf(finishedWidget->widget()));
+			return;
+		}
+	}
+
+	//Otherwise, create it
+	finishedWidget = new DownloadFinishedWidget(this);
+
+	connect(finishedWidget, SIGNAL(requestFinishedList()), pShare, SLOT(requestFinishedList()));
+	connect(pShare, SIGNAL(returnFinishedList(QList<FinishedDownloadStruct> *)), finishedWidget, SLOT(returnFinishedList(QList<FinishedDownloadStruct> *)));
+	connect(finishedWidget, SIGNAL(clearFinishedList()), pShare, SLOT(clearFinishedDownloads()));
+	connect(pShare, SIGNAL(finishedDownloadAdded(FinishedDownloadStruct)), finishedWidget, SLOT(addFinishedDownload(FinishedDownloadStruct)));
+	
+	tabs->addTab(finishedWidget->widget(), QIcon(":/ArpmanetDC/Resources/DownloadFinishedIcon.png"), tr("Finished Downloads"));
+
+	tabs->setCurrentIndex(tabs->indexOf(finishedWidget->widget()));
 }
 
 void ArpmanetDC::shareActionPressed()
@@ -480,14 +510,31 @@ void ArpmanetDC::shareActionPressed()
 void ArpmanetDC::reconnectActionPressed()
 {
 	//TODO: Reconnect was pressed
-	pHub->setHubAddress(pHubIP);
-	pHub->setHubPort(pHubPort);
+	pHub->setHubAddress(pSettings.hubAddress);
+	pHub->setHubPort(pSettings.hubPort);
 	pHub->connectHub();
 }
 
 void ArpmanetDC::settingsActionPressed()
 {
-	//TODO: Settings was pressed
+	//Check if share widget exists already
+	if (settingsWidget)
+	{
+		//If it does, select it and return
+		if (tabs->indexOf(settingsWidget->widget()) != -1)
+		{
+			tabs->setCurrentIndex(tabs->indexOf(settingsWidget->widget()));
+			return;
+		}
+	}
+
+	//Otherwise, create it
+	settingsWidget = new SettingsWidget(&pSettings, this);
+	connect(settingsWidget, SIGNAL(settingsSaved()), this, SLOT(settingsSaved()));
+	
+	tabs->addTab(settingsWidget->widget(), QIcon(":/ArpmanetDC/Resources/SettingsIcon.png"), tr("Settings"));
+
+	tabs->setCurrentIndex(tabs->indexOf(settingsWidget->widget()));
 }
 
 void ArpmanetDC::helpActionPressed()
@@ -592,6 +639,15 @@ void ArpmanetDC::tabDeleted(int index)
 			queueWidget = 0;
 		}
 	}
+	//Delete share tab
+	if (settingsWidget)
+	{
+		if (settingsWidget->widget() == tabs->widget(index))
+		{
+			settingsWidget->deleteLater();
+			settingsWidget = 0;
+		}
+	}
 
 	tabs->removeTab(index);
 }
@@ -603,12 +659,12 @@ void ArpmanetDC::tabChanged(int index)
 		tabs->tabBar()->setTabTextColor(index, tabTextColorNormal);
 }
 
-void ArpmanetDC::searchButtonPressed(quint64 id, QByteArray search, SearchWidget *sWidget)
+void ArpmanetDC::searchButtonPressed(quint64 id, QString search, SearchWidget *sWidget)
 {
 	//Search button was pressed on a search tab
-	pDispatcher->initiateSearch(id, search);
+	pDispatcher->initiateSearch(id, QByteArray().append(search));
 
-        tabs->setTabText(tabs->indexOf(sWidget->widget()), tr("Search - %1").arg(QString(search)));
+	tabs->setTabText(tabs->indexOf(sWidget->widget()), tr("Search - %1").arg(search));
 }
 
 void ArpmanetDC::shareSaveButtonPressed()
@@ -622,6 +678,18 @@ void ArpmanetDC::shareSaveButtonPressed()
 		shareWidget = 0;
 		//Show hashing progress
 		hashingProgressBar->setRange(0,0);
+	}
+}
+
+void ArpmanetDC::settingsSaved()
+{
+	//Delete settings tab
+	if (settingsWidget)
+	{
+		statusLabel->setText(tr("Settings saved"));
+		tabs->removeTab(tabs->indexOf(settingsWidget->widget()));
+		settingsWidget->deleteLater();
+		settingsWidget = 0;
 	}
 }
 
@@ -652,8 +720,7 @@ void ArpmanetDC::hashingDone(int msecs)
 
 	//Show on GUI when hashing is completed
 	statusLabel->setText(tr("Shares updated in %1").arg(timeStr));
-	pShare->getTotalShareFromDB();
-	shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr()));
+	shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr(true)));
 	hashingProgressBar->setRange(0,1);
 }
 
@@ -748,7 +815,7 @@ void ArpmanetDC::appendChatLine(QString msg)
 	msg.replace("\r","");
 
 	//Replace nick with red text
-	msg.replace(pNick, tr("<font color=\"red\">%1</font>").arg(pNick));
+	msg.replace(pSettings.nick, tr("<font color=\"red\">%1</font>").arg(pSettings.nick));
 
 	//Convert plain text links to HTML links
 	convertHTMLLinks(msg);
@@ -904,6 +971,36 @@ void ArpmanetDC::userListNickListReceived(QStringList list)
 		userListInfoReceived(nick, "", "");
 }
 
+void ArpmanetDC::hubOffline()
+{
+	tabs->setTabIcon(0, QIcon(":/ArpmanetDC/Resources/ServerOfflineIcon.png"));
+	statusLabel->setText("Hub offline");
+}
+
+void ArpmanetDC::hubOnline()
+{
+	tabs->setTabIcon(0, QIcon(":/ArpmanetDC/Resources/ServerIcon.png"));
+	statusLabel->setText("Hub online");
+}
+
+void ArpmanetDC::bootstrapStatusChanged(int status)
+{
+	// bootstrapStatus
+    // -2: Absoluut clueless en nowhere
+    // -1: Besig om multicast bootstrap te probeer
+    //  0: Besig om broadcast bootstrap te probeer
+    //  1: Suksesvol gebootstrap op broadcast
+    //  2: Suksesvol gebootstrap op multicast
+
+	bootstrapStatusLabel->setText(tr("%1").arg(status));
+	
+	//If not bootstrapped yet
+	if (status <= 0)
+		connectionIconLabel->setPixmap(*unbootstrappedIcon);
+	//If bootstrapped in either broadcast/multicast
+	else
+		connectionIconLabel->setPixmap(*bootstrappedIcon);
+}
 
 void ArpmanetDC::convertHTMLLinks(QString &msg)
 {
@@ -1017,12 +1114,12 @@ void ArpmanetDC::convertMagnetLinks(QString &msg)
 
 QString ArpmanetDC::nick()
 {
-	return pNick;
+	return pSettings.nick;
 }
 
 QString ArpmanetDC::password()
 {
-	return pPassword;
+	return pSettings.password;
 }
 
 sqlite3 *ArpmanetDC::database() const
