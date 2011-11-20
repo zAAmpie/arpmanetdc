@@ -11,7 +11,7 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
 	pTotalShare = 0;
 
 	//Commit transactions every minute
-	commitTimer = new QTimer();
+	commitTimer = new QTimer(this);
 	connect(commitTimer, SIGNAL(timeout()), this, SLOT(commitTransaction()));
 	commitTimer->setInterval(60000);
 

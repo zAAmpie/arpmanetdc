@@ -11,8 +11,11 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	pHubPort = DEFAULT_HUB_PORT;
 	mainChatLines = 0;
 
+	//Set window title
+	setWindowTitle(tr("ArpmanetDC %1").arg(VERSION_STRING));
+
 	//Create and connect Hub Connection
-	pHub = new HubConnection(this);
+	pHub = new HubConnection(pHubIP, pHubPort, pNick, pPassword, VERSION_STRING, this);
 
 	connect(pHub, SIGNAL(receivedChatMessage(QString)), this, SLOT(appendChatLine(QString)));
 	connect(pHub, SIGNAL(receivedMyINFO(QString, QString, QString)), this, SLOT(userListInfoReceived(QString, QString, QString)));
@@ -20,10 +23,6 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	connect(pHub, SIGNAL(userLoggedOut(QString)), this, SLOT(userListUserLoggedOut(QString)));	
 	connect(pHub, SIGNAL(receivedPrivateMessage(QString, QString)), this, SLOT(receivedPrivateMessage(QString, QString)));
 
-	pHub->setHubAddress(pHubIP);
-	pHub->setHubPort(pHubPort);
-	pHub->setNick(pNick);
-	pHub->setPassword(pPassword);
 	pHub->connectHub();
 
 	//For jokes, get the actual IP of the computer and use the first one for the dispatcher

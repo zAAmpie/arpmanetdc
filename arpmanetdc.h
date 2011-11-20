@@ -29,6 +29,8 @@
 #define MAX_MAINCHAT_LINES 1000
 #define MAX_SEARCH_RESULTS 100
 
+#define VERSION_STRING "0.1"
+
 //Main GUI window class
 class ArpmanetDC : public QMainWindow
 {
