@@ -2,9 +2,9 @@
 
 
 //Constructor
-HashFileThread::HashFileThread(QObject *parent) : QObject(parent)
+HashFileThread::HashFileThread(ReturnEncoding encoding, QObject *parent) : QObject(parent)
 {
-
+	pEncoding = encoding;
 }
 
 //Destructor
@@ -34,34 +34,49 @@ void HashFileThread::processFile(QString filePath, QString rootDir)
 
 		while (!file.atEnd())
 		{
-			Tiger oneMBTTH;
-
-			//Read 1MB chunk
-			QByteArray chunk = file.read(1048576);
+			//Read file in 1MB chunks
+			QByteArray iochunk = file.read(1*1048576);
 
 			//Add to total TTH
-			totalTTH.Update((byte *)chunk.data(), chunk.size());
+			totalTTH.Update((byte *)iochunk.data(), iochunk.size());
 
-			//Add to 1MB TTH
-			oneMBTTH.Update((byte *)chunk.data(), chunk.size());
+			while (!iochunk.isEmpty())
+			{
+				Tiger oneMBTTH;
 
-			//Calculate 1MB TTH root
-			byte *oneMBDigestTTH = new byte[oneMBTTH.DigestSize()];
-			oneMBTTH.Final(oneMBDigestTTH);
-			
-			//Append 1MB TTH to list
-			//oneMBTTHList->append(base32Encode(oneMBDigestTTH, oneMBTTH.DigestSize())); //Base32
-			//oneMBTTHList->append(QString(QByteArray((char *)oneMBDigestTTH, oneMBTTH.DigestSize())).toUtf8()); //8-bit
-			oneMBTTHList->append(QString(QByteArray((char *)oneMBDigestTTH, oneMBTTH.DigestSize()).toBase64()).toUtf8()); //Base64
-			delete oneMBDigestTTH;
+				//Read 1MB chunk
+				QByteArray chunk = iochunk.left(1048576);
+				iochunk.remove(0, 1048576);
+
+				//Add to 1MB TTH
+				oneMBTTH.Update((byte *)chunk.data(), chunk.size());
+
+				//Calculate 1MB TTH root
+				byte *oneMBDigestTTH = new byte[oneMBTTH.DigestSize()];
+				oneMBTTH.Final(oneMBDigestTTH);
+				
+				//Append 1MB TTH to list
+				if (pEncoding == Base64Encoded)
+					oneMBTTHList->append(QString(QByteArray((char *)oneMBDigestTTH, oneMBTTH.DigestSize()).toBase64()).toUtf8()); //Base64
+				else if (pEncoding == BinaryEncoded)
+					oneMBTTHList->append(QString(QByteArray((char *)oneMBDigestTTH, oneMBTTH.DigestSize())).toUtf8()); //8-bit
+				else if (pEncoding == Base32Encoded)
+					oneMBTTHList->append(base32Encode(oneMBDigestTTH, oneMBTTH.DigestSize())); //Base32
+					
+				delete oneMBDigestTTH;
+			}
 		}
 
 		byte *digestTTH = new byte[totalTTH.DigestSize()];
 		totalTTH.Final(digestTTH);
 
-		//tthRoot = base32Encode(digestTTH, totalTTH.DigestSize()); //Base32
-		//tthRoot = QString(QByteArray((char *)digestTTH, totalTTH.DigestSize())).toUtf8(); //8-bit
-		tthRoot = QString(QByteArray((char *)digestTTH, totalTTH.DigestSize()).toBase64()).toUtf8(); //Base64
+		if (pEncoding == Base64Encoded)
+			tthRoot = QString(QByteArray((char *)digestTTH, totalTTH.DigestSize()).toBase64()).toUtf8(); //Base64
+		else if (pEncoding == BinaryEncoded)
+			tthRoot = QString(QByteArray((char *)digestTTH, totalTTH.DigestSize())).toUtf8(); //8-bit
+		else if (pEncoding == Base32Encoded)
+			tthRoot = base32Encode(digestTTH, totalTTH.DigestSize()); //Base32
+		
 		delete digestTTH;
 
 		file.close();
@@ -70,10 +85,8 @@ void HashFileThread::processFile(QString filePath, QString rootDir)
 		emit done(filePath, fileName, fileSize, tthRoot, rootDir, modifiedDate, oneMBTTHList, this);
 	}
 	else
+		//Could not open file
 		emit failed(filePath, this);	
-	
-	//Stop execution
-	//exit();
 }
 
 

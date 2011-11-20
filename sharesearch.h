@@ -13,14 +13,14 @@
 
 class ArpmanetDC;
 
-struct ShareStruct
+struct ShareStruct //Used to return search results
 {
 	QString fileName;
 	QByteArray tthRoot;
 	qint64 fileSize;
 };
 
-struct FileListStruct
+struct FileListStruct //Used to store fileList for hashing
 {
 	QString fileName;
 	QString rootDir;
@@ -35,33 +35,36 @@ public:
 	~ShareSearch();
 
 	//Gets/Sets the total shares
-	quint64 totalShare();
-	QString totalShareStr();
+	quint64 totalShare(bool fromDB = false);
+	QString totalShareStr(bool fromDB = false);
 	void setTotalShare(quint64);	//TODO: Incorporate total shares into this class to query db directly
 
 	//Blocking function to get shares from database
 	QList<QDir> *getShares(); 
-
-	//Get the total share directly from the database
-	qint64 getTotalShareFromDB(); //WARNING: Blocking! 10 msecs per 10k files shared
 public slots:
-	//Query
+	//===== SHARE QUERIES =====
+	//String query
 	void querySearchString(QString searchStr);
 	//Return a struct of a file for a given TTH root
 	void queryTTH(QByteArray tthRoot);
 	//Return the 1MB TTH given a TTH root and file offset
 	void query1MBTTH(QByteArray tthRoot, qint64 offset);
 
-	//Slots for transfers
+	//===== TTH SOURCES FOR TRANSFERS =====
 	//Save a source for a particular TTH
 	void saveTTHSource(QByteArray *tthRoot, QHostAddress *peerAddress);
 	//Load a source from a TTH
 	void loadTTHSource(QByteArray *tthRoot);
 	//Request filename from a TTH
 	void requestFilePath(QByteArray *tthRoot);
+	//Release all sources for a particular TTH
+	void deleteTTHSources(QByteArray *tthRoot);
 
+	//===== UPDATE SHARES =====
 	//Sharing - updates shares when shareWidget saves new share structure
 	void updateShares(QList<QDir> *dirList); //Takes around 10 secs per 10k files to update including I/O but not hashing
+	//Convenience function to update existing shares
+	void updateShares();
 
 private slots:
 	//Hash file thread completed
@@ -78,6 +81,7 @@ private slots:
 	void commitTransaction(bool startNewTransaction = true);
 
 signals:
+	//===== SEARCH QUERIES =====
 	//Signal to return a list of search results
 	void returnSearchResults(QList<ShareStruct> *resultList);
 	//Signal to return share result for TTH search
@@ -85,12 +89,13 @@ signals:
 	//Signal to return 1MB TTH
 	void return1MBTTH(QByteArray tth1MB);
 
-	//Signals for transfers
+	//===== TRANSFERS =====
 	//Filename request reply
 	void filePathReply(QByteArray *tthRoot, QString *filePath);
 	//TTH source load reply
 	void tthSourceLoaded(QByteArray *tthRoot, QHostAddress *peerAddress);
 
+	//===== HASHING / PARSING =====
 	//Signal to show a file has completed hashing
 	void fileHashed(QString fileName);
 	//Signal to show a directory has been parsed
@@ -101,8 +106,11 @@ signals:
 	//Signal to show all parsing is done
 	void parsingDone();
 
+	//Signals to interface with hashing thread objects
 	void runHashThread(QString filePath, QString rootDir);
 	void runParseThread(QString directoryPath);
+
+
 
 private:
 	//Functions to start threads
@@ -118,6 +126,9 @@ private:
 	
 	//Sets all files inactive
 	void setAllFilesInactive(); //WARNING: Blocking! 500 msecs per 10k files
+	
+	//Get the total share directly from the database
+	qint64 getTotalShareFromDB(); //WARNING: Blocking! 10 msecs per 10k files shared
 
 	//Objects
 	ArpmanetDC *pParent;

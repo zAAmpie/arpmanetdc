@@ -67,6 +67,7 @@ void DownloadQueueWidget::createWidgets()
 	//Set model
 	queueTable->setModel(queueModel);
 	//queueTable->hideColumn(4);
+	queueTable->setSortingEnabled(true);
 
 	//===== Actions =====
 	setPriorityLowAction = new QAction(QIcon(":/ArpmanetDC/Resources/LowPriorityIcon.png"), tr("Low priority"), this);
@@ -110,7 +111,7 @@ void DownloadQueueWidget::showQueueTableContextMenu(const QPoint &point)
 	setPriorityMenu->addAction(setPriorityLowAction);
 
 	QMenu *queueMenu = new QMenu(pParent);
-	queueMenu->addAction(searchForAlternatesAction);
+	//queueMenu->addAction(searchForAlternatesAction);
 	queueMenu->addAction(deleteAction);
 	queueMenu->addSeparator();
 	queueMenu->addMenu(setPriorityMenu);
@@ -167,6 +168,7 @@ QList<QueueStruct> *DownloadQueueWidget::queueList()
 
 void DownloadQueueWidget::setQueueList(QList<QueueStruct> *list)
 {
-	delete pQueueList;
+	if (pQueueList != list)
+		delete pQueueList;
 	pQueueList = list;
 }

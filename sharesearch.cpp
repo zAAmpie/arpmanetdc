@@ -199,6 +199,12 @@ QList<QDir> *ShareSearch::getShares()
 	return shares;
 }
 
+void ShareSearch::updateShares()
+{
+	//Convenience function to update existing shares
+	updateShares(getShares());
+}
+
 //Hash file thread completed
 void ShareSearch::hashFileThreadDone(QString filePath, QString fileName, qint64 fileSize, QString tthRoot, QString rootDir, QString lastModified, QList<QString> *oneMBList, HashFileThread *hashObj)
 {
@@ -458,7 +464,7 @@ bool ShareSearch::fileNotModified(QString filePath, QString rootDir)
 		queries.append(QByteArray().append(queryStr));
 	}
 
-        QList<QList<QString> > results;
+	QList<QList<QString>> results;
 	sqlite3 *db = pParent->database();	
 	sqlite3_stmt *statement;
 
@@ -803,7 +809,7 @@ void ShareSearch::query1MBTTH(QByteArray tthRoot, qint64 offset)
 void ShareSearch::saveTTHSource(QByteArray *tthRoot, QHostAddress *peerAddress)
 {
 	//Insert a source for a particular TTH value
-	QString queryStr = tr("INSERT INTO TTHSources ([tthRoot], [source]) VALUES (?, ?)");
+	QString queryStr = tr("INSERT INTO TTHSources ([tthRoot], [source]) VALUES (?, ?);");
 
 	QByteArray results;
 	sqlite3 *db = pParent->database();	
@@ -904,14 +910,51 @@ void ShareSearch::requestFilePath(QByteArray *tthRoot)
 	emit filePathReply(tthRoot, results);
 }
 
-quint64 ShareSearch::totalShare()
+//Release all sources for a particular TTH
+void ShareSearch::deleteTTHSources(QByteArray *tthRoot)
 {
+	//Delete all sources for a TTH
+	QString queryStr = tr("DELETE FROM TTHSources WHERE [tthRoot] = ?;");
+
+	QByteArray results;
+	sqlite3 *db = pParent->database();	
+	sqlite3_stmt *statement;
+
+	//Prepare a query
+	QByteArray query;
+	query.append(queryStr);
+	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+	{
+		//Bind parameters
+		int res = 0;
+		res = res | sqlite3_bind_text16(statement, 1, QString(tthRoot->data()).utf16(), tthRoot->size()*2, SQLITE_STATIC);
+
+		int cols = sqlite3_column_count(statement);
+		int result = 0;
+		while (sqlite3_step(statement) == SQLITE_ROW);
+		sqlite3_finalize(statement);	
+	}
+
+	//Catch all error messages
+	QString error = sqlite3_errmsg(db);
+	if (error != "not an error")
+		QString error = "error";
+}
+
+quint64 ShareSearch::totalShare(bool fromDB)
+{
+	if (fromDB)
+		return getTotalShareFromDB();
 	return pTotalShare;
 }
 
-QString ShareSearch::totalShareStr()
+QString ShareSearch::totalShareStr(bool fromDB)
 {
-	double share = pTotalShare;
+	double share;
+	if (fromDB)
+		share = getTotalShareFromDB();
+	else
+		share = pTotalShare;
 	QString unit = "bytes";
 
 	if (share > 1024.0)

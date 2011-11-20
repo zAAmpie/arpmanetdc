@@ -26,6 +26,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	pHub->setPassword(pPassword);
 	pHub->connectHub();
 
+	//For jokes, get the actual IP of the computer and use the first one for the dispatcher
 	QList<QHostAddress> ips;
 	QList<QString> ipsStr;
 	QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
@@ -51,7 +52,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	quint16 port = DISPATCHER_PORT;
 	pDispatcher = new Dispatcher(ips.first(), port);
 
-	//Set up thread
+	//Set up thread for database / ShareSearch
 	dbThread = new ExecThread();
 
 	pShare = new ShareSearch(MAX_SEARCH_RESULTS, this);
@@ -59,14 +60,13 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	connect(pShare, SIGNAL(directoryParsed(QString)), this, SLOT(directoryParsed(QString)), Qt::QueuedConnection);
 	connect(pShare, SIGNAL(hashingDone(int)), this, SLOT(hashingDone(int)), Qt::QueuedConnection);
 	connect(pShare, SIGNAL(parsingDone()), this, SLOT(parsingDone()), Qt::QueuedConnection);
+	connect(this, SIGNAL(updateShares()), pShare, SLOT(updateShares()), Qt::QueuedConnection);
 
 	pShare->moveToThread(dbThread);
 	dbThread->start();
 
-	//Set pointer to zero at start
+	//Set database pointer to zero at start
 	db = 0;
-
-	//TODO: CONNECT
 
 	//GUI setup
 	createWidgets();
@@ -113,20 +113,31 @@ bool ArpmanetDC::setupDatabase()
 	sqlite3_stmt *statement;
 
 	QList<QString> queries;
-	//queries.append("DROP TABLE FileShares;");
-	//queries.append("DROP TABLE OneMBTTH;");
-	//queries.append("DROP TABLE SharePaths;");
-	queries.append("PRAGMA synchronous = NORMAL;");
+
+	//Set full synchronicity
+	queries.append("PRAGMA synchronous = FULL;");
+
+	//Create FileShares table - list of all files hashed
 	queries.append("CREATE TABLE FileShares (rowID INTEGER PRIMARY KEY, tth TEXT, fileName TEXT, fileSize INTEGER, filePath TEXT, lastModified TEXT, shareDirID INTEGER, active INTEGER, FOREIGN KEY(shareDirID) REFERENCES SharePaths(rowID), UNIQUE(filePath));");
 	queries.append("CREATE INDEX IDX_SEARCH on FileShares(searchFileName);");
+
+	//Create 1MB TTH table - list of the 1MB bucket TTHs for every fileshare
 	queries.append("CREATE TABLE OneMBTTH (rowID INTEGER PRIMARY KEY, oneMBtth TEXT, tth TEXT, offset INTEGER, fileShareID INTEGER, FOREIGN KEY(fileShareID) REFERENCES FileShares(rowID));");
 	queries.append("CREATE INDEX IDX_TTH on OneMBTTH(tth);");
+
+	//Create SharePaths table - list of all the folders/files chosen in ShareWidget
 	queries.append("CREATE TABLE SharePaths (rowID INTEGER PRIMARY KEY, path TEXT, UNIQUE(path));");
+
+	//Create TTHSources table - list of all sources for a transfer
 	queries.append("CREATE TABLE TTHSources (rowID INTEGER PRIMARY KEY, tthRoot TEXT, source TEXT, UNIQUE(tthRoot, source));");
-	//queries.append("SELECT SUM(fileSize) FROM FileShares WHERE [active] = 1;");
+	
+	//Create QueuedDownloads table - saves all queued downloads to restart transfers after restart
+	queries.append("CREATE TABLE QueuedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, fileSize INTEGER, priority INTEGER, tthRoot TEXT, UNIQUE(filePath));");
+
+	//Create FinishedDownloads table - saves download paths that were downloaded for list
+	queries.append("CREATE TABLE FinishedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, downloadedDate TEXT, UNIQUE(filePath));");
 
 	QList<QString> queryErrors(queries);
-	qint64 shareSize;
 
 	//Loop through all queries
 	for (int i = 0; i < queries.size(); i++)
@@ -138,22 +149,7 @@ bool ArpmanetDC::setupDatabase()
 		{
 			int cols = sqlite3_column_count(statement);
 			int result = 0;
-			while (true)
-			{
-				//Step through query results
-				result = sqlite3_step(statement);
-
-				//If result is a row, add to results
-				if (result == SQLITE_ROW)
-				{
-					shareSize = sqlite3_column_int64(statement, 0);
-				}
-				//Otherwise, break - usually means SQLITE_DONE
-				else
-				{
-					break;
-				}
-			}
+			while (sqlite3_step(statement) == SQLITE_ROW);
 			sqlite3_finalize(statement);	
 		}
 
@@ -163,11 +159,8 @@ bool ArpmanetDC::setupDatabase()
 			queryErrors[i] = error;
 	}
 
-	//pShare->setTotalShare(shareSize);
-	//shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr()));
-
 	//Update shares
-	pShare->updateShares(pShare->getShares());
+	emit updateShares();
 
 	return true;
 }
@@ -603,12 +596,12 @@ void ArpmanetDC::tabChanged(int index)
 		tabs->tabBar()->setTabTextColor(index, tabTextColorNormal);
 }
 
-void ArpmanetDC::searchButtonPressed(quint64 id, QByteArray search, SearchWidget *sWidget)
+void ArpmanetDC::searchButtonPressed(quint64 id, QString search, SearchWidget *sWidget)
 {
 	//Search button was pressed on a search tab
-	pDispatcher->initiateSearch(id, search);
+	pDispatcher->initiateSearch(id, QByteArray().append(search));
 
-        tabs->setTabText(tabs->indexOf(sWidget->widget()), tr("Search - %1").arg(QString(search)));
+	tabs->setTabText(tabs->indexOf(sWidget->widget()), tr("Search - %1").arg(search));
 }
 
 void ArpmanetDC::shareSaveButtonPressed()
@@ -652,8 +645,7 @@ void ArpmanetDC::hashingDone(int msecs)
 
 	//Show on GUI when hashing is completed
 	statusLabel->setText(tr("Shares updated in %1").arg(timeStr));
-	pShare->getTotalShareFromDB();
-	shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr()));
+	shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr(true)));
 	hashingProgressBar->setRange(0,1);
 }
 
