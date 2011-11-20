@@ -70,6 +70,7 @@ private slots:
 	void sortUserList();
 
 	//GUI interaction
+    void chatLineEditReturnPressed();
 	void sendChatMessage();
 
 	//Direct user interaction with actions

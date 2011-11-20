@@ -56,6 +56,9 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 		pSettings.externalIP = ips.first().toString();
 	}
 	pDispatcher = new Dispatcher(QHostAddress(pSettings.externalIP), pSettings.externalPort);
+    // conjure up something unique here and save it for every subsequent client invocation
+    QByteArray cid = "012345678901234567890124";
+    pDispatcher->setCID(cid);
 	connect(pDispatcher, SIGNAL(bootstrapStatusChanged(int)), this, SLOT(bootstrapStatusChanged(int)));
 
     // Create and connect Transfer manager
@@ -404,7 +407,7 @@ void ArpmanetDC::connectWidgets()
 	connect(transferListTable, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showTransferListContextMenu(const QPoint&)));
 
 	//Send chat message when enter is pressed
-	connect(chatLineEdit, SIGNAL(returnPressed()), this, SLOT(sendChatMessage()));
+    connect(chatLineEdit, SIGNAL(returnPressed()), this, SLOT(chatLineEditReturnPressed()));
 	
 	//Connect actions
 	connect(queueAction, SIGNAL(triggered()), this, SLOT(queueActionPressed()));
@@ -419,6 +422,25 @@ void ArpmanetDC::connectWidgets()
 	//Tab widget
 	connect(tabs, SIGNAL(tabCloseRequested(int)), this, SLOT(tabDeleted(int)));
 	connect(tabs, SIGNAL(currentChanged(int)), this, SLOT(tabChanged(int)));
+}
+
+void ArpmanetDC::chatLineEditReturnPressed()
+{
+    if (chatLineEdit->text().compare("+debugbuckets") == 0)
+    {
+        appendChatLine("DEBUG Bucket contents");
+        appendChatLine(pDispatcher->getDebugBucketsContents());
+        chatLineEdit->setText("");
+    }
+    else if (chatLineEdit->text().compare("+debugcidhosts") == 0)
+    {
+        appendChatLine("DEBUG CID Host contents");
+        appendChatLine(pDispatcher->getDebugCIDHostContents());
+        chatLineEdit->setText("");
+    }
+    else
+        sendChatMessage();
+
 }
 
 void ArpmanetDC::sendChatMessage()
@@ -834,7 +856,7 @@ void ArpmanetDC::appendChatLine(QString msg)
 	convertMagnetLinks(msg);
 
 	//Delete the first line if buffer is full
-	if (mainChatLines > MAX_MAINCHAT_LINES)
+    while (mainChatLines > MAX_MAINCHAT_LINES)
 	{
 		QTextCursor tcOriginal = mainChatTextEdit->textCursor();
 		QTextCursor tc = mainChatTextEdit->textCursor();
