@@ -22,7 +22,7 @@ class DownloadQueueWidget : public QObject
 	Q_OBJECT
 
 public:
-	DownloadQueueWidget(QList<QueueStruct> *queueList, ArpmanetDC *parent);
+	DownloadQueueWidget(ArpmanetDC *parent);
 	~DownloadQueueWidget();
 
 	//Get the encapsulating widget
@@ -30,6 +30,13 @@ public:
 
 	QList<QueueStruct> *queueList();
 	void setQueueList(QList<QueueStruct> *list);
+
+public slots:
+	//Queue list has been received
+	void returnQueueList(QList<QueueStruct> *list);
+
+	//Add a new queued download
+	void addQueuedDownload(QueueStruct file);
 
 private slots:
 	//Slots
@@ -47,6 +54,9 @@ signals:
 	void searchForAlternates(QByteArray *tthRoot);
 	void setPriority(QByteArray *tthRoot, QueuePriority priority);
 	void deleteFromQueue(QByteArray *tthRoot);
+
+	//Signals for the queue list from the database
+	void requestQueueList();
 
 private:
 	//Functions

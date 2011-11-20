@@ -135,7 +135,7 @@ bool ArpmanetDC::setupDatabase()
 	queries.append("CREATE TABLE QueuedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, fileSize INTEGER, priority INTEGER, tthRoot TEXT, UNIQUE(filePath));");
 
 	//Create FinishedDownloads table - saves download paths that were downloaded for list
-	queries.append("CREATE TABLE FinishedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, downloadedDate TEXT, UNIQUE(filePath));");
+	queries.append("CREATE TABLE FinishedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, fileSize INTEGER, tthRoot TEXT, downloadedDate TEXT, UNIQUE(filePath));");
 
 	QList<QString> queryErrors(queries);
 
@@ -423,29 +423,43 @@ void ArpmanetDC::queueActionPressed()
 	}
 
 	//Otherwise, create it
-	QList<QueueStruct> *list = new QList<QueueStruct>();
-	for (int i = 0; i < 10; i++)
-	{
-		QueueStruct q;
-		q.fileName = tr("File #%1").arg(i+1);
-		q.filePath = tr("H:/%1").arg(q.fileName);
-		q.fileSize = i+1;
-		q.priority = NormalQueuePriority;
-		q.tthRoot = new QByteArray("12345");
-		list->append(q);
-	}
+	queueWidget = new DownloadQueueWidget(this);
 
-	queueWidget = new DownloadQueueWidget(list, this);
-	//connect(shareWidget, SIGNAL(saveButtonPressed()), this, SLOT(shareSaveButtonPressed()));
+	connect(queueWidget, SIGNAL(requestQueueList()), pShare, SLOT(requestQueueList()));
+	connect(pShare, SIGNAL(returnQueueList(QList<QueueStruct> *)), queueWidget, SLOT(returnQueueList(QList<QueueStruct> *)));
+	connect(queueWidget, SIGNAL(deleteFromQueue(QByteArray *)), pShare, SLOT(removeQueuedDownload(QByteArray *)));
+	connect(queueWidget, SIGNAL(setPriority(QByteArray *, QueuePriority)), pShare, SLOT(setQueuedDownloadPriority(QByteArray *, QueuePriority)));
+	connect(pShare, SIGNAL(queuedDownloadAdded(QueueStruct)), queueWidget, SLOT(addQueuedDownload(QueueStruct)));
 	
 	tabs->addTab(queueWidget->widget(), QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Download Queue"));
 
 	tabs->setCurrentIndex(tabs->indexOf(queueWidget->widget()));
 }
 
-void ArpmanetDC::downloadFinishedPressed()
+void ArpmanetDC::downloadFinishedActionPressed()
 {
-	//TODO: Download finished widget
+	//Check if widget exists already
+	if (finishedWidget)
+	{
+		//If it does, select it and return
+		if (tabs->indexOf(finishedWidget->widget()) != -1)
+		{
+			tabs->setCurrentIndex(tabs->indexOf(finishedWidget->widget()));
+			return;
+		}
+	}
+
+	//Otherwise, create it
+	finishedWidget = new DownloadFinishedWidget(this);
+
+	connect(finishedWidget, SIGNAL(requestFinishedList()), pShare, SLOT(requestFinishedList()));
+	connect(pShare, SIGNAL(returnFinishedList(QList<FinishedDownloadStruct> *)), finishedWidget, SLOT(returnFinishedList(QList<FinishedDownloadStruct> *)));
+	connect(finishedWidget, SIGNAL(clearFinishedList()), pShare, SLOT(clearFinishedDownloads()));
+	connect(pShare, SIGNAL(finishedDownloadAdded(FinishedDownloadStruct)), finishedWidget, SLOT(addFinishedDownload(FinishedDownloadStruct)));
+	
+	tabs->addTab(finishedWidget->widget(), QIcon(":/ArpmanetDC/Resources/DownloadFinishedIcon.png"), tr("Finished Downloads"));
+
+	tabs->setCurrentIndex(tabs->indexOf(finishedWidget->widget()));
 }
 
 void ArpmanetDC::shareActionPressed()

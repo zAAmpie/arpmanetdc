@@ -10,6 +10,9 @@
 #include "hashfilethread.h"
 #include "parsedirectorythread.h"
 #include "execthread.h"
+#include "downloadqueuewidget.h"
+#include "downloadfinishedwidget.h"
+
 
 class ArpmanetDC;
 
@@ -66,6 +69,24 @@ public slots:
 	//Convenience function to update existing shares
 	void updateShares();
 
+	//===== DOWNLOAD QUEUE =====
+	//Save a new entry
+	void saveQueuedDownload(QueueStruct file);
+	//Remove an entry
+	void removeQueuedDownload(QByteArray *tthRoot);
+	//Sets the priority of a queued download
+	void setQueuedDownloadPriority(QByteArray *tthRoot, QueuePriority priority);
+	//Request queued download list
+	void requestQueueList();
+
+	//===== FINISHED DOWNLOADS =====
+	//Save an entry
+	void saveFinishedDownload(FinishedDownloadStruct file);
+	//Clear all entries
+	void clearFinishedDownloads();
+	//Request list
+	void requestFinishedList();
+
 private slots:
 	//Hash file thread completed
 	void hashFileThreadDone(QString filePath, QString fileName, qint64 fileSize, QString tthRoot, QString rootDir, QString lastModified, QList<QString> *oneMBList, HashFileThread *hashObj);
@@ -94,6 +115,18 @@ signals:
 	void filePathReply(QByteArray *tthRoot, QString *filePath);
 	//TTH source load reply
 	void tthSourceLoaded(QByteArray *tthRoot, QHostAddress *peerAddress);
+
+	//===== QUEUED DOWNLOADS =====
+	//Signals incoming queued list
+	void returnQueueList(QList<QueueStruct> *list);
+	//Signals that an entry has been added
+	void queuedDownloadAdded(QueueStruct file);
+
+	//===== FINISHED DOWNLOADS =====
+	//Signals incoming finished downloads list
+	void returnFinishedList(QList<FinishedDownloadStruct> *list);
+	//Signals that an entry has been added
+	void finishedDownloadAdded(FinishedDownloadStruct file);
 
 	//===== HASHING / PARSING =====
 	//Signal to show a file has completed hashing

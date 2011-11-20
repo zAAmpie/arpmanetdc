@@ -9,6 +9,7 @@
 #include "customtableitems.h"
 #include "searchwidget.h"
 #include "downloadqueuewidget.h"
+#include "downloadfinishedwidget.h"
 #include "pmwidget.h"
 #include "sharewidget.h"
 #include "sharesearch.h"
@@ -20,8 +21,8 @@
 #define DEFAULT_HUB_ADDRESS "172.31.65.115"
 #define DEFAULT_HUB_PORT 4012
 
-#define DEFAULT_NICK "Bassline"
-#define DEFAULT_PASSWORD "enilssab"
+#define DEFAULT_NICK "Testnick"
+#define DEFAULT_PASSWORD "test123"
 
 #define SHARE_DATABASE_PATH "arpmanetdc.sqlite"
 
@@ -66,7 +67,7 @@ private slots:
 	void searchActionPressed();
 	void queueActionPressed();
 	void shareActionPressed();
-	void downloadFinishedPressed();
+	void downloadFinishedActionPressed();
 	void settingsActionPressed();
 	void helpActionPressed();
 	void privateMessageActionPressed();
@@ -175,6 +176,7 @@ private:
 	DownloadQueueWidget *downloadQueueWidget;
 	ShareWidget *shareWidget;
 	DownloadQueueWidget *queueWidget;
+	DownloadFinishedWidget *finishedWidget;
 
 	ExecThread *dbThread;
 };
