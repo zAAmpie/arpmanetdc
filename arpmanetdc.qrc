@@ -12,5 +12,6 @@
         <file>Resources/RemoveIcon.png</file>
         <file>Resources/LowPriorityIcon.png</file>
         <file>Resources/DownloadFinishedIcon.png</file>
+        <file>Resources/ServerOfflineIcon.png</file>
     </qresource>
 </RCC>

@@ -11,6 +11,7 @@
 #include "downloadqueuewidget.h"
 #include "downloadfinishedwidget.h"
 #include "pmwidget.h"
+#include "settingswidget.h"
 #include "sharewidget.h"
 #include "sharesearch.h"
 #include "dispatcher.h"
@@ -58,6 +59,8 @@ private slots:
 	void userListInfoReceived(QString nick, QString desc, QString mode);
 	void userListUserLoggedOut(QString nick);
 	void userListNickListReceived(QStringList list);
+	void hubOnline();
+	void hubOffline();
 
 	//Sort user list
 	void sortUserList();
@@ -93,6 +96,9 @@ private slots:
 	//Share widget slots
 	void shareSaveButtonPressed();
 
+	//Settings widget slots
+	void settingsSaved();
+
 	//ShareSearch slot
 	void fileHashed(QString fileName);
 	void directoryParsed(QString path);
@@ -122,6 +128,8 @@ private:
 	QString pPassword;
 	QString pHubIP;
 	quint16 pHubPort;
+
+	SettingsStruct pSettings;
 
 	//Global lists
 	QList<QueueStruct> *pQueueList;
@@ -179,6 +187,7 @@ private:
 	ShareWidget *shareWidget;
 	DownloadQueueWidget *queueWidget;
 	DownloadFinishedWidget *finishedWidget;
+	SettingsWidget *settingsWidget;
 
 	ExecThread *dbThread;
 };

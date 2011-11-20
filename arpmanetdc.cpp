@@ -22,15 +22,17 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	connect(pHub, SIGNAL(receivedNickList(QStringList)), this, SLOT(userListNickListReceived(QStringList)));
 	connect(pHub, SIGNAL(userLoggedOut(QString)), this, SLOT(userListUserLoggedOut(QString)));	
 	connect(pHub, SIGNAL(receivedPrivateMessage(QString, QString)), this, SLOT(receivedPrivateMessage(QString, QString)));
+	connect(pHub, SIGNAL(hubOnline()), this, SLOT(hubOnline()));
+	connect(pHub, SIGNAL(hubOffline()), this, SLOT(hubOffline()));
 
 	pHub->connectHub();
 
 	//For jokes, get the actual IP of the computer and use the first one for the dispatcher
 	QList<QHostAddress> ips;
-	QList<QString> ipsStr;
 	QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
 	foreach (QNetworkInterface interf, interfaces)
 	{
+		//Only check the online interfaces capable of broadcasting that's not the local loopback
 		if (interf.flags().testFlag(QNetworkInterface::IsRunning) 
 			&& interf.flags().testFlag(QNetworkInterface::CanBroadcast) 
 			&& !interf.flags().testFlag(QNetworkInterface::IsLoopBack)
@@ -38,10 +40,10 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 		{
 			foreach (QNetworkAddressEntry entry, interf.addressEntries())
 			{
+				//Only add IPv4 addresses
 				if (entry.ip().protocol() == QAbstractSocket::IPv4Protocol)
 				{
 					ips.append(entry.ip());
-					ipsStr.append(entry.ip().toString());
 				}
 			}
 		}
@@ -73,6 +75,12 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	connectWidgets();	
 
 	setupDatabase();
+
+	downloadQueueWidget = 0;
+	shareWidget = 0;
+	queueWidget = 0;
+	finishedWidget = 0;
+	settingsWidget = 0;
 
 	//Icon generation
 	userIcon = new QPixmap();
@@ -342,7 +350,7 @@ void ArpmanetDC::placeWidgets()
 	tabLayout->addWidget(layoutWidget);
 	tabWidget->setLayout(tabLayout);
 	
-	tabs->addTab(tabWidget, QIcon(":/ArpmanetDC/Resources/ServerIcon.png"), tr("Arpmanet Chat"));
+	tabs->addTab(tabWidget, QIcon(":/ArpmanetDC/Resources/ServerOfflineIcon.png"), tr("Arpmanet Chat"));
 	tabs->setTabPosition(QTabWidget::North);
 	tabTextColorNormal = tabs->tabBar()->tabTextColor(tabs->indexOf(tabWidget));
 
@@ -493,7 +501,24 @@ void ArpmanetDC::reconnectActionPressed()
 
 void ArpmanetDC::settingsActionPressed()
 {
-	//TODO: Settings was pressed
+	//Check if share widget exists already
+	if (settingsWidget)
+	{
+		//If it does, select it and return
+		if (tabs->indexOf(settingsWidget->widget()) != -1)
+		{
+			tabs->setCurrentIndex(tabs->indexOf(settingsWidget->widget()));
+			return;
+		}
+	}
+
+	//Otherwise, create it
+	settingsWidget = new SettingsWidget(&pSettings, this);
+	connect(settingsWidget, SIGNAL(settingsSaved()), this, SLOT(settingsSaved()));
+	
+	tabs->addTab(settingsWidget->widget(), QIcon(":/ArpmanetDC/Resources/SettingsIcon.png"), tr("Settings"));
+
+	tabs->setCurrentIndex(tabs->indexOf(settingsWidget->widget()));
 }
 
 void ArpmanetDC::helpActionPressed()
@@ -598,6 +623,15 @@ void ArpmanetDC::tabDeleted(int index)
 			queueWidget = 0;
 		}
 	}
+	//Delete share tab
+	if (settingsWidget)
+	{
+		if (settingsWidget->widget() == tabs->widget(index))
+		{
+			settingsWidget->deleteLater();
+			settingsWidget = 0;
+		}
+	}
 
 	tabs->removeTab(index);
 }
@@ -628,6 +662,18 @@ void ArpmanetDC::shareSaveButtonPressed()
 		shareWidget = 0;
 		//Show hashing progress
 		hashingProgressBar->setRange(0,0);
+	}
+}
+
+void ArpmanetDC::settingsSaved()
+{
+	//Delete settings tab
+	if (settingsWidget)
+	{
+		statusLabel->setText(tr("Settings saved"));
+		tabs->removeTab(tabs->indexOf(settingsWidget->widget()));
+		settingsWidget->deleteLater();
+		settingsWidget = 0;
 	}
 }
 
@@ -909,6 +955,17 @@ void ArpmanetDC::userListNickListReceived(QStringList list)
 		userListInfoReceived(nick, "", "");
 }
 
+void ArpmanetDC::hubOffline()
+{
+	tabs->setTabIcon(0, QIcon(":/ArpmanetDC/Resources/ServerOfflineIcon.png"));
+	statusLabel->setText("Hub offline");
+}
+
+void ArpmanetDC::hubOnline()
+{
+	tabs->setTabIcon(0, QIcon(":/ArpmanetDC/Resources/ServerIcon.png"));
+	statusLabel->setText("Hub online");
+}
 
 void ArpmanetDC::convertHTMLLinks(QString &msg)
 {
