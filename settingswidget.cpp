@@ -20,8 +20,7 @@ SettingsWidget::~SettingsWidget()
 void SettingsWidget::createWidgets()
 {
 	hubAddressLineEdit = new QLineEdit(pSettings->hubAddress,(QWidget *)pParent);
-	//hubAddressLineEdit->setInputMask("009.009.009.009;0");
-	hubAddressLineEdit->setValidator(new IPValidator(this));
+	//hubAddressLineEdit->setValidator(new IPValidator(this));                              //Determine if IP validator is needed, most likely a hostname will suffice
 	
 	hubPortLineEdit = new QLineEdit(tr("%1").arg(pSettings->hubPort), (QWidget *)pParent);
 	hubPortLineEdit->setValidator(new QIntValidator(0, 65535, this));
@@ -32,7 +31,6 @@ void SettingsWidget::createWidgets()
 	passwordLineEdit->setEchoMode(QLineEdit::Password);
 	
 	ipLineEdit = new QLineEdit(pSettings->externalIP, (QWidget *)pParent);
-	//ipLineEdit->setInputMask("009.009.009.009;0");
 	ipLineEdit->setValidator(new IPValidator(this));
 
 	externalPortLineEdit = new QLineEdit(tr("%1").arg(pSettings->externalPort), (QWidget *)pParent);
@@ -44,12 +42,15 @@ void SettingsWidget::createWidgets()
 void SettingsWidget::placeWidgets()
 {
 	QFormLayout *flayout = new QFormLayout();
-	flayout->addRow(new QLabel("Hub address:"), hubAddressLineEdit);
-	flayout->addRow(new QLabel("Hub port:"), hubPortLineEdit);
-	flayout->addRow(new QLabel("Nickname:"), nickLineEdit);
+	flayout->addRow(new QLabel("<b>User information</b>"));
+    flayout->addRow(new QLabel("Nickname:"), nickLineEdit);
 	flayout->addRow(new QLabel("Password:"), passwordLineEdit);
-	flayout->addRow(new QLabel("External IP:"), ipLineEdit);
-	flayout->addRow(new QLabel("External port:"), externalPortLineEdit);
+    flayout->addRow(new QLabel("<b>Hub information</b>"));
+    flayout->addRow(new QLabel("Hub address:"), hubAddressLineEdit);
+	flayout->addRow(new QLabel("Hub port:"), hubPortLineEdit);
+    flayout->addRow(new QLabel("<br/><font color=\"red\"><b>Warning: Advanced users only. Leave these at default settings unless you know exactly what you're doing.</b></font>"));
+	flayout->addRow(new QLabel("<font color=\"red\">External IP:</font>"), ipLineEdit);
+	flayout->addRow(new QLabel("<font color=\"red\">External port:</font>"), externalPortLineEdit);
 
 	QHBoxLayout *hlayout = new QHBoxLayout();
 	hlayout->addStretch(1);

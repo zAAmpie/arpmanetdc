@@ -12,20 +12,18 @@ void ParseDirectoryThread::parseDirectory(QString dirPath)
 	parse(QDir(dirPath));	
 
 	//Check if recursion limit has been reached somewhere in the structure
-	if (recursionLimit < RECURSION_LIMIT)
+	//if (recursionLimit < RECURSION_LIMIT)
 		emit done(dirPath, pFileList, this);
-	else
-		emit failed(dirPath, this);		
+	//else
+	//	emit failed(dirPath, this);		
 }
 
 void ParseDirectoryThread::parse(QDir dir)
 {
 	//Ensure recursion limit hasn't been reached
-	if (recursionLimit >= RECURSION_LIMIT)
-		return;
+	//if (recursionLimit >= RECURSION_LIMIT)
+	//	return;
 	
-	recursionLimit++;
-
 	//Get only files for now
 	dir.setFilter(QDir::Files | QDir::NoSymLinks);
 
@@ -54,6 +52,7 @@ void ParseDirectoryThread::parse(QDir dir)
 		QDir nextDir(list.at(k).absoluteFilePath());
 		if (nextDir.isReadable())
 		{
+            recursionLimit++;
 			parse(nextDir);
 		}
 	}

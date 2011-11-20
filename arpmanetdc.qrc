@@ -13,5 +13,6 @@
         <file>Resources/LowPriorityIcon.png</file>
         <file>Resources/DownloadFinishedIcon.png</file>
         <file>Resources/ServerOfflineIcon.png</file>
+        <file>Resources/ServerOnlineIcon.png</file>
     </qresource>
 </RCC>

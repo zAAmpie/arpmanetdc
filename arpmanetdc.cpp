@@ -102,6 +102,8 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	*userIcon = QPixmap(":/ArpmanetDC/Resources/UserIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 	userFirewallIcon = new QPixmap();
 	*userFirewallIcon = QPixmap(":/ArpmanetDC/Resources/FirewallIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    fullyBootstrappedIcon = new QPixmap();
+	*fullyBootstrappedIcon = QPixmap(":/ArpmanetDC/Resources/ServerOnlineIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 	bootstrappedIcon = new QPixmap();
 	*bootstrappedIcon = QPixmap(":/ArpmanetDC/Resources/ServerIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 	unbootstrappedIcon = new QPixmap();
@@ -704,7 +706,7 @@ void ArpmanetDC::shareSaveButtonPressed()
 	//Delete share tab
 	if (shareWidget)
 	{
-		statusLabel->setText(tr("Directory parsing started"));
+		setStatus(tr("Directory parsing started"));
 		tabs->removeTab(tabs->indexOf(shareWidget->widget()));
 		shareWidget->deleteLater();
 		shareWidget = 0;
@@ -718,7 +720,7 @@ void ArpmanetDC::settingsSaved()
 	//Delete settings tab
 	if (settingsWidget)
 	{
-		statusLabel->setText(tr("Settings saved"));
+		setStatus(tr("Settings saved"));
 		tabs->removeTab(tabs->indexOf(settingsWidget->widget()));
 		settingsWidget->deleteLater();
 		settingsWidget = 0;
@@ -734,7 +736,7 @@ void ArpmanetDC::pmSent(QString otherNick, QString msg, PMWidget *pmWidget)
 void ArpmanetDC::fileHashed(QString fileName)
 {
 	//Show on GUI when file has finished hashing
-	statusLabel->setText(tr("Finished hashing: %1").arg(fileName));
+	setStatus(tr("Finished hashing: %1").arg(fileName));
 	shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr()));
 	//QApplication::processEvents();
 }
@@ -742,7 +744,7 @@ void ArpmanetDC::fileHashed(QString fileName)
 void ArpmanetDC::directoryParsed(QString path)
 {
 	//Show on GUI when directory has been parsed
-	statusLabel->setText(tr("Finished parsing directory: %1").arg(path));
+	setStatus(tr("Finished parsing directory: %1").arg(path));
 	//QApplication::processEvents();
 }
 
@@ -751,7 +753,7 @@ void ArpmanetDC::hashingDone(int msecs)
 	QString timeStr = tr("%1 seconds").arg((double)msecs / 1000.0, 0, 'f', 2);
 
 	//Show on GUI when hashing is completed
-	statusLabel->setText(tr("Shares updated in %1").arg(timeStr));
+	setStatus(tr("Shares updated in %1").arg(timeStr));
 	shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr(true)));
 	hashingProgressBar->setRange(0,1);
 }
@@ -759,7 +761,7 @@ void ArpmanetDC::hashingDone(int msecs)
 void ArpmanetDC::parsingDone()
 {
 	//Show on GUI when directory parsing is completed
-	statusLabel->setText(tr("Finished directory parsing. Starting hashing process..."));
+	setStatus(tr("Finished directory parsing. Starting hashing process..."));
 }
 
 void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)
@@ -1006,32 +1008,43 @@ void ArpmanetDC::userListNickListReceived(QStringList list)
 void ArpmanetDC::hubOffline()
 {
 	tabs->setTabIcon(0, QIcon(":/ArpmanetDC/Resources/ServerOfflineIcon.png"));
-	statusLabel->setText("Hub offline");
+	setStatus("Hub offline");
 }
 
 void ArpmanetDC::hubOnline()
 {
 	tabs->setTabIcon(0, QIcon(":/ArpmanetDC/Resources/ServerIcon.png"));
-	statusLabel->setText("Hub online");
+	setStatus("Hub online");
 }
 
 void ArpmanetDC::bootstrapStatusChanged(int status)
 {
-	// bootstrapStatus
+    // bootstrapStatus
     // -2: Absoluut clueless en nowhere
     // -1: Besig om multicast bootstrap te probeer
     //  0: Besig om broadcast bootstrap te probeer
-    //  1: Suksesvol gebootstrap op broadcast
-    //  2: Suksesvol gebootstrap op multicast
+    //  1: Aanvaar broadcast, geen ander nodes naby, het bucket ID gegenereer.
+    //  2: Suksesvol gebootstrap op broadcast
+    //  3: Suksesvol gebootstrap op multicast
 
 	bootstrapStatusLabel->setText(tr("%1").arg(status));
 	
 	//If not bootstrapped yet
 	if (status <= 0)
 		connectionIconLabel->setPixmap(*unbootstrappedIcon);
-	//If bootstrapped in either broadcast/multicast
-	else
+	//No other nodes nearby, waiting
+	else if (status == 1)
 		connectionIconLabel->setPixmap(*bootstrappedIcon);
+    //If bootstrapped in either broadcast/multicast
+    else
+        connectionIconLabel->setPixmap(*fullyBootstrappedIcon);
+}
+
+void ArpmanetDC::setStatus(QString msg)
+{
+    //Elide text to avoid stupid looking shifting of permanent widgets in the status bar
+    QFontMetrics fm(statusLabel->font());
+    statusLabel->setText(fm.elidedText(msg, Qt::ElideMiddle, statusLabel->width()));
 }
 
 void ArpmanetDC::convertHTMLLinks(QString &msg)

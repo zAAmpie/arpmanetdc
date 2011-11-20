@@ -20,7 +20,7 @@
 
 #define DISPATCHER_PORT 4012
 
-#define DEFAULT_HUB_ADDRESS "172.16.8.1"
+#define DEFAULT_HUB_ADDRESS "arpmanet.ath.cx"
 #define DEFAULT_HUB_PORT 4012
 
 #define DEFAULT_NICK "Testnick"
@@ -53,6 +53,10 @@ public:
 	//Link to database
 	sqlite3 *database() const;
 	QString databasePath();
+
+public slots:
+    //Sets the global status label in the status bar to msg
+    void setStatus(QString msg);
 
 private slots:
 	//Hub Connection slots
@@ -144,7 +148,7 @@ private:
 	quint32 mainChatLines;
 
 	//User list icons
-	QPixmap *userIcon, *userFirewallIcon, *bootstrappedIcon, *unbootstrappedIcon;
+	QPixmap *userIcon, *userFirewallIcon, *bootstrappedIcon, *unbootstrappedIcon, *fullyBootstrappedIcon;
 
 	//Actions
 	QAction *reconnectAction, *shareAction, *searchAction, *queueAction, *downloadFinishedAction, *settingsAction, *helpAction, *privateMessageAction;
