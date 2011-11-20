@@ -37,7 +37,7 @@ public:
     void setCID(QByteArray &CID);
 
 signals:
-    void bootstrapStatus(int status);
+    void changeBootstrapStatus(int status);
     void requestBucketContents(QHostAddress host);
     void requestAllBuckets(QHostAddress host);
 
@@ -45,8 +45,11 @@ public slots:
     // ons onderskei tussen hierdie twee sodat foreign buckets nie ons begrip van ons eie bucket id affekteer nie
     void announceReplyArrived(bool isMulticast, QHostAddress &hostAddr, QByteArray &cid, QByteArray &bucket);
     void announceForwardReplyArrived(QHostAddress &hostAddr, QByteArray &cid, QByteArray &bucket);
+
     void bucketContentsArrived(QByteArray);
     void initiateBucketRequests();
+
+    void setBootstrapStatus(int status);
 
     // debugging
     QString getDebugBucketsContents();
@@ -76,6 +79,7 @@ private:
     quint64 startupTime;
     int incomingAnnouncementCount;
     QByteArray CID;
+    int bootstrapStatus;
 };
 
 #endif // NETWORKTOPOLOGY_H

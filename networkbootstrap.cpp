@@ -54,8 +54,9 @@ void NetworkBootstrap::performBootstrap()
     // -2: Absoluut clueless en nowhere
     // -1: Besig om multicast bootstrap te probeer
     //  0: Besig om broadcast bootstrap te probeer
-    //  1: Suksesvol gebootstrap op broadcast
-    //  2: Suksesvol gebootstrap op multicast
+    //  1: Aanvaar broadcast, geen ander nodes naby, het bucket ID gegenereer.
+    //  2: Suksesvol gebootstrap op broadcast
+    //  3: Suksesvol gebootstrap op multicast
     // receive functions kan value na 1 of 2 set indien suksesvol.
     // gebruik setBootstrapStatus, hy emit sommer die change signal ook.
 
@@ -71,7 +72,7 @@ void NetworkBootstrap::performBootstrap()
         setBootstrapStatus(NETWORK_BOOTATTEMPT_BCAST);
         bootstrapTimer->start(8000);
         break;
-    case  NETWORK_BOOTATTEMPT_BCAST:
+    case NETWORK_BOOTATTEMPT_BCAST:
         setBootstrapStatus(NETWORK_BOOTATTEMPT_NONE);
         bootstrapTimer->start(1000);
         break;

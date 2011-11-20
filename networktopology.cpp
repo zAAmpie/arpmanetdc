@@ -49,15 +49,15 @@ void NetworkTopology::announceReplyArrived(bool isMulticast, QHostAddress &hostA
         unbootstrapped = false;
         if (isMulticast)
         {
-            emit bootstrapStatus(NETWORK_MCAST);
+            emit changeBootstrapStatus(NETWORK_MCAST);
             not_multicast = false;
         }
         else
-            emit bootstrapStatus(NETWORK_BCAST);
+            emit changeBootstrapStatus(NETWORK_BCAST);
     }
     else if (not_multicast && isMulticast)
     {
-        emit bootstrapStatus(NETWORK_MCAST);
+        emit changeBootstrapStatus(NETWORK_MCAST);
         not_multicast = false;
     }
 
@@ -256,18 +256,26 @@ QByteArray NetworkTopology::getOwnBucketId()
 
 void NetworkTopology::bootstrapTimeoutEvent()
 {
-    quint64 time = QDateTime::currentMSecsSinceEpoch();
-    qsrand(time);
-    QByteArray bucketID;
-    for (int i = 0; i < 3; i++)
-        bucketID.append(toQByteArray((quint64)qrand()*qrand()));
-    ownBucketId.insert(bucketID, 2);
-    emit bootstrapStatus(NETWORK_BCAST_ALONE);
+    if (bootstrapStatus <= 0)
+    {
+        quint64 time = QDateTime::currentMSecsSinceEpoch();
+        qsrand(time);
+        QByteArray bucketID;
+        for (int i = 0; i < 3; i++)
+            bucketID.append(toQByteArray((quint64)qrand()*qrand()));
+        ownBucketId.insert(bucketID, 2);
+        emit changeBootstrapStatus(NETWORK_BCAST_ALONE);
+    }
 }
 
 void NetworkTopology::setCID(QByteArray &cid)
 {
     CID = cid;
+}
+
+void NetworkTopology::setBootstrapStatus(int status)
+{
+    bootstrapStatus = status;
 }
 
 // DEBUGGING

@@ -57,7 +57,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	}
 	pDispatcher = new Dispatcher(QHostAddress(pSettings.externalIP), pSettings.externalPort);
     // conjure up something unique here and save it for every subsequent client invocation
-    QByteArray cid = "012345678901234567890124";
+    QByteArray cid = "012345678901234567890123";
     pDispatcher->setCID(cid);
 	connect(pDispatcher, SIGNAL(bootstrapStatusChanged(int)), this, SLOT(bootstrapStatusChanged(int)));
 
