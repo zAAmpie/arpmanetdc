@@ -18,10 +18,10 @@
 
 #define DISPATCHER_PORT 4012
 
-#define DEFAULT_HUB_ADDRESS "172.31.65.115"
+#define DEFAULT_HUB_ADDRESS "172.16.8.1"
 #define DEFAULT_HUB_PORT 4012
 
-#define DEFAULT_NICK "testuser"
+#define DEFAULT_NICK "testuser1234"
 #define DEFAULT_PASSWORD ""
 
 #define SHARE_DATABASE_PATH "fileshares.sqlite"
