@@ -15,7 +15,8 @@
 #include "sharewidget.h"
 #include "sharesearch.h"
 #include "dispatcher.h"
-#include "sqlite/sqlite3.h"
+#include "transfermanager.h"
+#include <sqlite/sqlite3.h>
 
 #define DISPATCHER_PORT 4012
 
@@ -124,6 +125,7 @@ private:
 	sqlite3 *db; //SQLite database
 	HubConnection *pHub;
 	Dispatcher *pDispatcher;
+    TransferManager *pTransferManager;
 	ShareSearch *pShare;
 
 	//Parameters

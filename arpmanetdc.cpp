@@ -26,7 +26,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	connect(pHub, SIGNAL(hubOnline()), this, SLOT(hubOnline()));
 	connect(pHub, SIGNAL(hubOffline()), this, SLOT(hubOffline()));
 
-	pHub->connectHub();
+    //pHub->connectHub();
 
 	//For jokes, get the actual IP of the computer and use the first one for the dispatcher
 	QList<QHostAddress> ips;
@@ -57,6 +57,13 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	}
 	pDispatcher = new Dispatcher(QHostAddress(pSettings.externalIP), pSettings.externalPort);
 	connect(pDispatcher, SIGNAL(bootstrapStatusChanged(int)), this, SLOT(bootstrapStatusChanged(int)));
+
+    // Create and connect Transfer manager
+    pTransferManager = new TransferManager();
+    connect(pDispatcher, SIGNAL(incomingUploadRequest(quint8,QHostAddress&,QByteArray&,quint64&,quint64&)),
+            pTransferManager, SLOT(incomingUploadRequest(quint8,QHostAddress&,QByteArray&,quint64&,quint64&)));
+    connect(pDispatcher, SIGNAL(incomingDataPacket(quint8,QByteArray&)),
+            pTransferManager, SLOT(incomingDataPacket(quint8,QByteArray&)));
 
 	//Set up thread for database / ShareSearch
 	dbThread = new ExecThread();
@@ -108,6 +115,9 @@ ArpmanetDC::~ArpmanetDC()
 {
 	//Destructor
 	delete pHub;
+    delete pTransferManager;
+    delete pDispatcher;
+
 	dbThread->exit(0);
 	if (dbThread->wait())
 		delete dbThread;
