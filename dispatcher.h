@@ -61,7 +61,7 @@ class Dispatcher : public QObject
     };
 
 public:
-    explicit Dispatcher(QHostAddress &dispatchIP, quint16 &dispatchPort, QObject *parent = 0);
+    explicit Dispatcher(QHostAddress dispatchIP, quint16 dispatchPort, QObject *parent = 0);
     void setCID(QByteArray &cid);
     void setDispatchIP(QHostAddress &dispatchIP);
     ~Dispatcher();

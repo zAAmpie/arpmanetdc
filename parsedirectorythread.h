@@ -26,7 +26,7 @@ signals:
 
 private:
 	//Recursive private function
-	void parse(QDir &directory);
+        void parse(QDir directory);
 
 	QList<QString> *pFileList;
 	QDir pDir;

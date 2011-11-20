@@ -18,7 +18,7 @@ void ParseDirectoryThread::parseDirectory(QString dirPath)
 		emit failed(dirPath, this);		
 }
 
-void ParseDirectoryThread::parse(QDir &dir)
+void ParseDirectoryThread::parse(QDir dir)
 {
 	//Ensure recursion limit hasn't been reached
 	if (recursionLimit >= RECURSION_LIMIT)

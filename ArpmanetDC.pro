@@ -34,7 +34,9 @@ SOURCES += main.cpp\
     base32.cpp \
     customtableitems.cpp \
     delayedexecutiontimer.cpp \
-    downloadqueuewidget.cpp
+    downloadqueuewidget.cpp \
+    settingswidget.cpp \
+    downloadfinishedwidget.cpp
 
 HEADERS  += arpmanetdc.h \
     hubconnection.h \
@@ -57,10 +59,14 @@ HEADERS  += arpmanetdc.h \
     checkableproxymodel.h \
     base32.h \
     customtableitems.h \
-    delayedexecutiontimer.h
+    delayedexecutiontimer.h \
+    downloadfinishedwidget.h \
+    settingswidget.h
 
 #FORMS    += arpmanetdc.ui
 
 RESOURCES += \
     arpmanetdc.qrc
+
+
 

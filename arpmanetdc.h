@@ -22,13 +22,8 @@
 #define DEFAULT_HUB_ADDRESS "172.16.8.1"
 #define DEFAULT_HUB_PORT 4012
 
-<<<<<<< HEAD
-#define DEFAULT_NICK "testuser1234"
-#define DEFAULT_PASSWORD ""
-=======
 #define DEFAULT_NICK "Testnick"
 #define DEFAULT_PASSWORD "test123"
->>>>>>> 92c4b3899992ca2ffeed16ec25464c4d75433339
 
 #define SHARE_DATABASE_PATH "arpmanetdc.sqlite"
 
