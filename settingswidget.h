@@ -14,7 +14,8 @@ struct SettingsStruct
 	QString nick;
 	QString password;
 
-	QString ip; //your own ip (or behind nat)
+	QString externalIP; //your own ip (or behind nat)
+	quint16 externalPort;
 };
 
 //Class encapsulating all widgets/signals for search tab
@@ -55,7 +56,7 @@ private:
 	SettingsStruct *pSettings;
 
 	//GUI
-	QLineEdit *hubAddressLineEdit, *hubPortLineEdit, *nickLineEdit, *passwordLineEdit, *ipLineEdit;
+	QLineEdit *hubAddressLineEdit, *hubPortLineEdit, *nickLineEdit, *passwordLineEdit, *ipLineEdit, *externalPortLineEdit;
 	QPushButton *saveButton;
 
 };

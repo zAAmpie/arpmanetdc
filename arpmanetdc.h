@@ -62,6 +62,9 @@ private slots:
 	void hubOnline();
 	void hubOffline();
 
+	//Dispatcher slots
+	void bootstrapStatusChanged(int status);
+
 	//Sort user list
 	void sortUserList();
 
@@ -124,11 +127,6 @@ private:
 	ShareSearch *pShare;
 
 	//Parameters
-	QString pNick;
-	QString pPassword;
-	QString pHubIP;
-	quint16 pHubPort;
-
 	SettingsStruct pSettings;
 
 	//Global lists
@@ -143,7 +141,7 @@ private:
 	quint32 mainChatLines;
 
 	//User list icons
-	QPixmap *userIcon, *userFirewallIcon;
+	QPixmap *userIcon, *userFirewallIcon, *bootstrappedIcon, *unbootstrappedIcon;
 
 	//Actions
 	QAction *reconnectAction, *shareAction, *searchAction, *queueAction, *downloadFinishedAction, *settingsAction, *helpAction, *privateMessageAction;
@@ -154,6 +152,8 @@ private:
 	QLabel *additionalInfoLabel;
 	QLabel *statusLabel;
 	QLabel *shareSizeLabel;
+	QLabel *connectionIconLabel;
+	QLabel *bootstrapStatusLabel;
 
 	//Progressbar
 	QProgressBar *hashingProgressBar;

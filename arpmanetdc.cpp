@@ -5,17 +5,18 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 {
 	//QApplication::setStyle(new QCleanlooksStyle());
 
-	pNick = DEFAULT_NICK;
-	pPassword = DEFAULT_PASSWORD;
-	pHubIP = DEFAULT_HUB_ADDRESS;
-	pHubPort = DEFAULT_HUB_PORT;
+	pSettings.nick = DEFAULT_NICK;
+	pSettings.password = DEFAULT_PASSWORD;
+	pSettings.hubAddress = DEFAULT_HUB_ADDRESS;
+	pSettings.hubPort = DEFAULT_HUB_PORT;
+	pSettings.externalPort = DISPATCHER_PORT;
 	mainChatLines = 0;
 
 	//Set window title
 	setWindowTitle(tr("ArpmanetDC %1").arg(VERSION_STRING));
 
 	//Create and connect Hub Connection
-	pHub = new HubConnection(pHubIP, pHubPort, pNick, pPassword, VERSION_STRING, this);
+	pHub = new HubConnection(pSettings.hubAddress, pSettings.hubPort, pSettings.nick, pSettings.password, VERSION_STRING, this);
 
 	connect(pHub, SIGNAL(receivedChatMessage(QString)), this, SLOT(appendChatLine(QString)));
 	connect(pHub, SIGNAL(receivedMyINFO(QString, QString, QString)), this, SLOT(userListInfoReceived(QString, QString, QString)));
@@ -50,8 +51,12 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	}
 
 	//Create and connect Dispatcher connection
-	quint16 port = DISPATCHER_PORT;
-	pDispatcher = new Dispatcher(ips.first(), port);
+	if (!ips.isEmpty())
+	{
+		pSettings.externalIP = ips.first().toString();
+	}
+	pDispatcher = new Dispatcher(QHostAddress(pSettings.externalIP), pSettings.externalPort);
+	connect(pDispatcher, SIGNAL(bootstrapStatusChanged(int)), this, SLOT(bootstrapStatusChanged(int)));
 
 	//Set up thread for database / ShareSearch
 	dbThread = new ExecThread();
@@ -87,6 +92,10 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	*userIcon = QPixmap(":/ArpmanetDC/Resources/UserIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 	userFirewallIcon = new QPixmap();
 	*userFirewallIcon = QPixmap(":/ArpmanetDC/Resources/FirewallIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+	bootstrappedIcon = new QPixmap();
+	*bootstrappedIcon = QPixmap(":/ArpmanetDC/Resources/ServerIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+	unbootstrappedIcon = new QPixmap();
+	*unbootstrappedIcon = QPixmap(":/ArpmanetDC/Resources/ServerOfflineIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
 	//Set up timer to ensure each and every update doesn't signal a complete list sort!
 	sortDue = false;
@@ -180,6 +189,11 @@ void ArpmanetDC::createWidgets()
 
 	statusLabel = new QLabel(tr("Status"));
 	shareSizeLabel = new QLabel(tr("Share: 0 bytes"));
+
+	bootstrapStatusLabel = new QLabel();
+	//connectionIconLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+	connectionIconLabel = new QLabel();
+	//connectionIconLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
 	//Progress bar
 	hashingProgressBar = new QProgressBar(this);
@@ -275,6 +289,8 @@ void ArpmanetDC::createWidgets()
 	//Status bars
 	statusBar = new QStatusBar(this);
 	statusBar->addPermanentWidget(statusLabel,1);
+	statusBar->addPermanentWidget(connectionIconLabel);
+	statusBar->addPermanentWidget(bootstrapStatusLabel);
 	statusBar->addPermanentWidget(hashingProgressBar);
 	statusBar->addPermanentWidget(shareSizeLabel);
 
@@ -494,8 +510,8 @@ void ArpmanetDC::shareActionPressed()
 void ArpmanetDC::reconnectActionPressed()
 {
 	//TODO: Reconnect was pressed
-	pHub->setHubAddress(pHubIP);
-	pHub->setHubPort(pHubPort);
+	pHub->setHubAddress(pSettings.hubAddress);
+	pHub->setHubPort(pSettings.hubPort);
 	pHub->connectHub();
 }
 
@@ -799,7 +815,7 @@ void ArpmanetDC::appendChatLine(QString msg)
 	msg.replace("\r","");
 
 	//Replace nick with red text
-	msg.replace(pNick, tr("<font color=\"red\">%1</font>").arg(pNick));
+	msg.replace(pSettings.nick, tr("<font color=\"red\">%1</font>").arg(pSettings.nick));
 
 	//Convert plain text links to HTML links
 	convertHTMLLinks(msg);
@@ -967,6 +983,25 @@ void ArpmanetDC::hubOnline()
 	statusLabel->setText("Hub online");
 }
 
+void ArpmanetDC::bootstrapStatusChanged(int status)
+{
+	// bootstrapStatus
+    // -2: Absoluut clueless en nowhere
+    // -1: Besig om multicast bootstrap te probeer
+    //  0: Besig om broadcast bootstrap te probeer
+    //  1: Suksesvol gebootstrap op broadcast
+    //  2: Suksesvol gebootstrap op multicast
+
+	bootstrapStatusLabel->setText(tr("%1").arg(status));
+	
+	//If not bootstrapped yet
+	if (status <= 0)
+		connectionIconLabel->setPixmap(*unbootstrappedIcon);
+	//If bootstrapped in either broadcast/multicast
+	else
+		connectionIconLabel->setPixmap(*bootstrappedIcon);
+}
+
 void ArpmanetDC::convertHTMLLinks(QString &msg)
 {
 	//Replace html links with hrefs
@@ -1079,12 +1114,12 @@ void ArpmanetDC::convertMagnetLinks(QString &msg)
 
 QString ArpmanetDC::nick()
 {
-	return pNick;
+	return pSettings.nick;
 }
 
 QString ArpmanetDC::password()
 {
-	return pPassword;
+	return pSettings.password;
 }
 
 sqlite3 *ArpmanetDC::database() const

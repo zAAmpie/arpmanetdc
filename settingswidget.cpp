@@ -31,9 +31,12 @@ void SettingsWidget::createWidgets()
 	passwordLineEdit = new QLineEdit(pSettings->password, (QWidget *)pParent);
 	passwordLineEdit->setEchoMode(QLineEdit::Password);
 	
-	ipLineEdit = new QLineEdit(pSettings->ip, (QWidget *)pParent);
+	ipLineEdit = new QLineEdit(pSettings->externalIP, (QWidget *)pParent);
 	//ipLineEdit->setInputMask("009.009.009.009;0");
 	ipLineEdit->setValidator(new IPValidator(this));
+
+	externalPortLineEdit = new QLineEdit(tr("%1").arg(pSettings->externalPort), (QWidget *)pParent);
+	externalPortLineEdit->setValidator(new QIntValidator(0, 65535, this));
 
 	saveButton = new QPushButton(tr("Save changes"), (QWidget *)pParent);
 }
@@ -46,6 +49,7 @@ void SettingsWidget::placeWidgets()
 	flayout->addRow(new QLabel("Nickname:"), nickLineEdit);
 	flayout->addRow(new QLabel("Password:"), passwordLineEdit);
 	flayout->addRow(new QLabel("External IP:"), ipLineEdit);
+	flayout->addRow(new QLabel("External port:"), externalPortLineEdit);
 
 	QHBoxLayout *hlayout = new QHBoxLayout();
 	hlayout->addStretch(1);
@@ -78,6 +82,8 @@ void SettingsWidget::savePressed()
 		missingStr.append("Password<br/>");
 	if (ipLineEdit->text().isEmpty())
 		missingStr.append("External IP<br/>");
+	if (externalPortLineEdit->text() == "0")
+		missingStr.append("External Port<br/>");
 
 	if (!missingStr.isEmpty())
 		QMessageBox::warning((QWidget *)pParent, tr("ArpmanetDC"), tr("<p><b>Information missing:</b></p><p>%1</p><p>Please enter the above fields and try again.</p>").arg(missingStr));
@@ -87,7 +93,8 @@ void SettingsWidget::savePressed()
 		pSettings->hubPort = hubPortLineEdit->text().toUShort();
 		pSettings->nick = nickLineEdit->text();
 		pSettings->password = passwordLineEdit->text();
-		pSettings->ip = ipLineEdit->text();
+		pSettings->externalIP = ipLineEdit->text();
+		pSettings->externalPort = externalPortLineEdit->text().toUShort();
 
 		emit settingsSaved();
 	}
