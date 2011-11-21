@@ -34,6 +34,9 @@ class Dispatcher : public QObject
         SearchRequestPacket=0x11,
         SearchForwardRequestPacket=0x12,
         SearchResultPacket=0x13,
+        TTHSearchRequestPacket=0x14,
+        TTHSearchForwardRequestPacket=0x15,
+        TTHSearchResultPacket=0x16,
         TransferErrorPacket=0x20,
         DownloadProtocolARequestPacket=0x21,
         DownloadProtocolBRequestPacket=0x22,
@@ -78,6 +81,8 @@ signals:
     void searchResultsReceived(QHostAddress &senderHost, QByteArray &senderCID, quint64 &searchID, QByteArray &searchResult);
     void searchQuestionReceived(QHostAddress &senderHost, quint64 &searchID, QByteArray &cid, QByteArray &searchData);
     void searchForwardReceived();  // for stats
+    void TTHSearchResultsReceived(QByteArray &tth, QHostAddress &peer);
+    void TTHSearchQuestionReceived(QByteArray &tth, QHostAddress &senderHost);
 
     // P2P network control data arrival signals
     // These signals are intended to be used to generate statistics or graphs on control data throughput
@@ -115,7 +120,10 @@ public slots:
     void sendUnicastAnnounceForwardRequest(QHostAddress &dstAddr);
 
     // Search
-    bool initiateSearch(quint64&, QByteArray&);
+    bool initiateSearch(quint64 &searchID, QByteArray &searchPacket);
+    void sendSearchResult(QHostAddress &toHost, QByteArray searchResult);
+    bool initiateTTHSearch(QByteArray &tth);
+    void sendTTHSearchResult(QHostAddress &toHost, QByteArray &tth);
 
     // Transfers
     void sendDownloadRequest(quint8 protocol, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
@@ -164,6 +172,12 @@ private:
     void handleReceivedSearchForwardRequest(QHostAddress &fromAddr, QByteArray &datagram);
     void parseArrivedSearchResult(QByteArray &datagram);
     void handleReceivedSearchQuestion(QHostAddress &fromHost, QByteArray &datagram);
+    void sendTTHSearchBroadcast(QByteArray &tth);
+    void sendTTHSearchMulticast(QByteArray &tth);
+    void sendTTHSearchForwardRequest(QHostAddress &forwardingNode, QByteArray &tth);
+    void handleReceivedTTHSearchForwardRequest(QHostAddress &fromAddr, QByteArray &datagram);
+    void handleArrivedTTHSearchResult(QHostAddress &fromAddr, QByteArray &datagram);
+    void handleReceivedTTHSearchQuestion(QHostAddress &fromHost, QByteArray &datagram);
 
     // CID related network functions
     void sendBroadcastCIDPing(QByteArray &cid);

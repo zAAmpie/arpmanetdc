@@ -12,9 +12,9 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     // Init P2P dispatch socket
     receiverUdpSocket = new QUdpSocket(this);
     receiverUdpSocket->bind(dispatchPort, QUdpSocket::ShareAddress);
-    //receiverUdpSocket->joinMulticastGroup(mcastAddress);
-    //receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastTtlOption, 16);
-    //receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastLoopbackOption, true);
+    receiverUdpSocket->joinMulticastGroup(mcastAddress);
+    receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastTtlOption, 16);
+    receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastLoopbackOption, false);
     connect(receiverUdpSocket, SIGNAL(readyRead()), this, SLOT(receiveP2PData()));
 
     senderUdpSocket = new QUdpSocket(this);
@@ -46,7 +46,7 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
 Dispatcher::~Dispatcher()
 {
     delete networkBootstrap;
-    //receiverUdpSocket->leaveMulticastGroup(mcastAddress);
+    receiverUdpSocket->leaveMulticastGroup(mcastAddress);
     delete networkTopology;
     delete senderUdpSocket;
     delete receiverUdpSocket;
@@ -101,6 +101,18 @@ void Dispatcher::handleProtocolInstruction(quint8 &quint8DatagramType, quint8 &q
     // try to sort this from most frequently used to less frequently used
     switch(quint8ProtocolInstruction)
     {
+    case TTHSearchRequestPacket:
+        handleReceivedTTHSearchQuestion(senderHost, datagram);
+        break;
+
+    case TTHSearchResultPacket:
+        handleArrivedTTHSearchResult(senderHost, datagram);
+        break;
+
+    case TTHSearchForwardRequestPacket:
+        handleReceivedTTHSearchForwardRequest(senderHost, datagram);
+        break;
+
     case SearchResultPacket:
         parseArrivedSearchResult(datagram);
         break;
@@ -337,6 +349,11 @@ bool Dispatcher::initiateSearch(quint64 &searchId, QByteArray &searchData)
     return true;
 }
 
+void Dispatcher::sendSearchResult(QHostAddress &toHost, QByteArray searchResult)
+{
+    // TODO: We need to have a means to transmit our matches on others' search questions!
+}
+
 QByteArray Dispatcher::assembleSearchPacket(QHostAddress &searchingHost, quint64 &searchID, QByteArray &searchData)
 {
     QByteArray datagram;
@@ -435,6 +452,116 @@ void Dispatcher::handleReceivedSearchQuestion(QHostAddress &fromHost, QByteArray
     if (bucket.length() > 0)
         emit bucketContentsArrived(bucket);
 
+}
+
+bool Dispatcher::initiateTTHSearch(QByteArray &tth)
+{
+    QByteArray datagram;
+    if (networkBootstrap->getBootstrapStatus() == NETWORK_MCAST)
+        datagram.append(MulticastPacket);
+    else if (networkBootstrap->getBootstrapStatus() == NETWORK_BCAST)
+        datagram.append(BroadcastPacket);
+    else
+        return false;
+    datagram.append(TTHSearchRequestPacket);
+
+    datagram.append(tth);
+    if (networkBootstrap->getBootstrapStatus() == NETWORK_MCAST)
+        sendMulticastRawDatagram(datagram);
+    else if (networkBootstrap->getBootstrapStatus() == NETWORK_BCAST)
+        sendBroadcastRawDatagram(datagram);
+
+    QList<QHostAddress> forwardingPeers = networkTopology->getForwardingPeers(3);
+    QListIterator<QHostAddress> it(forwardingPeers);
+    while(it.hasNext())
+    {
+        QHostAddress h = it.next();
+        sendTTHSearchForwardRequest(h, tth);
+    }
+    return true;
+}
+
+void Dispatcher::sendTTHSearchResult(QHostAddress &toHost, QByteArray &tth)
+{
+    QByteArray datagram;
+    datagram.append(UnicastPacket);
+    datagram.append(TTHSearchResultPacket);
+    datagram.append(toQByteArray(dispatchIP.toIPv4Address()));
+    datagram.append(tth);
+    sendUnicastRawDatagram(toHost, datagram);
+}
+
+void Dispatcher::sendTTHSearchBroadcast(QByteArray &tth)
+{
+    QByteArray datagram;
+    datagram.append(BroadcastPacket);
+    datagram.append(TTHSearchRequestPacket);
+    datagram.append(toQByteArray(dispatchIP.toIPv4Address()));
+    datagram.append(tth);
+    sendBroadcastRawDatagram(datagram);
+}
+
+void Dispatcher::sendTTHSearchMulticast(QByteArray &tth)
+{
+    QByteArray datagram;
+    datagram.append(MulticastPacket);
+    datagram.append(TTHSearchRequestPacket);
+    datagram.append(toQByteArray(dispatchIP.toIPv4Address()));
+    datagram.append(tth);
+    sendMulticastRawDatagram(datagram);
+}
+
+void Dispatcher::sendTTHSearchForwardRequest(QHostAddress &forwardingNode, QByteArray &tth)
+{
+    QByteArray datagram;
+    datagram.append(UnicastPacket);
+    datagram.append(TTHSearchForwardRequestPacket);
+    datagram.append(toQByteArray(dispatchIP.toIPv4Address()));
+    datagram.append(tth);
+    sendUnicastRawDatagram(forwardingNode, datagram);
+}
+
+void Dispatcher::handleReceivedTTHSearchForwardRequest(QHostAddress &fromAddr, QByteArray &datagram)
+{
+    QHostAddress allegedFromHost = QHostAddress(datagram.mid(2, 4).toUInt());
+    if (fromAddr != allegedFromHost)
+        return;
+
+    QByteArray searchToForward;
+    if (networkBootstrap->getBootstrapStatus() == NETWORK_MCAST)
+        searchToForward.append(MulticastPacket);
+    else if (networkBootstrap->getBootstrapStatus() == NETWORK_BCAST)
+        searchToForward.append(BroadcastPacket);
+
+    searchToForward.append(TTHSearchRequestPacket);
+    searchToForward.append(datagram.mid(2));
+    if (networkBootstrap->getBootstrapStatus() == NETWORK_MCAST)
+        sendMulticastRawDatagram(searchToForward);
+    else if (networkBootstrap->getBootstrapStatus() == NETWORK_BCAST)
+        sendBroadcastRawDatagram(searchToForward);
+    // else drop silently
+
+    emit searchForwardReceived(); // stats
+}
+
+void Dispatcher::handleArrivedTTHSearchResult(QHostAddress &fromAddr, QByteArray &datagram)
+{
+    QHostAddress allegedFromAddr = QHostAddress(datagram.mid(2, 4).toUInt());
+    if (fromAddr != allegedFromAddr) // mainly to catch misconfigured nodes behind NAT
+        return;
+
+    QByteArray tth(datagram.mid(6));
+    emit TTHSearchResultsReceived(tth, fromAddr);
+}
+
+void Dispatcher::handleReceivedTTHSearchQuestion(QHostAddress &fromAddr, QByteArray &datagram)
+{
+    QHostAddress allegedFromAddr = QHostAddress(datagram.mid(2, 4).toUInt());
+    if (fromAddr != allegedFromAddr) // mainly to catch misconfigured nodes behind NAT
+        return;
+
+    QByteArray tth(datagram.mid(6));
+    emit TTHSearchQuestionReceived(tth, fromAddr);
 }
 
 // ------------------=====================   Data transfer functions   =====================----------------------
