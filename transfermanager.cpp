@@ -47,7 +47,7 @@ void TransferManager::incomingDataPacket(quint8 transferProtocolVersion, QByteAr
 // incoming requests for files we share
 void TransferManager::incomingUploadRequest(quint8 protocolInstruction, QHostAddress &fromHost, QByteArray &tth, quint64 &offset, quint64 &length)
 {
-    Transfer *t = getTransferObjectPointer(tth, fromHost, TRANSFER_TYPE_UPLOAD);
+    Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_UPLOAD, fromHost);
     if (t)
     {
         t->setFileOffset(offset);
@@ -71,6 +71,7 @@ void TransferManager::incomingDownloadRequest(quint8 protocolVersion, QString &f
 {
     Transfer *t = new DownloadTransfer();
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
+    connect(t, SIGNAL(hashBucketRequest(QByteArray&,int&,QByteArray*)), this, SLOT(proxyHashBucketRequest(QByteArray&,int&,QByteArray*)));
     t->setFileName(filePathName);
     t->setTTH(tth);
     t->setTransferProtocol(protocolVersion);
@@ -81,7 +82,7 @@ void TransferManager::incomingDownloadRequest(quint8 protocolVersion, QString &f
 }
 
 // look for pointer to Transfer object matching tth, transfer type and host address
-Transfer* TransferManager::getTransferObjectPointer(QByteArray &tth, QHostAddress &hostAddr, int transferType)
+Transfer* TransferManager::getTransferObjectPointer(QByteArray &tth, int transferType, QHostAddress hostAddr)
 {
     if (transferObjectTable.contains(tth))
     {
@@ -143,4 +144,17 @@ void TransferManager::incomingTTHSource(QByteArray &tth, QHostAddress &sourcePee
 {
     if (transferObjectTable.contains(tth))
         transferObjectTable.value(tth)->addPeer(sourcePeer);
+}
+
+void TransferManager::proxyHashBucketRequest(QByteArray &rootTTH, int &bucketNumber, QByteArray *bucket)
+{
+    emit hashBucketRequest(rootTTH, bucketNumber, bucket);
+}
+
+void TransferManager::hashBucketReply(QByteArray &rootTTH, int &bucketNumber, QByteArray &bucketTTH)
+{
+    Transfer *t = getTransferObjectPointer(rootTTH, TRANSFER_TYPE_DOWNLOAD);
+    if (t)
+        t->hashBucketReply(rootTTH, bucketNumber, bucketTTH);
+    // should be no else, if the download object mysteriously disappeared somewhere, we can just silently drop the message here.
 }

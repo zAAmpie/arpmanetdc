@@ -6,6 +6,7 @@ DownloadTransfer::DownloadTransfer()
     transferProgress = 0;
     bytesWrittenSinceUpdate = 0;
     status = TRANSFER_STATE_INITIALIZING;
+    remoteHost = QHostAddress("0.0.0.0");
 
     transferRateCalculationTimer = new QTimer(this);
     connect(transferRateCalculationTimer, SIGNAL(timeout()), this, SLOT(transferRateCalculation()));

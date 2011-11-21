@@ -40,6 +40,9 @@ signals:
     void deleteTTHSourcesFromDatabase(QByteArray &tth);
     void searchTTHAlternateSources(QByteArray &tth);
 
+    // Request hashing of a bucket that has finished downloading
+    void hashBucketRequest(QByteArray &rootTTH, int &bucketNumber, QByteArray *bucket);
+
 public slots:
     void incomingDataPacket(quint8 transferProtocolVersion, QByteArray &datagram);
 
@@ -49,14 +52,20 @@ public slots:
     void incomingUploadRequest(quint8 protocolVersion, QHostAddress &fromHost, QByteArray &tth, quint64 &offset, quint64 &length);
     void incomingDownloadRequest(quint8 protocolVersion, QString &filePathName, QByteArray &tth);
 
+    // Response from hashing engine when bucket finished hashing
+    void hashBucketReply(QByteArray &rootTTH, int &bucketNumber, QByteArray &bucketTTH);
+
     void incomingTTHSource(QByteArray &tth, QHostAddress &sourcePeer);
 
     QList<TransferItemStatus> getGlobalTransferStatus();
 
     void destroyTransferObject(Transfer*);
 
+private slots:
+    void proxyHashBucketRequest(QByteArray &rootTTH, int &bucketNumber, QByteArray *bucket);
+
 private:
-    Transfer* getTransferObjectPointer(QByteArray &tth, QHostAddress &hostAddr, int transferType);
+    Transfer* getTransferObjectPointer(QByteArray &tth, int transferType, QHostAddress hostAddr = QHostAddress("0.0.0.0"));
     QMultiHash<QByteArray, Transfer*> transferObjectTable;
     QMultiHash<QByteArray, UploadTransferQueueItem*> uploadTransferQueue;
 
