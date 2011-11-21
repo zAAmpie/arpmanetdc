@@ -573,7 +573,23 @@ void ArpmanetDC::settingsActionPressed()
 
 void ArpmanetDC::helpActionPressed()
 {
-	//TODO: Help was pressed
+	//Check if help widget exists already
+	if (helpWidget)
+	{
+		//If it does, select it and return
+		if (tabs->indexOf(helpWidget->widget()) != -1)
+		{
+			tabs->setCurrentIndex(tabs->indexOf(helpWidget->widget()));
+			return;
+		}
+	}
+
+	//Otherwise, create it
+	helpWidget = new HelpWidget(&pSettings, this);
+	
+	tabs->addTab(helpWidget->widget(), QIcon(":/ArpmanetDC/Resources/HelpIcon.png"), tr("Help"));
+
+	tabs->setCurrentIndex(tabs->indexOf(helpWidget->widget()));
 }
 
 void ArpmanetDC::privateMessageActionPressed()

@@ -13,6 +13,7 @@
 #include "pmwidget.h"
 #include "settingswidget.h"
 #include "sharewidget.h"
+#include "helpwidget.h"
 #include "sharesearch.h"
 #include "dispatcher.h"
 #include "transfermanager.h"
@@ -195,6 +196,7 @@ private:
 	DownloadQueueWidget *queueWidget;
 	DownloadFinishedWidget *finishedWidget;
 	SettingsWidget *settingsWidget;
+    HelpWidget *helpWidget;
 
 	ExecThread *dbThread;
 };
