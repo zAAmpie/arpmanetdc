@@ -1,24 +1,82 @@
 #include "util.h"
 
-QString base32Encode(byte *input, int inputLength)
+QByteArray base32Encode(byte *input, int inputLength)
 {
     int encodedLength = Base32::GetEncode32Length(inputLength);
     byte *b32text = new byte[encodedLength];
     if (!Base32::Encode32(input, inputLength, b32text))
     {
-        return "";
+        return QByteArray();
     }
 
     char *alpha = new char[32];
-    memcpy(alpha, "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567", 32);
+    memcpy(alpha, base32Alpha, 32);
     Base32::Map32(b32text, encodedLength, (byte *)alpha);
 
-    QString output = QByteArray((const char*)b32text, encodedLength);
+    QByteArray output((const char*)b32text, encodedLength);
 
     delete [] b32text;
     delete [] alpha;
     return output;
 }
+
+bool base32Decode(QByteArray input, byte *output, int &outputLength)
+{
+    char *alpha = new char[32];
+    memcpy(alpha, base32Alpha, 32);
+    
+    byte *b32text = new byte[input.size()];
+    memcpy(b32text, (byte *)input.data(), input.size());
+    
+    Base32::Unmap32(b32text, input.size(), (byte *)alpha);
+    
+    //outputLength = Base32::GetDecode32Length(input.size());
+    byte *outputBuff = new byte[outputLength];
+
+    bool res = Base32::Decode32(b32text, input.size(), outputBuff);
+    
+    delete [] b32text;
+    delete [] alpha;
+
+    memmove(output, outputBuff, outputLength);
+    delete [] outputBuff;
+    return res;
+}
+
+//More intuitive base32 methods
+bool base32Encode(QByteArray &data)
+{
+    if (data.isEmpty())
+        return false;
+
+    QByteArray res = base32Encode((byte *)data.data(), data.size());
+    if (res.isEmpty())
+        return false;
+
+    data = res;
+    return true;
+}
+
+bool base32Decode(QByteArray &data)
+{
+    if (data.isEmpty())
+        return false;
+
+    int outputLength = Base32::GetDecode32Length(data.size());
+    byte *output = new byte[outputLength];
+    
+    bool res = base32Decode(data.data(), output, outputLength);
+    if (!res)
+    {
+        delete [] output;
+        return false;
+    }
+
+    data = QByteArray((char *)output, outputLength);
+    delete [] output;
+    return true;
+}
+
 
 // ------------------=====================   Sort STUKKENDE rubbish uit   =====================----------------------
 

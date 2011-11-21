@@ -18,9 +18,12 @@ class ArpmanetDC;
 
 struct ShareStruct //Used to return search results
 {
-	QString fileName;
 	QByteArray tthRoot;
+    QString fileName;
+	QString relativePath;
 	qint64 fileSize;
+    qint16 majorVersion;
+    qint16 minorVersion;
 };
 
 struct FileListStruct //Used to store fileList for hashing
@@ -47,7 +50,7 @@ public:
 public slots:
 	//===== SHARE QUERIES =====
 	//String query
-	void querySearchString(QString searchStr);
+	void querySearchString(qint16 majorVersion, qint16 minorVersion, QString searchStr);
 	//Return a struct of a file for a given TTH root
 	void queryTTH(QByteArray tthRoot);
 	//Return the 1MB TTH given a TTH root and file offset

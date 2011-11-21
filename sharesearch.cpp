@@ -665,15 +665,31 @@ qint64 ShareSearch::getTotalShareFromDB() //WARNING: Blocking! 10 msecs per 10k 
 }
 
 //Query search string
-void ShareSearch::querySearchString(QString searchStr)
+void ShareSearch::querySearchString(qint16 majorVersion, qint16 minorVersion, QString searchStr)
 {
 	//Split string into words
 	QStringList wordList = searchStr.split(" ");
 
 	//Query the database with the search string
-	QString queryStr = tr("SELECT [tth], [fileName], [fileSize] FROM FileShares WHERE ");
+	QString queryStr = tr("SELECT [tth], [fileName], [fileSize], [relativePath] FROM FileShares WHERE ");
+
+    bool first = true;
+
+    //Add major and minor versions
+    if (majorVersion > 0)
+    {
+        first = false;
+        queryStr.append(tr("[majorVersion] = %1 ").arg(majorVersion));
+    }
+    if (minorVersion > 0)
+    {
+        first = false;
+        if (majorVersion != -1)
+            queryStr.append("AND ");
+        queryStr.append(tr("[minorVersion] = %1 ").arg(minorVersion));
+    }
 	
-	bool first = true;
+    //Add word queries
 	for (int i = 0; i < wordList.size(); i++)
 	{
 		if (wordList.at(i).isEmpty())
@@ -715,6 +731,9 @@ void ShareSearch::querySearchString(QString searchStr)
 				s.tthRoot = QByteArray::fromBase64(tthRoot);
 				s.fileName = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 1));
 				s.fileSize = sqlite3_column_int64(statement, 2);
+                s.relativePath = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 3));
+                s.majorVersion = majorVersion;
+                s.minorVersion = minorVersion;
 				results->append(s);
 			}				
 		}

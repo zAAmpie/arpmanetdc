@@ -17,6 +17,7 @@
 #include "sharesearch.h"
 #include "dispatcher.h"
 #include "transfermanager.h"
+#include "util.h"
 #include <sqlite/sqlite3.h>
 
 #define DISPATCHER_PORT 4012

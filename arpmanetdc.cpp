@@ -96,6 +96,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	queueWidget = 0;
 	finishedWidget = 0;
 	settingsWidget = 0;
+    helpWidget = 0;
 
 	//Icon generation
 	userIcon = new QPixmap();
@@ -149,7 +150,7 @@ bool ArpmanetDC::setupDatabase()
 	queries.append("PRAGMA synchronous = FULL;");
 
 	//Create FileShares table - list of all files hashed
-	queries.append("CREATE TABLE FileShares (rowID INTEGER PRIMARY KEY, tth TEXT, fileName TEXT, fileSize INTEGER, filePath TEXT, lastModified TEXT, shareDirID INTEGER, active INTEGER, FOREIGN KEY(shareDirID) REFERENCES SharePaths(rowID), UNIQUE(filePath));");
+	queries.append("CREATE TABLE FileShares (rowID INTEGER PRIMARY KEY, tth TEXT, fileName TEXT, fileSize INTEGER, filePath TEXT, lastModified TEXT, shareDirID INTEGER, active INTEGER, majorVersion INTEGER, minorVersion INTEGER, relativePath TEXT, FOREIGN KEY(shareDirID) REFERENCES SharePaths(rowID), UNIQUE(filePath));");
 	queries.append("CREATE INDEX IDX_SEARCH on FileShares(searchFileName);");
 
 	//Create 1MB TTH table - list of the 1MB bucket TTHs for every fileshare
