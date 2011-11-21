@@ -12,9 +12,9 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     // Init P2P dispatch socket
     receiverUdpSocket = new QUdpSocket(this);
     receiverUdpSocket->bind(dispatchPort, QUdpSocket::ShareAddress);
-    receiverUdpSocket->joinMulticastGroup(mcastAddress);
-    receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastTtlOption, 16);
-    receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastLoopbackOption, false);
+    //receiverUdpSocket->joinMulticastGroup(mcastAddress);
+    //receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastTtlOption, 16);
+    //receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastLoopbackOption, false);
     connect(receiverUdpSocket, SIGNAL(readyRead()), this, SLOT(receiveP2PData()));
 
     senderUdpSocket = new QUdpSocket(this);
@@ -57,13 +57,13 @@ void Dispatcher::reconfigureDispatchHostPort(QHostAddress ip, quint16 port)
     dispatchIP = ip;
     dispatchPort = port;
     disconnect(receiverUdpSocket, SIGNAL(readyRead()));
-    receiverUdpSocket->leaveMulticastGroup(mcastAddress);
+    //receiverUdpSocket->leaveMulticastGroup(mcastAddress);
     receiverUdpSocket->close();
     receiverUdpSocket->bind(dispatchPort, QUdpSocket::ShareAddress);
     connect(receiverUdpSocket, SIGNAL(readyRead()), this, SLOT(receiveP2PData()));
-    receiverUdpSocket->joinMulticastGroup(mcastAddress);
-    receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastTtlOption, 16);
-    receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastLoopbackOption, false);
+    //receiverUdpSocket->joinMulticastGroup(mcastAddress);
+    //receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastTtlOption, 16);
+    //receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastLoopbackOption, false);
 }
 
 // ------------------=====================   Initial receive and dispatching   =====================----------------------

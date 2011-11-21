@@ -212,7 +212,7 @@ void ShareSearch::hashFileThreadDone(QString filePath, QString fileName, qint64 
 	QList<QString> queries;
 
 	//Generate fileShare query to insert data into database
-	QString fileShareQuery = tr("INSERT INTO FileShares ([tth], [fileName], [fileSize], [filePath], [lastModified], [shareDirID], [active]) VALUES (?001, ?002, ?003, ?004, ?005, (SELECT [rowID] FROM SharePaths WHERE path = ?006), 1);");
+	QString fileShareQuery = tr("INSERT INTO FileShares ([tth], [fileName], [fileSize], [filePath], [lastModified], [shareDirID], [active], [majorVersion], [minorVersion], [relativePath]) VALUES (?, ?, ?, ?, ?, (SELECT [rowID] FROM SharePaths WHERE path = ?), 1, ?, ?, ?);");
 		/*.arg(tthRoot)
 		//.arg("?")
 		//.arg(QByteArray().append(fileName).toBase64().data())
@@ -264,6 +264,10 @@ void ShareSearch::hashFileThreadDone(QString filePath, QString fileName, qint64 
 	sqlite3_stmt *statement;
 
 	qint64 totalShare;
+   
+    //Get version numbers
+    VersionStruct v = getMajorMinorVersions(fileName);   
+    QString relativePath = getRelativePath(rootDir, filePath);
 
 	//Loop through all queries
 	for (int i = 0; i < queries.size(); i++)
@@ -283,6 +287,9 @@ void ShareSearch::hashFileThreadDone(QString filePath, QString fileName, qint64 
 				res = res | sqlite3_bind_text16(statement, 4, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
 				res = res | sqlite3_bind_text16(statement, 5, lastModified.utf16(), lastModified.size()*2, SQLITE_STATIC);
 				res = res | sqlite3_bind_text16(statement, 6, rootDir.utf16(), rootDir.size()*2, SQLITE_STATIC);
+                res = res | sqlite3_bind_int64(statement, 7, v.majorVersion);
+                res = res | sqlite3_bind_int64(statement, 8, v.minorVersion);
+                res = res | sqlite3_bind_text16(statement, 9, relativePath.utf16(), relativePath.size()*2, SQLITE_STATIC);
 				if (res == SQLITE_OK)
 					QString awesome = "awesome";
 				else
@@ -679,16 +686,53 @@ void ShareSearch::querySearchString(qint16 majorVersion, qint16 minorVersion, QS
     if (majorVersion > 0)
     {
         first = false;
-        queryStr.append(tr("[majorVersion] = %1 ").arg(majorVersion));
+        queryStr.append(tr("([majorVersion] = %1 ").arg(majorVersion));
     }
     if (minorVersion > 0)
     {
-        first = false;
-        if (majorVersion != -1)
+        if (!first)
             queryStr.append("AND ");
+        else
+            queryStr.append("(");
+        first = false;
         queryStr.append(tr("[minorVersion] = %1 ").arg(minorVersion));
     }
-	
+
+    //Check for Base32 TTH's in the searchStr
+    QString regex = "([a-z2-7]{39})";
+	QRegExp rxTTH(regex, Qt::CaseInsensitive);
+    QStringList tthList;
+
+    //Iterate through all words
+    int count = 0;
+    while (count < wordList.size())
+    {
+        bool found = false;
+        QString word = wordList.at(count++);
+
+        int pos = 0;
+	    while ((pos = rxTTH.indexIn(word, pos)) != -1)
+        {
+            found = true;
+            QByteArray tth;
+            tth.append(rxTTH.cap(1).toUpper());
+            int size = tth.size();
+            base32Decode(tth);
+    	    tthList.append(tth.toBase64());
+            pos++;
+
+            //Only add max 10 TTH's per word
+            if (tthList.size() >= 10)
+                break;
+        }
+
+        if (found)
+        {
+            count--;
+            wordList.removeAt(count);
+        }
+    }
+
     //Add word queries
 	for (int i = 0; i < wordList.size(); i++)
 	{
@@ -696,10 +740,26 @@ void ShareSearch::querySearchString(qint16 majorVersion, qint16 minorVersion, QS
 			continue;
 		if (!first)
 			queryStr.append(" AND ");
-		queryStr.append(tr("[fileName] LIKE '%' || ? || '%'"));//.arg(wordList.at(i)));
+        else
+            queryStr.append("(");
+        queryStr.append(tr("[fileName] || [relativePath] LIKE '%' || ? || '%'"));
 		first = false;
 	}
-	queryStr.append(";");
+    if (!first)
+        queryStr.append(")");
+
+    //Add tth queries
+	for (int i = 0; i < tthList.size(); i++)
+	{
+		if (tthList.at(i).isEmpty())
+			continue;
+		if (!first)
+			queryStr.append(" OR ");
+		queryStr.append(tr("[tth] = '%1'").arg(tthList.at(i)));
+		first = false;
+	}
+
+	queryStr.append(tr(" LIMIT %1;").arg(MAX_SEARCH_RESULTS));
 
 	QList<ShareStruct> *results = new QList<ShareStruct>();
 	sqlite3 *db = pParent->database();	
@@ -1216,6 +1276,71 @@ void ShareSearch::requestFinishedList()
 	emit returnFinishedList(results);
 }
 
+//Get the major and minor versions for a specific fileName
+VersionStruct ShareSearch::getMajorMinorVersions(QString fileName)
+{    
+    VersionStruct v;
+    v.majorVersion = -1;
+    v.minorVersion = -1;
+
+    QFileInfo fi(fileName);
+    QString ext = fi.suffix();
+    QString name = fi.completeBaseName();
+
+    //Check if file is a movie file
+    if (!ext.contains(QRegExp("\\b(?:avi|mpg|mkv|wmv|asf|flv)\\b",Qt::CaseInsensitive)))
+        return v;
+
+    //Get major and minor numbers
+    //Regex for separated numbers i.e. s03e26 / 03e26 / 03ep26 / 3x26 / 3.26 / 3-26
+    QString regex = "s?([0-9]{1,2})(?:e|ep|x|\\.|\\-)+([0-9]{1,3})";
+    QRegExp rxS(regex, Qt::CaseInsensitive);
+    int pos = 0;
+    if (pos = rxS.indexIn(name) != -1)
+    {
+        //Don't match dates like 26-3-2006 / 23.3.2006
+        if (!name.contains(QRegExp("[0-9]{1,2}(?:\\.|\\-)[0-9]{1,2}(?:\\.|\\-)[0-9]{2,4}")))
+        {
+            v.majorVersion = rxS.cap(1).toShort();
+            v.minorVersion = rxS.cap(2).toShort();
+        }
+        else
+            return v;
+    }
+
+    //Regex for normal numbers i.e. 326 / 1516 but not 15123 or 35
+    regex = "(([0-1]?[0-9]{1})([0-9]{2}).?)";
+    QRegExp rxN(regex, Qt::CaseInsensitive);
+    if (pos = rxN.indexIn(name) != -1)
+    {
+        //Don't match large numbers greater than 4 characters and don't match 1080i/p and 720i/p
+        QString totalMatch = rxN.cap(1);
+        if (!name.contains(QRegExp("[0-9]{5,}"))  && !totalMatch.contains(QRegExp("(?:1080p|720p|1080i|720i)")))
+        {
+            v.majorVersion = rxN.cap(2).toShort();
+            v.minorVersion = rxN.cap(3).toShort();
+        }
+        else
+            return v;
+    }
+    
+    //If any of the versions are zero, invalid
+    if (!v.majorVersion || !v.minorVersion)
+    {
+        v.majorVersion = -1;
+        v.minorVersion = -1;
+    }
+    return v;
+}
+
+//Get relative path from root directory
+QString ShareSearch::getRelativePath(QString absoluteRootDir, QString absoluteFilePath)
+{
+    //Include the shared directory's name in the relative path
+    absoluteRootDir = absoluteRootDir.left(absoluteRootDir.lastIndexOf("/"));
+
+    return absoluteFilePath.remove(absoluteRootDir, Qt::CaseInsensitive);
+}
 
 quint64 ShareSearch::totalShare(bool fromDB)
 {

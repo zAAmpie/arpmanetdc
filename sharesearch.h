@@ -6,13 +6,14 @@
 #include <QList>
 #include <QTimer>
 #include <QDir>
+#include <QRegExp>
 #include <QHostAddress>
 #include "hashfilethread.h"
 #include "parsedirectorythread.h"
 #include "execthread.h"
 #include "downloadqueuewidget.h"
 #include "downloadfinishedwidget.h"
-
+#include "util.h"
 
 class ArpmanetDC;
 
@@ -30,6 +31,12 @@ struct FileListStruct //Used to store fileList for hashing
 {
 	QString fileName;
 	QString rootDir;
+};
+
+struct VersionStruct //Used to store major and minor version of a file
+{
+    qint16 majorVersion;
+    qint16 minorVersion;
 };
 
 class ShareSearch : public QObject
@@ -165,6 +172,12 @@ private:
 	
 	//Get the total share directly from the database
 	qint64 getTotalShareFromDB(); //WARNING: Blocking! 10 msecs per 10k files shared
+
+    //Get the major and minor versions for a specific fileName
+    VersionStruct getMajorMinorVersions(QString fileName);
+
+    //Get relative path to root dir
+    QString getRelativePath(QString absoluteRootDir, QString absoluteFilePath);
 
 	//Objects
 	ArpmanetDC *pParent;

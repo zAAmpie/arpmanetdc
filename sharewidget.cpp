@@ -134,7 +134,7 @@ void ShareWidget::saveSharePressed()
 
 	QMessageBox::information(0, tr("ArpmanetDC"), list);*/
 	
-	pShare->updateShares(dirList);
+   	pShare->updateShares(dirList);
 
 	emit saveButtonPressed();
 }
