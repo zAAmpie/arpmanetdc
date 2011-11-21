@@ -67,6 +67,8 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
             pTransferManager, SLOT(incomingUploadRequest(quint8,QHostAddress&,QByteArray&,quint64&,quint64&)));
     connect(pDispatcher, SIGNAL(incomingDataPacket(quint8,QByteArray&)),
             pTransferManager, SLOT(incomingDataPacket(quint8,QByteArray&)));
+    connect(pTransferManager, SIGNAL(transmitDatagram(QHostAddress&,QByteArray&)),
+            pDispatcher, SLOT(sendUnicastRawDatagram(QHostAddress&,QByteArray&)));
 
 	//Set up thread for database / ShareSearch
 	dbThread = new ExecThread();

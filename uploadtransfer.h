@@ -3,6 +3,8 @@
 #include "transfer.h"
 
 #define TIMER_INACTIVITY_MSECS 60000
+#define PACKET_MTU 1436
+#define PACKET_DATA_MTU 1434
 
 class UploadTransfer : public Transfer
 {

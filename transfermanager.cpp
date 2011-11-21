@@ -108,6 +108,7 @@ void TransferManager::filePathNameReply(QByteArray &tth, QString &filename)
     }
     Transfer *t = new UploadTransfer();
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
+    connect(t, SIGNAL(transmitDatagram(QHostAddress&,QByteArray&)), this, SIGNAL(transmitDatagram(QHostAddress&,QByteArray&)));
     t->setFileName(filename);
     t->setTTH(tth);
     t->setFileOffset(uploadTransferQueue.value(tth)->fileOffset);

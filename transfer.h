@@ -20,6 +20,7 @@
 
 enum DownloadProtocolInstructions
 {
+    DataPacket=0xaa,
     ProtocolADataPacket=0x21,
     ProtocolBDataPacket=0x22,
     ProtocolCDataPacket=0x23,
@@ -41,6 +42,7 @@ signals:
     void abort(Transfer*);
     void hashBucketRequest(QByteArray &rootTTH, int &bucketNumber, QByteArray *bucket);
     void TTHTreeRequest(QByteArray &rootTTH, QHostAddress &hostAddr);
+    void transmitDatagram(QHostAddress &dstHost, QByteArray &datagram);
 
 public slots:
     void setFileName(QString &filename);

@@ -31,18 +31,32 @@ int UploadTransfer::getTransferType()
 
 void UploadTransfer::startTransfer()
 {
-    //
-    if (!inputFile.isOpen())
-    {
-        inputFile.setFileName(filePathName);
-        inputFile.open(QIODevice::ReadOnly);
-    }
     status = TRANSFER_STATE_RUNNING;
+    inputFile.setFileName(filePathName);
+    inputFile.open(QIODevice::ReadOnly);
+    const char * f = (char*)inputFile.map(fileOffset, segmentLength);
+    inputFile.close();
+    qint64 wptr = 0;
+    QByteArray header;
+    header.append(DataPacket);
+    header.append(ProtocolADataPacket);
+    QByteArray data(QByteArray::fromRawData(f, segmentLength));
+    while (wptr < segmentLength)
+    {
+        QByteArray packet(header);
+        if (wptr + PACKET_DATA_MTU < segmentLength)
+            packet.append(data.mid(wptr, PACKET_DATA_MTU));
+        else
+            packet.append(data.mid(wptr, segmentLength - wptr));
+        wptr += PACKET_DATA_MTU;
+        emit transmitDatagram(remoteHost, packet);
+    }
+    transferInactivityTimer->start(TIMER_INACTIVITY_MSECS);
 }
 
 void UploadTransfer::pauseTransfer()
 {
-    status = TRANSFER_STATE_PAUSED;
+    status = TRANSFER_STATE_PAUSED; // TODO
 }
 
 void UploadTransfer::abortTransfer()
