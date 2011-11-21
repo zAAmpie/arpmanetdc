@@ -44,6 +44,8 @@ signals:
     // Request hashing of a bucket that has finished downloading
     void hashBucketRequest(QByteArray &rootTTH, int &bucketNumber, QByteArray *bucket);
 
+    void transmitDatagram(QHostAddress &dstHost, QByteArray &datagram);
+
 public slots:
     void incomingDataPacket(quint8 transferProtocolVersion, QByteArray &datagram);
 
