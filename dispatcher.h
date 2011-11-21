@@ -67,6 +67,7 @@ public:
     explicit Dispatcher(QHostAddress dispatchIP, quint16 dispatchPort, QObject *parent = 0);
     void setCID(QByteArray &cid);
     void setDispatchIP(QHostAddress &dispatchIP);
+    void reconfigureDispatchHostPort(QHostAddress dispatchIP, quint16 dispatchPort);
     ~Dispatcher();
 
 

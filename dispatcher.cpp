@@ -52,6 +52,20 @@ Dispatcher::~Dispatcher()
     delete receiverUdpSocket;
 }
 
+void Dispatcher::reconfigureDispatchHostPort(QHostAddress ip, quint16 port)
+{
+    dispatchIP = ip;
+    dispatchPort = port;
+    disconnect(receiverUdpSocket, SIGNAL(readyRead()));
+    receiverUdpSocket->leaveMulticastGroup(mcastAddress);
+    receiverUdpSocket->close();
+    receiverUdpSocket->bind(dispatchPort, QUdpSocket::ShareAddress);
+    connect(receiverUdpSocket, SIGNAL(readyRead()), this, SLOT(receiveP2PData()));
+    receiverUdpSocket->joinMulticastGroup(mcastAddress);
+    receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastTtlOption, 16);
+    receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastLoopbackOption, false);
+}
+
 // ------------------=====================   Initial receive and dispatching   =====================----------------------
 
 void Dispatcher::receiveP2PData()
