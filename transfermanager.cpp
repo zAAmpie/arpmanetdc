@@ -23,24 +23,22 @@ void TransferManager::destroyTransferObject(Transfer* transferObject)
 }
 
 // incoming data packets
-void TransferManager::incomingDataPacket(quint8 transferProtocolVersion, QByteArray &datagram)
+void TransferManager::incomingDataPacket(quint8 transferPacket, QByteArray &datagram)
 {
-    if (transferProtocolVersion == ProtocolAPacket)
+    if (transferPacket == ProtocolADataPacket)
     {
         quint64 offset = datagram.mid(2, 8).toULongLong();
         QByteArray tth = datagram.mid(10, 24);
         QByteArray data = datagram.mid(34);
         if ((data.length() == datagram.length() - 34) && (transferObjectTable.contains(tth)))
         {
-            QListIterator<Transfer*> it(transferObjectTable.values(tth));
-            while (it.hasNext())
-            {
-                Transfer *t = it.next();
-                // we can potentially be uploading segments of the file to multiple peers, but there can be only one download instance
-                if (t->getTransferType() == TRANSFER_TYPE_DOWNLOAD)
-                    t->incomingDataPacket(transferProtocolVersion, offset, data);
-            }
+            Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_DOWNLOAD);
+            t->incomingDataPacket(transferPacket, offset, data);
         }
+    }
+    else if (transferPacket == ProtocolAControlPacket)
+    {
+
     }
 }
 
@@ -71,7 +69,8 @@ void TransferManager::incomingDownloadRequest(quint8 protocolVersion, QString &f
 {
     Transfer *t = new DownloadTransfer();
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
-    connect(t, SIGNAL(hashBucketRequest(QByteArray&,int&,QByteArray*)), this, SLOT(proxyHashBucketRequest(QByteArray&,int&,QByteArray*)));
+    connect(t, SIGNAL(hashBucketRequest(QByteArray&,int&,QByteArray*)), this, SIGNAL(hashBucketRequest(QByteArray&,int&,QByteArray*)));
+    connect(t, SIGNAL(TTHTreeRequest(QByteArray&,QHostAddress&)), this, SIGNAL(TTHTreeRequest(QByteArray&,QHostAddress&)));
     t->setFileName(filePathName);
     t->setTTH(tth);
     t->setTransferProtocol(protocolVersion);
@@ -146,15 +145,20 @@ void TransferManager::incomingTTHSource(QByteArray &tth, QHostAddress &sourcePee
         transferObjectTable.value(tth)->addPeer(sourcePeer);
 }
 
-void TransferManager::proxyHashBucketRequest(QByteArray &rootTTH, int &bucketNumber, QByteArray *bucket)
+// packet containing part of a tree
+// qint32 bucket number followed by 24-byte QByteArray of bucket 1MBTTH
+// therefore, 2.25 petabyte max file size, should suffice.
+void TransferManager::incomingTTHTree(QByteArray &tth, QByteArray &tree)
 {
-    emit hashBucketRequest(rootTTH, bucketNumber, bucket);
+    Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_DOWNLOAD);
+    if (t)
+        t->TTHTreeReply(tth, tree);
 }
 
 void TransferManager::hashBucketReply(QByteArray &rootTTH, int &bucketNumber, QByteArray &bucketTTH)
 {
     Transfer *t = getTransferObjectPointer(rootTTH, TRANSFER_TYPE_DOWNLOAD);
     if (t)
-        t->hashBucketReply(rootTTH, bucketNumber, bucketTTH);
+        t->hashBucketReply(bucketNumber, bucketTTH);
     // should be no else, if the download object mysteriously disappeared somewhere, we can just silently drop the message here.
 }

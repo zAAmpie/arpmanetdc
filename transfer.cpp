@@ -12,7 +12,9 @@ Transfer::~Transfer()
 // empty base class definitions, since these do not make sense for uploads
 void Transfer::incomingDataPacket(quint8, quint64&, QByteArray&)
 {}
-void Transfer::hashBucketReply(QByteArray&, int&, QByteArray&)
+void Transfer::hashBucketReply(int&, QByteArray&)
+{}
+void Transfer::TTHTreeReply(QByteArray&, QByteArray&)
 {}
 // ------------------------------------------------------------------------
 

@@ -17,15 +17,18 @@ DownloadTransfer::DownloadTransfer()
 DownloadTransfer::~DownloadTransfer()
 {
     delete transferRateCalculationTimer;
-    QHashIterator<int, QByteArray*> it(downloadBucketTable);
-    while (it.hasNext())
+    QHashIterator<int, QByteArray*> itdb(downloadBucketTable);
+    while (itdb.hasNext())
     {
         // TODO: save halwe buckets na files toe
-        delete it.next();
+        delete itdb.next();
     }
+    QHashIterator<int, QByteArray*> ithb(downloadBucketHashLookupTable);
+    while (ithb.hasNext())
+        delete ithb.next();
 }
 
-void DownloadTransfer::incomingDataPacket(quint8 transferProtocolVersion, quint64 &offset, QByteArray &data)
+void DownloadTransfer::incomingDataPacket(quint8 transferPacketType, quint64 &offset, QByteArray &data)
 {
     // we are interested in which transfer protocol the packet is encoded with, since a download object may receive packets from various sources
     // transmitted with different transfer protocols.
@@ -35,7 +38,7 @@ void DownloadTransfer::incomingDataPacket(quint8 transferProtocolVersion, quint6
         QByteArray *bucket = new QByteArray();
         downloadBucketTable.insert(bucketNumber, bucket);
     }
-    if (downloadBucketTable.value(bucketNumber)->length() + data.length() > BUCKET_SIZE)
+    if ((downloadBucketTable.value(bucketNumber)->length() + data.length()) > BUCKET_SIZE)
     {
         int bucketRemaining = BUCKET_SIZE - downloadBucketTable.value(bucketNumber)->length();
         downloadBucketTable.value(bucketNumber)->append(data.mid(0, bucketRemaining));
@@ -44,8 +47,8 @@ void DownloadTransfer::incomingDataPacket(quint8 transferProtocolVersion, quint6
             QByteArray *nextBucket = new QByteArray(data.mid(bucketRemaining));
             downloadBucketTable.insert(bucketNumber + 1, nextBucket);
         }
-        // there should be no else - if the next bucket exists and data is sticking over, there is an error, since we segment on bucket boundaries.
-        // tth checksumming will catch the problems.
+        // there should be no else - if the next bucket exists and data is sticking over, there is an error,
+        // since we segment on bucket boundaries. tth checksumming will catch the problems.
     }
     else
         downloadBucketTable.value(bucketNumber)->append(data);
@@ -54,9 +57,29 @@ void DownloadTransfer::incomingDataPacket(quint8 transferProtocolVersion, quint6
         emit hashBucketRequest(TTH, bucketNumber, downloadBucketTable.value(bucketNumber));
 }
 
-void DownloadTransfer::hashBucketReply(QByteArray &rootTTH, int &bucketNumber, QByteArray &bucketTTH)
+void DownloadTransfer::hashBucketReply(int &bucketNumber, QByteArray &bucketTTH)
 {
-    // TODO: get tree, compare, flush functions
+    if (downloadBucketHashLookupTable.contains(bucketNumber))
+    {
+        if (*downloadBucketHashLookupTable.value(bucketNumber) == bucketTTH)
+            flushBucketToDisk(bucketNumber);
+        else
+        {
+            // TODO: emit MISTAKE!
+        }
+    }
+    // TODO: must check that tth tree item was received before requesting bucket hash.
+}
+
+void DownloadTransfer::TTHTreeReply(QByteArray &rootTTH, QByteArray &tree)
+{
+    while (tree.length() >= 28)
+    {
+        int bucketNumber = tree.mid(0, 4).toInt();
+        QByteArray *bucketHash = new QByteArray(tree.mid(4, 24));
+        tree.remove(0, 28);
+        downloadBucketHashLookupTable.insert(bucketNumber, bucketHash);
+    }
 }
 
 int DownloadTransfer::getTransferType()
@@ -66,7 +89,7 @@ int DownloadTransfer::getTransferType()
 
 void DownloadTransfer::startTransfer()
 {
-    status = TRANSFER_STATE_PAUSED; //TODO
+    status = TRANSFER_STATE_RUNNING; //TODO
 }
 
 void DownloadTransfer::pauseTransfer()
@@ -97,4 +120,25 @@ void DownloadTransfer::transferRateCalculation()
 int DownloadTransfer::calculateBucketNumber(quint64 fileOffset)
 {
     return (int)(fileOffset >> 20);
+}
+
+void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
+{
+    // TODO: decide where to store these files
+    byte *tthBytes = new byte[TTH.length()];
+    for (int i = 0; i < TTH.length(); i++)
+        tthBytes[i] = TTH.at(i);
+    QString tempFileName = base32Encode(tthBytes, TTH.length());
+    delete tthBytes;
+    tempFileName.append(".");
+    tempFileName.append(QString::number(bucketNumber));
+
+    QFile file(tempFileName);
+    if (file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+        file.write(*downloadBucketTable.value(bucketNumber));
+    else
+    {
+        // TODO: emit MISTAKE!, pause download
+    }
+    file.close();
 }

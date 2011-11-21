@@ -61,5 +61,9 @@ void UploadTransfer::transferRateCalculation()
 
     // snapshot the transfer rate as the amount of bytes written in the last second
     transferRate = bytesWrittenSinceUpdate;
-    bytesWrittenSinceUpdate = 0;
+    if (bytesWrittenSinceUpdate > 0)
+    {
+        bytesWrittenSinceUpdate = 0;
+        transferInactivityTimer->start(TIMER_INACTIVITY_MSECS);
+    }
 }

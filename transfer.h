@@ -20,10 +20,14 @@
 
 enum DownloadProtocolInstructions
 {
-    ProtocolAPacket=0x21,
-    ProtocolBPacket=0x22,
-    ProtocolCPacket=0x23,
-    ProtocolDPacket=0x24
+    ProtocolADataPacket=0x21,
+    ProtocolBDataPacket=0x22,
+    ProtocolCDataPacket=0x23,
+    ProtocolDDataPacket=0x24,
+    ProtocolAControlPacket=0x41,
+    ProtocolBControlPacket=0x42,
+    ProtocolCControlPacket=0x43,
+    ProtocolDControlPacket=0x44
 };
 
 class Transfer : public QObject
@@ -36,6 +40,7 @@ public:
 signals:
     void abort(Transfer*);
     void hashBucketRequest(QByteArray &rootTTH, int &bucketNumber, QByteArray *bucket);
+    void TTHTreeRequest(QByteArray &rootTTH, QHostAddress &hostAddr);
 
 public slots:
     void setFileName(QString &filename);
@@ -50,8 +55,9 @@ public slots:
     quint64* getTransferRate();
     int* getTransferStatus();
     int* getTransferProgress();
-    void hashBucketReply(QByteArray &rootTTH, int &bucketNumber, QByteArray &bucketTTH);
+    void hashBucketReply(int &bucketNumber, QByteArray &bucketTTH);
     void addPeer(QHostAddress &peer);
+    void TTHTreeReply(QByteArray &rootTTH, QByteArray &tree);
     virtual void incomingDataPacket(quint8 transferProtocolVersion, quint64 &offset, QByteArray &data);
     virtual int getTransferType() = 0;
     virtual void startTransfer() = 0;

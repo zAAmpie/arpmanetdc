@@ -89,7 +89,7 @@ void HashFileThread::processFile(QString filePath, QString rootDir)
 		emit failed(filePath, this);	
 }
 
-
+/*
 QString HashFileThread::base32Encode(byte *input, int inputLength)
 {
 	int encodedLength = Base32::GetEncode32Length(inputLength);
@@ -108,4 +108,4 @@ QString HashFileThread::base32Encode(byte *input, int inputLength)
 	delete [] b32text;
 	delete [] alpha;
 	return output;
-}
+}*/

@@ -1,5 +1,25 @@
 #include "util.h"
 
+QString base32Encode(byte *input, int inputLength)
+{
+    int encodedLength = Base32::GetEncode32Length(inputLength);
+    byte *b32text = new byte[encodedLength];
+    if (!Base32::Encode32(input, inputLength, b32text))
+    {
+        return "";
+    }
+
+    char *alpha = new char[32];
+    memcpy(alpha, "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567", 32);
+    Base32::Map32(b32text, encodedLength, (byte *)alpha);
+
+    QString output = QByteArray((const char*)b32text, encodedLength);
+
+    delete [] b32text;
+    delete [] alpha;
+    return output;
+}
+
 // ------------------=====================   Sort STUKKENDE rubbish uit   =====================----------------------
 
 // qbytearray append nie integers se rou data nie, hy maak droog.

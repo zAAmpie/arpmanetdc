@@ -10,7 +10,7 @@
 #include <QFileInfo>
 #include <QDateTime>
 #include <cryptopp/tiger.h>
-#include "base32.h"
+#include "util.h"
 
 using namespace CryptoPP;
 
@@ -34,7 +34,7 @@ signals:
 	void failed(QString filePath, HashFileThread *hashObj);
 
 private:
-	QString base32Encode(byte *input, int inputLength);
+    //QString base32Encode(byte *input, int inputLength);
 
 	ReturnEncoding pEncoding;
 };
