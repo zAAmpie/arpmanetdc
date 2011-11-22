@@ -178,7 +178,8 @@ void SearchWidget::addSearchResult(QHostAddress sender, QByteArray cid, QByteArr
 
     //Create new row
     QList<QStandardItem *> row;
-    row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, res.fileName, pIconList->getIconFromName(fi.suffix())));
+    QString ext = fi.suffix();
+    row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, res.fileName, pIconList->getIconFromName(ext)));
     if (results.isEmpty())
         row.append(new CStandardItem(CStandardItem::IntegerType, "1"));
     else

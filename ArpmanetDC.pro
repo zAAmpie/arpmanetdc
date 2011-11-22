@@ -37,7 +37,8 @@ SOURCES += main.cpp\
     downloadqueuewidget.cpp \
     settingswidget.cpp \
     downloadfinishedwidget.cpp \
-    helpwidget.cpp
+    helpwidget.cpp \
+    resourceextractor.cpp
 
 HEADERS  += arpmanetdc.h \
     hubconnection.h \
@@ -63,12 +64,15 @@ HEADERS  += arpmanetdc.h \
     delayedexecutiontimer.h \
     downloadfinishedwidget.h \
     settingswidget.h \
-    helpwidget.h
+    helpwidget.h \
+    resourceextractor.h
 
 #FORMS    += arpmanetdc.ui
 
 RESOURCES += \
     arpmanetdc.qrc
+
+
 
 
 
