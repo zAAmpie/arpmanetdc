@@ -44,7 +44,7 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
 Dispatcher::~Dispatcher()
 {
     delete networkBootstrap;
-    receiverUdpSocket->leaveMulticastGroup(mcastAddress);
+    //receiverUdpSocket->leaveMulticastGroup(mcastAddress);
     delete networkTopology;
     delete senderUdpSocket;
     delete receiverUdpSocket;

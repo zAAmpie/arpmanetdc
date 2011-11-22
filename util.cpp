@@ -123,3 +123,102 @@ QByteArray toQByteArray(quint64 n)
     return a;
 }
 
+
+QByteArray quint16ToByteArray(quint16 num)
+{
+	//Convert quint16 to QByteArray
+	QByteArray numBA;
+	QDataStream ds(&numBA,QIODevice::WriteOnly);
+	ds.setVersion(QDataStream::Qt_4_6);
+	ds << (quint16)num;
+	return numBA;
+}
+
+QByteArray qint16ToByteArray(qint16 num)
+{
+	//Convert qint16 to QByteArray
+	QByteArray numBA;
+	QDataStream ds(&numBA,QIODevice::WriteOnly);
+	ds.setVersion(QDataStream::Qt_4_6);
+	ds << (qint16)num;
+	return numBA;
+}
+
+QByteArray quint64ToByteArray(quint64 num)
+{
+	//Convert quint64 to QByteArray
+	QByteArray numBA;
+	QDataStream ds(&numBA,QIODevice::WriteOnly);
+	ds.setVersion(QDataStream::Qt_4_6);
+	ds << (quint64)num;
+	return numBA;
+}
+
+QByteArray stringToByteArray(QString str)
+{
+	//Return a n byte QByteArray with str and its size
+	QByteArray strBA, str8bitBA = str.toLocal8Bit();	
+	QDataStream ds(&strBA,QIODevice::WriteOnly);
+	ds.setVersion(QDataStream::Qt_4_6);
+	ds << (quint16)str8bitBA.size();
+	strBA.append(str8bitBA);
+	return strBA;
+}
+
+QByteArray sizeOfByteArray(QByteArray *data)
+{
+	//Return a 2 byte QByteArray with data's size
+	QByteArray sizeBA;
+	QDataStream ds(&sizeBA,QIODevice::WriteOnly);
+	ds.setVersion(QDataStream::Qt_4_6);
+	quint16 size = data->size();
+	ds << (quint16)size;
+	//QMessageBox::information(this,tr("sizeOfByteArray"), tr("Size of ByteArray: %1\nsize: %2").arg(sizeBA.size()).arg(size));
+	return sizeBA;
+}
+
+QString getStringFromByteArray(QByteArray *data)
+{
+	//Remove a string from a QByteArray
+	quint16 size;
+	QDataStream ds(data,QIODevice::ReadOnly);
+	ds.setVersion(QDataStream::Qt_4_6);
+	ds >> size;
+	data->remove(0,2);
+	QString str = data->left(size).data();
+	data->remove(0,size);
+	return str;
+}
+
+quint16 getQuint16FromByteArray(QByteArray *data)
+{
+	//Remove a quint16 from a QByteArray
+	quint16 num;
+	QDataStream ds(data,QIODevice::ReadOnly);
+	ds.setVersion(QDataStream::Qt_4_6);
+	ds >> num;
+	data->remove(0,2);
+	return num;
+}
+
+qint16 getQint16FromByteArray(QByteArray *data)
+{
+	//Remove a quint16 from a QByteArray
+	qint16 num;
+	QDataStream ds(data,QIODevice::ReadOnly);
+	ds.setVersion(QDataStream::Qt_4_6);
+	ds >> num;
+	data->remove(0,2);
+	return num;
+}
+
+quint64 getQuint64FromByteArray(QByteArray *data)
+{
+	//Remove a quint64 from a QByteArray
+	quint64 num;
+	QDataStream ds(data,QIODevice::ReadOnly);
+	ds.setVersion(QDataStream::Qt_4_6);
+	ds >> num;
+	data->remove(0,8);
+	return num;
+}

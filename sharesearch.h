@@ -17,7 +17,7 @@
 
 class ArpmanetDC;
 
-struct ShareStruct //Used to return search results
+struct SearchStruct //Used to return search results
 {
 	QByteArray tthRoot;
     QString fileName;
@@ -57,7 +57,7 @@ public:
 public slots:
 	//===== SHARE QUERIES =====
 	//String query
-	void querySearchString(qint16 majorVersion, qint16 minorVersion, QString searchStr);
+	void querySearchString(quint64 id, QByteArray searchPacket);
 	//Return a struct of a file for a given TTH root
 	void queryTTH(QByteArray tthRoot);
 	//Return the 1MB TTH given a TTH root and file offset
@@ -113,10 +113,10 @@ private slots:
 
 signals:
 	//===== SEARCH QUERIES =====
-	//Signal to return a list of search results
-	void returnSearchResults(QList<ShareStruct> *resultList);
+	//Signal to return a search result
+	void returnSearchResult(quint64 id, QByteArray result);
 	//Signal to return share result for TTH search
-	void returnTTHResult(ShareStruct result);
+	void returnTTHResult(SearchStruct result);
 	//Signal to return 1MB TTH
 	void return1MBTTH(QByteArray tth1MB);
 

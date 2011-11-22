@@ -17,6 +17,7 @@
 #include "sharesearch.h"
 #include "dispatcher.h"
 #include "transfermanager.h"
+#include "resourceextractor.h"
 #include "util.h"
 #include <sqlite/sqlite3.h>
 
@@ -34,6 +35,8 @@
 #define MAX_SEARCH_RESULTS 100
 
 #define VERSION_STRING "0.1"
+
+
 
 //Main GUI window class
 class ArpmanetDC : public QMainWindow
@@ -98,7 +101,9 @@ private slots:
 	void showTransferListContextMenu(const QPoint&);
 
 	//Search widget slots
-	void searchButtonPressed(quint64, QString, SearchWidget *);
+	void searchButtonPressed(quint64 id, QString searchStr,  QByteArray searchPacket, SearchWidget *widget);
+    void searchResultReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult);
+    void ownResultReceived(quint64 id, QByteArray searchPacket);
 
 	//PM widget slots
 	void pmSent(QString otherNick, QString msg, PMWidget *);
@@ -134,6 +139,7 @@ private:
 	Dispatcher *pDispatcher;
     TransferManager *pTransferManager;
 	ShareSearch *pShare;
+    ResourceExtractor *pTypeIconList;
 
 	//Parameters
 	SettingsStruct pSettings;
@@ -191,6 +197,7 @@ private:
 
 	//Full page custom widgets
 	QHash<QWidget *, SearchWidget *> searchWidgetHash;
+    QHash<quint64, SearchWidget *> searchWidgetIDHash;
 	QHash<QWidget *, PMWidget *> pmWidgetHash;
 	DownloadQueueWidget *downloadQueueWidget;
 	ShareWidget *shareWidget;

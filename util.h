@@ -3,6 +3,8 @@
 #include <QObject>
 #include <QByteArray>
 #include <QChar>
+#include <QString>
+#include <QDataStream>
 #include "base32.h"
 
 typedef unsigned char byte;
@@ -21,5 +23,17 @@ bool base32Decode(QByteArray &data);
 QByteArray toQByteArray(quint16 n);
 QByteArray toQByteArray(quint32 n);
 QByteArray toQByteArray(quint64 n);
+
+QByteArray quint16ToByteArray(quint16 num);
+QByteArray qint16ToByteArray(qint16 num);
+QByteArray quint64ToByteArray(quint64 num);
+QByteArray stringToByteArray(QString str);
+QByteArray sizeOfByteArray(QByteArray *data);
+
+QString getStringFromByteArray(QByteArray *data);
+quint16 getQuint16FromByteArray(QByteArray *data);
+qint16 getQint16FromByteArray(QByteArray *data);
+quint64 getQuint64FromByteArray(QByteArray *data);
+
 
 #endif // UTIL_H

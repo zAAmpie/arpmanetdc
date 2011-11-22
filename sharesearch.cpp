@@ -672,13 +672,27 @@ qint64 ShareSearch::getTotalShareFromDB() //WARNING: Blocking! 10 msecs per 10k 
 }
 
 //Query search string
-void ShareSearch::querySearchString(qint16 majorVersion, qint16 minorVersion, QString searchStr)
+void ShareSearch::querySearchString(quint64 id, QByteArray searchPacket)
 {
+    if (searchPacket.size() < 4)
+        return;
+
+    //Packet query structure
+    //========================================
+    //majorVersion      qint16
+    //minorVersion      qint16
+    //searchStr         QString (variable size)
+    
+    //Get data from packet
+    qint16 majorVersion = getQint16FromByteArray(&searchPacket);
+    qint16 minorVersion = getQint16FromByteArray(&searchPacket);
+    QString searchStr = getStringFromByteArray(&searchPacket); 
+   
 	//Split string into words
 	QStringList wordList = searchStr.split(" ");
 
 	//Query the database with the search string
-	QString queryStr = tr("SELECT [tth], [fileName], [fileSize], [relativePath] FROM FileShares WHERE ");
+	QString queryStr = tr("SELECT [tth], [fileName], [fileSize], [majorVersion], [minorVersion], [relativePath] FROM FileShares WHERE ");
 
     bool first = true;
 
@@ -761,7 +775,6 @@ void ShareSearch::querySearchString(qint16 majorVersion, qint16 minorVersion, QS
 
 	queryStr.append(tr(" LIMIT %1;").arg(MAX_SEARCH_RESULTS));
 
-	QList<ShareStruct> *results = new QList<ShareStruct>();
 	sqlite3 *db = pParent->database();	
 	sqlite3_stmt *statement;
 
@@ -784,17 +797,38 @@ void ShareSearch::querySearchString(qint16 majorVersion, qint16 minorVersion, QS
 		int result = 0;
 		while (sqlite3_step(statement) == SQLITE_ROW)
 		{
-			if (cols = 3)
+			if (cols = 6)
 			{
-				ShareStruct s;
+				SearchStruct s;
 				QByteArray tthRoot = QByteArray().append((char*)sqlite3_column_text(statement, 0));
 				s.tthRoot = QByteArray::fromBase64(tthRoot);
 				s.fileName = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 1));
 				s.fileSize = sqlite3_column_int64(statement, 2);
-                s.relativePath = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 3));
-                s.majorVersion = majorVersion;
-                s.minorVersion = minorVersion;
-				results->append(s);
+                s.majorVersion = sqlite3_column_int64(statement, 3);
+                s.minorVersion = sqlite3_column_int64(statement, 4);
+                s.relativePath = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 5));
+
+                //Construct packet
+                QByteArray packet;
+
+                //Packet reply structure
+                //===========================================
+                //fileName          String (variable size)
+                //relativePath      String (variable size)
+                //fileSize          quint64
+                //majorVersion      qint16
+                //minorVersion      qint16
+                //tthRoot           QByteArray (variable size)
+
+                packet.append(stringToByteArray(s.fileName));
+                packet.append(stringToByteArray(s.relativePath));
+                packet.append(quint64ToByteArray(s.fileSize));
+                packet.append(qint16ToByteArray(s.majorVersion));
+                packet.append(qint16ToByteArray(s.minorVersion));
+                packet.append(s.tthRoot);
+				
+                //Report results
+	            emit returnSearchResult(id, packet);	
 			}				
 		}
 		sqlite3_finalize(statement);	
@@ -804,9 +838,6 @@ void ShareSearch::querySearchString(qint16 majorVersion, qint16 minorVersion, QS
 	QString error = sqlite3_errmsg(db);
 	if (error != "not an error")
 		QString error = "error";
-
-	//Report results
-	emit returnSearchResults(results);	
 }
 
 //Return a struct of a file for a given TTH root
@@ -815,7 +846,7 @@ void ShareSearch::queryTTH(QByteArray tthRoot)
 	//Query the database with the search string
 	QString queryStr = tr("SELECT DISTINCT [tth], [fileName], [fileSize] FROM FileShares WHERE tth = '%1';").arg(QString(tthRoot.toBase64()));
 
-	ShareStruct results;
+	SearchStruct results;
 	sqlite3 *db = pParent->database();	
 	sqlite3_stmt *statement;
 

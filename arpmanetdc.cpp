@@ -60,6 +60,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     QByteArray cid = "012345678901234567890123";
     pDispatcher->setCID(cid);
 	connect(pDispatcher, SIGNAL(bootstrapStatusChanged(int)), this, SLOT(bootstrapStatusChanged(int)));
+    connect(pDispatcher, SIGNAL(searchResultsReceived(QHostAddress, QByteArray, quint64, QByteArray)), this, SLOT(searchResultReceived(QHostAddress, senderCID, quint64, QByteArray)));
 
     // Create and connect Transfer manager
     pTransferManager = new TransferManager();
@@ -79,6 +80,9 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	connect(pShare, SIGNAL(hashingDone(int)), this, SLOT(hashingDone(int)), Qt::QueuedConnection);
 	connect(pShare, SIGNAL(parsingDone()), this, SLOT(parsingDone()), Qt::QueuedConnection);
 	connect(this, SIGNAL(updateShares()), pShare, SLOT(updateShares()), Qt::QueuedConnection);
+    
+    //Temporary signal to search local database
+    connect(pShare, SIGNAL(returnSearchResult(quint64, QByteArray)), this, SLOT(ownResultReceived(quint64, QByteArray)));
 
 	pShare->moveToThread(dbThread);
 	dbThread->start();
@@ -111,6 +115,9 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	*bootstrappedIcon = QPixmap(":/ArpmanetDC/Resources/ServerIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 	unbootstrappedIcon = new QPixmap();
 	*unbootstrappedIcon = QPixmap(":/ArpmanetDC/Resources/ServerOfflineIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+
+    //Init type icon list with resource extractor class
+    pTypeIconList = new ResourceExtractor();
 
 	//Set up timer to ensure each and every update doesn't signal a complete list sort!
 	sortDue = false;
@@ -463,9 +470,12 @@ void ArpmanetDC::sendChatMessage()
 
 void ArpmanetDC::searchActionPressed()
 {
-	SearchWidget *sWidget = new SearchWidget(this);
-	connect(sWidget, SIGNAL(search(quint64, QString, SearchWidget *)), this, SLOT(searchButtonPressed(quint64, QString, SearchWidget *)));
+	SearchWidget *sWidget = new SearchWidget(pTypeIconList, this);
+	
+    connect(sWidget, SIGNAL(search(quint64, QString, QByteArray, SearchWidget *)), this, SLOT(searchButtonPressed(quint64, QString, QByteArray, SearchWidget *)));
+
 	searchWidgetHash.insert(sWidget->widget(), sWidget);
+    searchWidgetIDHash.insert(sWidget->id(), sWidget);
 
 	tabs->addTab(sWidget->widget(), QIcon(":/ArpmanetDC/Resources/SearchIcon.png"), tr("Search"));
 
@@ -667,7 +677,9 @@ void ArpmanetDC::tabDeleted(int index)
 	//Delete search tab
 	if (searchWidgetHash.contains(tabs->widget(index)))
 	{
-		searchWidgetHash.value(tabs->widget(index))->deleteLater();
+        SearchWidget *widget = searchWidgetHash.value(tabs->widget(index));
+        searchWidgetIDHash.remove(widget->id());
+		widget->deleteLater();
 		searchWidgetHash.remove(tabs->widget(index));
 	}
 
@@ -715,14 +727,29 @@ void ArpmanetDC::tabChanged(int index)
 		tabs->tabBar()->setTabTextColor(index, tabTextColorNormal);
 }
 
-void ArpmanetDC::searchButtonPressed(quint64 id, QString search, SearchWidget *sWidget)
+void ArpmanetDC::searchButtonPressed(quint64 id, QString searchStr, QByteArray searchPacket, SearchWidget *sWidget)
 {
 	//Search button was pressed on a search tab
-	pDispatcher->initiateSearch(id, QByteArray().append(search));
+	pDispatcher->initiateSearch(id, searchPacket);
+    pShare->querySearchString(id, searchPacket);
 
-	tabs->setTabText(tabs->indexOf(sWidget->widget()), tr("Search - %1").arg(search));
+	tabs->setTabText(tabs->indexOf(sWidget->widget()), tr("Search - %1").arg(searchStr.left(20)));
 }
 
+//Received a search result from ShareSearch
+void ArpmanetDC::ownResultReceived(quint64 id, QByteArray searchPacket)
+{
+    if (searchWidgetIDHash.contains(id))
+        searchWidgetIDHash.value(id)->addSearchResult(QHostAddress("127.0.0.1"), "ME!", searchPacket);
+}
+
+//Received a search result from dispatcher
+void ArpmanetDC::searchResultReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult)
+{
+    if (searchWidgetIDHash.contains(searchID))
+        searchWidgetIDHash.value(searchID)->addSearchResult(senderHost, senderCID, searchResult);
+}
+ 
 void ArpmanetDC::shareSaveButtonPressed()
 {
 	//Delete share tab

@@ -3,6 +3,9 @@
 
 #include <QtGui>
 #include "customtableitems.h"
+#include "sharesearch.h"
+#include "util.h"
+#include "resourceextractor.h"
 
 class ArpmanetDC;
 
@@ -12,7 +15,7 @@ class SearchWidget : public QObject
 	Q_OBJECT
 
 public:
-	SearchWidget(ArpmanetDC *parent);
+	SearchWidget(ResourceExtractor *mappedIconList, ArpmanetDC *parent);
 	~SearchWidget();
 
 	//Get the encapsulating widget
@@ -21,15 +24,21 @@ public:
 
 public slots:
 	//Populate search results
-	void addSearchResult(QString);
+	void addSearchResult(QHostAddress sender, QByteArray cid, QByteArray result);
 
 private slots:
 	//Search button pressed
 	void searchPressed();
 
+    //Sort results
+    void sortTimeout();
+
+    //Stop the progress thingy after x seconds
+    void stopProgress();
+
 signals:
 	//Search for string
-	void search(quint64 id, QString search, SearchWidget *sWidget);
+	void search(quint64 id, QString searchStr, QByteArray searchPacket, SearchWidget *sWidget);
 
 private:
 	//Functions
@@ -39,9 +48,15 @@ private:
 
 	QByteArray idGenerator();
 
+    QIcon fileIcon(const QString &filename);
+
 	//Objects
 	QWidget *pWidget;
 	ArpmanetDC *pParent;
+    ResourceExtractor *pIconList;
+
+    QTimer *sortTimer;
+    bool sortDue;
 
 	//Parameters
 	quint64 pID;
@@ -52,12 +67,15 @@ private:
 
 	//Search
 	QLineEdit *searchLineEdit;
+    QLineEdit *majorVersionLineEdit, *minorVersionLineEdit;
+
 	QPushButton *searchButton;
 	QProgressBar *searchProgress;
 
 	//Results
-	QTableView *resultsTable;
+	QTreeView *resultsTable;
 	QStandardItemModel *resultsModel;
+    QStandardItem *parentItem;
 
 };
 
