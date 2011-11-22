@@ -7,6 +7,7 @@
 #include <QList>
 #include <QFile>
 #include <QTimer>
+#include "util.h"
 
 #define TRANSFER_STATE_PAUSED 0
 #define TRANSFER_STATE_INITIALIZING 1
@@ -59,7 +60,7 @@ public slots:
     int* getTransferProgress();
     void hashBucketReply(int &bucketNumber, QByteArray &bucketTTH);
     void addPeer(QHostAddress &peer);
-    void TTHTreeReply(QByteArray &rootTTH, QByteArray &tree);
+    void TTHTreeReply(QByteArray &tree);
     virtual void incomingDataPacket(quint8 transferProtocolVersion, quint64 &offset, QByteArray &data);
     virtual int getTransferType() = 0;
     virtual void startTransfer() = 0;
@@ -71,6 +72,7 @@ public slots:
 
 protected:
     QByteArray TTH;
+    QByteArray TTHBase32;
     QString filePathName;
     quint8 transferProtocol;
     QHostAddress remoteHost;

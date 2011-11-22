@@ -153,7 +153,7 @@ void TransferManager::incomingTTHTree(QByteArray &tth, QByteArray &tree)
 {
     Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_DOWNLOAD);
     if (t)
-        t->TTHTreeReply(tth, tree);
+        t->TTHTreeReply(tree);
 }
 
 void TransferManager::hashBucketReply(QByteArray &rootTTH, int &bucketNumber, QByteArray &bucketTTH)

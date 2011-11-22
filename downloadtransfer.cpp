@@ -71,7 +71,7 @@ void DownloadTransfer::hashBucketReply(int &bucketNumber, QByteArray &bucketTTH)
     // TODO: must check that tth tree item was received before requesting bucket hash.
 }
 
-void DownloadTransfer::TTHTreeReply(QByteArray &rootTTH, QByteArray &tree)
+void DownloadTransfer::TTHTreeReply(QByteArray &tree)
 {
     while (tree.length() >= 28)
     {
@@ -125,11 +125,8 @@ int DownloadTransfer::calculateBucketNumber(quint64 fileOffset)
 void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
 {
     // TODO: decide where to store these files
-    byte *tthBytes = new byte[TTH.length()];
-    for (int i = 0; i < TTH.length(); i++)
-        tthBytes[i] = TTH.at(i);
-    QString tempFileName = base32Encode(tthBytes, TTH.length());
-    delete tthBytes;
+    QString tempFileName;
+    tempFileName.append(TTHBase32);
     tempFileName.append(".");
     tempFileName.append(QString::number(bucketNumber));
 

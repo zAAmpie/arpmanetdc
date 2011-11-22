@@ -1,9 +1,8 @@
 #ifndef DOWNLOADTRANSFER_H
 #define DOWNLOADTRANSFER_H
 #include "transfer.h"
-#include "util.h"
 
-#define BUCKET_SIZE 1<<20
+#define BUCKET_SIZE (1<<20)
 
 class DownloadTransfer : public Transfer
 {
@@ -13,7 +12,7 @@ public:
 
 public slots:
     void hashBucketReply(int &bucketNumber, QByteArray &bucketTTH);
-    void TTHTreeReply(QByteArray &rootTTH, QByteArray &tree);
+    void TTHTreeReply(QByteArray &tree);
 
 private:
     void incomingDataPacket(quint8 transferProtocolVersion, quint64 &offset, QByteArray &data);

@@ -14,7 +14,7 @@ void Transfer::incomingDataPacket(quint8, quint64&, QByteArray&)
 {}
 void Transfer::hashBucketReply(int&, QByteArray&)
 {}
-void Transfer::TTHTreeReply(QByteArray&, QByteArray&)
+void Transfer::TTHTreeReply(QByteArray&)
 {}
 // ------------------------------------------------------------------------
 
@@ -26,6 +26,11 @@ void Transfer::setFileName(QString &filename)
 void Transfer::setTTH(QByteArray &tth)
 {
     TTH = tth;
+    TTHBase32 = tth;
+    if (!base32Encode(TTHBase32))
+    {
+        // TODO: emit MISTAKE!
+    }
 }
 
 void Transfer::setFileOffset(quint64 offset)

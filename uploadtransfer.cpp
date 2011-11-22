@@ -36,7 +36,7 @@ void UploadTransfer::startTransfer()
     inputFile.open(QIODevice::ReadOnly);
     const char * f = (char*)inputFile.map(fileOffset, segmentLength);
     inputFile.close();
-    qint64 wptr = 0;
+    quint64 wptr = 0;
     QByteArray header;
     header.append(DataPacket);
     header.append(ProtocolADataPacket);
@@ -51,6 +51,7 @@ void UploadTransfer::startTransfer()
         wptr += PACKET_DATA_MTU;
         emit transmitDatagram(remoteHost, packet);
     }
+    bytesWrittenSinceUpdate += segmentLength;
     transferInactivityTimer->start(TIMER_INACTIVITY_MSECS);
 }
 
