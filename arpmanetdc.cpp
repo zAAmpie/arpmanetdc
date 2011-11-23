@@ -73,12 +73,8 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 
     //Connect Dispatcher to GUI - handle search replies from other clients
 	connect(pDispatcher, SIGNAL(bootstrapStatusChanged(int)), this, SLOT(bootstrapStatusChanged(int)));
-<<<<<<< HEAD
     connect(pDispatcher, SIGNAL(searchResultsReceived(QHostAddress, QByteArray, quint64, QByteArray)),
             this, SLOT(searchResultReceived(QHostAddress, QByteArray, quint64, QByteArray)));
-=======
-    connect(pDispatcher, SIGNAL(searchResultsReceived(QHostAddress, QByteArray, quint64, QByteArray)), this, SLOT(searchResultReceived(QHostAddress, QByteArray, quint64, QByteArray)));
->>>>>>> ddd56b307a4e658d1255e441b33ce13d6bc34e7e
 
     // Create Transfer manager
     pTransferManager = new TransferManager();
@@ -117,12 +113,9 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     connect(pShare, SIGNAL(tthSourceLoaded(QByteArray, QHostAddress)), pTransferManager, SLOT(incomingTTHSource(QByteArray, QHostAddress)), Qt::QueuedConnection);
     
     //Temporary signal to search local database
-<<<<<<< HEAD
+
     connect(pShare, SIGNAL(returnSearchResult(QHostAddress,QByteArray,quint64,QByteArray)),
             this, SLOT(searchResultReceived(QHostAddress,QByteArray,quint64,QByteArray)));
-=======
-    connect(pShare, SIGNAL(returnSearchResult(QHostAddress, QByteArray, quint64, QByteArray)), this, SLOT(searchResultReceived(QHostAddress, QByteArray, quint64, QByteArray)));
->>>>>>> ddd56b307a4e658d1255e441b33ce13d6bc34e7e
 
 	pShare->moveToThread(dbThread);
 	dbThread->start();
