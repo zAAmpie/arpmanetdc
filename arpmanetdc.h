@@ -36,15 +36,13 @@
 
 #define VERSION_STRING "0.1"
 
-
-
 //Main GUI window class
 class ArpmanetDC : public QMainWindow
 {
 	Q_OBJECT
 
 public:
-	ArpmanetDC(QWidget *parent = 0, Qt::WFlags flags = 0);
+    ArpmanetDC(QWidget *parent = 0, Qt::WFlags flags = 0);
 	~ArpmanetDC();
 
 	//Get functions
@@ -74,6 +72,7 @@ private slots:
 
 	//Dispatcher slots
 	void bootstrapStatusChanged(int status);
+    void searchResultReceived(QHostAddress &senderHost, QByteArray &senderCID, quint64 &searchID, QByteArray &searchResult);
 
 	//Sort user list
 	void sortUserList();
@@ -102,8 +101,7 @@ private slots:
 
 	//Search widget slots
 	void searchButtonPressed(quint64 id, QString searchStr,  QByteArray searchPacket, SearchWidget *widget);
-    void searchResultReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult);
-    void ownResultReceived(quint64 id, QByteArray searchPacket);
+    //void ownResultReceived(quint64 id, QByteArray searchPacket);
 
 	//PM widget slots
 	void pmSent(QString otherNick, QString msg, PMWidget *);

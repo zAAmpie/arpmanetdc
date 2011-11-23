@@ -80,7 +80,7 @@ signals:
 
     // Search signals
     void searchResultsReceived(QHostAddress &senderHost, QByteArray &senderCID, quint64 &searchID, QByteArray &searchResult);
-    void searchQuestionReceived(QHostAddress &senderHost, quint64 &searchID, QByteArray &cid, QByteArray &searchData);
+    void searchQuestionReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchQuery);
     void searchForwardReceived();  // for stats
     void TTHSearchResultsReceived(QByteArray &tth, QHostAddress &peer);
     void TTHSearchQuestionReceived(QByteArray &tth, QHostAddress &senderHost);
@@ -122,7 +122,7 @@ public slots:
 
     // Search
     bool initiateSearch(quint64 &searchID, QByteArray &searchPacket);
-    void sendSearchResult(QHostAddress &toHost, QByteArray searchResult);
+    void sendSearchResult(QHostAddress toHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult);
     bool initiateTTHSearch(QByteArray &tth);
     void sendTTHSearchResult(QHostAddress &toHost, QByteArray &tth);
 

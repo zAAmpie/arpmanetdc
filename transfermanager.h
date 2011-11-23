@@ -34,10 +34,10 @@ public:
     ~TransferManager();
 
 signals:
-    void filePathNameRequest(QByteArray &tth);
-    void saveTTHSourceToDatabase(QByteArray &tth, QHostAddress &peerAddress);
-    void loadTTHSourcesFromDatabase(QByteArray &tth);
-    void deleteTTHSourcesFromDatabase(QByteArray &tth);
+    void filePathNameRequest(QByteArray tth);
+    void saveTTHSourceToDatabase(QByteArray tth, QHostAddress peerAddress);
+    void loadTTHSourcesFromDatabase(QByteArray tth);
+    void deleteTTHSourcesFromDatabase(QByteArray tth);
     void searchTTHAlternateSources(QByteArray &tth);
     void TTHTreeRequest(QByteArray &rootTTH, QHostAddress &hostAddr);
 
@@ -50,7 +50,7 @@ public slots:
     void incomingDataPacket(quint8 transferProtocolVersion, QByteArray &datagram);
 
     // Request file name for given TTH from sharing engine, reply with empty string if not found.
-    void filePathNameReply(QByteArray &tth, QString &filename);
+    void filePathNameReply(QByteArray tth, QString filename);
 
     void incomingUploadRequest(quint8 protocolVersion, QHostAddress &fromHost, QByteArray &tth, quint64 &offset, quint64 &length);
     void incomingDownloadRequest(quint8 protocolVersion, QString &filePathName, QByteArray &tth);
@@ -58,7 +58,7 @@ public slots:
     // Response from hashing engine when bucket finished hashing
     void hashBucketReply(QByteArray &rootTTH, int &bucketNumber, QByteArray &bucketTTH);
 
-    void incomingTTHSource(QByteArray &tth, QHostAddress &sourcePeer);
+    void incomingTTHSource(QByteArray tth, QHostAddress sourcePeer);
     void incomingTTHTree(QByteArray &tth, QByteArray &tree);
 
     QList<TransferItemStatus> getGlobalTransferStatus();

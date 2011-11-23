@@ -672,7 +672,7 @@ qint64 ShareSearch::getTotalShareFromDB() //WARNING: Blocking! 10 msecs per 10k 
 }
 
 //Query search string
-void ShareSearch::querySearchString(quint64 id, QByteArray searchPacket)
+void ShareSearch::querySearchString(QHostAddress senderHost, QByteArray cid, quint64 id, QByteArray searchPacket)
 {
     if (searchPacket.size() < 4)
         return;
@@ -773,7 +773,7 @@ void ShareSearch::querySearchString(quint64 id, QByteArray searchPacket)
 		first = false;
 	}
 
-	queryStr.append(tr(" LIMIT %1;").arg(MAX_SEARCH_RESULTS));
+	queryStr.append(tr(" LIMIT %1;").arg(pMaxResults));
 
 	sqlite3 *db = pParent->database();	
 	sqlite3_stmt *statement;
@@ -828,7 +828,7 @@ void ShareSearch::querySearchString(quint64 id, QByteArray searchPacket)
                 packet.append(s.tthRoot);
 				
                 //Report results
-	            emit returnSearchResult(id, packet);	
+	            emit returnSearchResult(senderHost, cid, id, packet);	
 			}				
 		}
 		sqlite3_finalize(statement);	
@@ -916,7 +916,7 @@ void ShareSearch::query1MBTTH(QByteArray tthRoot, qint64 offset)
 
 //Slots for transfers
 //Save a source for a particular TTH
-void ShareSearch::saveTTHSource(QByteArray *tthRoot, QHostAddress *peerAddress)
+void ShareSearch::saveTTHSource(QByteArray tthRoot, QHostAddress peerAddress)
 {
 	//Insert a source for a particular TTH value
 	QString queryStr = tr("INSERT INTO TTHSources ([tthRoot], [source]) VALUES (?, ?);");
@@ -932,9 +932,9 @@ void ShareSearch::saveTTHSource(QByteArray *tthRoot, QHostAddress *peerAddress)
 	{
 		//Bind parameters
 		int res = 0;
-		QString tthRootStr = QString(tthRoot->data());
+		QString tthRootStr = QString(tthRoot.data());
 		res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size(), SQLITE_STATIC);
-		res = res | sqlite3_bind_text16(statement, 2, peerAddress->toString().utf16(), peerAddress->toString().size()*2, SQLITE_STATIC);
+		res = res | sqlite3_bind_text16(statement, 2, peerAddress.toString().utf16(), peerAddress.toString().size()*2, SQLITE_STATIC);
 
 		int cols = sqlite3_column_count(statement);
 		int result = 0;
@@ -949,7 +949,7 @@ void ShareSearch::saveTTHSource(QByteArray *tthRoot, QHostAddress *peerAddress)
 }
 
 //Load a source from a TTH
-void ShareSearch::loadTTHSource(QByteArray *tthRoot)
+void ShareSearch::loadTTHSource(QByteArray tthRoot)
 {
 	//Return the source IP for a specified TTH
 	QString queryStr = tr("SELECT [source] FROM TTHSources WHERE [tthRoot] = ?;");
@@ -965,7 +965,7 @@ void ShareSearch::loadTTHSource(QByteArray *tthRoot)
 	{
 		//Bind parameters
 		int res = 0;
-		QString tthRootStr = QString(tthRoot->data());
+		QString tthRootStr = QString(tthRoot.data());
 		res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size(), SQLITE_STATIC);
 
 		int cols = sqlite3_column_count(statement);
@@ -982,17 +982,17 @@ void ShareSearch::loadTTHSource(QByteArray *tthRoot)
 	if (error != "not an error")
 		QString error = "error";
 
-	QHostAddress *ip = new QHostAddress(results);
+	QHostAddress ip(results);
 	emit tthSourceLoaded(tthRoot, ip);
 }
 
 //Request filepath from a TTH
-void ShareSearch::requestFilePath(QByteArray *tthRoot)
+void ShareSearch::requestFilePath(QByteArray tthRoot)
 {
 	//Return the source IP for a specified TTH
 	QString queryStr = tr("SELECT [filePath] FROM FileShares WHERE [tth] = ?;");
 
-	QString *results = new QString();
+	QString results;
 	sqlite3 *db = pParent->database();	
 	sqlite3_stmt *statement;
 
@@ -1003,14 +1003,14 @@ void ShareSearch::requestFilePath(QByteArray *tthRoot)
 	{
 		//Bind parameters
 		int res = 0;
-		QString tthRootStr = QString(tthRoot->data());
+		QString tthRootStr = QString(tthRoot.data());
 		res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size(), SQLITE_STATIC);
 
 		int cols = sqlite3_column_count(statement);
 		int result = 0;
 		while (sqlite3_step(statement) == SQLITE_ROW)
 		{
-			*results = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0));
+			results = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0));
 		}
 		sqlite3_finalize(statement);	
 	}
@@ -1024,7 +1024,7 @@ void ShareSearch::requestFilePath(QByteArray *tthRoot)
 }
 
 //Release all sources for a particular TTH
-void ShareSearch::deleteTTHSources(QByteArray *tthRoot)
+void ShareSearch::deleteTTHSources(QByteArray tthRoot)
 {
 	//Delete all sources for a TTH
 	QString queryStr = tr("DELETE FROM TTHSources WHERE [tthRoot] = ?;");
@@ -1040,7 +1040,7 @@ void ShareSearch::deleteTTHSources(QByteArray *tthRoot)
 	{
 		//Bind parameters
 		int res = 0;
-		QString tthRootStr = QString(tthRoot->data());
+		QString tthRootStr = QString(tthRoot.data());
 		res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size(), SQLITE_STATIC);
 
 		int cols = sqlite3_column_count(statement);

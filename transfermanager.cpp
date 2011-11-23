@@ -99,7 +99,7 @@ Transfer* TransferManager::getTransferObjectPointer(QByteArray &tth, int transfe
 // sharing engine replies with file name for tth being requested for download
 // this structure assumes only one user requests a specific file during the time it takes to dispatch the request to a transfer object.
 // should more than one user try simultaneously, their requests will be deleted off the queue in .remove(tth) and they should try again. oops.
-void TransferManager::filePathNameReply(QByteArray &tth, QString &filename)
+void TransferManager::filePathNameReply(QByteArray tth, QString filename)
 {
     if (filename == "")
     {
@@ -140,7 +140,7 @@ QList<TransferItemStatus> TransferManager::getGlobalTransferStatus()
 }
 
 // signals from db restore and incoming tth search both route here
-void TransferManager::incomingTTHSource(QByteArray &tth, QHostAddress &sourcePeer)
+void TransferManager::incomingTTHSource(QByteArray tth, QHostAddress sourcePeer)
 {
     if (transferObjectTable.contains(tth))
         transferObjectTable.value(tth)->addPeer(sourcePeer);

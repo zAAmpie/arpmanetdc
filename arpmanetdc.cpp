@@ -5,6 +5,8 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 {
 	//QApplication::setStyle(new QCleanlooksStyle());
 
+    qRegisterMetaType<QHostAddress>("QHostAddress");
+
 	pSettings.nick = DEFAULT_NICK;
 	pSettings.password = DEFAULT_PASSWORD;
 	pSettings.hubAddress = DEFAULT_HUB_ADDRESS;
@@ -15,9 +17,10 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	//Set window title
 	setWindowTitle(tr("ArpmanetDC %1").arg(VERSION_STRING));
 
-	//Create and connect Hub Connection
+	//Create Hub Connection
 	pHub = new HubConnection(pSettings.hubAddress, pSettings.hubPort, pSettings.nick, pSettings.password, VERSION_STRING, this);
 
+    //Connect HubConnection to GUI
 	connect(pHub, SIGNAL(receivedChatMessage(QString)), this, SLOT(appendChatLine(QString)));
 	connect(pHub, SIGNAL(receivedMyINFO(QString, QString, QString)), this, SLOT(userListInfoReceived(QString, QString, QString)));
 	connect(pHub, SIGNAL(receivedNickList(QStringList)), this, SLOT(userListNickListReceived(QStringList)));
@@ -50,20 +53,32 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 		}
 	}
 
-	//Create and connect Dispatcher connection
 	if (!ips.isEmpty())
 	{
 		pSettings.externalIP = ips.first().toString();
 	}
-	pDispatcher = new Dispatcher(QHostAddress(pSettings.externalIP), pSettings.externalPort);
-    // conjure up something unique here and save it for every subsequent client invocation
-    QByteArray cid = "012345678901234567890123";
-    pDispatcher->setCID(cid);
-	connect(pDispatcher, SIGNAL(bootstrapStatusChanged(int)), this, SLOT(bootstrapStatusChanged(int)));
-    connect(pDispatcher, SIGNAL(searchResultsReceived(QHostAddress, QByteArray, quint64, QByteArray)), this, SLOT(searchResultReceived(QHostAddress, senderCID, quint64, QByteArray)));
 
-    // Create and connect Transfer manager
+    //Create Dispatcher connection
+	pDispatcher = new Dispatcher(QHostAddress(pSettings.externalIP), pSettings.externalPort);
+
+    // conjure up something unique here and save it for every subsequent client invocation
+    //Maybe make a SHA1 hash of the Nick + Password - unique and consistent? Except if you have two clients open with the same login details? Meh
+    QCryptographicHash hash(QCryptographicHash::Sha1);
+    hash.addData(QByteArray().append(pSettings.nick));
+    hash.addData(QByteArray().append(pSettings.password));
+    QByteArray cid = hash.result();
+
+    //QByteArray cid = "012345678901234567890123";
+    pDispatcher->setCID(cid);
+
+    //Connect Dispatcher to GUI - handle search replies from other clients
+	connect(pDispatcher, SIGNAL(bootstrapStatusChanged(int)), this, SLOT(bootstrapStatusChanged(int)));
+    connect(pDispatcher, SIGNAL(searchResultsReceived(QHostAddress &, QByteArray &, quint64 &, QByteArray &)), this, SLOT(searchResultReceived(QHostAddress &, QByteArray &, quint64 &, QByteArray &)));
+
+    // Create Transfer manager
     pTransferManager = new TransferManager();
+
+    //Connect Dispatcher to TransferManager - handles upload/download requests and transfers
     connect(pDispatcher, SIGNAL(incomingUploadRequest(quint8,QHostAddress&,QByteArray&,quint64&,quint64&)),
             pTransferManager, SLOT(incomingUploadRequest(quint8,QHostAddress&,QByteArray&,quint64&,quint64&)));
     connect(pDispatcher, SIGNAL(incomingDataPacket(quint8,QByteArray&)),
@@ -73,16 +88,31 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 
 	//Set up thread for database / ShareSearch
 	dbThread = new ExecThread();
-
 	pShare = new ShareSearch(MAX_SEARCH_RESULTS, this);
+
+    //Connect ShareSearch to GUI - share files on this computer and hash them
 	connect(pShare, SIGNAL(fileHashed(QString)), this, SLOT(fileHashed(QString)), Qt::QueuedConnection);
 	connect(pShare, SIGNAL(directoryParsed(QString)), this, SLOT(directoryParsed(QString)), Qt::QueuedConnection);
 	connect(pShare, SIGNAL(hashingDone(int)), this, SLOT(hashingDone(int)), Qt::QueuedConnection);
 	connect(pShare, SIGNAL(parsingDone()), this, SLOT(parsingDone()), Qt::QueuedConnection);
 	connect(this, SIGNAL(updateShares()), pShare, SLOT(updateShares()), Qt::QueuedConnection);
+
+    //Connect ShareSearch to Dispatcher - reply to search request from other clients
+    connect(pShare, SIGNAL(returnSearchResult(QHostAddress, QByteArray, quint64, QByteArray)), 
+            pDispatcher, SLOT(sendSearchResult(QHostAddress, QByteArray, quint64, QByteArray)), Qt::QueuedConnection);
+    connect(pDispatcher, SIGNAL(searchQuestionReceived(QHostAddress, QByteArray, quint64, QByteArray)), 
+            pShare, SLOT(querySearchString(QHostAddress, QByteArray, quint64, QByteArray)), Qt::QueuedConnection);
+
+    //Connect ShareSearch to TransferManager - loads and saves a set of sources to the database
+    connect(pTransferManager, SIGNAL(filePathNameRequest(QByteArray)), pShare, SLOT(requestFilePath(QByteArray)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(saveTTHSourceToDatabase(QByteArray, QHostAddress)), pShare, SLOT(saveTTHSource(QByteArray, QHostAddress)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(loadTTHSourcesFromDatabase(QByteArray)), pShare, SLOT(loadTTHSource(QByteArray)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(deleteTTHSourcesFromDatabase(QByteArray)), pShare, SLOT(deleteTTHSources(QByteArray)), Qt::QueuedConnection);
+    connect(pShare, SIGNAL(filePathReply(QByteArray, QString)), pTransferManager, SLOT(filePathNameReply(QByteArray, QString)), Qt::QueuedConnection);
+    connect(pShare, SIGNAL(tthSourceLoaded(QByteArray, QHostAddress)), pTransferManager, SLOT(incomingTTHSource(QByteArray, QHostAddress)), Qt::QueuedConnection);
     
     //Temporary signal to search local database
-    connect(pShare, SIGNAL(returnSearchResult(quint64, QByteArray)), this, SLOT(ownResultReceived(quint64, QByteArray)));
+    //connect(pShare, SIGNAL(returnSearchResult(quint64, QByteArray)), this, SLOT(ownResultReceived(quint64, QByteArray)));
 
 	pShare->moveToThread(dbThread);
 	dbThread->start();
@@ -731,25 +761,27 @@ void ArpmanetDC::searchButtonPressed(quint64 id, QString searchStr, QByteArray s
 {
 	//Search button was pressed on a search tab
 	pDispatcher->initiateSearch(id, searchPacket);
-    pShare->querySearchString(id, searchPacket);
+    //pShare->querySearchString(QHostAddress("127.0.0.1"), id, QByteArray("ME!"), searchPacket);
 
 	tabs->setTabText(tabs->indexOf(sWidget->widget()), tr("Search - %1").arg(searchStr.left(20)));
 }
 
+/*
 //Received a search result from ShareSearch
 void ArpmanetDC::ownResultReceived(quint64 id, QByteArray searchPacket)
 {
-    if (searchWidgetIDHash.contains(id))
-        searchWidgetIDHash.value(id)->addSearchResult(QHostAddress("127.0.0.1"), "ME!", searchPacket);
+   // if (searchWidgetIDHash.contains(id))
+   //     searchWidgetIDHash.value(id)->addSearchResult(QHostAddress("127.0.0.1"), "ME!", searchPacket);
 }
+*/
 
 //Received a search result from dispatcher
-void ArpmanetDC::searchResultReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult)
+void ArpmanetDC::searchResultReceived(QHostAddress &senderHost, QByteArray &senderCID, quint64 &searchID, QByteArray &searchResult)
 {
     if (searchWidgetIDHash.contains(searchID))
         searchWidgetIDHash.value(searchID)->addSearchResult(senderHost, senderCID, searchResult);
 }
- 
+
 void ArpmanetDC::shareSaveButtonPressed()
 {
 	//Delete share tab

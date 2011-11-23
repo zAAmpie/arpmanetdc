@@ -57,7 +57,7 @@ public:
 public slots:
 	//===== SHARE QUERIES =====
 	//String query
-	void querySearchString(quint64 id, QByteArray searchPacket);
+	void querySearchString(QHostAddress senderHost, QByteArray cid, quint64 id, QByteArray searchPacket);
 	//Return a struct of a file for a given TTH root
 	void queryTTH(QByteArray tthRoot);
 	//Return the 1MB TTH given a TTH root and file offset
@@ -65,13 +65,13 @@ public slots:
 
 	//===== TTH SOURCES FOR TRANSFERS =====
 	//Save a source for a particular TTH
-	void saveTTHSource(QByteArray *tthRoot, QHostAddress *peerAddress);
+	void saveTTHSource(QByteArray tthRoot, QHostAddress peerAddress);
 	//Load a source from a TTH
-	void loadTTHSource(QByteArray *tthRoot);
+	void loadTTHSource(QByteArray tthRoot);
 	//Request filename from a TTH
-	void requestFilePath(QByteArray *tthRoot);
+	void requestFilePath(QByteArray tthRoot);
 	//Release all sources for a particular TTH
-	void deleteTTHSources(QByteArray *tthRoot);
+	void deleteTTHSources(QByteArray tthRoot);
 
 	//===== UPDATE SHARES =====
 	//Sharing - updates shares when shareWidget saves new share structure
@@ -114,7 +114,7 @@ private slots:
 signals:
 	//===== SEARCH QUERIES =====
 	//Signal to return a search result
-	void returnSearchResult(quint64 id, QByteArray result);
+	void returnSearchResult(QHostAddress host, QByteArray cid, quint64 id, QByteArray result);
 	//Signal to return share result for TTH search
 	void returnTTHResult(SearchStruct result);
 	//Signal to return 1MB TTH
@@ -122,9 +122,9 @@ signals:
 
 	//===== TRANSFERS =====
 	//Filename request reply
-	void filePathReply(QByteArray *tthRoot, QString *filePath);
+	void filePathReply(QByteArray tthRoot, QString filePath);
 	//TTH source load reply
-	void tthSourceLoaded(QByteArray *tthRoot, QHostAddress *peerAddress);
+	void tthSourceLoaded(QByteArray tthRoot, QHostAddress peerAddress);
 
 	//===== QUEUED DOWNLOADS =====
 	//Signals incoming queued list

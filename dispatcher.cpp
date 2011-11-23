@@ -361,7 +361,7 @@ bool Dispatcher::initiateSearch(quint64 &searchId, QByteArray &searchData)
     return true;
 }
 
-void Dispatcher::sendSearchResult(QHostAddress &toHost, QByteArray searchResult)
+void Dispatcher::sendSearchResult(QHostAddress toHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult)
 {
     // TODO: We need to have a means to transmit our matches on others' search questions!
 }
@@ -459,7 +459,7 @@ void Dispatcher::handleReceivedSearchQuestion(QHostAddress &fromHost, QByteArray
     QByteArray bucket = datagram.mid(40 + searchLength);
 
     if (searchData.length() > 0)
-        emit searchQuestionReceived(fromHost, searchID, clientCID, searchData);
+        emit searchQuestionReceived(fromHost, clientCID, searchID, searchData);
 
     if (bucket.length() > 0)
         emit bucketContentsArrived(bucket);
