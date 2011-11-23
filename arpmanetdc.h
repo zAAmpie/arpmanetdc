@@ -117,7 +117,7 @@ private slots:
 	//ShareSearch slot
 	void fileHashed(QString fileName);
 	void directoryParsed(QString path);
-	void hashingDone(int msecs);
+	void hashingDone(int msecs, int numFiles);
 	void parsingDone();
 
 signals:
