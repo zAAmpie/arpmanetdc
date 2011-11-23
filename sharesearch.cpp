@@ -91,10 +91,10 @@ void ShareSearch::updateShares(QList<QDir> *dirList) //500 msecs to update Share
 	{
 		if (k != 0)
 			removeQuery.append(",");
-		removeQuery.append(tr("?"));//.arg(QByteArray().append(dirList->at(k).absolutePath()).toBase64().data()));
+        removeQuery.append(tr("?"));//.arg(QByteArray().append(dirList->at(k).absolutePath()).toBase64().data()));
 
 		QByteArray query;
-		query.append(tr("INSERT INTO SharePaths ([path]) SELECT ?;"));//.arg(QByteArray().append(dirList->at(k).absolutePath()).toBase64().data()));
+        query.append(tr("INSERT INTO SharePaths ([path]) SELECT ?;"));//.arg(QByteArray().append(dirList->at(k).absolutePath()).toBase64().data()));
 		queries.append(query);
 
 	}

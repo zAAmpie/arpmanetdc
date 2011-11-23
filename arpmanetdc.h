@@ -72,7 +72,7 @@ private slots:
 
 	//Dispatcher slots
 	void bootstrapStatusChanged(int status);
-    void searchResultReceived(QHostAddress &senderHost, QByteArray &senderCID, quint64 &searchID, QByteArray &searchResult);
+    void searchResultReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult);
 
 	//Sort user list
 	void sortUserList();

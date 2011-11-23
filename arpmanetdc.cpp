@@ -73,7 +73,8 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 
     //Connect Dispatcher to GUI - handle search replies from other clients
 	connect(pDispatcher, SIGNAL(bootstrapStatusChanged(int)), this, SLOT(bootstrapStatusChanged(int)));
-    connect(pDispatcher, SIGNAL(searchResultsReceived(QHostAddress &, QByteArray &, quint64 &, QByteArray &)), this, SLOT(searchResultReceived(QHostAddress &, QByteArray &, quint64 &, QByteArray &)));
+    connect(pDispatcher, SIGNAL(searchResultsReceived(QHostAddress, QByteArray, quint64, QByteArray)),
+            this, SLOT(searchResultReceived(QHostAddress, QByteArray, quint64, QByteArray)));
 
     // Create Transfer manager
     pTransferManager = new TransferManager();
@@ -112,7 +113,8 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     connect(pShare, SIGNAL(tthSourceLoaded(QByteArray, QHostAddress)), pTransferManager, SLOT(incomingTTHSource(QByteArray, QHostAddress)), Qt::QueuedConnection);
     
     //Temporary signal to search local database
-    //connect(pShare, SIGNAL(returnSearchResult(quint64, QByteArray)), this, SLOT(ownResultReceived(quint64, QByteArray)));
+    connect(pShare, SIGNAL(returnSearchResult(QHostAddress,QByteArray,quint64,QByteArray)),
+            this, SLOT(searchResultReceived(QHostAddress,QByteArray,quint64,QByteArray)));
 
 	pShare->moveToThread(dbThread);
 	dbThread->start();
@@ -761,7 +763,7 @@ void ArpmanetDC::searchButtonPressed(quint64 id, QString searchStr, QByteArray s
 {
 	//Search button was pressed on a search tab
 	pDispatcher->initiateSearch(id, searchPacket);
-    //pShare->querySearchString(QHostAddress("127.0.0.1"), id, QByteArray("ME!"), searchPacket);
+    pShare->querySearchString(QHostAddress("127.0.0.1"), QByteArray("ME!"), id, searchPacket);
 
 	tabs->setTabText(tabs->indexOf(sWidget->widget()), tr("Search - %1").arg(searchStr.left(20)));
 }
@@ -776,7 +778,7 @@ void ArpmanetDC::ownResultReceived(quint64 id, QByteArray searchPacket)
 */
 
 //Received a search result from dispatcher
-void ArpmanetDC::searchResultReceived(QHostAddress &senderHost, QByteArray &senderCID, quint64 &searchID, QByteArray &searchResult)
+void ArpmanetDC::searchResultReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult)
 {
     if (searchWidgetIDHash.contains(searchID))
         searchWidgetIDHash.value(searchID)->addSearchResult(senderHost, senderCID, searchResult);

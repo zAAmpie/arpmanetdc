@@ -79,7 +79,7 @@ signals:
     void announceArrived(QHostAddress &hostAddr, QByteArray &cid, QByteArray &bucket);
 
     // Search signals
-    void searchResultsReceived(QHostAddress &senderHost, QByteArray &senderCID, quint64 &searchID, QByteArray &searchResult);
+    void searchResultsReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult);
     void searchQuestionReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchQuery);
     void searchForwardReceived();  // for stats
     void TTHSearchResultsReceived(QByteArray &tth, QHostAddress &peer);
