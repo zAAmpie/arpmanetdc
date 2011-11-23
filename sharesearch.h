@@ -174,7 +174,7 @@ signals:
 	void directoryParsed(QString path);
 
 	//Signal to show all hashing is done
-	void hashingDone(int msecs);
+	void hashingDone(int msecs, int numFiles);
 	//Signal to show all parsing is done
 	void parsingDone();
 
@@ -215,12 +215,14 @@ private:
 
 	quint32 pMaxResults;
 	quint64 pTotalShare;
+    int numberOfFilesShared;
 
 	bool transactionInProgress;
 	QTimer *commitTimer;
 
 	//Measure the time taken to update the share db
 	QTime *updateTime;
+    
 
 	ExecThread *hashThread;
 

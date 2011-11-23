@@ -71,7 +71,7 @@ void ShareSearch::updateShares(QList<QDir> *dirList) //500 msecs to update Share
 	pDirList = dirList;
 	if (dirList->isEmpty())
     {
-        emit hashingDone(0);
+        emit hashingDone(0,0);
 		return;
     }
 
@@ -387,6 +387,8 @@ void ShareSearch::startDirectoryParsing()
 
 		//Start file hashing on file list
 		startFileHashing();
+
+        numberOfFilesShared = pFileList->size();
 	}
 }
 
@@ -422,7 +424,7 @@ void ShareSearch::startFileHashing()
 		commitTimer->stop();
 		commitTransaction(false);
 		int totalUpdateTime = updateTime->elapsed();
-		emit hashingDone(totalUpdateTime);
+		emit hashingDone(totalUpdateTime, numberOfFilesShared);
 	}
 }
 
@@ -1379,19 +1381,17 @@ QString ShareSearch::getRelativePath(QString absoluteRootDir, QString absoluteFi
 quint64 ShareSearch::totalShare(bool fromDB)
 {
 	if (fromDB)
-		return getTotalShareFromDB();
+		pTotalShare = getTotalShareFromDB();
+
 	return pTotalShare;
 }
 
 QString ShareSearch::totalShareStr(bool fromDB)
 {
-	quint64 share;
 	if (fromDB)
-		share = getTotalShareFromDB();
-	else
-		share = pTotalShare;
-	
-	return bytesToSize(share);
+		pTotalShare = getTotalShareFromDB();
+		
+	return bytesToSize(pTotalShare);
 }
 
 void ShareSearch::setTotalShare(quint64 size)

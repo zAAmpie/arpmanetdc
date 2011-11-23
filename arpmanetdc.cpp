@@ -73,7 +73,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 
     //Connect Dispatcher to GUI - handle search replies from other clients
 	connect(pDispatcher, SIGNAL(bootstrapStatusChanged(int)), this, SLOT(bootstrapStatusChanged(int)));
-    connect(pDispatcher, SIGNAL(searchResultsReceived(QHostAddress &, QByteArray &, quint64 &, QByteArray &)), this, SLOT(searchResultReceived(QHostAddress &, QByteArray &, quint64 &, QByteArray &)));
+    connect(pDispatcher, SIGNAL(searchResultsReceived(QHostAddress, QByteArray, quint64, QByteArray)), this, SLOT(searchResultReceived(QHostAddress, QByteArray, quint64, QByteArray)));
 
     // Create Transfer manager
     pTransferManager = new TransferManager();
@@ -93,7 +93,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     //Connect ShareSearch to GUI - share files on this computer and hash them
 	connect(pShare, SIGNAL(fileHashed(QString)), this, SLOT(fileHashed(QString)), Qt::QueuedConnection);
 	connect(pShare, SIGNAL(directoryParsed(QString)), this, SLOT(directoryParsed(QString)), Qt::QueuedConnection);
-	connect(pShare, SIGNAL(hashingDone(int)), this, SLOT(hashingDone(int)), Qt::QueuedConnection);
+	connect(pShare, SIGNAL(hashingDone(int, int)), this, SLOT(hashingDone(int, int)), Qt::QueuedConnection);
 	connect(pShare, SIGNAL(parsingDone()), this, SLOT(parsingDone()), Qt::QueuedConnection);
 	connect(this, SIGNAL(updateShares()), pShare, SLOT(updateShares()), Qt::QueuedConnection);
 
@@ -112,7 +112,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     connect(pShare, SIGNAL(tthSourceLoaded(QByteArray, QHostAddress)), pTransferManager, SLOT(incomingTTHSource(QByteArray, QHostAddress)), Qt::QueuedConnection);
     
     //Temporary signal to search local database
-    //connect(pShare, SIGNAL(returnSearchResult(quint64, QByteArray)), this, SLOT(ownResultReceived(quint64, QByteArray)));
+    connect(pShare, SIGNAL(returnSearchResult(QHostAddress, QByteArray, quint64, QByteArray)), this, SLOT(searchResultReceived(QHostAddress, QByteArray, quint64, QByteArray)));
 
 	pShare->moveToThread(dbThread);
 	dbThread->start();
@@ -763,7 +763,7 @@ void ArpmanetDC::searchButtonPressed(quint64 id, QString searchStr, QByteArray s
 {
 	//Search button was pressed on a search tab
 	pDispatcher->initiateSearch(id, searchPacket);
-    //pShare->querySearchString(QHostAddress("127.0.0.1"), id, QByteArray("ME!"), searchPacket);
+    pShare->querySearchString(QHostAddress("127.0.0.1"), QByteArray("ME!"), id, searchPacket);
 
 	tabs->setTabText(tabs->indexOf(sWidget->widget()), tr("Search - %1").arg(searchStr.left(20)));
 }
@@ -778,7 +778,7 @@ void ArpmanetDC::ownResultReceived(quint64 id, QByteArray searchPacket)
 */
 
 //Received a search result from dispatcher
-void ArpmanetDC::searchResultReceived(QHostAddress &senderHost, QByteArray &senderCID, quint64 &searchID, QByteArray &searchResult)
+void ArpmanetDC::searchResultReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult)
 {
     if (searchWidgetIDHash.contains(searchID))
         searchWidgetIDHash.value(searchID)->addSearchResult(senderHost, senderCID, searchResult);
@@ -831,13 +831,14 @@ void ArpmanetDC::directoryParsed(QString path)
 	//QApplication::processEvents();
 }
 
-void ArpmanetDC::hashingDone(int msecs)
+void ArpmanetDC::hashingDone(int msecs, int numFiles)
 {
 	QString timeStr = tr("%1 seconds").arg((double)msecs / 1000.0, 0, 'f', 2);
 
 	//Show on GUI when hashing is completed
 	setStatus(tr("Shares updated in %1").arg(timeStr));
 	shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr(true)));
+    shareSizeLabel->setToolTip(tr("Share size: %1\nFiles shared: %2").arg(pShare->totalShareStr(false)).arg(numFiles));
 	hashingProgressBar->setRange(0,1);
 }
 

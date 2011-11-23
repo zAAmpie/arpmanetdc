@@ -74,7 +74,7 @@ private slots:
 
 	//Dispatcher slots
 	void bootstrapStatusChanged(int status);
-    void searchResultReceived(QHostAddress &senderHost, QByteArray &senderCID, quint64 &searchID, QByteArray &searchResult);
+    void searchResultReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult);
 
 	//Sort user list
 	void sortUserList();
@@ -117,7 +117,7 @@ private slots:
 	//ShareSearch slot
 	void fileHashed(QString fileName);
 	void directoryParsed(QString path);
-	void hashingDone(int msecs);
+	void hashingDone(int msecs, int numFiles);
 	void parsingDone();
 
 signals:
