@@ -12,7 +12,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	pSettings.hubAddress = DEFAULT_HUB_ADDRESS;
 	pSettings.hubPort = DEFAULT_HUB_PORT;
 	pSettings.externalPort = DISPATCHER_PORT;
-	mainChatLines = 0;
+	mainChatBlocks = 0;
 
 	//Set window title
 	setWindowTitle(tr("ArpmanetDC %1").arg(VERSION_STRING));
@@ -125,6 +125,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	placeWidgets();
 	connectWidgets();	
 
+    pStatusHistoryList = new QList<QString>();
 	setupDatabase();
 
 	downloadQueueWidget = 0;
@@ -235,6 +236,7 @@ bool ArpmanetDC::setupDatabase()
 
 	//Update shares
 	emit updateShares();
+    setStatus(tr("Share update procedure started. Parsing directories/paths..."));
 
 	return true;
 }
@@ -255,7 +257,7 @@ void ArpmanetDC::createWidgets()
 
 	//Progress bar
 	hashingProgressBar = new QProgressBar(this);
-	hashingProgressBar->setRange(0,1);
+	hashingProgressBar->setRange(0,0);
 	hashingProgressBar->setStyle(new QPlastiqueStyle());
 	hashingProgressBar->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Ignored);
 
@@ -787,7 +789,7 @@ void ArpmanetDC::shareSaveButtonPressed()
 	//Delete share tab
 	if (shareWidget)
 	{
-		setStatus(tr("Directory parsing started"));
+		setStatus(tr("Share update procedure started. Parsing directories/paths..."));
 		tabs->removeTab(tabs->indexOf(shareWidget->widget()));
 		shareWidget->deleteLater();
 		shareWidget = 0;
@@ -817,7 +819,7 @@ void ArpmanetDC::pmSent(QString otherNick, QString msg, PMWidget *pmWidget)
 void ArpmanetDC::fileHashed(QString fileName)
 {
 	//Show on GUI when file has finished hashing
-	setStatus(tr("Finished hashing: %1").arg(fileName));
+	setStatus(tr("Finished hashing file: %1").arg(fileName));
 	shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr()));
 	//QApplication::processEvents();
 }
@@ -825,7 +827,7 @@ void ArpmanetDC::fileHashed(QString fileName)
 void ArpmanetDC::directoryParsed(QString path)
 {
 	//Show on GUI when directory has been parsed
-	setStatus(tr("Finished parsing directory: %1").arg(path));
+	setStatus(tr("Finished parsing directory/path: %1").arg(path));
 	//QApplication::processEvents();
 }
 
@@ -842,7 +844,7 @@ void ArpmanetDC::hashingDone(int msecs)
 void ArpmanetDC::parsingDone()
 {
 	//Show on GUI when directory parsing is completed
-	setStatus(tr("Finished directory parsing. Starting hashing process..."));
+	setStatus(tr("Finished directory/path parsing. Checking for new/modified files..."));
 }
 
 void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)
@@ -939,7 +941,7 @@ void ArpmanetDC::appendChatLine(QString msg)
 	convertMagnetLinks(msg);
 
 	//Delete the first line if buffer is full
-    while (mainChatLines > MAX_MAINCHAT_LINES)
+    while (mainChatBlocks > MAX_MAINCHAT_BLOCKS)
 	{
 		QTextCursor tcOriginal = mainChatTextEdit->textCursor();
 		QTextCursor tc = mainChatTextEdit->textCursor();
@@ -949,12 +951,12 @@ void ArpmanetDC::appendChatLine(QString msg)
 		tc.movePosition(QTextCursor::End, QTextCursor::MoveAnchor);
 				
 		mainChatTextEdit->setTextCursor(tc);
-		mainChatLines--;
+		mainChatBlocks--;
 	}
 
 	//Output chat line with current time
 	mainChatTextEdit->append(tr("<b>[%1]</b> %2").arg(QTime::currentTime().toString()).arg(msg));
-	mainChatLines++;
+	mainChatBlocks++;
 
 	//If not on mainchat, notify tab
 	if (tabs->currentIndex() != 0)
@@ -1123,6 +1125,21 @@ void ArpmanetDC::bootstrapStatusChanged(int status)
 
 void ArpmanetDC::setStatus(QString msg)
 {
+    //Save history
+    pStatusHistoryList->append(tr("[%1]: %2").arg(QTime::currentTime().toString()).arg(msg));
+    if (pStatusHistoryList->size() > MAX_STATUS_HISTORY_ENTRIES)
+        pStatusHistoryList->removeFirst();
+
+    QString history;
+    for (int i = 0; i < pStatusHistoryList->size(); i++)
+    {
+        if (!history.isEmpty())
+            history += "\n";
+        history.append(pStatusHistoryList->at(i));
+    }
+   
+    statusLabel->setToolTip(history);
+    
     //Elide text to avoid stupid looking shifting of permanent widgets in the status bar
     QFontMetrics fm(statusLabel->font());
     statusLabel->setText(fm.elidedText(msg, Qt::ElideMiddle, statusLabel->width()));
@@ -1193,23 +1210,7 @@ void ArpmanetDC::convertMagnetLinks(QString &msg)
 
 			//Convert to correct unit
 			double sizeInt = size.toDouble();
-			QString sizeUnit = "bytes";
-			if (sizeInt > 1024.0)
-			{
-				sizeInt /= 1024.0;
-				sizeUnit = "KiB";
-				if (sizeInt > 1024.0)
-				{
-					sizeInt /= 1024.0;
-					sizeUnit = "MiB";
-					if (sizeInt > 1024.0)
-					{
-						sizeInt /= 1024.0;
-						sizeUnit = "GiB";
-					}
-				}
-			}
-			sizeStr = tr("%1 %2").arg(sizeInt, 0, 'f', 2).arg(sizeUnit);
+            sizeStr = bytesToSize(size.toULongLong());
 
 			//Parse filename
 			QString fileNameRegEx = "&dn=([a-z0-9+\\-_.]*(?:[\\.]+[a-z0-9+\\-_]*))";

@@ -70,7 +70,10 @@ void ShareSearch::updateShares(QList<QDir> *dirList) //500 msecs to update Share
 
 	pDirList = dirList;
 	if (dirList->isEmpty())
+    {
+        emit hashingDone(0);
 		return;
+    }
 
 	//Construct a directory list insert query
 	QList<QByteArray> queries;
@@ -1382,35 +1385,13 @@ quint64 ShareSearch::totalShare(bool fromDB)
 
 QString ShareSearch::totalShareStr(bool fromDB)
 {
-	double share;
+	quint64 share;
 	if (fromDB)
 		share = getTotalShareFromDB();
 	else
 		share = pTotalShare;
-	QString unit = "bytes";
-
-	if (share > 1024.0)
-	{
-		share /= 1024.0;
-		unit = "KiB";
-		if (share > 1024.0)
-		{
-			share /= 1024.0;
-			unit = "MiB";
-			if (share > 1024.0)
-			{
-				share /= 1024.0;
-				unit = "GiB";
-				if (share > 1024.0)
-				{
-					share /= 1024.0;
-					unit = "TiB";
-				}
-			}
-		}
-	}
-
-	return tr("%1 %2").arg(share, 0, 'f', 2).arg(unit);
+	
+	return bytesToSize(share);
 }
 
 void ShareSearch::setTotalShare(quint64 size)

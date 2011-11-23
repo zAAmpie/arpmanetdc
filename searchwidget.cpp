@@ -32,9 +32,11 @@ void SearchWidget::createWidgets()
 	searchLineEdit = new QLineEdit();
 
     majorVersionLineEdit = new QLineEdit("0");
+    majorVersionLineEdit->setMaximumWidth(50);
     majorVersionLineEdit->setValidator(new QIntValidator(0, 65535, 0));
 
     minorVersionLineEdit = new QLineEdit("0");
+    minorVersionLineEdit->setMaximumWidth(50);
     minorVersionLineEdit->setValidator(new QIntValidator(0, 65535, 0));
 
 	searchButton = new QPushButton(QIcon(tr(":/ArpmanetDC/Resources/SearchIcon.png")),tr("Search"));
