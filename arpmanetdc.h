@@ -31,8 +31,10 @@
 
 #define SHARE_DATABASE_PATH "arpmanetdc.sqlite"
 
-#define MAX_MAINCHAT_LINES 1000
-#define MAX_SEARCH_RESULTS 100
+#define MAX_SEARCH_RESULTS 100 //Max to give a query, not max to display
+
+#define MAX_MAINCHAT_BLOCKS 1000
+#define MAX_STATUS_HISTORY_ENTRIES 20 //Tooltip of status label
 
 #define VERSION_STRING "0.1"
 
@@ -101,7 +103,6 @@ private slots:
 
 	//Search widget slots
 	void searchButtonPressed(quint64 id, QString searchStr,  QByteArray searchPacket, SearchWidget *widget);
-    //void ownResultReceived(quint64 id, QByteArray searchPacket);
 
 	//PM widget slots
 	void pmSent(QString otherNick, QString msg, PMWidget *);
@@ -120,6 +121,7 @@ private slots:
 	void parsingDone();
 
 signals:
+    //Private queued signal for cross-thread comms
 	void updateShares();
 
 private:
@@ -139,19 +141,23 @@ private:
 	ShareSearch *pShare;
     ResourceExtractor *pTypeIconList;
 
+    //Threads
+    ExecThread *dbThread;
+
 	//Parameters
 	SettingsStruct pSettings;
 
 	//Global lists
 	QList<QueueStruct> *pQueueList;
+    QList<QString> *pStatusHistoryList;
 
-	//===== Main GUI parameters =====
+	//-----===== Main GUI parameters =====-----
 
 	//Determines if sorting should be done
 	bool sortDue;
 
 	//Lines in mainchat
-	quint32 mainChatLines;
+	quint32 mainChatBlocks;
 
 	//User list icons
 	QPixmap *userIcon, *userFirewallIcon, *bootstrappedIcon, *unbootstrappedIcon, *fullyBootstrappedIcon;
@@ -159,7 +165,7 @@ private:
 	//Actions
 	QAction *reconnectAction, *shareAction, *searchAction, *queueAction, *downloadFinishedAction, *settingsAction, *helpAction, *privateMessageAction;
 
-	//----- Widgets -----
+	//-----===== Widgets =====-----
 	//Labels
 	QLabel *userHubCountLabel;
 	QLabel *additionalInfoLabel;
@@ -203,8 +209,6 @@ private:
 	DownloadFinishedWidget *finishedWidget;
 	SettingsWidget *settingsWidget;
     HelpWidget *helpWidget;
-
-	ExecThread *dbThread;
 };
 
 #endif

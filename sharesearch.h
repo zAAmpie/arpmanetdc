@@ -33,11 +33,13 @@ struct FileListStruct //Used to store fileList for hashing
 	QString rootDir;
 };
 
-struct VersionStruct //Used to store major and minor version of a file
+struct VersionStruct //Used to store/return major and minor version of a file
 {
     qint16 majorVersion;
     qint16 minorVersion;
 };
+
+
 
 class ShareSearch : public QObject
 {
@@ -50,51 +52,67 @@ public:
 	//Gets/Sets the total shares
 	quint64 totalShare(bool fromDB = false);
 	QString totalShareStr(bool fromDB = false);
-	void setTotalShare(quint64);	//TODO: Incorporate total shares into this class to query db directly
+	void setTotalShare(quint64);
 
 	//Blocking function to get shares from database
 	QList<QDir> *getShares(); 
 public slots:
-	//===== SHARE QUERIES =====
+	//----------========== SHARE QUERIES (DISPATCHER) ==========----------
+
 	//String query
 	void querySearchString(QHostAddress senderHost, QByteArray cid, quint64 id, QByteArray searchPacket);
-	//Return a struct of a file for a given TTH root
+	
+    //Return a struct of a file for a given TTH root
 	void queryTTH(QByteArray tthRoot);
-	//Return the 1MB TTH given a TTH root and file offset
+	
+    //Return the 1MB TTH given a TTH root and file offset
 	void query1MBTTH(QByteArray tthRoot, qint64 offset);
 
-	//===== TTH SOURCES FOR TRANSFERS =====
-	//Save a source for a particular TTH
+	//----------========== TTH SOURCES FOR TRANSFERS (TRANSFER MANAGER) ==========----------
+	
+    //Save a source for a particular TTH
 	void saveTTHSource(QByteArray tthRoot, QHostAddress peerAddress);
-	//Load a source from a TTH
+	
+    //Load a source from a TTH
 	void loadTTHSource(QByteArray tthRoot);
-	//Request filename from a TTH
+	
+    //Request filename from a TTH
 	void requestFilePath(QByteArray tthRoot);
-	//Release all sources for a particular TTH
+	
+    //Release all sources for a particular TTH
 	void deleteTTHSources(QByteArray tthRoot);
 
-	//===== UPDATE SHARES =====
-	//Sharing - updates shares when shareWidget saves new share structure
+	//----------========== UPDATE SHARES (GUI) ==========----------
+	
+    //Sharing - updates shares when shareWidget saves new share structure
 	void updateShares(QList<QDir> *dirList); //Takes around 10 secs per 10k files to update including I/O but not hashing
-	//Convenience function to update existing shares
+	
+    //Convenience function to update existing shares
 	void updateShares();
 
-	//===== DOWNLOAD QUEUE =====
-	//Save a new entry
+	//----------========== DOWNLOAD QUEUE (DOWNLOAD QUEUE WIDGET) ==========----------
+	
+    //Save a new entry
 	void saveQueuedDownload(QueueStruct file);
-	//Remove an entry
+	
+    //Remove an entry
 	void removeQueuedDownload(QByteArray *tthRoot);
-	//Sets the priority of a queued download
+	
+    //Sets the priority of a queued download
 	void setQueuedDownloadPriority(QByteArray *tthRoot, QueuePriority priority);
-	//Request queued download list
+	
+    //Request queued download list
 	void requestQueueList();
 
-	//===== FINISHED DOWNLOADS =====
-	//Save an entry
+	//----------========== FINISHED DOWNLOADS (FINISHED DOWNLOADS WIDGET) ==========----------
+	
+    //Save an entry
 	void saveFinishedDownload(FinishedDownloadStruct file);
-	//Clear all entries
+	
+    //Clear all entries
 	void clearFinishedDownloads();
-	//Request list
+	
+    //Request list
 	void requestFinishedList();
 
 private slots:
@@ -112,36 +130,47 @@ private slots:
 	void commitTransaction(bool startNewTransaction = true);
 
 signals:
-	//===== SEARCH QUERIES =====
-	//Signal to return a search result
+	//----------========== SEARCH QUERIES (DISPATCHER) ==========----------
+	
+    //Signal to return a search result
 	void returnSearchResult(QHostAddress host, QByteArray cid, quint64 id, QByteArray result);
-	//Signal to return share result for TTH search
+	
+    //Signal to return share result for TTH search
 	void returnTTHResult(SearchStruct result);
-	//Signal to return 1MB TTH
+	
+    //Signal to return 1MB TTH
 	void return1MBTTH(QByteArray tth1MB);
 
-	//===== TRANSFERS =====
-	//Filename request reply
+	//----------========== TRANSFERS (TRANSFER MANAGER) ==========----------
+	
+    //Filename request reply
 	void filePathReply(QByteArray tthRoot, QString filePath);
-	//TTH source load reply
+	
+    //TTH source load reply
 	void tthSourceLoaded(QByteArray tthRoot, QHostAddress peerAddress);
 
-	//===== QUEUED DOWNLOADS =====
-	//Signals incoming queued list
+	//----------========== QUEUED DOWNLOADS (DOWNLOAD QUEUE WIDGET) ==========----------
+	
+    //Signals incoming queued list
 	void returnQueueList(QList<QueueStruct> *list);
-	//Signals that an entry has been added
+	
+    //Signals that an entry has been added
 	void queuedDownloadAdded(QueueStruct file);
 
-	//===== FINISHED DOWNLOADS =====
-	//Signals incoming finished downloads list
+	//----------========== FINISHED DOWNLOADS (FINISHED DOWNLOAD WIDGET) ==========----------
+	
+    //Signals incoming finished downloads list
 	void returnFinishedList(QList<FinishedDownloadStruct> *list);
-	//Signals that an entry has been added
+	
+    //Signals that an entry has been added
 	void finishedDownloadAdded(FinishedDownloadStruct file);
 
-	//===== HASHING / PARSING =====
-	//Signal to show a file has completed hashing
+	//----------========== PUBLIC HASHING / PARSING (GUI) ==========----------
+	
+    //Signal to show a file has completed hashing
 	void fileHashed(QString fileName);
-	//Signal to show a directory has been parsed
+	
+    //Signal to show a directory has been parsed
 	void directoryParsed(QString path);
 
 	//Signal to show all hashing is done
@@ -149,11 +178,11 @@ signals:
 	//Signal to show all parsing is done
 	void parsingDone();
 
+    //----------========== PRIVATE SIGNALS ==========----------
+
 	//Signals to interface with hashing thread objects
 	void runHashThread(QString filePath, QString rootDir);
 	void runParseThread(QString directoryPath);
-
-
 
 private:
 	//Functions to start threads

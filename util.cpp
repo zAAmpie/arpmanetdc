@@ -77,6 +77,63 @@ bool base32Decode(QByteArray &data)
     return true;
 }
 
+//Function to convert quint64 containing bytes into a human readable format
+QString bytesToSize(quint64 bytes)
+{
+    QString unit = "bytes";
+    double d = bytes;
+    if (d > 1024.0)
+	{
+		d /= 1024.0;
+		unit = "KiB";
+		if (d > 1024.0)
+		{
+			d /= 1024.0;
+			unit = "MiB";
+			if (d > 1024.0)
+			{
+				d /= 1024.0;
+				unit = "GiB";
+				if (d > 1024.0)
+				{
+					d /= 1024.0;
+					unit = "TiB";
+				}
+			}
+		}
+	}
+
+    return QObject::tr("%1 %2").arg(d, 0, 'f', 2).arg(unit);
+}
+
+//Function to convert human readable size into bytes i.e. from 24.0428 MB to 25 210 706 bytes
+quint64 sizeToBytes(QString size)
+{
+    //String can be 24MB / 24.56MB / 24.56 MB / 24.56 MiB etc
+    QString regex = "(\\d+\\.?\\d+)\\s*([a-z]*)";
+    QRegExp rx(regex, Qt::CaseInsensitive);
+
+    double val;
+    QString unit;
+  
+    if (rx.indexIn(size) != -1)
+    {
+        val = rx.cap(1).toDouble();
+        unit = rx.cap(2);
+    }
+
+    if (unit.compare("TiB") == 0 || unit.compare("TB") == 0)
+        val *= 1LL<<40;
+    if (unit.compare("GiB") == 0 || unit.compare("GB") == 0)
+        val *= 1<<30;
+    if (unit.compare("MiB") == 0 || unit.compare("MB") == 0)
+        val *= 1<<20;
+    if (unit.compare("KiB") == 0 || unit.compare("KB") == 0)
+        val *= 1<<10;
+
+    return (quint64)val;
+}
+
 
 // ------------------=====================   Sort STUKKENDE rubbish uit   =====================----------------------
 

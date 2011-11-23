@@ -2,6 +2,7 @@
 #include <QTextDocument>
 #include <QAbstractTextDocumentLayout>
 #include <QPainter>
+#include "util.h"
 
 HTMLDelegate::HTMLDelegate(QTableView *tableView)
 {
@@ -81,41 +82,7 @@ bool CStandardItem::operator<(const QStandardItem &other) const
     }
     else if (pType == SizeType)
     {
-        QString regex = "(\\d+\\.\\d+)\\s*([a-z]*)";
-        QRegExp rx(regex, Qt::CaseInsensitive);
-
-        double valThis, valThat;
-        QString unitThis, unitThat;
-        if (rx.indexIn(text()) != -1)
-        {
-            valThis = rx.cap(1).toDouble();
-            unitThis = rx.cap(2);
-        }
-        if (rx.indexIn(other.text()) != -1)
-        {
-            valThat = rx.cap(1).toDouble();
-            unitThat = rx.cap(2);
-        }
-
-        if (unitThis.compare("TiB") == 0 || unitThis.compare("TB") == 0)
-            valThis *= 1<<40;
-        if (unitThis.compare("GiB") == 0 || unitThis.compare("GB") == 0)
-            valThis *= 1<<30;
-        if (unitThis.compare("MiB") == 0 || unitThis.compare("MB") == 0)
-            valThis *= 1<<20;
-        if (unitThis.compare("KiB") == 0 || unitThis.compare("KB") == 0)
-            valThis *= 1<<10;
-
-        if (unitThat.compare("TiB") == 0 || unitThat.compare("TB") == 0)
-            valThat *= 1<<40;
-        if (unitThat.compare("GiB") == 0 || unitThat.compare("GB") == 0)
-            valThat *= 1<<30;
-        if (unitThat.compare("MiB") == 0 || unitThat.compare("MB") == 0)
-            valThat *= 1<<20;
-        if (unitThat.compare("KiB") == 0 || unitThat.compare("KB") == 0)
-            valThat *= 1<<10;
-
-        return valThis < valThat;
+        return sizeToBytes(text()) < sizeToBytes(other.text());
     }
     else if (pType == CaseInsensitiveTextType)
     {
