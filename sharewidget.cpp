@@ -38,7 +38,7 @@ ShareWidget::~ShareWidget()
 
 void ShareWidget::createWidgets()
 {
-	saveButton = new QPushButton(QIcon(""), tr("Save shares"));
+	saveButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Save shares"));
 
 	fileModel = new QFileSystemModel();
 	//fileModel->setFilter(QDir::Dirs | QDir::Drives | QDir::NoDotAndDotDot);

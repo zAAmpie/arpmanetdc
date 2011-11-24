@@ -24,13 +24,13 @@ class SettingsWidget : public QObject
 	Q_OBJECT
 
 public:
-	SettingsWidget(SettingsStruct *settings, ArpmanetDC *parent);
+	SettingsWidget(QHash<QString, QString> *settings, ArpmanetDC *parent);
 	~SettingsWidget();
 
 	//Get the encapsulating widget
 	QWidget *widget();
 
-	SettingsStruct *settings();
+	QHash<QString, QString> *settings() const;
 
 public slots:
 	//Slots
@@ -38,6 +38,8 @@ public slots:
 private slots:
 	//Pressed save button
 	void savePressed();
+    //Pressed guess IP button
+    void guessIPPressed();
 
 signals:
 	//Signalled when settings were saved
@@ -53,11 +55,11 @@ private:
 	QWidget *pWidget;
 	ArpmanetDC *pParent;
 
-	SettingsStruct *pSettings;
+	QHash<QString, QString> *pSettings;
 
 	//GUI
 	QLineEdit *hubAddressLineEdit, *hubPortLineEdit, *nickLineEdit, *passwordLineEdit, *ipLineEdit, *externalPortLineEdit;
-	QPushButton *saveButton;
+	QPushButton *saveButton, *guessIPButton;
 
 };
 

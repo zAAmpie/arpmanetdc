@@ -21,10 +21,10 @@
 #include "util.h"
 #include <sqlite/sqlite3.h>
 
-#define DISPATCHER_PORT 4012
+#define DEFAULT_EXTERNAL_PORT "4012"
 
 #define DEFAULT_HUB_ADDRESS "arpmanet.ath.cx"
-#define DEFAULT_HUB_PORT 4012
+#define DEFAULT_HUB_PORT "4012"
 
 #define DEFAULT_NICK "Testnick"
 #define DEFAULT_PASSWORD "test123"
@@ -58,6 +58,9 @@ public:
 	//Link to database
 	sqlite3 *database() const;
 	QString databasePath();
+
+    //Guess the computer's IP
+    QHostAddress getIPGuess();
 
 public slots:
     //Sets the global status label in the status bar to msg
@@ -132,6 +135,10 @@ private:
 
 	//SQLite setup
 	bool setupDatabase();
+   
+    //Load settings from database
+    bool loadSettings();
+    bool saveSettings();
 
 	//Objects
 	sqlite3 *db; //SQLite database
@@ -145,7 +152,8 @@ private:
     ExecThread *dbThread;
 
 	//Parameters
-	SettingsStruct pSettings;
+	//SettingsStruct pSettings;
+    QHash<QString, QString> *pSettings;
 
 	//Global lists
 	QList<QueueStruct> *pQueueList;

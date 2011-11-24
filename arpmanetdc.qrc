@@ -15,5 +15,6 @@
         <file>Resources/ServerOfflineIcon.png</file>
         <file>Resources/ServerOnlineIcon.png</file>
         <file>Resources/TypeIcons.png</file>
+        <file>Resources/CheckIcon.png</file>
     </qresource>
 </RCC>

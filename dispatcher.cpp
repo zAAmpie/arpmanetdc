@@ -830,6 +830,19 @@ QByteArray Dispatcher::fixedCIDLength(QByteArray CID)
     return CID.leftJustified(24, (char)0x00, true);
 }
 
+// ------------------=====================   GET FUNCTIONS   =====================----------------------
+
+//Get functions to avoid reconfiguration if no change was made
+QHostAddress Dispatcher::getDispatchIP()
+{
+    return dispatchIP;
+}
+
+quint16 Dispatcher::getDispatchPort()
+{
+    return dispatchPort;
+}
+
 // ------------------=====================   DEBUGGING   =====================----------------------
 
 QString Dispatcher::getDebugBucketsContents()

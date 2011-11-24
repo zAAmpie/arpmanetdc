@@ -70,6 +70,9 @@ public:
     void reconfigureDispatchHostPort(QHostAddress dispatchIP, quint16 dispatchPort);
     ~Dispatcher();
 
+    //Get functions to avoid reconfiguration if no change was made
+    QHostAddress getDispatchIP();
+    quint16 getDispatchPort();
 
 signals:
     // Bootstrap signals

@@ -30,13 +30,14 @@ SearchWidget::~SearchWidget()
 void SearchWidget::createWidgets()
 {
 	searchLineEdit = new QLineEdit();
+    searchLineEdit->setMinimumWidth(200);
 
     majorVersionLineEdit = new QLineEdit("0");
-    majorVersionLineEdit->setMaximumWidth(50);
+    majorVersionLineEdit->setMaximumWidth(40);
     majorVersionLineEdit->setValidator(new QIntValidator(0, 65535, 0));
 
     minorVersionLineEdit = new QLineEdit("0");
-    minorVersionLineEdit->setMaximumWidth(50);
+    minorVersionLineEdit->setMaximumWidth(40);
     minorVersionLineEdit->setValidator(new QIntValidator(0, 65535, 0));
 
 	searchButton = new QPushButton(QIcon(tr(":/ArpmanetDC/Resources/SearchIcon.png")),tr("Search"));
@@ -116,6 +117,8 @@ void SearchWidget::connectWidgets()
 	//TODO: Connect all widgets
 	connect(searchButton, SIGNAL(clicked()), this, SLOT(searchPressed()));
 	connect(searchLineEdit, SIGNAL(returnPressed()), this, SLOT(searchPressed()));
+    connect(majorVersionLineEdit, SIGNAL(returnPressed()), this, SLOT(searchPressed()));
+    connect(minorVersionLineEdit, SIGNAL(returnPressed()), this, SLOT(searchPressed()));
 }
 
 QByteArray SearchWidget::idGenerator()

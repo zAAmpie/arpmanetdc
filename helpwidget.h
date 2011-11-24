@@ -4,7 +4,6 @@
 #include <QtGui>
 
 class ArpmanetDC;
-struct SettingsStruct;
 
 //Displays help
 class HelpWidget : public QObject
@@ -12,7 +11,7 @@ class HelpWidget : public QObject
 	Q_OBJECT
 
 public:
-	HelpWidget(SettingsStruct *settings, ArpmanetDC *parent);
+	HelpWidget(ArpmanetDC *parent);
 	~HelpWidget();
 
 	//Get the encapsulating widget
@@ -27,8 +26,6 @@ private:
 	//Objects
 	QWidget *pWidget;
 	ArpmanetDC *pParent;
-
-	SettingsStruct *pSettings;
 };
 
 #endif

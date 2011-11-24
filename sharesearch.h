@@ -218,7 +218,7 @@ private:
     int numberOfFilesShared;
 
 	bool transactionInProgress;
-	QTimer *commitTimer;
+	QTimer *commitTimer; //TODO: Cannot use QTimers in a thread other than the GUI thread... Will need to move it somehow.
 
 	//Measure the time taken to update the share db
 	QTime *updateTime;

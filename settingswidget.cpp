@@ -1,7 +1,7 @@
 #include "settingswidget.h"
 #include "arpmanetdc.h"
 
-SettingsWidget::SettingsWidget(SettingsStruct *settings, ArpmanetDC *parent)
+SettingsWidget::SettingsWidget(QHash<QString, QString> *settings, ArpmanetDC *parent)
 {
 	//Constructor
 	pParent = parent;
@@ -19,24 +19,25 @@ SettingsWidget::~SettingsWidget()
 
 void SettingsWidget::createWidgets()
 {
-	hubAddressLineEdit = new QLineEdit(pSettings->hubAddress,(QWidget *)pParent);
+	hubAddressLineEdit = new QLineEdit(pSettings->value("hubAddress"),(QWidget *)pParent);
 	//hubAddressLineEdit->setValidator(new IPValidator(this));                              //Determine if IP validator is needed, most likely a hostname will suffice
 	
-	hubPortLineEdit = new QLineEdit(tr("%1").arg(pSettings->hubPort), (QWidget *)pParent);
+	hubPortLineEdit = new QLineEdit(pSettings->value("hubPort"), (QWidget *)pParent);
 	hubPortLineEdit->setValidator(new QIntValidator(0, 65535, this));
 
-	nickLineEdit = new QLineEdit(pSettings->nick, (QWidget *)pParent);
+	nickLineEdit = new QLineEdit(pSettings->value("nick"), (QWidget *)pParent);
 	
-	passwordLineEdit = new QLineEdit(pSettings->password, (QWidget *)pParent);
+	passwordLineEdit = new QLineEdit(pSettings->value("password"), (QWidget *)pParent);
 	passwordLineEdit->setEchoMode(QLineEdit::Password);
 	
-	ipLineEdit = new QLineEdit(pSettings->externalIP, (QWidget *)pParent);
+	ipLineEdit = new QLineEdit(pSettings->value("externalIP"), (QWidget *)pParent);
 	ipLineEdit->setValidator(new IPValidator(this));
 
-	externalPortLineEdit = new QLineEdit(tr("%1").arg(pSettings->externalPort), (QWidget *)pParent);
+	externalPortLineEdit = new QLineEdit(pSettings->value("externalPort"), (QWidget *)pParent);
 	externalPortLineEdit->setValidator(new QIntValidator(0, 65535, this));
 
-	saveButton = new QPushButton(tr("Save changes"), (QWidget *)pParent);
+	saveButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Save changes"), (QWidget *)pParent);
+    guessIPButton = new QPushButton(tr("Guess External IP"), (QWidget *)pParent);
 }
 
 void SettingsWidget::placeWidgets()
@@ -52,12 +53,18 @@ void SettingsWidget::placeWidgets()
 	flayout->addRow(new QLabel("<font color=\"red\">External IP:</font>"), ipLineEdit);
 	flayout->addRow(new QLabel("<font color=\"red\">External port:</font>"), externalPortLineEdit);
 
+    QHBoxLayout *guessLayout = new QHBoxLayout();
+    guessLayout->addWidget(guessIPButton);
+	guessLayout->addStretch(1);
+
 	QHBoxLayout *hlayout = new QHBoxLayout();
 	hlayout->addStretch(1);
 	hlayout->addWidget(saveButton);
 
 	QVBoxLayout *layout = new QVBoxLayout();
 	layout->addLayout(flayout);
+    layout->addLayout(guessLayout);
+    layout->addStretch(1);
 	layout->addLayout(hlayout);
 
 	pWidget = new QWidget();
@@ -67,6 +74,7 @@ void SettingsWidget::placeWidgets()
 void SettingsWidget::connectWidgets()
 {
 	connect(saveButton, SIGNAL(clicked()), this, SLOT(savePressed()));
+    connect(guessIPButton, SIGNAL(clicked()), this, SLOT(guessIPPressed()));
 }
 
 void SettingsWidget::savePressed()
@@ -90,15 +98,21 @@ void SettingsWidget::savePressed()
 		QMessageBox::warning((QWidget *)pParent, tr("ArpmanetDC"), tr("<p><b>Information missing:</b></p><p>%1</p><p>Please enter the above fields and try again.</p>").arg(missingStr));
 	else
 	{
-		pSettings->hubAddress = hubAddressLineEdit->text();
-		pSettings->hubPort = hubPortLineEdit->text().toUShort();
-		pSettings->nick = nickLineEdit->text();
-		pSettings->password = passwordLineEdit->text();
-		pSettings->externalIP = ipLineEdit->text();
-		pSettings->externalPort = externalPortLineEdit->text().toUShort();
+        (*pSettings)["hubAddress"] = hubAddressLineEdit->text();
+		(*pSettings)["hubPort"] = hubPortLineEdit->text();
+        (*pSettings)["nick"] = nickLineEdit->text();
+		(*pSettings)["password"] = passwordLineEdit->text();
+        (*pSettings)["externalIP"] = ipLineEdit->text();
+        (*pSettings)["externalPort"] = externalPortLineEdit->text();
 
 		emit settingsSaved();
 	}
+}
+
+void SettingsWidget::guessIPPressed()
+{
+    QString ip = pParent->getIPGuess().toString();
+    ipLineEdit->setText(ip);
 }
 
 QWidget *SettingsWidget::widget()
@@ -107,7 +121,7 @@ QWidget *SettingsWidget::widget()
 	return pWidget;
 }
 
-SettingsStruct *SettingsWidget::settings()
+QHash<QString, QString> *SettingsWidget::settings() const
 {
 	return pSettings;
 }

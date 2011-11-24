@@ -42,9 +42,14 @@ ShareSearch::~ShareSearch()
 	//Destructor
 	delete pDirList;
 	delete pFileList;
-	hashThread->exit(0);
-	if (hashThread->wait())
+	hashThread->quit();
+	if (hashThread->wait(5000))
 		delete hashThread;
+    else
+    {
+        hashThread->terminate();
+        delete hashThread;
+    }
 }
 
 void ShareSearch::startHashFileThread(QString filePath, QString rootDir)
@@ -385,10 +390,10 @@ void ShareSearch::startDirectoryParsing()
 	{		
 		emit parsingDone();
 
+        numberOfFilesShared = pFileList->size();
+
 		//Start file hashing on file list
 		startFileHashing();
-
-        numberOfFilesShared = pFileList->size();
 	}
 }
 

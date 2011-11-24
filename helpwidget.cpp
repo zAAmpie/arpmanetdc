@@ -1,11 +1,10 @@
 #include "helpwidget.h"
 #include "arpmanetdc.h"
 
-HelpWidget::HelpWidget(SettingsStruct *settings, ArpmanetDC *parent)
+HelpWidget::HelpWidget(ArpmanetDC *parent)
 {
 	//Constructor
 	pParent = parent;
-	pSettings = settings;
 
 	createWidgets();
 	placeWidgets();

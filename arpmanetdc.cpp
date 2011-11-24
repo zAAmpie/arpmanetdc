@@ -5,20 +5,33 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 {
 	//QApplication::setStyle(new QCleanlooksStyle());
 
+    //Register QHostAddress for queueing over threads
     qRegisterMetaType<QHostAddress>("QHostAddress");
 
-	pSettings.nick = DEFAULT_NICK;
-	pSettings.password = DEFAULT_PASSWORD;
-	pSettings.hubAddress = DEFAULT_HUB_ADDRESS;
-	pSettings.hubPort = DEFAULT_HUB_PORT;
-	pSettings.externalPort = DISPATCHER_PORT;
+    //Set database pointer to zero at start
+	db = 0;
+
+    setupDatabase();
+    pSettings = new QHash<QString, QString>();
+
+    //Load settings from database or initialize settings from defaults
+   	if (!loadSettings())
+    {
+        pSettings->insert("nick", DEFAULT_NICK);
+        pSettings->insert("password", DEFAULT_PASSWORD);
+        pSettings->insert("hubAddress", DEFAULT_HUB_ADDRESS);
+        pSettings->insert("hubPort", DEFAULT_HUB_PORT);
+        pSettings->insert("externalIP", getIPGuess().toString());
+        pSettings->insert("externalPort", DEFAULT_EXTERNAL_PORT);
+    }
+
 	mainChatBlocks = 0;
 
 	//Set window title
 	setWindowTitle(tr("ArpmanetDC %1").arg(VERSION_STRING));
 
 	//Create Hub Connection
-	pHub = new HubConnection(pSettings.hubAddress, pSettings.hubPort, pSettings.nick, pSettings.password, VERSION_STRING, this);
+	pHub = new HubConnection(pSettings->value("hubAddress"), pSettings->value("hubPort").toShort(), pSettings->value("nick"), pSettings->value("password"), VERSION_STRING, this);
 
     //Connect HubConnection to GUI
 	connect(pHub, SIGNAL(receivedChatMessage(QString)), this, SLOT(appendChatLine(QString)));
@@ -31,41 +44,14 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 
     //pHub->connectHub();
 
-	//For jokes, get the actual IP of the computer and use the first one for the dispatcher
-	QList<QHostAddress> ips;
-	QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
-	foreach (QNetworkInterface interf, interfaces)
-	{
-		//Only check the online interfaces capable of broadcasting that's not the local loopback
-		if (interf.flags().testFlag(QNetworkInterface::IsRunning) 
-			&& interf.flags().testFlag(QNetworkInterface::CanBroadcast) 
-			&& !interf.flags().testFlag(QNetworkInterface::IsLoopBack)
-			&& interf.flags().testFlag(QNetworkInterface::IsUp))
-		{
-			foreach (QNetworkAddressEntry entry, interf.addressEntries())
-			{
-				//Only add IPv4 addresses
-				if (entry.ip().protocol() == QAbstractSocket::IPv4Protocol)
-				{
-					ips.append(entry.ip());
-				}
-			}
-		}
-	}
-
-	if (!ips.isEmpty())
-	{
-		pSettings.externalIP = ips.first().toString();
-	}
-
     //Create Dispatcher connection
-	pDispatcher = new Dispatcher(QHostAddress(pSettings.externalIP), pSettings.externalPort);
+	pDispatcher = new Dispatcher(QHostAddress(pSettings->value("externalIP")), pSettings->value("externalPort").toShort());
 
     // conjure up something unique here and save it for every subsequent client invocation
     //Maybe make a SHA1 hash of the Nick + Password - unique and consistent? Except if you have two clients open with the same login details? Meh
     QCryptographicHash hash(QCryptographicHash::Sha1);
-    hash.addData(QByteArray().append(pSettings.nick));
-    hash.addData(QByteArray().append(pSettings.password));
+    hash.addData(QByteArray().append(pSettings->value("nick")));
+    hash.addData(QByteArray().append(pSettings->value("password")));
     QByteArray cid = hash.result();
 
     //QByteArray cid = "012345678901234567890123";
@@ -120,16 +106,16 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	pShare->moveToThread(dbThread);
 	dbThread->start();
 
-	//Set database pointer to zero at start
-	db = 0;
-
 	//GUI setup
 	createWidgets();
 	placeWidgets();
 	connectWidgets();	
 
     pStatusHistoryList = new QList<QString>();
-	setupDatabase();
+
+    //Update shares
+	emit updateShares();
+    setStatus(tr("Share update procedure started. Parsing directories/paths..."));
 
 	downloadQueueWidget = 0;
 	shareWidget = 0;
@@ -167,9 +153,17 @@ ArpmanetDC::~ArpmanetDC()
     delete pTransferManager;
     delete pDispatcher;
 
-	dbThread->exit(0);
-	if (dbThread->wait())
+    //saveSettings();
+    delete pSettings;
+
+	dbThread->quit();
+	if (dbThread->wait(5000))
 		delete dbThread;
+    else
+    {
+        dbThread->terminate();
+        delete dbThread;
+    }
 	sqlite3_close(db);
 	
 }
@@ -197,7 +191,10 @@ bool ArpmanetDC::setupDatabase()
 
 	//Create FileShares table - list of all files hashed
 	queries.append("CREATE TABLE FileShares (rowID INTEGER PRIMARY KEY, tth TEXT, fileName TEXT, fileSize INTEGER, filePath TEXT, lastModified TEXT, shareDirID INTEGER, active INTEGER, majorVersion INTEGER, minorVersion INTEGER, relativePath TEXT, FOREIGN KEY(shareDirID) REFERENCES SharePaths(rowID), UNIQUE(filePath));");
-	queries.append("CREATE INDEX IDX_SEARCH on FileShares(searchFileName);");
+	queries.append("CREATE INDEX IDX_FILESHARES_FILENAME on FileShares(fileName);");
+    queries.append("CREATE INDEX IDX_FILESHARES_FILEPATH on FileShares(filePath);");
+    queries.append("CREATE INDEX IDX_FILESHARES_FILESIZE on FileShares(fileSize);");
+    queries.append("CREATE INDEX IDX_FILESHARES_ACTIVE on FileShares(active);");
 
 	//Create 1MB TTH table - list of the 1MB bucket TTHs for every fileshare
 	queries.append("CREATE TABLE OneMBTTH (rowID INTEGER PRIMARY KEY, oneMBtth TEXT, tth TEXT, offset INTEGER, fileShareID INTEGER, FOREIGN KEY(fileShareID) REFERENCES FileShares(rowID));");
@@ -205,15 +202,22 @@ bool ArpmanetDC::setupDatabase()
 
 	//Create SharePaths table - list of all the folders/files chosen in ShareWidget
 	queries.append("CREATE TABLE SharePaths (rowID INTEGER PRIMARY KEY, path TEXT, UNIQUE(path));");
+    queries.append("CREATE INDEX IDX_SHAREPATHS_PATH on SharePaths(path);");
 
 	//Create TTHSources table - list of all sources for a transfer
 	queries.append("CREATE TABLE TTHSources (rowID INTEGER PRIMARY KEY, tthRoot TEXT, source TEXT, UNIQUE(tthRoot, source));");
+    queries.append("CREATE INDEX IDX_TTHSOURCES_TTHROOT on TTHSources(tthRoot);");
 	
 	//Create QueuedDownloads table - saves all queued downloads to restart transfers after restart
 	queries.append("CREATE TABLE QueuedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, fileSize INTEGER, priority INTEGER, tthRoot TEXT, UNIQUE(filePath));");
+    queries.append("CREATE INDEX IDX_QUEUED_FILEPATH on QueuedDownloads(filePath);");
 
 	//Create FinishedDownloads table - saves download paths that were downloaded for list
 	queries.append("CREATE TABLE FinishedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, fileSize INTEGER, tthRoot TEXT, downloadedDate TEXT, UNIQUE(filePath));");
+    queries.append("CREATE INDEX IDX_FINISHED_FILEPATH on FinishedDownloads(filePath);");
+
+    //Create Settings table - saves settings (doh)
+    queries.append("CREATE TABLE Settings (rowID INTEGER PRIMARY KEY, parameter TEXT, value TEXT);");
 
 	QList<QString> queryErrors(queries);
 
@@ -237,11 +241,102 @@ bool ArpmanetDC::setupDatabase()
 			queryErrors[i] = error;
 	}
 
-	//Update shares
-	emit updateShares();
-    setStatus(tr("Share update procedure started. Parsing directories/paths..."));
-
 	return true;
+}
+
+bool ArpmanetDC::loadSettings()
+{
+    QList<QString> queries;
+    pSettings->clear();
+    
+     //Create Settings table - saves settings (doh)
+    queries.append("SELECT [parameter], [value]  FROM Settings;");
+
+    sqlite3_stmt *statement;
+	QList<QString> queryErrors(queries);
+
+	//Loop through all queries
+	for (int i = 0; i < queries.size(); i++)
+	{
+		//Prepare a query
+		QByteArray query;
+		query.append(queries.at(i).toUtf8());
+		if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+		{
+			int cols = sqlite3_column_count(statement);
+			int result = 0;
+			while (sqlite3_step(statement) == SQLITE_ROW)
+            {
+                //Load settings
+                if (cols == 2)
+                {
+                    QString parameter = QString::fromUtf16((const unsigned short *)sqlite3_column_text16(statement, 0));
+                    QString value = QString::fromUtf16((const unsigned short *)sqlite3_column_text16(statement, 1));
+                    if (!parameter.isEmpty())
+                        pSettings->insert(parameter, value);
+                }
+            };
+			sqlite3_finalize(statement);	
+		}
+
+		//Catch all error messages
+		QString error = sqlite3_errmsg(db);
+		if (error != "not an error")
+			queryErrors[i] = error;
+	}
+
+	return !pSettings->isEmpty();
+}
+
+bool ArpmanetDC::saveSettings()
+{
+    QList<QString> queries;
+    //queries.append("BEGIN;");
+    queries.append("DELETE FROM Settings;");
+    
+    QList<QString> parameters = pSettings->keys();
+    for (int i = 0; i < pSettings->size(); i++)
+        queries.append("INSERT INTO Settings([parameter], [value]) VALUES (?, ?);");
+
+    queries.append("COMMIT;");
+    queries.append("BEGIN;");
+
+    bool result = true;
+	QList<QString> queryErrors(queries);
+    sqlite3_stmt *statement;
+
+	//Loop through all queries
+	for (int i = 0; i < queries.size(); i++)
+	{
+		//Prepare a query
+		QByteArray query;
+		query.append(queries.at(i).toUtf8());
+		if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+		{
+            if (query.contains("INSERT INTO Settings") && !parameters.isEmpty())
+            {
+                int res = 0;
+                QString parameter = parameters.takeFirst();
+                QString value = pSettings->value(parameter);
+		        res = res | sqlite3_bind_text16(statement, 1, parameter.utf16(), parameter.size()*2, SQLITE_STATIC);
+                res = res | sqlite3_bind_text16(statement, 2, value.utf16(), value.size()*2, SQLITE_STATIC);
+                if (res != SQLITE_OK)
+                    result = false;
+            }
+
+			int cols = sqlite3_column_count(statement);
+			int result = 0;
+			while (sqlite3_step(statement) == SQLITE_ROW);
+			sqlite3_finalize(statement);	
+		}
+
+		//Catch all error messages
+		QString error = sqlite3_errmsg(db);
+		if (error != "not an error")
+			queryErrors[i] = error;
+	}
+
+	return result;
 }
 
 void ArpmanetDC::createWidgets()
@@ -595,8 +690,8 @@ void ArpmanetDC::shareActionPressed()
 void ArpmanetDC::reconnectActionPressed()
 {
 	//TODO: Reconnect was pressed
-	pHub->setHubAddress(pSettings.hubAddress);
-	pHub->setHubPort(pSettings.hubPort);
+	pHub->setHubAddress(pSettings->value("hubAddress"));
+	pHub->setHubPort(pSettings->value("hubPort").toShort());
 	pHub->connectHub();
 }
 
@@ -614,7 +709,7 @@ void ArpmanetDC::settingsActionPressed()
 	}
 
 	//Otherwise, create it
-	settingsWidget = new SettingsWidget(&pSettings, this);
+	settingsWidget = new SettingsWidget(pSettings, this);
 	connect(settingsWidget, SIGNAL(settingsSaved()), this, SLOT(settingsSaved()));
 	
 	tabs->addTab(settingsWidget->widget(), QIcon(":/ArpmanetDC/Resources/SettingsIcon.png"), tr("Settings"));
@@ -636,7 +731,7 @@ void ArpmanetDC::helpActionPressed()
 	}
 
 	//Otherwise, create it
-	helpWidget = new HelpWidget(&pSettings, this);
+	helpWidget = new HelpWidget(this);
 	
 	tabs->addTab(helpWidget->widget(), QIcon(":/ArpmanetDC/Resources/HelpIcon.png"), tr("Help"));
 
@@ -803,6 +898,18 @@ void ArpmanetDC::shareSaveButtonPressed()
 
 void ArpmanetDC::settingsSaved()
 {
+    //Save settings to database
+    saveSettings();
+
+    //Reconnect hub
+    reconnectActionPressed();
+    //Reconnect dispatcher if necessary
+    QString externalIP = pSettings->value("externalIP");
+    quint16 externalPort = pSettings->value("externalPort").toShort();
+    
+    if (externalIP != pDispatcher->getDispatchIP().toString() || externalPort != pDispatcher->getDispatchPort())
+        pDispatcher->reconfigureDispatchHostPort(QHostAddress(externalIP), externalPort);
+
 	//Delete settings tab
 	if (settingsWidget)
 	{
@@ -936,7 +1043,7 @@ void ArpmanetDC::appendChatLine(QString msg)
 	msg.replace("\r","");
 
 	//Replace nick with red text
-	msg.replace(pSettings.nick, tr("<font color=\"red\">%1</font>").arg(pSettings.nick));
+	msg.replace(pSettings->value("nick"), tr("<font color=\"red\">%1</font>").arg(pSettings->value("nick")));
 
 	//Convert plain text links to HTML links
 	convertHTMLLinks(msg);
@@ -1243,14 +1350,42 @@ void ArpmanetDC::convertMagnetLinks(QString &msg)
 	}
 }
 
+QHostAddress ArpmanetDC::getIPGuess()
+{
+    //For jokes, get the actual IP of the computer and use the first one for the dispatcher
+	//QList<QHostAddress> ips;
+	//QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
+	foreach (QNetworkInterface interf, QNetworkInterface::allInterfaces())
+	{
+		//Only check the online interfaces capable of broadcasting that's not the local loopback
+		if (interf.flags().testFlag(QNetworkInterface::IsRunning) 
+			&& interf.flags().testFlag(QNetworkInterface::CanBroadcast) 
+			&& !interf.flags().testFlag(QNetworkInterface::IsLoopBack)
+			&& interf.flags().testFlag(QNetworkInterface::IsUp))
+		{
+			foreach (QNetworkAddressEntry entry, interf.addressEntries())
+			{
+				//Only add IPv4 addresses
+				if (entry.ip().protocol() == QAbstractSocket::IPv4Protocol)
+				{
+					//ips.append(entry.ip());
+                    return entry.ip();
+				}
+			}
+		}
+	}
+
+    return QHostAddress();
+}
+
 QString ArpmanetDC::nick()
 {
-	return pSettings.nick;
+	return pSettings->value("nick");
 }
 
 QString ArpmanetDC::password()
 {
-	return pSettings.password;
+	return pSettings->value("password");
 }
 
 sqlite3 *ArpmanetDC::database() const
