@@ -38,7 +38,8 @@ SOURCES += main.cpp\
     settingswidget.cpp \
     downloadfinishedwidget.cpp \
     helpwidget.cpp \
-    resourceextractor.cpp
+    resourceextractor.cpp \
+    transferwidget.cpp
 
 HEADERS  += arpmanetdc.h \
     hubconnection.h \
@@ -65,12 +66,15 @@ HEADERS  += arpmanetdc.h \
     downloadfinishedwidget.h \
     settingswidget.h \
     helpwidget.h \
-    resourceextractor.h
+    resourceextractor.h \
+    transferwidget.h
 
 #FORMS    += arpmanetdc.ui
 
 RESOURCES += \
     arpmanetdc.qrc
+
+
 
 
 
