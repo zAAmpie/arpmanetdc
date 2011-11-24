@@ -363,7 +363,17 @@ bool Dispatcher::initiateSearch(quint64 &searchId, QByteArray &searchData)
 
 void Dispatcher::sendSearchResult(QHostAddress toHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult)
 {
-    // TODO: We need to have a means to transmit our matches on others' search questions!
+    // TODO: we can lose senderCID in the function call since it is our own CID we are sending here.
+    QByteArray datagram;
+    datagram.append(UnicastPacket);
+    datagram.append(SearchResultPacket);
+    datagram.append(toQByteArray(dispatchIP.toIPv4Address()));
+    datagram.append(toQByteArray(searchID));
+    datagram.append(CID);
+    datagram.append(toQByteArray((quint16)searchResult.length()));
+    datagram.append(searchResult);
+    datagram.append(networkTopology->getOwnBucket());
+    sendUnicastRawDatagram(toHost, datagram);
 }
 
 QByteArray Dispatcher::assembleSearchPacket(QHostAddress &searchingHost, quint64 &searchID, QByteArray &searchData)
