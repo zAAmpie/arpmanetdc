@@ -123,6 +123,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	finishedWidget = 0;
 	settingsWidget = 0;
     helpWidget = 0;
+    transferWidget = 0;
 
 	//Icon generation
 	userIcon = new QPixmap();
@@ -412,27 +413,9 @@ void ArpmanetDC::createWidgets()
 	userListTable->hideColumn(3);
 	userListTable->hideColumn(4);
 
-	//===== Transfer list =====
-	//Model
-	transferListModel = new QStandardItemModel(0,1);
-	transferListModel->setHeaderData(0, Qt::Horizontal, tr("Transfer"));
+    //TransferWidget
+    transferWidget = new TransferWidget(this);
 
-	//Table
-	transferListTable = new QTableView(this);
-	transferListTable->setContextMenuPolicy(Qt::CustomContextMenu);
-
-	//Link table and model
-	transferListTable->setModel(transferListModel);
-
-	//Sizing
-	transferListTable->horizontalHeader()->setResizeMode(QHeaderView::Interactive);
-
-	//Style
-	transferListTable->setShowGrid(true);
-	userListTable->setGridStyle(Qt::DotLine);
-	transferListTable->verticalHeader()->hide();
-	transferListTable->setItemDelegate(new HTMLDelegate(transferListTable));
-		
 	//===== Bars =====
 	//Toolbar
 	toolBar = new QToolBar(tr("Actions"), this);
@@ -530,7 +513,7 @@ void ArpmanetDC::placeWidgets()
 
 	//Place horizontal widgets
 	splitterHorizontal->addWidget(tabs);
-	splitterHorizontal->addWidget(transferListTable);
+	splitterHorizontal->addWidget(transferWidget->widget());
 	
 	sizes.clear();
 	sizes << 400 << 200;
@@ -549,7 +532,6 @@ void ArpmanetDC::connectWidgets()
 {
 	//Context menu
 	connect(userListTable, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showUserListContextMenu(const QPoint&)));
-	connect(transferListTable, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showTransferListContextMenu(const QPoint&)));
 
 	//Send chat message when enter is pressed
     connect(chatLineEdit, SIGNAL(returnPressed()), this, SLOT(chatLineEditReturnPressed()));
@@ -778,23 +760,15 @@ void ArpmanetDC::privateMessageActionPressed()
 //Show right-click menu on user list
 void ArpmanetDC::showUserListContextMenu(const QPoint &pos)
 {
+    if (userListTable->selectionModel()->selectedRows().size() == 0)
+        return;
+
 	QPoint globalPos = userListTable->viewport()->mapToGlobal(pos);
 
 	QMenu *userListMenu = new QMenu(this);
 	userListMenu->addAction(privateMessageAction);
 
 	userListMenu->popup(globalPos);
-}
-
-//Show right-click menu on transfer list
-void ArpmanetDC::showTransferListContextMenu(const QPoint &pos)
-{
-	QPoint globalPos = transferListTable->viewport()->mapToGlobal(pos);
-
-	QMenu *transferListMenu = new QMenu(this);
-	transferListMenu->addAction(privateMessageAction);
-
-	transferListMenu->popup(globalPos);
 }
 
 //When a tab is deleted - free from memory
@@ -901,8 +875,10 @@ void ArpmanetDC::settingsSaved()
     //Save settings to database
     saveSettings();
 
-    //Reconnect hub
-    reconnectActionPressed();
+    //Reconnect hub if necessary
+    if (pSettings->value("hubAddress") != pHub->getHubAddress() || pSettings->value("hubPort").toShort() != pHub->getHubPort())
+        reconnectActionPressed();
+
     //Reconnect dispatcher if necessary
     QString externalIP = pSettings->value("externalIP");
     quint16 externalPort = pSettings->value("externalPort").toShort();

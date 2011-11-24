@@ -14,6 +14,7 @@
 #include "settingswidget.h"
 #include "sharewidget.h"
 #include "helpwidget.h"
+#include "transferwidget.h"
 #include "sharesearch.h"
 #include "dispatcher.h"
 #include "transfermanager.h"
@@ -67,6 +68,8 @@ public slots:
     void setStatus(QString msg);
 
 private slots:
+    //-----===== OBJECT SLOTS =====-----
+
 	//Hub Connection slots
 	void appendChatLine(QString msg);
 	void userListInfoReceived(QString nick, QString desc, QString mode);
@@ -78,6 +81,29 @@ private slots:
 	//Dispatcher slots
 	void bootstrapStatusChanged(int status);
     void searchResultReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult);
+
+    //ShareSearch slot
+	void fileHashed(QString fileName);
+	void directoryParsed(QString path);
+	void hashingDone(int msecs, int numFiles);
+	void parsingDone();
+
+    //-----===== CUSTOM WIDGET SLOTS =====-----
+
+    //Search widget slots
+	void searchButtonPressed(quint64 id, QString searchStr,  QByteArray searchPacket, SearchWidget *widget);
+
+	//PM widget slots
+	void pmSent(QString otherNick, QString msg, PMWidget *);
+	void receivedPrivateMessage(QString otherNick, QString msg);
+
+	//Share widget slots
+	void shareSaveButtonPressed();
+
+	//Settings widget slots
+	void settingsSaved();
+
+    //-----===== GUI SLOTS =====-----
 
 	//Sort user list
 	void sortUserList();
@@ -102,26 +128,6 @@ private slots:
 
 	//Right-click menus
 	void showUserListContextMenu(const QPoint&);
-	void showTransferListContextMenu(const QPoint&);
-
-	//Search widget slots
-	void searchButtonPressed(quint64 id, QString searchStr,  QByteArray searchPacket, SearchWidget *widget);
-
-	//PM widget slots
-	void pmSent(QString otherNick, QString msg, PMWidget *);
-	void receivedPrivateMessage(QString otherNick, QString msg);
-
-	//Share widget slots
-	void shareSaveButtonPressed();
-
-	//Settings widget slots
-	void settingsSaved();
-
-	//ShareSearch slot
-	void fileHashed(QString fileName);
-	void directoryParsed(QString path);
-	void hashingDone(int msecs, int numFiles);
-	void parsingDone();
 
 signals:
     //Private queued signal for cross-thread comms
@@ -200,9 +206,9 @@ private:
 	QTextBrowser *mainChatTextEdit;
 
 	//Tables and models
-	QTableView *userListTable, *transferListTable;
-	QStandardItemModel *userListModel, *transferListModel;
-	QSortFilterProxyModel *userSortProxy, *transferSortProxy;
+	QTableView *userListTable;
+	QStandardItemModel *userListModel;
+	QSortFilterProxyModel *userSortProxy;
 
 	//Splitters
 	QSplitter *splitterVertical, *splitterHorizontal;
@@ -217,6 +223,7 @@ private:
 	DownloadFinishedWidget *finishedWidget;
 	SettingsWidget *settingsWidget;
     HelpWidget *helpWidget;
+    TransferWidget *transferWidget;
 };
 
 #endif
