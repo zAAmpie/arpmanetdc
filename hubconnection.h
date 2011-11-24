@@ -22,6 +22,8 @@ public:
 	void setVersion(QString version);
     void sendPrivateMessage(QString otherNick, QString message);
     void sendChatMessage(QString message);
+    QString getHubAddress();
+    quint16 getHubPort();
 
 signals:
     void receivedChatMessage(QString message);

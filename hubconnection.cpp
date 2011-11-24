@@ -328,3 +328,14 @@ void HubConnection::reconnectTimeout()
 	//Retry connection
 	connectHub();
 }
+
+// Get functions, so that we do not need to reconnect on every settings change
+QString HubConnection::getHubAddress()
+{
+    return hubAddress;
+}
+
+quint16 HubConnection::getHubPort()
+{
+    return hubPort;
+}
