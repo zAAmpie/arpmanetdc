@@ -169,7 +169,7 @@ private:
     QHostAddress dispatchIP;
 
     // Search network functions
-    QByteArray assembleSearchPacket(QHostAddress &searchingHost, quint64 &searchID, QByteArray &searchData);
+    QByteArray assembleSearchPacket(QHostAddress &searchingHost, quint64 &searchID, QByteArray &searchData, bool appendBucket=true);
     void sendSearchBroadcast(QByteArray &searchPacket);
     void sendSearchMulticast(QByteArray &searchPacket);
     void sendSearchForwardRequest(QHostAddress &forwardingNode, QByteArray &searchPacket);

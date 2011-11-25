@@ -12,9 +12,9 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     // Init P2P dispatch socket
     receiverUdpSocket = new QUdpSocket(this);
     receiverUdpSocket->bind(dispatchPort, QUdpSocket::ShareAddress);
-    //receiverUdpSocket->joinMulticastGroup(mcastAddress);
-    //receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastTtlOption, 16);
-    //receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastLoopbackOption, false);
+    receiverUdpSocket->joinMulticastGroup(mcastAddress);
+    receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastTtlOption, 16);
+    receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastLoopbackOption, false);
     connect(receiverUdpSocket, SIGNAL(readyRead()), this, SLOT(receiveP2PData()));
 
     senderUdpSocket = new QUdpSocket(this);
@@ -44,7 +44,7 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
 Dispatcher::~Dispatcher()
 {
     delete networkBootstrap;
-    //receiverUdpSocket->leaveMulticastGroup(mcastAddress);
+    receiverUdpSocket->leaveMulticastGroup(mcastAddress);
     delete networkTopology;
     delete senderUdpSocket;
     delete receiverUdpSocket;
@@ -55,13 +55,13 @@ void Dispatcher::reconfigureDispatchHostPort(QHostAddress ip, quint16 port)
     dispatchIP = ip;
     dispatchPort = port;
     disconnect(receiverUdpSocket, SIGNAL(readyRead()));
-    //receiverUdpSocket->leaveMulticastGroup(mcastAddress);
+    receiverUdpSocket->leaveMulticastGroup(mcastAddress);
     receiverUdpSocket->close();
     receiverUdpSocket->bind(dispatchPort, QUdpSocket::ShareAddress);
     connect(receiverUdpSocket, SIGNAL(readyRead()), this, SLOT(receiveP2PData()));
-    //receiverUdpSocket->joinMulticastGroup(mcastAddress);
-    //receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastTtlOption, 16);
-    //receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastLoopbackOption, false);
+    receiverUdpSocket->joinMulticastGroup(mcastAddress);
+    receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastTtlOption, 16);
+    receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastLoopbackOption, false);
 }
 
 // ------------------=====================   Initial receive and dispatching   =====================----------------------
@@ -143,7 +143,14 @@ void Dispatcher::handleProtocolInstruction(quint8 &quint8DatagramType, quint8 &q
 
     // incoming announcement, send to buckets, reply with AnnounceReply
     case AnnouncePacket:
-        sendUnicastAnnounceReply(senderHost);
+        switch (quint8DatagramType)
+        {
+        case MulticastPacket:
+            sendMulticastAnnounceReply();
+            break;
+        case BroadcastPacket:
+            sendBroadcastAnnounceReply();
+        }
         handleReceivedAnnounce(quint8DatagramType, senderHost, datagram);
         break;
 
@@ -367,16 +374,11 @@ void Dispatcher::sendSearchResult(QHostAddress toHost, QByteArray senderCID, qui
     QByteArray datagram;
     datagram.append(UnicastPacket);
     datagram.append(SearchResultPacket);
-    datagram.append(toQByteArray(dispatchIP.toIPv4Address()));
-    datagram.append(toQByteArray(searchID));
-    datagram.append(CID);
-    datagram.append(toQByteArray((quint16)searchResult.length()));
-    datagram.append(searchResult);
-    datagram.append(networkTopology->getOwnBucket());
+    datagram.append(assembleSearchPacket(dispatchIP, searchID, searchResult, false));
     sendUnicastRawDatagram(toHost, datagram);
 }
 
-QByteArray Dispatcher::assembleSearchPacket(QHostAddress &searchingHost, quint64 &searchID, QByteArray &searchData)
+QByteArray Dispatcher::assembleSearchPacket(QHostAddress &searchingHost, quint64 &searchID, QByteArray &searchData, bool appendBucket)
 {
     QByteArray datagram;
     datagram.append(toQByteArray(searchingHost.toIPv4Address()));
@@ -384,7 +386,8 @@ QByteArray Dispatcher::assembleSearchPacket(QHostAddress &searchingHost, quint64
     datagram.append(fixedCIDLength(CID));  // moet seker wees lengte is reg, anders bevark hy die indekse wat kom
     datagram.append(toQByteArray((quint16)searchData.length()));
     datagram.append(searchData);
-    datagram.append(networkTopology->getOwnBucket());
+    if (appendBucket)
+        datagram.append(networkTopology->getOwnBucket());
     return datagram;
 }
 
@@ -398,7 +401,8 @@ void Dispatcher::parseArrivedSearchResult(QByteArray &datagram)
     QHostAddress senderHost = QHostAddress(datagram.mid(2,4).toUInt());
     quint64 searchID = datagram.mid(6, 8).toULongLong();
     QByteArray senderCID = datagram.mid(14, 24);
-    int searchResultLength = datagram.mid(38, 2).toInt();
+    QByteArray t = datagram.mid(38, 2);
+    int searchResultLength = getQuint16FromByteArray(&t);
     QByteArray searchResult = datagram.mid(40, searchResultLength);
     QByteArray bucket = datagram.mid(40 + searchResultLength);
 
@@ -464,7 +468,8 @@ void Dispatcher::handleReceivedSearchQuestion(QHostAddress &fromHost, QByteArray
 {
     quint64 searchID = datagram.mid(6, 8).toULongLong();
     QByteArray clientCID = datagram.mid(14, 24);
-    int searchLength = datagram.mid(38, 2).toInt();
+    QByteArray t = datagram.mid(38, 2);
+    int searchLength = getQuint16FromByteArray(&t);
     QByteArray searchData = datagram.mid(40, searchLength);
     QByteArray bucket = datagram.mid(40 + searchLength);
 
@@ -818,8 +823,8 @@ void Dispatcher::sendMulticastRawDatagram(QByteArray &datagram)
 void Dispatcher::setCID(QByteArray &cid)
 {
     CID.clear();
-    CID.append(cid);
-    networkTopology->setCID(cid);
+    CID.append(fixedCIDLength(cid));
+    networkTopology->setCID(CID);
 }
 
 void Dispatcher::changeBootstrapStatus(int status)
