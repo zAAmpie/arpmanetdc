@@ -39,11 +39,16 @@ signals:
 
     // Bucket exchange
     void initiateBucketExchanges();
+    void sendRequestAllBuckets(QHostAddress toAddr);
 
 public slots:
     // Bootstrapping
     void performBootstrap();
     void setBootstrapStatus(int status);
+
+    // Network scanning ranges
+    void addNetworkScanRange(quint32 rangeBase, quint32 rangeLength);
+    void removeNetworkScanRange(quint32 rangeBase);
 
 
 private slots:
@@ -61,6 +66,9 @@ private:
     QTimer *networkScanTimer;
     QTimer *keepaliveTimer;
 
+    // Network scanning ranges
+    QMap<quint32, quint32> networkScanRanges;
+    quint32 totalScanHosts;
 };
 
 #endif // NETWORKBOOTSTRAP_H

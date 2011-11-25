@@ -26,6 +26,8 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     connect(networkBootstrap, SIGNAL(sendMulticastAnnounce()), this, SLOT(sendMulticastAnnounce()));
     connect(networkBootstrap, SIGNAL(sendUnicastAnnounceForwardRequest(QHostAddress&)),
             this, SLOT(sendUnicastAnnounceForwardRequest(QHostAddress&)));
+    connect(networkBootstrap, SIGNAL(sendRequestAllBuckets(QHostAddress)),
+            this, SLOT(requestAllBuckets(QHostAddress)));
 
     // Network topology manager
     networkTopology = new NetworkTopology(this);
@@ -789,6 +791,18 @@ void Dispatcher::requestAllBuckets(QHostAddress host)
     datagram.append(UnicastPacket);
     datagram.append(RequestAllBucketsPacket);
     sendUnicastRawDatagram(host, datagram);
+}
+
+// ------------------=====================   Set network scanning ranges   =====================----------------------
+
+void Dispatcher::addNetworkScanRange(quint32 rangeBase, quint32 rangeLength)
+{
+    networkBootstrap->addNetworkScanRange(rangeBase, rangeLength);
+}
+
+void Dispatcher::removeNetworkScanRange(quint32 rangeBase)
+{
+    networkBootstrap->removeNetworkScanRange(rangeBase);
 }
 
 // ------------------=====================   Raw transmission functions   =====================----------------------

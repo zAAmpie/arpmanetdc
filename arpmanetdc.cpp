@@ -71,10 +71,15 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     //Connect Dispatcher to TransferManager - handles upload/download requests and transfers
     connect(pDispatcher, SIGNAL(incomingUploadRequest(quint8,QHostAddress&,QByteArray&,quint64&,quint64&)),
             pTransferManager, SLOT(incomingUploadRequest(quint8,QHostAddress&,QByteArray&,quint64&,quint64&))); //This slot doesn't work since Dispatcher hasn't been modified to work with protocolhints
+
     connect(pDispatcher, SIGNAL(incomingDataPacket(quint8,QByteArray&)),
             pTransferManager, SLOT(incomingDataPacket(quint8,QByteArray&)));
     connect(pTransferManager, SIGNAL(transmitDatagram(QHostAddress&,QByteArray&)),
             pDispatcher, SLOT(sendUnicastRawDatagram(QHostAddress&,QByteArray&)));
+
+    // Set network scan ranges in Dispatcher, initial shotgun approach
+    pDispatcher->addNetworkScanRange(QHostAddress("143.160.0.1").toIPv4Address(), 65534);
+    pDispatcher->addNetworkScanRange(QHostAddress("172.31.0.1").toIPv4Address(), 65534);
 
 	//Set up thread for database / ShareSearch
 	dbThread = new ExecThread();

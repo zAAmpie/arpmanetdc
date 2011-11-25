@@ -122,6 +122,8 @@ public slots:
     void sendBroadcastAnnounceReply();
     void sendUnicastAnnounceReply(QHostAddress &dstHost);
     void sendUnicastAnnounceForwardRequest(QHostAddress &dstAddr);
+    void addNetworkScanRange(quint32 rangeBase, quint32 rangeLength);
+    void removeNetworkScanRange(quint32 rangeBase);
 
     // Search
     bool initiateSearch(quint64 &searchID, QByteArray &searchPacket);

@@ -39,6 +39,8 @@ NetworkBootstrap::NetworkBootstrap(QObject *parent) :
     // Begin bootstrap proses
     bootstrapTimer->start(1000);
     networkScanTimer->start(2500);
+
+    totalScanHosts = 0;
 }
 
 NetworkBootstrap::~NetworkBootstrap()
@@ -94,15 +96,35 @@ void NetworkBootstrap::setBootstrapStatus(int status)
 
 void NetworkBootstrap::networkScanTimerEvent()
 {
-    // TODO: slim scanning om stuff op ander broadcast domains raak te skiet
-
-
     if (bootstrapStatus <= 0)
         networkScanTimer->start(2500);
     else
     {
         networkScanTimer->start(60000);
         emit initiateBucketExchanges();
+    }
+
+    if (totalScanHosts == 0)
+        return;
+
+    for (int i = 0; i < 3; i++)
+    {
+        quint32 scanHostOffset = qrand() % totalScanHosts;
+        QMapIterator<quint32, quint32> it(networkScanRanges);
+        int currentOffset = 0;
+        QHostAddress scanHost;
+        while (it.hasNext())
+        {
+            currentOffset += it.peekNext().value();
+            if (scanHostOffset <= currentOffset)
+            {
+                scanHost = QHostAddress(it.peekNext().key() + scanHostOffset % it.peekNext().value());
+                break;
+            }
+            else
+                it.next();
+        }
+        emit sendRequestAllBuckets(scanHost);
     }
 }
 
@@ -118,4 +140,22 @@ void NetworkBootstrap::keepaliveTimerEvent()
 int NetworkBootstrap::getBootstrapStatus()
 {
     return bootstrapStatus;
+}
+
+void NetworkBootstrap::addNetworkScanRange(quint32 rangeBase, quint32 rangeLength)
+{
+    if (!networkScanRanges.contains(rangeBase))
+    {
+        networkScanRanges.insert(rangeBase, rangeLength);
+        totalScanHosts += rangeLength;
+    }
+}
+
+void NetworkBootstrap::removeNetworkScanRange(quint32 rangeBase)
+{
+    if (networkScanRanges.contains(rangeBase))
+    {
+        totalScanHosts -= networkScanRanges.value(rangeBase);
+        networkScanRanges.remove(rangeBase);
+    }
 }
