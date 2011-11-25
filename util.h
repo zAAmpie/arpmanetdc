@@ -23,8 +23,12 @@ bool base32Decode(QByteArray &data);
 
 //Function to convert quint64 containing bytes into a human readable format
 QString bytesToSize(quint64 bytes);
+//Function to convert bytes/second quint64 to human readable format
+QString bytesToRate(quint64 rate);
 //Function to convert human readable size into bytes
 quint64 sizeToBytes(QString size);
+//Function to convert human readable rate into bytes
+quint64 rateToBytes(QString rate);
 
 QByteArray toQByteArray(quint16 n);
 QByteArray toQByteArray(quint32 n);

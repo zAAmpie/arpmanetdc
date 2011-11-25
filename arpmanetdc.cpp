@@ -7,6 +7,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 
     //Register QHostAddress for queueing over threads
     qRegisterMetaType<QHostAddress>("QHostAddress");
+    qRegisterMetaType<QueueStruct>("QueueStruct");
 
     //Set database pointer to zero at start
 	db = 0;
@@ -23,6 +24,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
         pSettings->insert("hubPort", DEFAULT_HUB_PORT);
         pSettings->insert("externalIP", getIPGuess().toString());
         pSettings->insert("externalPort", DEFAULT_EXTERNAL_PORT);
+        pSettings->insert("downloadPath", getDefaultDownloadPath());
     }
 
 	mainChatBlocks = 0;
@@ -112,6 +114,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	connectWidgets();	
 
     pStatusHistoryList = new QList<QString>();
+    pQueueList = new QList<QueueStruct>();
 
     //Update shares
 	emit updateShares();
@@ -210,11 +213,11 @@ bool ArpmanetDC::setupDatabase()
     queries.append("CREATE INDEX IDX_TTHSOURCES_TTHROOT on TTHSources(tthRoot);");
 	
 	//Create QueuedDownloads table - saves all queued downloads to restart transfers after restart
-	queries.append("CREATE TABLE QueuedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, fileSize INTEGER, priority INTEGER, tthRoot TEXT, UNIQUE(filePath));");
+	queries.append("CREATE TABLE QueuedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, fileSize INTEGER, priority INTEGER, tthRoot TEXT);");
     queries.append("CREATE INDEX IDX_QUEUED_FILEPATH on QueuedDownloads(filePath);");
 
 	//Create FinishedDownloads table - saves download paths that were downloaded for list
-	queries.append("CREATE TABLE FinishedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, fileSize INTEGER, tthRoot TEXT, downloadedDate TEXT, UNIQUE(filePath));");
+	queries.append("CREATE TABLE FinishedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, fileSize INTEGER, tthRoot TEXT, downloadedDate TEXT);");
     queries.append("CREATE INDEX IDX_FINISHED_FILEPATH on FinishedDownloads(filePath);");
 
     //Create Settings table - saves settings (doh)
@@ -414,7 +417,7 @@ void ArpmanetDC::createWidgets()
 	userListTable->hideColumn(4);
 
     //TransferWidget
-    transferWidget = new TransferWidget(this);
+    transferWidget = new TransferWidget(pTransferManager, this);
 
 	//===== Bars =====
 	//Toolbar
@@ -582,7 +585,7 @@ void ArpmanetDC::sendChatMessage()
 
 void ArpmanetDC::searchActionPressed()
 {
-	SearchWidget *sWidget = new SearchWidget(pTypeIconList, this);
+	SearchWidget *sWidget = new SearchWidget(pTypeIconList, pTransferManager, this);
 	
     connect(sWidget, SIGNAL(search(quint64, QString, QByteArray, SearchWidget *)), this, SLOT(searchButtonPressed(quint64, QString, QByteArray, SearchWidget *)));
 
@@ -619,6 +622,8 @@ void ArpmanetDC::queueActionPressed()
 	tabs->addTab(queueWidget->widget(), QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Download Queue"));
 
 	tabs->setCurrentIndex(tabs->indexOf(queueWidget->widget()));
+
+    pShare->requestQueueList();
 }
 
 void ArpmanetDC::downloadFinishedActionPressed()
@@ -1232,6 +1237,16 @@ void ArpmanetDC::setStatus(QString msg)
     statusLabel->setText(fm.elidedText(msg, Qt::ElideMiddle, statusLabel->width()));
 }
 
+//Add a download to the queue
+void ArpmanetDC::addDownloadToQueue(QueueStruct item)
+{
+    if (!pQueueList->contains(item))
+    {
+        pQueueList->append(item);
+        pShare->saveQueuedDownload(item);
+    }
+}
+
 void ArpmanetDC::convertHTMLLinks(QString &msg)
 {
 	//Replace html links with hrefs
@@ -1352,6 +1367,16 @@ QHostAddress ArpmanetDC::getIPGuess()
 	}
 
     return QHostAddress();
+}
+
+QString ArpmanetDC::getDefaultDownloadPath()
+{
+    return QDir::homePath();
+}
+
+QString ArpmanetDC::downloadPath()
+{
+    return pSettings->value("downloadPath");
 }
 
 QString ArpmanetDC::nick()

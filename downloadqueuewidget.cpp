@@ -6,6 +6,7 @@ DownloadQueueWidget::DownloadQueueWidget(ArpmanetDC *parent)
 {
 	//Constructor
 	pParent = parent;
+    pQueueList = 0;
 
 	createWidgets();
 	placeWidgets();
@@ -27,7 +28,7 @@ void DownloadQueueWidget::createWidgets()
 	queueTable->setGridStyle(Qt::DotLine);
 	queueTable->verticalHeader()->hide();
 	queueTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-	queueTable->setItemDelegate(new HTMLDelegate(queueTable));
+	//queueTable->setItemDelegate(new HTMLDelegate(queueTable));
 	queueTable->setContextMenuPolicy(Qt::CustomContextMenu);
 
 	//Model
@@ -96,37 +97,89 @@ void DownloadQueueWidget::showQueueTableContextMenu(const QPoint &point)
 //Actions
 void DownloadQueueWidget::setPriorityLowActionPressed()
 {
-	QByteArray *tthRoot = new QByteArray();
+    for (int i = 0; i < queueTable->selectionModel()->selectedRows().size(); i++)
+    {
+        //Get selected files
+	    QModelIndex selectedIndex = queueTable->selectionModel()->selectedRows().at(i);//userListTable->selectionModel()->selection().indexes().first();
+	    //Get TTH of file
+	    QString base32TTH = queueModel->data(queueModel->index(selectedIndex.row(), 4)).toString();
 
-	emit setPriority(tthRoot, LowQueuePriority);
+        QByteArray *tthRoot = new QByteArray();
+        tthRoot->append(base32TTH);
+        base32Decode(*tthRoot);  
+        
+	    emit setPriority(tthRoot, LowQueuePriority);
+    }
 }
 
 void DownloadQueueWidget::setPriorityNormalActionPressed()
 {
-	QByteArray *tthRoot = new QByteArray();
+	for (int i = 0; i < queueTable->selectionModel()->selectedRows().size(); i++)
+    {
+        //Get selected files
+	    QModelIndex selectedIndex = queueTable->selectionModel()->selectedRows().at(i);//userListTable->selectionModel()->selection().indexes().first();
+	    //Get TTH of file
+	    QString base32TTH = queueModel->data(queueModel->index(selectedIndex.row(), 4)).toString();
 
-	emit setPriority(tthRoot, NormalQueuePriority);
+        QByteArray *tthRoot = new QByteArray();
+        tthRoot->append(base32TTH);
+        base32Decode(*tthRoot);  
+        
+	    emit setPriority(tthRoot, NormalQueuePriority);
+    }
 }
 
 void DownloadQueueWidget::setPriorityHighActionPressed()
 {
-	QByteArray *tthRoot = new QByteArray();
+	for (int i = 0; i < queueTable->selectionModel()->selectedRows().size(); i++)
+    {
+        //Get selected files
+	    QModelIndex selectedIndex = queueTable->selectionModel()->selectedRows().at(i);//userListTable->selectionModel()->selection().indexes().first();
+	    //Get TTH of file
+	    QString base32TTH = queueModel->data(queueModel->index(selectedIndex.row(), 4)).toString();
 
-	emit setPriority(tthRoot, HighQueuePriority);
+        QByteArray *tthRoot = new QByteArray();
+        tthRoot->append(base32TTH);
+        base32Decode(*tthRoot);  
+        
+	    emit setPriority(tthRoot, HighQueuePriority);
+    }
 }
 
 void DownloadQueueWidget::deleteActionPressed()
 {
-	QByteArray *tthRoot = new QByteArray();
+	for (int i = 0; i < queueTable->selectionModel()->selectedRows().size(); i++)
+    {
+        //Get selected files
+	    QModelIndex selectedIndex = queueTable->selectionModel()->selectedRows().at(i);//userListTable->selectionModel()->selection().indexes().first();
+	    //Get TTH of file
+	    QString base32TTH = queueModel->data(queueModel->index(selectedIndex.row(), 4)).toString();
 
-	emit deleteFromQueue(tthRoot);
+        QByteArray *tthRoot = new QByteArray();
+        tthRoot->append(base32TTH);
+        base32Decode(*tthRoot);  
+        
+        //TODO: Remove entry from list
+
+	    emit deleteFromQueue(tthRoot);
+    }
 }
 
 void DownloadQueueWidget::searchForAlternatesActionPressed()
 {
-	QByteArray *tthRoot = new QByteArray();
+	for (int i = 0; i < queueTable->selectionModel()->selectedRows().size(); i++)
+    {
+        //Get selected files
+	    QModelIndex selectedIndex = queueTable->selectionModel()->selectedRows().at(i);//userListTable->selectionModel()->selection().indexes().first();
+	    //Get TTH of file
+	    QString base32TTH = queueModel->data(queueModel->index(selectedIndex.row(), 4)).toString();
 
-	emit searchForAlternates(tthRoot);
+        QByteArray *tthRoot = new QByteArray();
+        tthRoot->append(base32TTH);
+        base32Decode(*tthRoot);  
+
+	    emit searchForAlternates(tthRoot);
+    }
 }
 
 //Queue list has been received
@@ -160,7 +213,10 @@ void DownloadQueueWidget::returnQueueList(QList<QueueStruct> *list)
 		}
 
 		queueModel->setItem(i, 3, new QStandardItem(priorityStr));
-		queueModel->setItem(i, 4, new QStandardItem(pQueueList->at(i).tthRoot->toBase64().data()));
+        QByteArray tthBase32(pQueueList->at(i).tthRoot->data());
+        base32Encode(tthBase32);
+
+		queueModel->setItem(i, 4, new QStandardItem(tthBase32.data()));
 	}
 }
 
@@ -186,7 +242,21 @@ void DownloadQueueWidget::addQueuedDownload(QueueStruct file)
 	}
 
 	queueModel->setItem(queueModel->rowCount()-1, 3, new QStandardItem(priorityStr));
-	queueModel->setItem(queueModel->rowCount()-1, 4, new QStandardItem(file.tthRoot->toBase64().data()));
+    QByteArray tthBase32(file.tthRoot->data());
+    base32Encode(tthBase32);
+	queueModel->setItem(queueModel->rowCount()-1, 4, new QStandardItem(tthBase32.data()));
+}
+
+//Remove queued download
+void DownloadQueueWidget::removeQueuedDownload(QueueStruct file)
+{
+    //Find item
+    QList<QStandardItem *> res = queueModel->findItems(file.tthRoot->toBase64().data(), Qt::MatchExactly, 4);
+    if (res.isEmpty())
+        return;
+
+    //Remove that row
+    queueModel->removeRow(queueModel->indexFromItem(res.first()).row());
 }
 
 QWidget *DownloadQueueWidget::widget()
@@ -202,7 +272,8 @@ QList<QueueStruct> *DownloadQueueWidget::queueList()
 
 void DownloadQueueWidget::setQueueList(QList<QueueStruct> *list)
 {
-	if (pQueueList != list)
-		delete pQueueList;
-	pQueueList = list;
+	if (pQueueList)
+        if (pQueueList != list)
+            delete pQueueList;
+    pQueueList = list;
 }

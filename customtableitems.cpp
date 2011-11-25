@@ -76,9 +76,13 @@ bool CStandardItem::operator<(const QStandardItem &other) const
     {
         return text().toLongLong() < other.text().toLongLong();
     }
-    if (pType == DoubleType)
+    else if (pType == DoubleType)
     {
         return text().toDouble() < other.text().toDouble();
+    }
+    else if (pType == RateType)
+    {
+        return rateToBytes(text()) < rateToBytes(other.text());
     }
     else if (pType == SizeType)
     {

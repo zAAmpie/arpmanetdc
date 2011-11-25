@@ -4,6 +4,7 @@
 #include <QtGui>
 
 class ArpmanetDC;
+class TransferManager;
 
 //Displays help
 class TransferWidget : public QObject
@@ -11,7 +12,7 @@ class TransferWidget : public QObject
 	Q_OBJECT
 
 public:
-	TransferWidget(ArpmanetDC *parent);
+	TransferWidget(TransferManager *transferManager, ArpmanetDC *parent);
 	~TransferWidget();
 
 	//Get the encapsulating widget
@@ -24,15 +25,26 @@ private slots:
     //Actions
     void deleteActionPressed();
 
+    //Update status
+    void updateStatus();
+
 private:
 	//Functions
 	void createWidgets();
 	void placeWidgets();
 	void connectWidgets();
 
+    //String conversion functions
+    QString typeString(int type);
+    QString stateString(int state);
+
 	//Objects
 	QWidget *pWidget;
 	ArpmanetDC *pParent;
+    TransferManager *pTransferManager;
+
+    //Update timer
+    QTimer *updateStatusTimer;
 
     //Actions
     QAction *deleteAction;

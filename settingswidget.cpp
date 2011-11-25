@@ -36,16 +36,25 @@ void SettingsWidget::createWidgets()
 	externalPortLineEdit = new QLineEdit(pSettings->value("externalPort"), (QWidget *)pParent);
 	externalPortLineEdit->setValidator(new QIntValidator(0, 65535, this));
 
+    downloadPathLineEdit = new QLineEdit(pSettings->value("downloadPath"), (QWidget *)pParent);
+
 	saveButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Save changes"), (QWidget *)pParent);
     guessIPButton = new QPushButton(tr("Guess External IP"), (QWidget *)pParent);
+    browseDownloadPathButton = new QPushButton(tr("Browse"), (QWidget *)pParent);
 }
 
 void SettingsWidget::placeWidgets()
 {
+    QHBoxLayout *downloadPathLayout = new QHBoxLayout;
+    downloadPathLayout->addWidget(downloadPathLineEdit);
+    downloadPathLayout->addWidget(browseDownloadPathButton);
+
 	QFormLayout *flayout = new QFormLayout();
 	flayout->addRow(new QLabel("<b>User information</b>"));
     flayout->addRow(new QLabel("Nickname:"), nickLineEdit);
 	flayout->addRow(new QLabel("Password:"), passwordLineEdit);
+    flayout->addRow(new QLabel("<b>Download path</b>"));
+    flayout->addRow(new QLabel("Download path:"), downloadPathLayout);
     flayout->addRow(new QLabel("<b>Hub information</b>"));
     flayout->addRow(new QLabel("Hub address:"), hubAddressLineEdit);
 	flayout->addRow(new QLabel("Hub port:"), hubPortLineEdit);
@@ -75,6 +84,7 @@ void SettingsWidget::connectWidgets()
 {
 	connect(saveButton, SIGNAL(clicked()), this, SLOT(savePressed()));
     connect(guessIPButton, SIGNAL(clicked()), this, SLOT(guessIPPressed()));
+    connect(browseDownloadPathButton, SIGNAL(clicked()), this, SLOT(browseDownloadPathPressed()));
 }
 
 void SettingsWidget::savePressed()
@@ -93,6 +103,8 @@ void SettingsWidget::savePressed()
 		missingStr.append("External IP<br/>");
 	if (externalPortLineEdit->text() == "0")
 		missingStr.append("External Port<br/>");
+    if (downloadPathLineEdit->text() == "")
+		missingStr.append("Download path<br/>");
 
 	if (!missingStr.isEmpty())
 		QMessageBox::warning((QWidget *)pParent, tr("ArpmanetDC"), tr("<p><b>Information missing:</b></p><p>%1</p><p>Please enter the above fields and try again.</p>").arg(missingStr));
@@ -104,6 +116,7 @@ void SettingsWidget::savePressed()
 		(*pSettings)["password"] = passwordLineEdit->text();
         (*pSettings)["externalIP"] = ipLineEdit->text();
         (*pSettings)["externalPort"] = externalPortLineEdit->text();
+        (*pSettings)["downloadPath"] = downloadPathLineEdit->text().replace("\\","/");
 
 		emit settingsSaved();
 	}
@@ -113,6 +126,13 @@ void SettingsWidget::guessIPPressed()
 {
     QString ip = pParent->getIPGuess().toString();
     ipLineEdit->setText(ip);
+}
+
+void SettingsWidget::browseDownloadPathPressed()
+{
+    QString downloadPath = QFileDialog::getExistingDirectory((QWidget *)pParent, tr("Select download path"), downloadPathLineEdit->text());
+    if (!downloadPath.isEmpty())
+        downloadPathLineEdit->setText(downloadPath.replace("\\","/"));
 }
 
 QWidget *SettingsWidget::widget()

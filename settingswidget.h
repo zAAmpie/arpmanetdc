@@ -5,19 +5,6 @@
 
 class ArpmanetDC;
 
-//Struct for holding all settings
-struct SettingsStruct
-{
-	QString hubAddress;
-	quint16 hubPort;
-	
-	QString nick;
-	QString password;
-
-	QString externalIP; //your own ip (or behind nat)
-	quint16 externalPort;
-};
-
 //Class encapsulating all widgets/signals for search tab
 class SettingsWidget : public QObject
 {
@@ -40,6 +27,8 @@ private slots:
 	void savePressed();
     //Pressed guess IP button
     void guessIPPressed();
+    //Pressed download path browse button
+    void browseDownloadPathPressed();
 
 signals:
 	//Signalled when settings were saved
@@ -58,8 +47,8 @@ private:
 	QHash<QString, QString> *pSettings;
 
 	//GUI
-	QLineEdit *hubAddressLineEdit, *hubPortLineEdit, *nickLineEdit, *passwordLineEdit, *ipLineEdit, *externalPortLineEdit;
-	QPushButton *saveButton, *guessIPButton;
+	QLineEdit *hubAddressLineEdit, *hubPortLineEdit, *nickLineEdit, *passwordLineEdit, *ipLineEdit, *externalPortLineEdit, *downloadPathLineEdit;
+	QPushButton *saveButton, *guessIPButton, *browseDownloadPathButton;
 
 };
 

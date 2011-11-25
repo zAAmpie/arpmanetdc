@@ -8,6 +8,7 @@
 #include "resourceextractor.h"
 
 class ArpmanetDC;
+class TransferManager;
 
 //Class encapsulating all widgets/signals for search tab
 class SearchWidget : public QObject
@@ -15,7 +16,7 @@ class SearchWidget : public QObject
 	Q_OBJECT
 
 public:
-	SearchWidget(ResourceExtractor *mappedIconList, ArpmanetDC *parent);
+	SearchWidget(ResourceExtractor *mappedIconList, TransferManager *transferManager, ArpmanetDC *parent);
 	~SearchWidget();
 
 	//Get the encapsulating widget
@@ -27,6 +28,13 @@ public slots:
 	void addSearchResult(QHostAddress sender, QByteArray cid, QByteArray result);
 
 private slots:
+    //Right-click menu
+    void showContextMenu(const QPoint&);
+
+    //Actions
+    void downloadActionPressed();
+    void downloadToActionPressed();
+
 	//Search button pressed
 	void searchPressed();
 
@@ -48,12 +56,11 @@ private:
 
 	QByteArray idGenerator();
 
-    QIcon fileIcon(const QString &filename);
-
 	//Objects
 	QWidget *pWidget;
 	ArpmanetDC *pParent;
     ResourceExtractor *pIconList;
+    TransferManager *pTransferManager;
 
     QTimer *sortTimer;
     bool sortDue;
@@ -64,6 +71,9 @@ private:
 
 
 	//===== Main GUI elements =====
+
+    //Actions
+    QAction *downloadAction, *downloadToAction;
 
 	//Search
 	QLineEdit *searchLineEdit;

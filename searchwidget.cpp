@@ -1,14 +1,16 @@
 #include "searchwidget.h"
 #include "QCryptographicHash"
 #include "arpmanetdc.h"
+#include "transfermanager.h"
 
 quint64 SearchWidget::staticID = 0;
 
-SearchWidget::SearchWidget(ResourceExtractor *mappedIconList, ArpmanetDC *parent)
+SearchWidget::SearchWidget(ResourceExtractor *mappedIconList, TransferManager *transferManager, ArpmanetDC *parent)
 {
 	//Constructor
 	pParent = parent;
     pIconList = mappedIconList;
+    pTransferManager = transferManager;
 
 	createWidgets();
 	placeWidgets();
@@ -71,6 +73,7 @@ void SearchWidget::createWidgets()
     resultsTable->setUniformRowHeights(true);
     resultsTable->setColumnWidth(0, 500);
     resultsTable->sortByColumn(1, Qt::DescendingOrder);
+    resultsTable->setContextMenuPolicy(Qt::CustomContextMenu);
 
     parentItem = resultsModel->invisibleRootItem();
 
@@ -84,6 +87,9 @@ void SearchWidget::createWidgets()
 	//resultsTable->hideColumn(6);
 	//resultsTable->hideColumn(7);
     //resultsTable->hideColumn(8);
+
+    downloadAction = new QAction(QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Download"), this);
+    downloadToAction = new QAction(QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Download to folder..."), this);
 
 	pWidget = new QWidget();
 }
@@ -114,11 +120,85 @@ void SearchWidget::placeWidgets()
 
 void SearchWidget::connectWidgets()
 {
-	//TODO: Connect all widgets
+	connect(resultsTable, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showContextMenu(const QPoint&)));
+
+    connect(downloadAction, SIGNAL(triggered()), this, SLOT(downloadActionPressed()));
+    connect(downloadToAction, SIGNAL(triggered()), this, SLOT(downloadToActionPressed()));
+
 	connect(searchButton, SIGNAL(clicked()), this, SLOT(searchPressed()));
 	connect(searchLineEdit, SIGNAL(returnPressed()), this, SLOT(searchPressed()));
     connect(majorVersionLineEdit, SIGNAL(returnPressed()), this, SLOT(searchPressed()));
     connect(minorVersionLineEdit, SIGNAL(returnPressed()), this, SLOT(searchPressed()));
+}
+
+void SearchWidget::downloadActionPressed()
+{
+    //TODO: Download to default path
+    QString path = pParent->downloadPath();
+    if (path.right(1).compare("/") != 0)
+        path.append("/");
+
+    for (int i = 0; i < resultsTable->selectionModel()->selectedRows().size(); i++)
+    {
+        //Get a result
+	    QModelIndex selectedIndex = resultsTable->selectionModel()->selectedRows().at(i);
+	    //Get TTH and filename of the result
+	    QString tthBase32 = resultsModel->data(resultsModel->index(selectedIndex.row(), 8)).toString();
+        QString fileName = resultsModel->data(resultsModel->index(selectedIndex.row(), 0)).toString();
+        quint64 fileSize = resultsModel->data(resultsModel->index(selectedIndex.row(), 5)).toInt();
+
+        //Convert TTH back to binary from Base32
+        QByteArray tthRoot;
+        tthRoot.append(tthBase32);
+        base32Decode(tthRoot);
+
+        //Add to download queue
+        QueueStruct item;
+        item.fileName = fileName;
+        item.filePath = path;
+        item.fileSize = fileSize;
+        item.priority = NormalQueuePriority;
+        item.tthRoot = new QByteArray(tthRoot);
+        pParent->addDownloadToQueue(item);
+
+        //I'm totally guessing the protocol here??? How should I distinguish?
+        //pTransferManager->incomingDownloadRequest(DownloadProtocolInstructions::DataPacket, path + fileName, tthRoot);
+    }
+}
+
+void SearchWidget::downloadToActionPressed()
+{
+    //TODO: Download to specific folder
+    QString path = QFileDialog::getExistingDirectory((QWidget *)pParent, tr("Select download path"), pParent->downloadPath());
+    if (path.right(1).compare("/") != 0)
+        path.append("/");
+
+    for (int i = 0; i < resultsTable->selectionModel()->selectedRows().size(); i++)
+    {
+        //Get a result
+	    QModelIndex selectedIndex = resultsTable->selectionModel()->selectedRows().at(i);
+	    //Get TTH and filename of the result
+	    QString tthBase32 = resultsModel->data(resultsModel->index(selectedIndex.row(), 8)).toString();
+        QString fileName = resultsModel->data(resultsModel->index(selectedIndex.row(), 0)).toString();
+        quint64 fileSize = resultsModel->data(resultsModel->index(selectedIndex.row(), 5)).toInt();
+
+        //Convert TTH back to binary from Base32
+        QByteArray tthRoot;
+        tthRoot.append(tthBase32);
+        base32Decode(tthRoot);
+
+        //Add to download queue
+        QueueStruct item;
+        item.fileName = fileName;
+        item.filePath = path;
+        item.fileSize = fileSize;
+        item.priority = NormalQueuePriority;
+        item.tthRoot = new QByteArray(tthRoot);
+        pParent->addDownloadToQueue(item);
+
+        //I'm totally guessing the protocol here??? How should I distinguish?
+        //pTransferManager->incomingDownloadRequest(DownloadProtocolInstructions::DataPacket, path + fileName, tthRoot);
+    }
 }
 
 QByteArray SearchWidget::idGenerator()
@@ -280,15 +360,19 @@ void SearchWidget::stopProgress()
     searchProgress->setVisible(false);
 }
 
-QIcon SearchWidget::fileIcon(const QString &filename)
+//Show right-click menu on transfer list
+void SearchWidget::showContextMenu(const QPoint &pos)
 {
-    QFileInfo info(filename);
-    const QString ext=info.suffix().toLower();
+    if (resultsTable->selectionModel()->selectedRows().size() == 0)
+        return;
 
-    QIcon icon;
-    icon = QApplication::style()->standardIcon(QStyle::SP_FileIcon);
+	QPoint globalPos = resultsTable->viewport()->mapToGlobal(pos);
 
-    return icon;
+	QMenu *resultsMenu = new QMenu((QWidget *)pParent);
+	resultsMenu->addAction(downloadAction);
+    resultsMenu->addAction(downloadToAction);
+
+	resultsMenu->popup(globalPos);
 }
 
 //===== GET FUNCTIONS =====

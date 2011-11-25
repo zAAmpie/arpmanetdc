@@ -51,6 +51,7 @@ public:
 	//Get functions
 	QString nick();
 	QString password();
+    QString downloadPath();
 
 	//HTML link converters
 	void convertHTMLLinks(QString &msg);
@@ -66,6 +67,9 @@ public:
 public slots:
     //Sets the global status label in the status bar to msg
     void setStatus(QString msg);
+
+    //Add a download to the queue
+    void addDownloadToQueue(QueueStruct item);
 
 private slots:
     //-----===== OBJECT SLOTS =====-----
@@ -145,6 +149,9 @@ private:
     //Load settings from database
     bool loadSettings();
     bool saveSettings();
+
+    //Get path for downloads
+    QString getDefaultDownloadPath();
 
 	//Objects
 	sqlite3 *db; //SQLite database

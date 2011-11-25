@@ -106,6 +106,12 @@ QString bytesToSize(quint64 bytes)
     return QObject::tr("%1 %2").arg(d, 0, 'f', 2).arg(unit);
 }
 
+//Function to convert bytes/second quint64 to human readable format
+QString bytesToRate(quint64 rate)
+{
+    return QObject::tr("%1/s").arg(bytesToSize(rate).replace("bytes", "b"));
+}
+
 //Function to convert human readable size into bytes i.e. from 24.0428 MB to 25 210 706 bytes
 quint64 sizeToBytes(QString size)
 {
@@ -132,6 +138,12 @@ quint64 sizeToBytes(QString size)
         val *= 1<<10;
 
     return (quint64)val;
+}
+
+//Function to convert human readable rate into bytes
+quint64 rateToBytes(QString rate)
+{
+    return sizeToBytes(rate.replace("/s", ""));
 }
 
 

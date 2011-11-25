@@ -1088,7 +1088,7 @@ void ShareSearch::saveQueuedDownload(QueueStruct file)
 		res = res | sqlite3_bind_int64(statement, 3, file.fileSize);
 		QString priority = QString((char)file.priority);
 		res = res | sqlite3_bind_text16(statement, 4, priority.utf16(), priority.size()*2, SQLITE_STATIC);
-		QString tthRoot = QString(file.tthRoot->data());
+		QString tthRoot = QString(file.tthRoot->toBase64().data());
 		res = res | sqlite3_bind_text16(statement, 5, tthRoot.utf16(), tthRoot.size()*2, SQLITE_STATIC);
 
 		int cols = sqlite3_column_count(statement);
@@ -1122,8 +1122,8 @@ void ShareSearch::removeQueuedDownload(QByteArray *tthRoot)
 	{
 		//Bind parameters
 		int res = 0;
-		QString tthRootStr = QString(tthRoot->data());
-		res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size(), SQLITE_STATIC);
+		QString tthRootStr = QString(tthRoot->toBase64().data());
+		res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size()*2, SQLITE_STATIC);
 
 		int cols = sqlite3_column_count(statement);
 		int result = 0;
@@ -1157,7 +1157,7 @@ void ShareSearch::setQueuedDownloadPriority(QByteArray *tthRoot, QueuePriority p
 		QString priorityStr = QString((char)priority);
 		res = res | sqlite3_bind_text16(statement, 1, priorityStr.utf16(), priorityStr.size()*2, SQLITE_STATIC);
 	
-		QString tthRootStr = QString(tthRoot->data());
+		QString tthRootStr = QString(tthRoot->toBase64().data());
 		res = res | sqlite3_bind_text16(statement, 2, tthRootStr.utf16(), tthRootStr.size()*2, SQLITE_STATIC);
 
 		int cols = sqlite3_column_count(statement);
@@ -1170,6 +1170,8 @@ void ShareSearch::setQueuedDownloadPriority(QByteArray *tthRoot, QueuePriority p
 	QString error = sqlite3_errmsg(db);
 	if (error != "not an error")
 		QString error = "error";
+
+
 }
 
 //Request queued download list
@@ -1198,6 +1200,7 @@ void ShareSearch::requestQueueList()
 			s.priority = (QueuePriority)QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 3)).at(0).toAscii();
 			s.tthRoot = new QByteArray();
 			s.tthRoot->append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 4)));
+            (*s.tthRoot) = QByteArray::fromBase64(*s.tthRoot);
 
 			results->append(s);
 		}
@@ -1233,7 +1236,7 @@ void ShareSearch::saveFinishedDownload(FinishedDownloadStruct file)
 		res = res | sqlite3_bind_text16(statement, 1, file.fileName.utf16(), file.fileName.size()*2, SQLITE_STATIC);
 		res = res | sqlite3_bind_text16(statement, 2, file.filePath.utf16(), file.filePath.size()*2, SQLITE_STATIC);
 		res = res | sqlite3_bind_int64(statement, 3, file.fileSize);
-		QString tthRoot = QString(file.tthRoot->data());
+		QString tthRoot = QString(file.tthRoot->toBase64().data());
 		res = res | sqlite3_bind_text16(statement, 4, tthRoot.utf16(), tthRoot.size()*2, SQLITE_STATIC);
 		res = res | sqlite3_bind_text16(statement, 5, file.downloadedDate.utf16(), file.downloadedDate.size()*2, SQLITE_STATIC);
 
@@ -1302,6 +1305,7 @@ void ShareSearch::requestFinishedList()
 			s.fileSize = sqlite3_column_int64(statement, 2);
 			s.tthRoot = new QByteArray();
 			s.tthRoot->append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 3)));
+            (*s.tthRoot) = QByteArray::fromBase64(*s.tthRoot);
 			s.downloadedDate = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 4));
 
 			results->append(s);

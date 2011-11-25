@@ -14,6 +14,7 @@ struct QueueStruct
 	qint64 fileSize;
 	QueuePriority priority;
 	QByteArray *tthRoot;
+    bool operator==(const QueueStruct &other) const { return tthRoot == other.tthRoot; }
 };
 
 //Class encapsulating all widgets/signals for search tab
@@ -37,6 +38,9 @@ public slots:
 
 	//Add a new queued download
 	void addQueuedDownload(QueueStruct file);
+
+    //Remove queued download
+    void removeQueuedDownload(QueueStruct file);
 
 private slots:
 	//Slots
