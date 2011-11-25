@@ -1106,7 +1106,7 @@ void ShareSearch::saveQueuedDownload(QueueStruct file)
 }
 
 //Remove an entry
-void ShareSearch::removeQueuedDownload(QByteArray *tthRoot)
+void ShareSearch::removeQueuedDownload(QByteArray tthRoot)
 {
 	//Delete an entry from the queued downloads list
 	QString queryStr = tr("DELETE FROM QueuedDownloads WHERE [tthRoot] = ?;");
@@ -1122,7 +1122,7 @@ void ShareSearch::removeQueuedDownload(QByteArray *tthRoot)
 	{
 		//Bind parameters
 		int res = 0;
-		QString tthRootStr = QString(tthRoot->toBase64().data());
+		QString tthRootStr = QString(tthRoot.toBase64().data());
 		res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size()*2, SQLITE_STATIC);
 
 		int cols = sqlite3_column_count(statement);
@@ -1138,7 +1138,7 @@ void ShareSearch::removeQueuedDownload(QByteArray *tthRoot)
 }
 
 //Sets the priority of a queued download
-void ShareSearch::setQueuedDownloadPriority(QByteArray *tthRoot, QueuePriority priority)
+void ShareSearch::setQueuedDownloadPriority(QByteArray tthRoot, QueuePriority priority)
 {
 	//Updates an entry in the queued downloads list
 	QString queryStr = tr("UPDATE QueuedDownloads SET [priority] = ? WHERE [tthRoot] = ?;");
@@ -1157,7 +1157,7 @@ void ShareSearch::setQueuedDownloadPriority(QByteArray *tthRoot, QueuePriority p
 		QString priorityStr = QString((char)priority);
 		res = res | sqlite3_bind_text16(statement, 1, priorityStr.utf16(), priorityStr.size()*2, SQLITE_STATIC);
 	
-		QString tthRootStr = QString(tthRoot->toBase64().data());
+		QString tthRootStr = QString(tthRoot.toBase64().data());
 		res = res | sqlite3_bind_text16(statement, 2, tthRootStr.utf16(), tthRootStr.size()*2, SQLITE_STATIC);
 
 		int cols = sqlite3_column_count(statement);
@@ -1180,7 +1180,7 @@ void ShareSearch::requestQueueList()
 	//Return the list of queued downloads
 	QString queryStr = tr("SELECT [fileName], [filePath], [fileSize], [priority], [tthRoot] FROM QueuedDownloads;");
 
-	QList<QueueStruct> *results = new QList<QueueStruct>();
+	QHash<QByteArray, QueueStruct> *results = new QHash<QByteArray, QueueStruct>();
 	sqlite3 *db = pParent->database();	
 	sqlite3_stmt *statement;
 
@@ -1202,7 +1202,7 @@ void ShareSearch::requestQueueList()
 			s.tthRoot->append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 4)));
             (*s.tthRoot) = QByteArray::fromBase64(*s.tthRoot);
 
-			results->append(s);
+            results->insert(*s.tthRoot, s);
 		}
 		sqlite3_finalize(statement);	
 	}

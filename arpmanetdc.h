@@ -70,6 +70,12 @@ public slots:
 
     //Add a download to the queue
     void addDownloadToQueue(QueueStruct item);
+    //Remove download from the queue
+    void deleteFromQueue(QByteArray tth);
+    //Change queue item priority
+    void setQueuePriority(QByteArray tth, QueuePriority priority);
+    //Returns a queuelist
+    void returnQueueList(QHash<QByteArray , QueueStruct> *);
 
 private slots:
     //-----===== OBJECT SLOTS =====-----
@@ -137,6 +143,12 @@ signals:
     //Private queued signal for cross-thread comms
 	void updateShares();
 
+    //Signals for queues
+    void saveQueuedDownload(QueueStruct item);
+    void removeQueuedDownload(QByteArray tth);
+    void requestQueueList();
+    void setQueuedDownloadPriority(QByteArray tth, QueuePriority priority);
+
 private:
 	//GUI setup functions
 	void createWidgets();
@@ -169,7 +181,7 @@ private:
     QHash<QString, QString> *pSettings;
 
 	//Global lists
-	QList<QueueStruct> *pQueueList;
+	QHash<QByteArray, QueueStruct> *pQueueList;
     QList<QString> *pStatusHistoryList;
 
 	//-----===== Main GUI parameters =====-----
@@ -182,6 +194,9 @@ private:
 
 	//User list icons
 	QPixmap *userIcon, *userFirewallIcon, *bootstrappedIcon, *unbootstrappedIcon, *fullyBootstrappedIcon;
+
+    //Menus
+    QMenu *userListMenu;
 
 	//Actions
 	QAction *reconnectAction, *shareAction, *searchAction, *queueAction, *downloadFinishedAction, *settingsAction, *helpAction, *privateMessageAction;

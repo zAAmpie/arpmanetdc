@@ -39,6 +39,8 @@ void TransferWidget::createWidgets()
 	transferListTable = new QTableView((QWidget *)pParent);
 	transferListTable->setContextMenuPolicy(Qt::CustomContextMenu);
     transferListTable->setSortingEnabled(true);
+    transferListTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    transferListTable->horizontalHeader()->setStretchLastSection(true);
 
 	//Link table and model
 	transferListTable->setModel(transferListModel);
@@ -50,10 +52,15 @@ void TransferWidget::createWidgets()
 	transferListTable->setShowGrid(true);
 	transferListTable->setGridStyle(Qt::DotLine);
 	transferListTable->verticalHeader()->hide();
-	transferListTable->setItemDelegate(new HTMLDelegate(transferListTable));
+    transferListTable->horizontalHeader()->setHighlightSections(false);
+	//transferListTable->setItemDelegate(new HTMLDelegate(transferListTable));
 
     //Action
     deleteAction = new QAction(QIcon(":/ArpmanetDC/Resources/RemoveIcon.png"), tr("Delete transfer"), this);
+
+    //Menu
+    transferListMenu = new QMenu((QWidget *)pParent);
+	transferListMenu->addAction(deleteAction);
 }
 
 void TransferWidget::placeWidgets()
@@ -77,9 +84,6 @@ void TransferWidget::showTransferListContextMenu(const QPoint &pos)
         return;
 
 	QPoint globalPos = transferListTable->viewport()->mapToGlobal(pos);
-
-	QMenu *transferListMenu = new QMenu((QWidget *)pParent);
-	transferListMenu->addAction(deleteAction);
 
 	transferListMenu->popup(globalPos);
 }

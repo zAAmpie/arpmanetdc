@@ -26,7 +26,7 @@ private:
 class CStandardItem : public QStandardItem
 {
 public:
-    enum CStandardItemType {IntegerType, DoubleType, SizeType, RateType, CaseInsensitiveTextType};
+    enum CStandardItemType {IntegerType, DoubleType, SizeType, RateType, CaseInsensitiveTextType, PriorityType};
     CStandardItem(CStandardItemType type, const QString &value) : QStandardItem(value) {pType = type; setEditable(false);}
     CStandardItem(CStandardItemType type, const QString &value, const QIcon &icon) : QStandardItem(icon, value) {pType = type; setEditable(false);}
 

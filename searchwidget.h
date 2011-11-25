@@ -72,6 +72,9 @@ private:
 
 	//===== Main GUI elements =====
 
+    //Menu
+    QMenu *resultsMenu;
+
     //Actions
     QAction *downloadAction, *downloadToAction;
 

@@ -69,6 +69,7 @@ private:
 	QTableView *finishedTable;
 	QStandardItemModel *finishedModel;
 
+    QMenu *finishedMenu;
 	QAction *openAction, *clearAction;
 };
 

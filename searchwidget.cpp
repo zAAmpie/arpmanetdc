@@ -74,6 +74,7 @@ void SearchWidget::createWidgets()
     resultsTable->setColumnWidth(0, 500);
     resultsTable->sortByColumn(1, Qt::DescendingOrder);
     resultsTable->setContextMenuPolicy(Qt::CustomContextMenu);
+    resultsTable->header()->setHighlightSections(false);
 
     parentItem = resultsModel->invisibleRootItem();
 
@@ -90,6 +91,10 @@ void SearchWidget::createWidgets()
 
     downloadAction = new QAction(QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Download"), this);
     downloadToAction = new QAction(QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Download to folder..."), this);
+
+    resultsMenu = new QMenu((QWidget *)pParent);
+	resultsMenu->addAction(downloadAction);
+    resultsMenu->addAction(downloadToAction);
 
 	pWidget = new QWidget();
 }
@@ -162,7 +167,8 @@ void SearchWidget::downloadActionPressed()
         pParent->addDownloadToQueue(item);
 
         //I'm totally guessing the protocol here??? How should I distinguish?
-        //pTransferManager->incomingDownloadRequest(DownloadProtocolInstructions::DataPacket, path + fileName, tthRoot);
+        QString finalPath = path + fileName;
+        pTransferManager->incomingDownloadRequest(0, finalPath, tthRoot);
     }
 }
 
@@ -197,7 +203,8 @@ void SearchWidget::downloadToActionPressed()
         pParent->addDownloadToQueue(item);
 
         //I'm totally guessing the protocol here??? How should I distinguish?
-        //pTransferManager->incomingDownloadRequest(DownloadProtocolInstructions::DataPacket, path + fileName, tthRoot);
+        QString finalPath = path + fileName;
+        pTransferManager->incomingDownloadRequest(0, finalPath, tthRoot);
     }
 }
 
@@ -367,10 +374,6 @@ void SearchWidget::showContextMenu(const QPoint &pos)
         return;
 
 	QPoint globalPos = resultsTable->viewport()->mapToGlobal(pos);
-
-	QMenu *resultsMenu = new QMenu((QWidget *)pParent);
-	resultsMenu->addAction(downloadAction);
-    resultsMenu->addAction(downloadToAction);
 
 	resultsMenu->popup(globalPos);
 }

@@ -96,10 +96,10 @@ public slots:
 	void saveQueuedDownload(QueueStruct file);
 	
     //Remove an entry
-	void removeQueuedDownload(QByteArray *tthRoot);
+	void removeQueuedDownload(QByteArray tthRoot);
 	
     //Sets the priority of a queued download
-	void setQueuedDownloadPriority(QByteArray *tthRoot, QueuePriority priority);
+	void setQueuedDownloadPriority(QByteArray tthRoot, QueuePriority priority);
 	
     //Request queued download list
 	void requestQueueList();
@@ -152,7 +152,7 @@ signals:
 	//----------========== QUEUED DOWNLOADS (DOWNLOAD QUEUE WIDGET) ==========----------
 	
     //Signals incoming queued list
-	void returnQueueList(QList<QueueStruct> *list);
+	void returnQueueList(QHash<QByteArray, QueueStruct> *list);
 	
     //Signals that an entry has been added
 	void queuedDownloadAdded(QueueStruct file);

@@ -58,21 +58,27 @@ void SettingsWidget::placeWidgets()
     flayout->addRow(new QLabel("<b>Hub information</b>"));
     flayout->addRow(new QLabel("Hub address:"), hubAddressLineEdit);
 	flayout->addRow(new QLabel("Hub port:"), hubPortLineEdit);
-    flayout->addRow(new QLabel("<br/><font color=\"red\"><b>Warning: Advanced users only. Leave these at default settings unless you know exactly what you're doing.</b></font>"));
-	flayout->addRow(new QLabel("<font color=\"red\">External IP:</font>"), ipLineEdit);
-	flayout->addRow(new QLabel("<font color=\"red\">External port:</font>"), externalPortLineEdit);
 
     QHBoxLayout *guessLayout = new QHBoxLayout();
-    guessLayout->addWidget(guessIPButton);
-	guessLayout->addStretch(1);
+    guessLayout->addWidget(ipLineEdit);
+    guessLayout->addWidget(guessIPButton);	
+
+    QFormLayout *flayoutR = new QFormLayout();
+    flayoutR->addRow(new QLabel("<font color=\"red\"><b>Warning: Advanced users only!</b></font>"));
+	flayoutR->addRow(new QLabel("<font color=\"red\">External IP:</font>"), guessLayout);
+	flayoutR->addRow(new QLabel("<font color=\"red\">External port:</font>"), externalPortLineEdit);
+
+    QHBoxLayout *formLayouts = new QHBoxLayout();
+    formLayouts->addLayout(flayout);
+    formLayouts->addSpacing(20);
+    formLayouts->addLayout(flayoutR);  
 
 	QHBoxLayout *hlayout = new QHBoxLayout();
 	hlayout->addStretch(1);
 	hlayout->addWidget(saveButton);
 
 	QVBoxLayout *layout = new QVBoxLayout();
-	layout->addLayout(flayout);
-    layout->addLayout(guessLayout);
+    layout->addLayout(formLayouts);
     layout->addStretch(1);
 	layout->addLayout(hlayout);
 

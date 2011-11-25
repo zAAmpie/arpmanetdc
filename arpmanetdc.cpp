@@ -8,6 +8,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     //Register QHostAddress for queueing over threads
     qRegisterMetaType<QHostAddress>("QHostAddress");
     qRegisterMetaType<QueueStruct>("QueueStruct");
+    qRegisterMetaType<QueuePriority>("QueuePriority");
 
     //Set database pointer to zero at start
 	db = 0;
@@ -84,7 +85,13 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	connect(pShare, SIGNAL(directoryParsed(QString)), this, SLOT(directoryParsed(QString)), Qt::QueuedConnection);
 	connect(pShare, SIGNAL(hashingDone(int, int)), this, SLOT(hashingDone(int, int)), Qt::QueuedConnection);
 	connect(pShare, SIGNAL(parsingDone()), this, SLOT(parsingDone()), Qt::QueuedConnection);
-	connect(this, SIGNAL(updateShares()), pShare, SLOT(updateShares()), Qt::QueuedConnection);
+	connect(pShare, SIGNAL(returnQueueList(QHash<QByteArray, QueueStruct> *)), this, SLOT(returnQueueList(QHash<QByteArray, QueueStruct> *)), Qt::QueuedConnection);
+    connect(this, SIGNAL(updateShares()), pShare, SLOT(updateShares()), Qt::QueuedConnection);
+    connect(this, SIGNAL(requestQueueList()), pShare, SLOT(requestQueueList()), Qt::QueuedConnection);
+    connect(this, SIGNAL(setQueuedDownloadPriority(QByteArray, QueuePriority)), pShare, SLOT(setQueuedDownloadPriority(QByteArray, QueuePriority)), Qt::QueuedConnection);
+    connect(this, SIGNAL(removeQueuedDownload(QByteArray)), pShare, SLOT(removeQueuedDownload(QByteArray)), Qt::QueuedConnection);
+    connect(this, SIGNAL(saveQueuedDownload(QueueStruct)), pShare, SLOT(saveQueuedDownload(QueueStruct)), Qt::QueuedConnection);
+    emit requestQueueList();    
 
     //Connect ShareSearch to Dispatcher - reply to search request from other clients
     connect(pShare, SIGNAL(returnSearchResult(QHostAddress, QByteArray, quint64, QByteArray)), 
@@ -114,7 +121,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	connectWidgets();	
 
     pStatusHistoryList = new QList<QString>();
-    pQueueList = new QList<QueueStruct>();
+    pQueueList = new QHash<QByteArray, QueueStruct>();
 
     //Update shares
 	emit updateShares();
@@ -213,7 +220,7 @@ bool ArpmanetDC::setupDatabase()
     queries.append("CREATE INDEX IDX_TTHSOURCES_TTHROOT on TTHSources(tthRoot);");
 	
 	//Create QueuedDownloads table - saves all queued downloads to restart transfers after restart
-	queries.append("CREATE TABLE QueuedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, fileSize INTEGER, priority INTEGER, tthRoot TEXT);");
+	queries.append("CREATE TABLE QueuedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, fileSize INTEGER, priority INTEGER, tthRoot TEXT, UNIQUE(tthRoot));");
     queries.append("CREATE INDEX IDX_QUEUED_FILEPATH on QueuedDownloads(filePath);");
 
 	//Create FinishedDownloads table - saves download paths that were downloaded for list
@@ -453,6 +460,10 @@ void ArpmanetDC::createWidgets()
 	helpAction = new QAction(QIcon(":/ArpmanetDC/Resources/HelpIcon.png"), tr("Help"), this);
 	privateMessageAction = new QAction(QIcon(":/ArpmanetDC/Resources/PMIcon.png"), tr("Send private message"), this);
 	reconnectAction = new QAction(QIcon(":/ArpmanetDC/Resources/ServerIcon.png"), tr("Reconnect"), this);
+
+    //===== Menus =====
+    userListMenu = new QMenu(this);
+	userListMenu->addAction(privateMessageAction);
 }
 
 void ArpmanetDC::placeWidgets()
@@ -611,19 +622,11 @@ void ArpmanetDC::queueActionPressed()
 	}
 
 	//Otherwise, create it
-	queueWidget = new DownloadQueueWidget(this);
-
-	connect(queueWidget, SIGNAL(requestQueueList()), pShare, SLOT(requestQueueList()));
-	connect(pShare, SIGNAL(returnQueueList(QList<QueueStruct> *)), queueWidget, SLOT(returnQueueList(QList<QueueStruct> *)));
-	connect(queueWidget, SIGNAL(deleteFromQueue(QByteArray *)), pShare, SLOT(removeQueuedDownload(QByteArray *)));
-	connect(queueWidget, SIGNAL(setPriority(QByteArray *, QueuePriority)), pShare, SLOT(setQueuedDownloadPriority(QByteArray *, QueuePriority)));
-	connect(pShare, SIGNAL(queuedDownloadAdded(QueueStruct)), queueWidget, SLOT(addQueuedDownload(QueueStruct)));
+	queueWidget = new DownloadQueueWidget(pQueueList, pShare, this);
 	
 	tabs->addTab(queueWidget->widget(), QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Download Queue"));
 
 	tabs->setCurrentIndex(tabs->indexOf(queueWidget->widget()));
-
-    pShare->requestQueueList();
 }
 
 void ArpmanetDC::downloadFinishedActionPressed()
@@ -769,9 +772,6 @@ void ArpmanetDC::showUserListContextMenu(const QPoint &pos)
         return;
 
 	QPoint globalPos = userListTable->viewport()->mapToGlobal(pos);
-
-	QMenu *userListMenu = new QMenu(this);
-	userListMenu->addAction(privateMessageAction);
 
 	userListMenu->popup(globalPos);
 }
@@ -1237,13 +1237,60 @@ void ArpmanetDC::setStatus(QString msg)
     statusLabel->setText(fm.elidedText(msg, Qt::ElideMiddle, statusLabel->width()));
 }
 
+//Get the queue from the database
+void ArpmanetDC::returnQueueList(QHash<QByteArray , QueueStruct> *queue)
+{
+    if (pQueueList)
+        delete pQueueList;
+    pQueueList = queue;
+}
+
 //Add a download to the queue
 void ArpmanetDC::addDownloadToQueue(QueueStruct item)
 {
-    if (!pQueueList->contains(item))
+    if (!pQueueList->contains(*item.tthRoot))
     {
-        pQueueList->append(item);
-        pShare->saveQueuedDownload(item);
+        //Insert into global queue structure
+        pQueueList->insert(*item.tthRoot, item);
+        
+        //Insert into database
+        emit saveQueuedDownload(item);
+
+        //Insert into queueWidget
+        if (queueWidget)
+        {
+            //Check if queueWidget is open
+            if (tabs->indexOf(queueWidget->widget()) != -1)
+                queueWidget->addQueuedDownload(item);
+        }
+    }
+}
+
+//Remove download from the queue
+void ArpmanetDC::deleteFromQueue(QByteArray tth)
+{
+    if (pQueueList->contains(tth))
+    {
+        //Remove from queue
+        pQueueList->remove(tth);
+
+        //Remove from database
+        emit removeQueuedDownload(tth);
+    }
+}
+
+//Change queue item priority
+void ArpmanetDC::setQueuePriority(QByteArray tth, QueuePriority priority)
+{
+    if (pQueueList->contains(tth))
+    {
+        //Set priority in queue
+        QueueStruct s = pQueueList->take(tth);
+        s.priority = priority;
+        pQueueList->insert(tth, s);        
+
+        //Set priority in database
+        emit setQueuedDownloadPriority(tth, priority);
     }
 }
 

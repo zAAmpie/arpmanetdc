@@ -92,6 +92,12 @@ bool CStandardItem::operator<(const QStandardItem &other) const
     {
         return text().toUpper() < other.text().toUpper();
     }
+    else if (pType == PriorityType)
+    {
+        QString thisText = text().replace("High","C").replace("Normal","B").replace("Low","A");
+        QString otherText = other.text().replace("High","C").replace("Normal","B").replace("Low","A");
+        return thisText < otherText;
+    }
 
     return text() < other.text();
 }

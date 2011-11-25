@@ -30,6 +30,7 @@ void DownloadFinishedWidget::createWidgets()
 	finishedTable->setSelectionBehavior(QAbstractItemView::SelectRows);
 	finishedTable->setItemDelegate(new HTMLDelegate(finishedTable));
 	finishedTable->setContextMenuPolicy(Qt::CustomContextMenu);
+    finishedTable->horizontalHeader()->setHighlightSections(false);
 
 	//Model
 	finishedModel = new QStandardItemModel(0, 5);
@@ -47,6 +48,10 @@ void DownloadFinishedWidget::createWidgets()
 	//===== Actions =====
 	openAction = new QAction(QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Open file"), this);
 	clearAction = new QAction(QIcon(":/ArpmanetDC/Resources/RemoveIcon.png"), tr("Clear list"), this);
+
+    finishedMenu = new QMenu(pParent);
+	finishedMenu->addAction(openAction);
+	finishedMenu->addAction(clearAction);
 }
 
 void DownloadFinishedWidget::placeWidgets()
@@ -69,10 +74,6 @@ void DownloadFinishedWidget::showFinishedTableContextMenu(const QPoint &point)
 		return;
 
 	QPoint globalPos = finishedTable->viewport()->mapToGlobal(point);
-
-	QMenu *finishedMenu = new QMenu(pParent);
-	finishedMenu->addAction(openAction);
-	finishedMenu->addAction(clearAction);
 
 	finishedMenu->popup(globalPos);
 }

@@ -4,6 +4,7 @@
 #include <QtGui>
 
 class ArpmanetDC;
+class ShareSearch;
 
 enum QueuePriority {LowQueuePriority='L', NormalQueuePriority='N', HighQueuePriority='H'};
 
@@ -23,24 +24,17 @@ class DownloadQueueWidget : public QObject
 	Q_OBJECT
 
 public:
-	DownloadQueueWidget(ArpmanetDC *parent);
+	DownloadQueueWidget(QHash<QByteArray, QueueStruct> *queueList, ShareSearch *share, ArpmanetDC *parent);
 	~DownloadQueueWidget();
 
 	//Get the encapsulating widget
 	QWidget *widget();
 
-	QList<QueueStruct> *queueList();
-	void setQueueList(QList<QueueStruct> *list);
-
 public slots:
-	//Queue list has been received
-	void returnQueueList(QList<QueueStruct> *list);
-
-	//Add a new queued download
+    //Public slots
+    
+    //Add a new queued download
 	void addQueuedDownload(QueueStruct file);
-
-    //Remove queued download
-    void removeQueuedDownload(QueueStruct file);
 
 private slots:
 	//Slots
@@ -55,9 +49,9 @@ private slots:
 
 signals:
 	//Signals
-	void searchForAlternates(QByteArray *tthRoot);
-	void setPriority(QByteArray *tthRoot, QueuePriority priority);
-	void deleteFromQueue(QByteArray *tthRoot);
+	void searchForAlternates(QByteArray tthRoot);
+	void setPriority(QByteArray tthRoot, QueuePriority priority);
+	void deleteFromQueue(QByteArray tthRoot);
 
 	//Signals for the queue list from the database
 	void requestQueueList();
@@ -68,15 +62,21 @@ private:
 	void placeWidgets();
 	void connectWidgets();
 
+    //Queue list has been received
+	void loadQueueList();
+
 	//Objects
 	QWidget *pWidget;
 	ArpmanetDC *pParent;
+    ShareSearch *pShare;
 
-	QList<QueueStruct> *pQueueList;
+	QHash<QByteArray, QueueStruct> *pQueueList; //Link to main GUIs queue
 
 	//GUI
 	QTableView *queueTable;
 	QStandardItemModel *queueModel;
+
+    QMenu *queueMenu, *setPriorityMenu;
 
 	QAction *setPriorityLowAction, *setPriorityNormalAction, *setPriorityHighAction;
 	QAction *deleteAction, *searchForAlternatesAction;

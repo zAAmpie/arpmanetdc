@@ -55,6 +55,7 @@ void ShareWidget::createWidgets()
 	fileTree->setColumnWidth(0, 500);
 	fileTree->setUniformRowHeights(true);
 	fileTree->setSortingEnabled(false);
+    fileTree->header()->setHighlightSections(false);
 
 	checkProxyModel->setDefaultCheckState(Qt::Unchecked);	
 	//checkProxyModel->sort(0, Qt::AscendingOrder);

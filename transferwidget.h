@@ -46,6 +46,9 @@ private:
     //Update timer
     QTimer *updateStatusTimer;
 
+    //Menu
+    QMenu *transferListMenu;
+
     //Actions
     QAction *deleteAction;
 
