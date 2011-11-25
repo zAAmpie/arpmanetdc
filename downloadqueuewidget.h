@@ -6,7 +6,7 @@
 class ArpmanetDC;
 class ShareSearch;
 
-enum QueuePriority {LowQueuePriority='L', NormalQueuePriority='N', HighQueuePriority='H'};
+enum QueuePriority {LowQueuePriority=3, NormalQueuePriority=2, HighQueuePriority=1};
 
 struct QueueStruct
 {

@@ -70,7 +70,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 
     //Connect Dispatcher to TransferManager - handles upload/download requests and transfers
     connect(pDispatcher, SIGNAL(incomingUploadRequest(quint8,QHostAddress&,QByteArray&,quint64&,quint64&)),
-            pTransferManager, SLOT(incomingUploadRequest(quint8,QHostAddress&,QByteArray&,quint64&,quint64&)));
+            pTransferManager, SLOT(incomingUploadRequest(quint8,QHostAddress&,QByteArray&,quint64&,quint64&))); //This slot doesn't work since Dispatcher hasn't been modified to work with protocolhints
     connect(pDispatcher, SIGNAL(incomingDataPacket(quint8,QByteArray&)),
             pTransferManager, SLOT(incomingDataPacket(quint8,QByteArray&)));
     connect(pTransferManager, SIGNAL(transmitDatagram(QHostAddress&,QByteArray&)),
@@ -1271,6 +1271,9 @@ void ArpmanetDC::deleteFromQueue(QByteArray tth)
 {
     if (pQueueList->contains(tth))
     {
+        //Remove from transfer manager queue
+        pTransferManager->removeQueuedDownload((int)pQueueList->value(tth).priority, tth);
+
         //Remove from queue
         pQueueList->remove(tth);
 
@@ -1284,10 +1287,14 @@ void ArpmanetDC::setQueuePriority(QByteArray tth, QueuePriority priority)
 {
     if (pQueueList->contains(tth))
     {
-        //Set priority in queue
         QueueStruct s = pQueueList->take(tth);
+
+        //Set transfer manager priority
+        pTransferManager->changeQueuedDownloadPriority((int)s.priority, (int)priority, *s.tthRoot);
+
+        //Set priority in queue
         s.priority = priority;
-        pQueueList->insert(tth, s);        
+        pQueueList->insert(tth, s);  
 
         //Set priority in database
         emit setQueuedDownloadPriority(tth, priority);

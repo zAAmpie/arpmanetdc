@@ -166,9 +166,8 @@ void SearchWidget::downloadActionPressed()
         item.tthRoot = new QByteArray(tthRoot);
         pParent->addDownloadToQueue(item);
 
-        //I'm totally guessing the protocol here??? How should I distinguish?
         QString finalPath = path + fileName;
-        pTransferManager->incomingDownloadRequest(0, finalPath, tthRoot);
+        pTransferManager->queueDownload((int)NormalQueuePriority, tthRoot, finalPath);
     }
 }
 
@@ -204,7 +203,7 @@ void SearchWidget::downloadToActionPressed()
 
         //I'm totally guessing the protocol here??? How should I distinguish?
         QString finalPath = path + fileName;
-        pTransferManager->incomingDownloadRequest(0, finalPath, tthRoot);
+        pTransferManager->queueDownload((int)NormalQueuePriority, tthRoot, finalPath);
     }
 }
 
@@ -242,24 +241,7 @@ void SearchWidget::addSearchResult(QHostAddress sender, QByteArray cid, QByteArr
     res.tthRoot = result;
 
     //Convert to correct unit
-    double sizeInt = res.fileSize;
-	QString sizeUnit = "bytes";
-	if (sizeInt > 1024.0)
-	{
-		sizeInt /= 1024.0;
-		sizeUnit = "KiB";
-		if (sizeInt > 1024.0)
-		{
-			sizeInt /= 1024.0;
-			sizeUnit = "MiB";
-			if (sizeInt > 1024.0)
-			{
-				sizeInt /= 1024.0;
-				sizeUnit = "GiB";
-			}
-		}
-	}
-	QString sizeStr = tr("%1 %2").arg(sizeInt, 0, 'f', 2).arg(sizeUnit);
+    QString sizeStr = bytesToSize(res.fileSize);
 
     QFileInfo fi(res.fileName);
     QByteArray base32TTH(res.tthRoot);

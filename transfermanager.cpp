@@ -138,6 +138,7 @@ void TransferManager::changeQueuedDownloadPriority(int oldPriority, int newPrior
                 item = i.next();
                 break;
             }
+            i.next();
         }
     }
     if (item.filePathName != "")
