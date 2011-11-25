@@ -52,12 +52,13 @@ public slots:
     void setSegmentLength(quint64 length);
     void setRemoteHost(QHostAddress remote);
     void setTransferProtocol(quint8 protocol);
+    void setTransferProtocolHint(QByteArray &protocolHint);
     QByteArray* getTTH();
     QString* getFileName();
     QHostAddress* getRemoteHost();
-    quint64* getTransferRate();
-    int* getTransferStatus();
-    int* getTransferProgress();
+    quint64 getTransferRate();
+    int getTransferStatus();
+    int getTransferProgress();
     void hashBucketReply(int &bucketNumber, QByteArray &bucketTTH);
     void addPeer(QHostAddress &peer);
     void TTHTreeReply(QByteArray &tree);
@@ -75,6 +76,7 @@ protected:
     QByteArray TTHBase32;
     QString filePathName;
     quint8 transferProtocol;
+    QByteArray transferProtocolHint;
     QHostAddress remoteHost;
     quint64 fileOffset;
     quint64 segmentLength;

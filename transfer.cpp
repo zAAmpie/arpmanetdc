@@ -53,6 +53,11 @@ void Transfer::setTransferProtocol(quint8 protocol)
     transferProtocol = protocol;
 }
 
+void Transfer::setTransferProtocolHint(QByteArray &protocolHint)
+{
+    transferProtocolHint = protocolHint;
+}
+
 QByteArray* Transfer::getTTH()
 {
     return &TTH;
@@ -68,19 +73,19 @@ QHostAddress* Transfer::getRemoteHost()
     return &remoteHost;
 }
 
-quint64* Transfer::getTransferRate()
+quint64 Transfer::getTransferRate()
 {
-    return &transferRate;
+    return transferRate;
 }
 
-int* Transfer::getTransferStatus()
+int Transfer::getTransferStatus()
 {
-    return &status;
+    return status;
 }
 
-int* Transfer::getTransferProgress()
+int Transfer::getTransferProgress()
 {
-    return &transferProgress;
+    return transferProgress;
 }
 
 void Transfer::addPeer(QHostAddress &peer)
