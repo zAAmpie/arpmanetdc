@@ -13,6 +13,9 @@ TransferManager::~TransferManager()
         Transfer *p = it.next().value();
         destroyTransferObject(p);
     }
+    QMapIterator<int, QList<DownloadTransferQueueItem>*> i(downloadTransferQueue);
+    while (i.hasNext())
+        delete i.next().value();
 }
 
 // remove the pointer to the transfer object from the transfer object table before deleting the object.
@@ -43,7 +46,7 @@ void TransferManager::incomingDataPacket(quint8 transferPacket, QByteArray &data
 }
 
 // incoming requests for files we share
-void TransferManager::incomingUploadRequest(quint8 protocolInstruction, QHostAddress &fromHost, QByteArray &tth, quint64 &offset, quint64 &length)
+void TransferManager::incomingUploadRequest(QByteArray transferProtocolHint, QHostAddress &fromHost, QByteArray &tth, quint64 &offset, quint64 &length)
 {
     Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_UPLOAD, fromHost);
     if (t)
@@ -55,7 +58,7 @@ void TransferManager::incomingUploadRequest(quint8 protocolInstruction, QHostAdd
     else
     {
         UploadTransferQueueItem *i;
-        i->protocol = protocolInstruction;
+        i->transferProtocolHint = transferProtocolHint;
         i->requestingHost = fromHost;
         i->fileOffset = offset;
         i->requestLength = length;
@@ -65,19 +68,114 @@ void TransferManager::incomingUploadRequest(quint8 protocolInstruction, QHostAdd
 }
 
 // incoming requests from user interface for files we want to download
-void TransferManager::incomingDownloadRequest(quint8 protocolVersion, QString &filePathName, QByteArray &tth)
+// the higher the priority, the lower the number.
+void TransferManager::queueDownload(int priority, QByteArray &tth, QString &filePathName)
 {
+    if (!downloadTransferQueue.contains(priority))
+    {
+        QList<DownloadTransferQueueItem> *list = new QList<DownloadTransferQueueItem>;
+        downloadTransferQueue.insert(priority, list);
+    }
+    DownloadTransferQueueItem i;
+    i.filePathName = filePathName;
+    i.tth = tth;
+    downloadTransferQueue.value(priority)->append(i);
+    // start the next highest priority queued download, unless max downloads active.
+    if (currentDownloadCount < maximumSimultaneousDownloads)
+        startNextDownload();
+}
+
+// get next item to be downloaded off the queue
+DownloadTransferQueueItem TransferManager::getNextQueuedDownload()
+{
+    QMapIterator<int, QList<DownloadTransferQueueItem>* > i(downloadTransferQueue);
+    while (i.hasNext());
+    {
+        QList<DownloadTransferQueueItem>* l = i.next().value();
+        if (!l->isEmpty())
+        {
+            DownloadTransferQueueItem nextItem;
+            nextItem = l->first();
+            l->removeFirst();
+            return nextItem;
+        }
+    }
+    DownloadTransferQueueItem noItem;
+    noItem.filePathName = "";
+    return noItem;
+}
+
+void TransferManager::startNextDownload()
+{
+    DownloadTransferQueueItem i = getNextQueuedDownload();
+    if (i.filePathName == "")
+        return;
+
+    currentDownloadCount++;
     Transfer *t = new DownloadTransfer();
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
     connect(t, SIGNAL(hashBucketRequest(QByteArray&,int&,QByteArray*)), this, SIGNAL(hashBucketRequest(QByteArray&,int&,QByteArray*)));
     connect(t, SIGNAL(TTHTreeRequest(QByteArray&,QHostAddress&)), this, SIGNAL(TTHTreeRequest(QByteArray&,QHostAddress&)));
-    t->setFileName(filePathName);
-    t->setTTH(tth);
-    t->setTransferProtocol(protocolVersion);
-    transferObjectTable.insertMulti(tth, t);
+    t->setFileName(i.filePathName);
+    t->setTTH(i.tth);
+    //t->setTransferProtocol(protocolVersion);
+    transferObjectTable.insertMulti(i.tth, t);
     t->startTransfer();
-    emit loadTTHSourcesFromDatabase(tth);
-    emit searchTTHAlternateSources(tth);
+    emit loadTTHSourcesFromDatabase(i.tth);
+    emit searchTTHAlternateSources(i.tth);
+}
+
+void TransferManager::changeQueuedDownloadPriority(int oldPriority, int newPriority, QByteArray &tth)
+{
+    DownloadTransferQueueItem item;
+    if (downloadTransferQueue.contains(oldPriority))
+    {
+        QListIterator<DownloadTransferQueueItem> i(*downloadTransferQueue.value(oldPriority));
+        while (i.hasNext())
+        {
+            if (i.peekNext().tth == tth)
+            {
+                item = i.next();
+                break;
+            }
+        }
+    }
+    if (item.filePathName != "")
+    {
+        if (!downloadTransferQueue.contains(newPriority))
+        {
+            QList<DownloadTransferQueueItem> *list = new QList<DownloadTransferQueueItem>;
+            downloadTransferQueue.insert(newPriority, list);
+        }
+        if (oldPriority > newPriority)
+            downloadTransferQueue.value(newPriority)->append(item);
+        else
+            downloadTransferQueue.value(newPriority)->prepend(item);
+    }
+}
+
+// downloads that are still queued can just be lifted off the queue, their transfer objects do not exist yet.
+void TransferManager::removeQueuedDownload(int priority, QByteArray &tth)
+{
+    if (downloadTransferQueue.contains(priority))
+    {
+        int pos = -1;
+        int foundPos = -1;
+        QListIterator<DownloadTransferQueueItem> i(*downloadTransferQueue.value(priority));
+        while (i.hasNext())
+        {
+            pos++;
+            if (i.next().tth == tth)
+            {
+                foundPos = pos;
+                break;
+            }
+        }
+        if (foundPos > -1)
+        {   // As far as I understand, a list's index will always start at 0 and follow sequentially. Touch wood.
+            downloadTransferQueue.value(priority)->removeAt(foundPos);
+        }
+    }
 }
 
 // look for pointer to Transfer object matching tth, transfer type and host address
@@ -104,7 +202,7 @@ void TransferManager::filePathNameReply(QByteArray tth, QString filename)
     if (filename == "")
     {
         uploadTransferQueue.remove(tth);
-        return; // TODO: stuur error terug
+        return; // TODO: stuur error terug na requesting host
     }
     Transfer *t = new UploadTransfer();
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
@@ -114,7 +212,7 @@ void TransferManager::filePathNameReply(QByteArray tth, QString filename)
     t->setFileOffset(uploadTransferQueue.value(tth)->fileOffset);
     t->setSegmentLength(uploadTransferQueue.value(tth)->requestLength);
     t->setRemoteHost(uploadTransferQueue.value(tth)->requestingHost);
-    t->setTransferProtocol(uploadTransferQueue.value(tth)->protocol);
+    t->setTransferProtocolHint(uploadTransferQueue.value(tth)->transferProtocolHint);
     uploadTransferQueue.remove(tth);
     transferObjectTable.insertMulti(tth, t);
     t->startTransfer();
@@ -128,8 +226,8 @@ QList<TransferItemStatus> TransferManager::getGlobalTransferStatus()
     while (it.hasNext())
     {
         TransferItemStatus tis;
-        tis.TTH = it.peekNext().value()->getTTH();
-        tis.filePathName = it.peekNext().value()->getFileName();
+        tis.TTH = *it.peekNext().value()->getTTH();
+        tis.filePathName = *it.peekNext().value()->getFileName();
         tis.transferType = it.peekNext().value()->getTransferType();
         tis.transferStatus = it.peekNext().value()->getTransferStatus();
         tis.transferProgress = it.peekNext().value()->getTransferProgress();
@@ -162,4 +260,9 @@ void TransferManager::hashBucketReply(QByteArray &rootTTH, int &bucketNumber, QB
     if (t)
         t->hashBucketReply(bucketNumber, bucketTTH);
     // should be no else, if the download object mysteriously disappeared somewhere, we can just silently drop the message here.
+}
+
+void TransferManager::setMaximumSimultaneousDownloads(int n)
+{
+    maximumSimultaneousDownloads = n;
 }

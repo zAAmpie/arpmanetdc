@@ -10,7 +10,7 @@
 
 typedef struct
 {
-    quint8 protocol;
+    QByteArray transferProtocolHint;
     QHostAddress requestingHost;
     quint64 fileOffset;
     quint64 requestLength;
@@ -18,12 +18,18 @@ typedef struct
 
 typedef struct
 {
-    QByteArray* TTH;
-    QString* filePathName;
+    QString filePathName;
+    QByteArray tth;
+} DownloadTransferQueueItem;
+
+typedef struct
+{
+    QByteArray TTH;
+    QString filePathName;
     int transferType;
-    int* transferStatus;
-    int* transferProgress;
-    quint64* transferRate;
+    int transferStatus;
+    int transferProgress;
+    quint64 transferRate;
 } TransferItemStatus;
 
 class TransferManager : public QObject
@@ -46,14 +52,20 @@ signals:
 
     void transmitDatagram(QHostAddress &dstHost, QByteArray &datagram);
 
+    // GUI updates
+    void downloadStarted(QByteArray tth);
+    void downloadCompleted(QByteArray tth);
+
 public slots:
     void incomingDataPacket(quint8 transferProtocolVersion, QByteArray &datagram);
 
     // Request file name for given TTH from sharing engine, reply with empty string if not found.
     void filePathNameReply(QByteArray tth, QString filename);
 
-    void incomingUploadRequest(quint8 protocolVersion, QHostAddress &fromHost, QByteArray &tth, quint64 &offset, quint64 &length);
-    void incomingDownloadRequest(quint8 protocolVersion, QString &filePathName, QByteArray &tth);
+    void incomingUploadRequest(QByteArray transferProtocolHint, QHostAddress &fromHost, QByteArray &tth, quint64 &offset, quint64 &length);
+    void queueDownload(int priority, QByteArray &tth, QString &filePathName);
+    void changeQueuedDownloadPriority(int oldPriority, int newPriority, QByteArray &tth);
+    void removeQueuedDownload(int priority, QByteArray &tth);
 
     // Response from hashing engine when bucket finished hashing
     void hashBucketReply(QByteArray &rootTTH, int &bucketNumber, QByteArray &bucketTTH);
@@ -65,10 +77,18 @@ public slots:
 
     void destroyTransferObject(Transfer*);
 
+    // Set functions
+    void setMaximumSimultaneousDownloads(int n);
+
 private:
     Transfer* getTransferObjectPointer(QByteArray &tth, int transferType, QHostAddress hostAddr = QHostAddress("0.0.0.0"));
+    DownloadTransferQueueItem getNextQueuedDownload();
+    void startNextDownload();
+    QMap<int, QList<DownloadTransferQueueItem>* > downloadTransferQueue;
     QMultiHash<QByteArray, Transfer*> transferObjectTable;
     QMultiHash<QByteArray, UploadTransferQueueItem*> uploadTransferQueue;
+    int maximumSimultaneousDownloads;
+    int currentDownloadCount;
 
 };
 

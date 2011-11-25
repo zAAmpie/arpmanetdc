@@ -98,7 +98,7 @@ void TransferWidget::updateStatus()
     for (int i = 0; i < status.size(); i++)
     {
         //Base32 encode the tth
-        QByteArray base32TTH(*status.at(i).TTH);
+        QByteArray base32TTH(status.at(i).TTH);
         base32Encode(base32TTH);
 
         //Check if entry exists
@@ -108,11 +108,11 @@ void TransferWidget::updateStatus()
         if (findResults.isEmpty())
         {
             QList<QStandardItem *> row;
-            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, typeString(*status.at(i).transferStatus)));
-            row.append(new CStandardItem(CStandardItem::IntegerType, tr("%1").arg(*status.at(i).transferProgress)));
-            row.append(new CStandardItem(CStandardItem::RateType, bytesToRate(*status.at(i).transferRate)));
-            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, *status.at(i).filePathName));
-            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, stateString(*status.at(i).transferStatus)));
+            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, typeString(status.at(i).transferStatus)));
+            row.append(new CStandardItem(CStandardItem::IntegerType, tr("%1").arg(status.at(i).transferProgress)));
+            row.append(new CStandardItem(CStandardItem::RateType, bytesToRate(status.at(i).transferRate)));
+            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, status.at(i).filePathName));
+            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, stateString(status.at(i).transferStatus)));
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, base32TTH.data()));
             transferListModel->appendRow(row);
         }
@@ -121,15 +121,15 @@ void TransferWidget::updateStatus()
         {
             QStandardItem *item;
             item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 0));
-            item->setText(typeString(*status.at(i).transferStatus));
+            item->setText(typeString(status.at(i).transferStatus));
             item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 1));
-            item->setText(tr("%1").arg(*status.at(i).transferProgress));
+            item->setText(tr("%1").arg(status.at(i).transferProgress));
             item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 2));
-            item->setText(bytesToRate(*status.at(i).transferRate));
+            item->setText(bytesToRate(status.at(i).transferRate));
             item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 3));
-            item->setText(*status.at(i).filePathName);
+            item->setText(status.at(i).filePathName);
             item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 4));
-            item->setText(stateString(*status.at(i).transferStatus));
+            item->setText(stateString(status.at(i).transferStatus));
             item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 5));
             item->setText(base32TTH.data());
         }
