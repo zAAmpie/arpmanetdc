@@ -58,7 +58,7 @@ void TransferManager::incomingUploadRequest(QByteArray transferProtocolHint, QHo
     }
     else
     {
-        UploadTransferQueueItem *i;
+        UploadTransferQueueItem *i = new UploadTransferQueueItem;
         i->transferProtocolHint = transferProtocolHint;
         i->requestingHost = fromHost;
         i->fileOffset = offset;

@@ -12,9 +12,11 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     // Init P2P dispatch socket
     receiverUdpSocket = new QUdpSocket(this);
     receiverUdpSocket->bind(dispatchPort, QUdpSocket::ShareAddress);
+#if QT_VERSION >= 0x040800
     receiverUdpSocket->joinMulticastGroup(mcastAddress);
     receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastTtlOption, 16);
     receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastLoopbackOption, false);
+#endif
     connect(receiverUdpSocket, SIGNAL(readyRead()), this, SLOT(receiveP2PData()));
 
     senderUdpSocket = new QUdpSocket(this);
@@ -46,7 +48,9 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
 Dispatcher::~Dispatcher()
 {
     delete networkBootstrap;
+#if QT_VERSION >= 0x040800
     receiverUdpSocket->leaveMulticastGroup(mcastAddress);
+#endif
     delete networkTopology;
     delete senderUdpSocket;
     delete receiverUdpSocket;
@@ -57,13 +61,17 @@ void Dispatcher::reconfigureDispatchHostPort(QHostAddress ip, quint16 port)
     dispatchIP = ip;
     dispatchPort = port;
     disconnect(receiverUdpSocket, SIGNAL(readyRead()));
+#if QT_VERSION >= 0x040800
     receiverUdpSocket->leaveMulticastGroup(mcastAddress);
+#endif
     receiverUdpSocket->close();
     receiverUdpSocket->bind(dispatchPort, QUdpSocket::ShareAddress);
     connect(receiverUdpSocket, SIGNAL(readyRead()), this, SLOT(receiveP2PData()));
+#if QT_VERSION >= 0x040800
     receiverUdpSocket->joinMulticastGroup(mcastAddress);
     receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastTtlOption, 16);
     receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastLoopbackOption, false);
+#endif
 }
 
 // ------------------=====================   Initial receive and dispatching   =====================----------------------
