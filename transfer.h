@@ -19,19 +19,6 @@
 #define TRANSFER_TYPE_UPLOAD 0
 #define TRANSFER_TYPE_DOWNLOAD 1
 
-enum DownloadProtocolInstructions
-{
-    DataPacket=0xaa,
-    ProtocolADataPacket=0x21,
-    ProtocolBDataPacket=0x22,
-    ProtocolCDataPacket=0x23,
-    ProtocolDDataPacket=0x24,
-    ProtocolAControlPacket=0x41,
-    ProtocolBControlPacket=0x42,
-    ProtocolCControlPacket=0x43,
-    ProtocolDControlPacket=0x44
-};
-
 class Transfer : public QObject
 {
     Q_OBJECT
@@ -42,7 +29,9 @@ public:
 signals:
     void abort(Transfer*);
     void hashBucketRequest(QByteArray &rootTTH, int &bucketNumber, QByteArray *bucket);
-    void TTHTreeRequest(QByteArray &rootTTH, QHostAddress &hostAddr);
+    void TTHTreeRequest(QHostAddress &hostAddr, QByteArray &rootTTH);
+    void searchTTHAlternateSources(QByteArray &tth);
+    void loadTTHSourcesFromDatabase(QByteArray tth);
     void transmitDatagram(QHostAddress &dstHost, QByteArray &datagram);
 
 public slots:

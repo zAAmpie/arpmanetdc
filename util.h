@@ -48,6 +48,7 @@ QByteArray sizeOfByteArray(QByteArray *data);
 QString getStringFromByteArray(QByteArray *data);
 quint16 getQuint16FromByteArray(QByteArray *data);
 qint16 getQint16FromByteArray(QByteArray *data);
+quint32 getQuint32FromByteArray(QByteArray *data);
 quint64 getQuint64FromByteArray(QByteArray *data);
 
 

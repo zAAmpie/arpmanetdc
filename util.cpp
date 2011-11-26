@@ -291,6 +291,17 @@ qint16 getQint16FromByteArray(QByteArray *data)
 	return num;
 }
 
+quint32 getQuint32FromByteArray(QByteArray *data)
+{
+    //Remove a quint16 from a QByteArray
+    quint32 num;
+    QDataStream ds(data,QIODevice::ReadOnly);
+    ds.setVersion(QDataStream::Qt_4_6);
+    ds >> num;
+    data->remove(0,4);
+    return num;
+}
+
 quint64 getQuint64FromByteArray(QByteArray *data)
 {
 	//Remove a quint64 from a QByteArray

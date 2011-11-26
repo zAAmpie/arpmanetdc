@@ -1,6 +1,7 @@
 #ifndef UPLOADTRANSFER_H
 #define UPLOADTRANSFER_H
 #include "transfer.h"
+#include "protocoldef.h"
 
 #define TIMER_INACTIVITY_MSECS 60000
 #define PACKET_MTU 1436

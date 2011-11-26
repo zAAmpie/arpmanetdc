@@ -12,11 +12,16 @@ DownloadTransfer::DownloadTransfer()
     connect(transferRateCalculationTimer, SIGNAL(timeout()), this, SLOT(transferRateCalculation()));
     transferRateCalculationTimer->setSingleShot(false);
     transferRateCalculationTimer->start(1000);
+
+    transferTimer = new QTimer(this);
+    connect(transferTimer, SIGNAL(timeout()), this, SLOT(transferTimerEvent()));
+    transferTimer->setSingleShot(false);
 }
 
 DownloadTransfer::~DownloadTransfer()
 {
     delete transferRateCalculationTimer;
+    delete transferTimer;
     QHashIterator<int, QByteArray*> itdb(downloadBucketTable);
     while (itdb.hasNext())
     {
@@ -82,6 +87,18 @@ void DownloadTransfer::TTHTreeReply(QByteArray &tree)
     }
 }
 
+void DownloadTransfer::sendDownloadRequest(QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length)
+{
+    QByteArray datagram;
+    datagram.append(UnicastPacket);
+    datagram.append(DownloadRequestPacket);
+    datagram.append(tth);
+    datagram.append(toQByteArray(offset));
+    datagram.append(toQByteArray(length));
+    datagram.append(protocolPreference);
+    emit transmitDatagram(dstHost, datagram);
+}
+
 int DownloadTransfer::getTransferType()
 {
     return TRANSFER_TYPE_DOWNLOAD;
@@ -89,7 +106,7 @@ int DownloadTransfer::getTransferType()
 
 void DownloadTransfer::startTransfer()
 {
-    status = TRANSFER_STATE_RUNNING; //TODO
+    transferTimer->start(100);
 }
 
 void DownloadTransfer::pauseTransfer()
@@ -138,4 +155,28 @@ void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
         // TODO: emit MISTAKE!, pause download
     }
     file.close();
+}
+
+// We keep the transfer alive in here
+void DownloadTransfer::transferTimerEvent()
+{
+    if (status == TRANSFER_STATE_INITIALIZING)
+    {
+        // Get peers and TTH tree
+        if (!listOfPeers.isEmpty())
+        {
+            // simple and stupid for now...
+            emit TTHTreeRequest(listOfPeers.first(), TTH);
+        }
+    }
+    else if ((status == TRANSFER_STATE_RUNNING) || (status == TRANSFER_STATE_STALLED))
+    {
+        // Transfer some data
+    }
+
+}
+
+void DownloadTransfer::setProtocolPreference(QByteArray &preference)
+{
+    protocolPreference = preference;
 }
