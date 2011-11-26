@@ -49,7 +49,7 @@ void TransferWidget::createWidgets()
 	transferListTable->horizontalHeader()->setResizeMode(QHeaderView::Interactive);
 
 	//Style
-	transferListTable->setShowGrid(true);
+	transferListTable->setShowGrid(false);
 	transferListTable->setGridStyle(Qt::DotLine);
 	transferListTable->verticalHeader()->hide();
     transferListTable->horizontalHeader()->setHighlightSections(false);
@@ -138,6 +138,9 @@ void TransferWidget::updateStatus()
             item->setText(base32TTH.data());
         }
     }
+
+    //Adjust row height
+    resizeRowsToContents(transferListTable);
 
     //Sort table
     int column = transferListTable->horizontalHeader()->sortIndicatorSection();

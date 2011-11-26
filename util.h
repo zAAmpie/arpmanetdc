@@ -6,6 +6,7 @@
 #include <QRegExp>
 #include <QString>
 #include <QDataStream>
+#include <QTableView>
 #include "base32.h"
 
 typedef unsigned char byte;
@@ -29,6 +30,8 @@ QString bytesToRate(quint64 rate);
 quint64 sizeToBytes(QString size);
 //Function to convert human readable rate into bytes
 quint64 rateToBytes(QString rate);
+//Function to adjust a tableviews rows to fit contents (much faster fixed size version)
+void resizeRowsToContents(QTableView *tableView);
 
 QByteArray toQByteArray(quint16 n);
 QByteArray toQByteArray(quint32 n);

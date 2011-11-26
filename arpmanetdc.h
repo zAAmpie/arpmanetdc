@@ -39,6 +39,8 @@
 
 #define VERSION_STRING "0.1"
 
+#define ROW_HEIGHT_MULTIPLIER 1.5
+
 //Main GUI window class
 class ArpmanetDC : public QMainWindow
 {

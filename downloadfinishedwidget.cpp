@@ -24,7 +24,7 @@ void DownloadFinishedWidget::createWidgets()
 {
 	//Table View
 	finishedTable = new QTableView();
-	finishedTable->setShowGrid(true);
+	finishedTable->setShowGrid(false);
 	finishedTable->setGridStyle(Qt::DotLine);
 	finishedTable->verticalHeader()->hide();
 	finishedTable->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -116,6 +116,8 @@ void DownloadFinishedWidget::returnFinishedList(QList<FinishedDownloadStruct> *l
 		finishedModel->setItem(i, 4, new QStandardItem(pFinishedList->at(i).tthRoot->toBase64().data()));
 		finishedModel->setItem(i, 5, new QStandardItem(pFinishedList->at(i).downloadedDate));
 	}
+
+    resizeRowsToContents(finishedTable);
 }
 
 //Add an entry
@@ -127,6 +129,9 @@ void DownloadFinishedWidget::addFinishedDownload(FinishedDownloadStruct file)
 	finishedModel->setItem(finishedModel->rowCount()-1, 2, new QStandardItem(tr("%1").arg(file.fileSize)));
 	finishedModel->setItem(finishedModel->rowCount()-1, 4, new QStandardItem(file.tthRoot->toBase64().data()));
 	finishedModel->setItem(finishedModel->rowCount()-1, 5, new QStandardItem(file.downloadedDate));
+
+    //Adjust row height
+    resizeRowsToContents(finishedTable);
 }
 
 void DownloadFinishedWidget::loadFinishedDownloads()

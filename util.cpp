@@ -146,6 +146,16 @@ quint64 rateToBytes(QString rate)
     return sizeToBytes(rate.replace("/s", ""));
 }
 
+void resizeRowsToContents(QTableView *tableView)
+{
+    if (!tableView)
+        return;
+
+    tableView->resizeRowToContents(0);
+    for (int i = 1; i < tableView->model()->rowCount(); i++)
+        tableView->setRowHeight(i, tableView->rowHeight(0));
+}
+
 
 // ------------------=====================   Sort STUKKENDE rubbish uit   =====================----------------------
 

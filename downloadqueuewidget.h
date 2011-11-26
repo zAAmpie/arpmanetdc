@@ -45,11 +45,9 @@ private slots:
 	void setPriorityNormalActionPressed();
 	void setPriorityHighActionPressed();
 	void deleteActionPressed();
-	void searchForAlternatesActionPressed();
 
 signals:
 	//Signals
-	void searchForAlternates(QByteArray tthRoot);
 	void setPriority(QByteArray tthRoot, QueuePriority priority);
 	void deleteFromQueue(QByteArray tthRoot);
 
@@ -79,7 +77,7 @@ private:
     QMenu *queueMenu, *setPriorityMenu;
 
 	QAction *setPriorityLowAction, *setPriorityNormalAction, *setPriorityHighAction;
-	QAction *deleteAction, *searchForAlternatesAction;
+	QAction *deleteAction;
 };
 
 #endif

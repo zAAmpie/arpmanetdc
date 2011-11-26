@@ -25,7 +25,7 @@ void DownloadQueueWidget::createWidgets()
 {
 	//Table View
 	queueTable = new QTableView();
-	queueTable->setShowGrid(true);
+	queueTable->setShowGrid(false);
 	queueTable->setGridStyle(Qt::DotLine);
 	queueTable->verticalHeader()->hide();
 	queueTable->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -53,7 +53,6 @@ void DownloadQueueWidget::createWidgets()
 	setPriorityNormalAction = new QAction(QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Normal priority"), this);
 	setPriorityHighAction = new QAction(QIcon(":/ArpmanetDC/Resources/HighPriorityIcon.png"), tr("High priority"), this);
 	deleteAction = new QAction(QIcon(":/ArpmanetDC/Resources/RemoveIcon.png"), tr("Delete"), this);
-	searchForAlternatesAction = new QAction(QIcon(":/ArpmanetDC/Resources/SearchIcon.png"), tr("Search for alternates"), this);
 
     //===== Menus =====
     setPriorityMenu = new QMenu(tr("Set priority"), pParent);
@@ -62,7 +61,6 @@ void DownloadQueueWidget::createWidgets()
 	setPriorityMenu->addAction(setPriorityLowAction);
 
 	queueMenu = new QMenu(pParent);
-	//queueMenu->addAction(searchForAlternatesAction);
 	queueMenu->addAction(deleteAction);
 	queueMenu->addSeparator();
 	queueMenu->addMenu(setPriorityMenu);
@@ -81,7 +79,6 @@ void DownloadQueueWidget::connectWidgets()
 	connect(setPriorityNormalAction, SIGNAL(triggered()), this, SLOT(setPriorityNormalActionPressed()));
 	connect(setPriorityHighAction, SIGNAL(triggered()), this, SLOT(setPriorityHighActionPressed()));
 	connect(deleteAction, SIGNAL(triggered()), this, SLOT(deleteActionPressed()));
-	connect(searchForAlternatesAction, SIGNAL(triggered()), this, SLOT(searchForAlternatesActionPressed()));
 }
 
 void DownloadQueueWidget::showQueueTableContextMenu(const QPoint &point)
@@ -169,30 +166,8 @@ void DownloadQueueWidget::deleteActionPressed()
         QByteArray tthRoot;
         tthRoot.append(base32TTH);
         base32Decode(tthRoot);   
-        
-        //TODO: Remove entry from list
 
 	    pParent->deleteFromQueue(tthRoot);
-    }
-}
-
-void DownloadQueueWidget::searchForAlternatesActionPressed()
-{
-    //Not implemented - seems kinda silly to use the download queue to search for alternates? Will remove later
-    return;
-
-	for (int i = 0; i < queueTable->selectionModel()->selectedRows().size(); i++)
-    {
-        //Get selected files
-	    QModelIndex selectedIndex = queueTable->selectionModel()->selectedRows().at(i);//userListTable->selectionModel()->selection().indexes().first();
-	    //Get TTH of file
-	    QString base32TTH = queueModel->data(queueModel->index(selectedIndex.row(), 4)).toString();
-
-        QByteArray *tthRoot = new QByteArray();
-        tthRoot->append(base32TTH);
-        base32Decode(*tthRoot);  
-
-        //pParent->searchForAlternates(tthRoot);
     }
 }
 
@@ -203,12 +178,15 @@ void DownloadQueueWidget::loadQueueList()
 	queueModel->removeRows(0, queueModel->rowCount());
 
     QList<QueueStruct> list = pQueueList->values();
+    if (list.isEmpty())
+        return;
+
 	for (int i = 0; i < list.size(); i++)
 	{
-		queueModel->appendRow(new QStandardItem());
-        queueModel->setItem(i, 0, new CStandardItem(CStandardItem::CaseInsensitiveTextType, list.at(i).fileName));
-		queueModel->setItem(i, 1, new CStandardItem(CStandardItem::CaseInsensitiveTextType, list.at(i).filePath));
-        queueModel->setItem(i, 2, new CStandardItem(CStandardItem::SizeType, bytesToSize(list.at(i).fileSize)));
+		QList<QStandardItem *> row;
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, list.at(i).fileName));
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, list.at(i).filePath));
+        row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(list.at(i).fileSize)));
 
 		QString priorityStr;
 		switch (list.at(i).priority)
@@ -223,21 +201,24 @@ void DownloadQueueWidget::loadQueueList()
 			priorityStr = "High";
 			break;
 		}
-
-        queueModel->setItem(i, 3, new CStandardItem(CStandardItem::PriorityType, priorityStr));
+        row.append(new CStandardItem(CStandardItem::PriorityType, priorityStr));
+        
         QByteArray tthBase32(list.at(i).tthRoot->data());
         base32Encode(tthBase32);
+        row.append(new QStandardItem(tthBase32.data()));
+		
+        queueModel->appendRow(row);
+    }
 
-		queueModel->setItem(i, 4, new QStandardItem(tthBase32.data()));
-	}
+    resizeRowsToContents(queueTable);
 }
 
 void DownloadQueueWidget::addQueuedDownload(QueueStruct file)
 {
-	queueModel->appendRow(new QStandardItem());
-	queueModel->setItem(queueModel->rowCount()-1, 0, new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.fileName));
-    queueModel->setItem(queueModel->rowCount()-1, 1, new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.filePath));
-    queueModel->setItem(queueModel->rowCount()-1, 2, new CStandardItem(CStandardItem::SizeType, bytesToSize(file.fileSize)));
+	QList<QStandardItem *> row;
+    row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.fileName));
+    row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.filePath));
+    row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(file.fileSize)));
 
 	QString priorityStr;
 	switch (file.priority)
@@ -252,15 +233,18 @@ void DownloadQueueWidget::addQueuedDownload(QueueStruct file)
 		priorityStr = "High";
 		break;
 	}
+    row.append(new CStandardItem(CStandardItem::PriorityType, priorityStr));
 
-    queueModel->setItem(queueModel->rowCount()-1, 3, new CStandardItem(CStandardItem::PriorityType, priorityStr));
     QByteArray tthBase32(file.tthRoot->data());
     base32Encode(tthBase32);
-	queueModel->setItem(queueModel->rowCount()-1, 4, new QStandardItem(tthBase32.data()));
+    row.append(new QStandardItem(tthBase32.data()));
+	
+    queueModel->appendRow(row); 
+
+    resizeRowsToContents(queueTable);
 }
 
 QWidget *DownloadQueueWidget::widget()
 {
-	//TODO: Return widget containing all search widgets
 	return pWidget;
 }
