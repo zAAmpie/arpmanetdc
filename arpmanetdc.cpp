@@ -78,12 +78,14 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
             pDispatcher, SLOT(sendUnicastRawDatagram(QHostAddress&,QByteArray&)));
     connect(pDispatcher, SIGNAL(receivedTTHTree(QByteArray,QByteArray)),
             pTransferManager, SLOT(incomingTTHTree(QByteArray,QByteArray)));
-    connect(pTransferManager, SIGNAL(TTHTreeRequest(QHostAddress&,QByteArray&)),
-            pDispatcher, SLOT(sendTTHTreeRequest(QHostAddress&,QByteArray&)));
+    connect(pTransferManager, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray)),
+            pDispatcher, SLOT(sendTTHTreeRequest(QHostAddress,QByteArray)));
     connect(pDispatcher, SIGNAL(TTHSearchResultsReceived(QByteArray,QHostAddress)),
             pTransferManager, SLOT(incomingTTHSource(QByteArray,QHostAddress)));
     connect(pTransferManager, SIGNAL(searchTTHAlternateSources(QByteArray&)),
             pDispatcher, SLOT(initiateTTHSearch(QByteArray&)));
+    connect(pTransferManager, SIGNAL(sendDownloadRequest(QByteArray&,QHostAddress&,QByteArray&,quint64&,quint64&)),
+            pDispatcher, SLOT(sendDownloadRequest(QByteArray&,QHostAddress&,QByteArray&,quint64&,quint64&)));
 
     // Set network scan ranges in Dispatcher, initial shotgun approach
     pDispatcher->addNetworkScanRange(QHostAddress("143.160.0.1").toIPv4Address(), 65534);
@@ -111,6 +113,15 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
             pDispatcher, SLOT(sendSearchResult(QHostAddress, QByteArray, quint64, QByteArray)), Qt::QueuedConnection);
     connect(pDispatcher, SIGNAL(searchQuestionReceived(QHostAddress, QByteArray, quint64, QByteArray)), 
             pShare, SLOT(querySearchString(QHostAddress, QByteArray, quint64, QByteArray)), Qt::QueuedConnection);
+    //TODO
+//    connect(pDispatcher, SIGNAL(TTHSearchQuestionReceived(QByteArray,QHostAddress)),
+//            pShare, SLOT(), Qt::QueuedConnection);
+//    connect(pShare, SIGNAL(),
+//            pDispatcher, SLOT(sendTTHSearchResult(QHostAddress,QByteArray)), Qt::QueuedConnection);
+//    connect(pDispatcher, SIGNAL(incomingTTHTreeRequest(QHostAddress,QByteArray)),
+//            pShare, SLOT(), Qt::QueuedConnection);
+//    connect(pShare, SIGNAL(),
+//            pDispatcher, SLOT(sendTTHTreeReply(QHostAddress,QByteArray)), Qt::QueuedConnection);
 
     //Connect ShareSearch to TransferManager - loads and saves a set of sources to the database
     connect(pTransferManager, SIGNAL(filePathNameRequest(QByteArray)), pShare, SLOT(requestFilePath(QByteArray)), Qt::QueuedConnection);

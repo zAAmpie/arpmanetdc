@@ -45,7 +45,8 @@ signals:
     void loadTTHSourcesFromDatabase(QByteArray tth);
     void deleteTTHSourcesFromDatabase(QByteArray tth);
     void searchTTHAlternateSources(QByteArray &tth);
-    void TTHTreeRequest(QHostAddress &hostAddr,QByteArray &rootTTH);
+    void TTHTreeRequest(QHostAddress hostAddr,QByteArray rootTTH);
+    void sendDownloadRequest(QByteArray &protocolPreference, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
 
     // Request hashing of a bucket that has finished downloading
     void hashBucketRequest(QByteArray &rootTTH, int &bucketNumber, QByteArray *bucket);

@@ -517,7 +517,7 @@ bool Dispatcher::initiateTTHSearch(QByteArray &tth)
     return true;
 }
 
-void Dispatcher::sendTTHSearchResult(QHostAddress &toHost, QByteArray &tth)
+void Dispatcher::sendTTHSearchResult(QHostAddress toHost, QByteArray tth)
 {
     QByteArray datagram;
     datagram.append(UnicastPacket);
@@ -639,12 +639,21 @@ void Dispatcher::sendTransferError(QHostAddress &dstHost, quint8 error)
     sendUnicastRawDatagram(dstHost, sendDatagram);
 }
 
-void Dispatcher::sendTTHTreeRequest(QHostAddress &host, QByteArray &tthRoot)
+void Dispatcher::sendTTHTreeRequest(QHostAddress host, QByteArray tthRoot)
 {
     QByteArray datagram;
     datagram.append(UnicastPacket);
     datagram.append(TTHTreeRequestPacket);
     datagram.append(tthRoot);
+    sendUnicastRawDatagram(host, datagram);
+}
+
+void Dispatcher::sendTTHTreeReply(QHostAddress host, QByteArray tthTreePacket)
+{
+    QByteArray datagram;
+    datagram.append(UnicastPacket);
+    datagram.append(TTHTreeReplyPacket);
+    datagram.append(tthTreePacket);
     sendUnicastRawDatagram(host, datagram);
 }
 

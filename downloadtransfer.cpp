@@ -43,7 +43,11 @@ void DownloadTransfer::incomingDataPacket(quint8 transferPacketType, quint64 &of
 
     // we can later break this up into protocols, currently I just want to see it working.
     if (offset != requestingOffset)
+    {
+        status = TRANSFER_STATE_STALLED;
         return;
+    }
+    status = TRANSFER_STATE_RUNNING;
 
     int bucketNumber = calculateBucketNumber(offset);
     if (!downloadBucketTable.contains(bucketNumber))

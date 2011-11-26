@@ -45,7 +45,7 @@ signals:
     void searchQuestionReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchQuery);
     void searchForwardReceived();  // for stats
     void TTHSearchResultsReceived(QByteArray tth, QHostAddress peer);
-    void TTHSearchQuestionReceived(QByteArray &tth, QHostAddress &senderHost);
+    void TTHSearchQuestionReceived(QByteArray tth, QHostAddress senderHost);
 
     // P2P network control data arrival signals
     // These signals are intended to be used to generate statistics or graphs on control data throughput
@@ -67,7 +67,7 @@ signals:
 
     // TTH Tree
     void receivedTTHTree(QByteArray tthRoot, QByteArray tthTree);
-    void incomingTTHTreeRequest(QHostAddress &fromHost, QByteArray &datagram);
+    void incomingTTHTreeRequest(QHostAddress fromHost, QByteArray datagram);
 
     // Transfers
     void incomingUploadRequest(QByteArray protocolHint, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length);
@@ -88,7 +88,7 @@ public slots:
     bool initiateSearch(quint64 &searchID, QByteArray &searchPacket);
     void sendSearchResult(QHostAddress toHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult);
     bool initiateTTHSearch(QByteArray &tth);
-    void sendTTHSearchResult(QHostAddress &toHost, QByteArray &tth);
+    void sendTTHSearchResult(QHostAddress toHost, QByteArray tth);
 
     // Transfers
     void sendDownloadRequest(QByteArray &protocolPreference, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
@@ -99,7 +99,8 @@ public slots:
     void requestAllBuckets(QHostAddress host);
 
     // TTH
-    void sendTTHTreeRequest(QHostAddress &host, QByteArray &tthRoot);
+    void sendTTHTreeRequest(QHostAddress host, QByteArray tthRoot);
+    void sendTTHTreeReply(QHostAddress host, QByteArray tthTreePacket);
 
     // CID
     void dispatchCIDPing(QByteArray &cid);

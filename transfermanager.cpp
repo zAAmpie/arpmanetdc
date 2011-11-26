@@ -119,6 +119,8 @@ void TransferManager::startNextDownload()
     connect(t, SIGNAL(TTHTreeRequest(QHostAddress&,QByteArray&)), this, SIGNAL(TTHTreeRequest(QHostAddress&,QByteArray&)));
     connect(t, SIGNAL(searchTTHAlternateSources(QByteArray&)), this, SIGNAL(searchTTHAlternateSources(QByteArray&)));
     connect(t, SIGNAL(loadTTHSourcesFromDatabase(QByteArray)), this, SIGNAL(loadTTHSourcesFromDatabase(QByteArray)));
+    connect(t, SIGNAL(sendDownloadRequest(QByteArray&,QHostAddress&,QByteArray&,quint64&,quint64&)),
+            this, SIGNAL(sendDownloadRequest(QByteArray&,QHostAddress&,QByteArray&,quint64&,quint64&)));
     t->setFileName(i.filePathName);
     t->setTTH(i.tth);
     //t->setTransferProtocol(protocolVersion);
