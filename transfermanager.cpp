@@ -3,6 +3,7 @@
 TransferManager::TransferManager(QObject *parent) :
     QObject(parent)
 {
+    currentDownloadCount = 0;
 }
 
 TransferManager::~TransferManager()
@@ -46,7 +47,7 @@ void TransferManager::incomingDataPacket(quint8 transferPacket, QByteArray &data
 }
 
 // incoming requests for files we share
-void TransferManager::incomingUploadRequest(QByteArray transferProtocolHint, QHostAddress &fromHost, QByteArray &tth, quint64 &offset, quint64 &length)
+void TransferManager::incomingUploadRequest(QByteArray transferProtocolHint, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length)
 {
     Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_UPLOAD, fromHost);
     if (t)
@@ -89,7 +90,7 @@ void TransferManager::queueDownload(int priority, QByteArray &tth, QString &file
 DownloadTransferQueueItem TransferManager::getNextQueuedDownload()
 {
     QMapIterator<int, QList<DownloadTransferQueueItem>* > i(downloadTransferQueue);
-    while (i.hasNext());
+    while (i.hasNext())
     {
         QList<DownloadTransferQueueItem>* l = i.next().value();
         if (!l->isEmpty())
@@ -115,14 +116,16 @@ void TransferManager::startNextDownload()
     Transfer *t = new DownloadTransfer();
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
     connect(t, SIGNAL(hashBucketRequest(QByteArray&,int&,QByteArray*)), this, SIGNAL(hashBucketRequest(QByteArray&,int&,QByteArray*)));
-    connect(t, SIGNAL(TTHTreeRequest(QByteArray&,QHostAddress&)), this, SIGNAL(TTHTreeRequest(QByteArray&,QHostAddress&)));
+    connect(t, SIGNAL(TTHTreeRequest(QHostAddress&,QByteArray&)), this, SIGNAL(TTHTreeRequest(QHostAddress&,QByteArray&)));
+    connect(t, SIGNAL(searchTTHAlternateSources(QByteArray&)), this, SIGNAL(searchTTHAlternateSources(QByteArray&)));
+    connect(t, SIGNAL(loadTTHSourcesFromDatabase(QByteArray)), this, SIGNAL(loadTTHSourcesFromDatabase(QByteArray)));
     t->setFileName(i.filePathName);
     t->setTTH(i.tth);
     //t->setTransferProtocol(protocolVersion);
     transferObjectTable.insertMulti(i.tth, t);
-    t->startTransfer();
     emit loadTTHSourcesFromDatabase(i.tth);
     emit searchTTHAlternateSources(i.tth);
+    t->startTransfer();
 }
 
 void TransferManager::changeQueuedDownloadPriority(int oldPriority, int newPriority, QByteArray &tth)
@@ -248,7 +251,7 @@ void TransferManager::incomingTTHSource(QByteArray tth, QHostAddress sourcePeer)
 // packet containing part of a tree
 // qint32 bucket number followed by 24-byte QByteArray of bucket 1MBTTH
 // therefore, 2.25 petabyte max file size, should suffice.
-void TransferManager::incomingTTHTree(QByteArray &tth, QByteArray &tree)
+void TransferManager::incomingTTHTree(QByteArray tth, QByteArray tree)
 {
     Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_DOWNLOAD);
     if (t)

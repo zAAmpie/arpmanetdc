@@ -12,9 +12,9 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     // Init P2P dispatch socket
     receiverUdpSocket = new QUdpSocket(this);
     receiverUdpSocket->bind(dispatchPort, QUdpSocket::ShareAddress);
-    //receiverUdpSocket->joinMulticastGroup(mcastAddress);
-    //receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastTtlOption, 16);
-    //receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastLoopbackOption, false);
+    receiverUdpSocket->joinMulticastGroup(mcastAddress);
+    receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastTtlOption, 16);
+    receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastLoopbackOption, false);
     connect(receiverUdpSocket, SIGNAL(readyRead()), this, SLOT(receiveP2PData()));
 
     senderUdpSocket = new QUdpSocket(this);
@@ -46,7 +46,7 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
 Dispatcher::~Dispatcher()
 {
     delete networkBootstrap;
-    //receiverUdpSocket->leaveMulticastGroup(mcastAddress);
+    receiverUdpSocket->leaveMulticastGroup(mcastAddress);
     delete networkTopology;
     delete senderUdpSocket;
     delete receiverUdpSocket;
@@ -57,13 +57,13 @@ void Dispatcher::reconfigureDispatchHostPort(QHostAddress ip, quint16 port)
     dispatchIP = ip;
     dispatchPort = port;
     disconnect(receiverUdpSocket, SIGNAL(readyRead()));
-    //receiverUdpSocket->leaveMulticastGroup(mcastAddress);
+    receiverUdpSocket->leaveMulticastGroup(mcastAddress);
     receiverUdpSocket->close();
     receiverUdpSocket->bind(dispatchPort, QUdpSocket::ShareAddress);
     connect(receiverUdpSocket, SIGNAL(readyRead()), this, SLOT(receiveP2PData()));
-    //receiverUdpSocket->joinMulticastGroup(mcastAddress);
-    //receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastTtlOption, 16);
-    //receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastLoopbackOption, false);
+    receiverUdpSocket->joinMulticastGroup(mcastAddress);
+    receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastTtlOption, 16);
+    receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastLoopbackOption, false);
 }
 
 // ------------------=====================   Initial receive and dispatching   =====================----------------------
@@ -170,14 +170,8 @@ void Dispatcher::handleProtocolInstruction(quint8 &quint8DatagramType, quint8 &q
         handleReceivedSearchQuestion(senderHost, datagram);
         break;
 
-    case DownloadProtocolARequestPacket:
-        handleIncomingUploadRequest(DownloadProtocolARequestPacket, senderHost, datagram);
-        break;
-
-    case DownloadProtocolBRequestPacket:
-    case DownloadProtocolCRequestPacket:
-    case DownloadProtocolDRequestPacket:
-        sendTransferError(senderHost, TRANSFER_ERROR_NOT_SUPPORTED);
+    case DownloadRequestPacket:
+        handleIncomingUploadRequest(senderHost, datagram);
         break;
 
     case SearchForwardRequestPacket:
@@ -213,7 +207,7 @@ void Dispatcher::handleProtocolInstruction(quint8 &quint8DatagramType, quint8 &q
         break;
 
     case TTHTreeReplyPacket:
-        emit incomingTTHTreeDatagram(datagram);
+        handleReceivedTTHTree(datagram);
         break;
 
     // NAT traversal
@@ -295,7 +289,8 @@ void Dispatcher::sendUnicastAnnounceForwardRequest(QHostAddress &toAddr)
 
 void Dispatcher::handleReceivedAnnounceForwardRequest(QHostAddress &fromHost, QByteArray &datagram)
 {
-    QHostAddress allegedFromHost = QHostAddress(datagram.mid(2, 4).toUInt());
+    QByteArray tmp = datagram.mid(2, 4);
+    QHostAddress allegedFromHost = QHostAddress(getQuint32FromByteArray(&tmp));
     if (fromHost != allegedFromHost)
         return;
 
@@ -376,7 +371,7 @@ void Dispatcher::sendSearchResult(QHostAddress toHost, QByteArray senderCID, qui
     QByteArray datagram;
     datagram.append(UnicastPacket);
     datagram.append(SearchResultPacket);
-    datagram.append(assembleSearchPacket(dispatchIP, searchID, searchResult, false));
+    datagram.append(assembleSearchPacket(dispatchIP, searchID, searchResult, false));  // TODO: add bucket on first result per host
     sendUnicastRawDatagram(toHost, datagram);
 }
 
@@ -400,11 +395,13 @@ void Dispatcher::parseArrivedSearchResult(QByteArray &datagram)
         emit invalidPacketReceived();
         return;
     }
-    QHostAddress senderHost = QHostAddress(datagram.mid(2,4).toUInt());
-    quint64 searchID = datagram.mid(6, 8).toULongLong();
+    QByteArray tmp = datagram.mid(2,4);
+    QHostAddress senderHost = QHostAddress(getQuint32FromByteArray(&tmp));
+    tmp = datagram.mid(6, 8);
+    quint64 searchID = getQuint64FromByteArray(&tmp);
     QByteArray senderCID = datagram.mid(14, 24);
-    QByteArray t = datagram.mid(38, 2);
-    int searchResultLength = getQuint16FromByteArray(&t);
+    tmp = datagram.mid(38, 2);
+    int searchResultLength = getQuint16FromByteArray(&tmp);
     QByteArray searchResult = datagram.mid(40, searchResultLength);
     QByteArray bucket = datagram.mid(40 + searchResultLength);
 
@@ -444,7 +441,8 @@ void Dispatcher::sendSearchForwardRequest(QHostAddress &forwardingNode, QByteArr
 
 void Dispatcher::handleReceivedSearchForwardRequest(QHostAddress &fromAddr, QByteArray &datagram)
 {
-    QHostAddress allegedFromHost = QHostAddress(datagram.mid(2, 4).toUInt());
+    QByteArray tmp = datagram.mid(2, 4);
+    QHostAddress allegedFromHost = QHostAddress(getQuint32FromByteArray(&tmp));
     if (fromAddr != allegedFromHost)
         return;
 
@@ -468,10 +466,11 @@ void Dispatcher::handleReceivedSearchForwardRequest(QHostAddress &fromAddr, QByt
 // kan later besluit of ons host adres uit pakkie uit wil parse of van socket af wil kry of wat.
 void Dispatcher::handleReceivedSearchQuestion(QHostAddress &fromHost, QByteArray &datagram)
 {
-    quint64 searchID = datagram.mid(6, 8).toULongLong();
+    QByteArray tmp = datagram.mid(6, 8);
+    quint64 searchID = getQuint64FromByteArray(&tmp);
     QByteArray clientCID = datagram.mid(14, 24);
-    QByteArray t = datagram.mid(38, 2);
-    int searchLength = getQuint16FromByteArray(&t);
+    tmp = datagram.mid(38, 2);
+    int searchLength = getQuint16FromByteArray(&tmp);
     QByteArray searchData = datagram.mid(40, searchLength);
     QByteArray bucket = datagram.mid(40 + searchLength);
 
@@ -552,7 +551,8 @@ void Dispatcher::sendTTHSearchForwardRequest(QHostAddress &forwardingNode, QByte
 
 void Dispatcher::handleReceivedTTHSearchForwardRequest(QHostAddress &fromAddr, QByteArray &datagram)
 {
-    QHostAddress allegedFromHost = QHostAddress(datagram.mid(2, 4).toUInt());
+    QByteArray tmp = datagram.mid(2, 4);
+    QHostAddress allegedFromHost = QHostAddress(getQuint32FromByteArray(&tmp));
     if (fromAddr != allegedFromHost)
         return;
 
@@ -575,7 +575,8 @@ void Dispatcher::handleReceivedTTHSearchForwardRequest(QHostAddress &fromAddr, Q
 
 void Dispatcher::handleArrivedTTHSearchResult(QHostAddress &fromAddr, QByteArray &datagram)
 {
-    QHostAddress allegedFromAddr = QHostAddress(datagram.mid(2, 4).toUInt());
+    QByteArray tmp = datagram.mid(2, 4);
+    QHostAddress allegedFromAddr = QHostAddress(getQuint32FromByteArray(&tmp));
     if (fromAddr != allegedFromAddr) // mainly to catch misconfigured nodes behind NAT
         return;
 
@@ -585,7 +586,8 @@ void Dispatcher::handleArrivedTTHSearchResult(QHostAddress &fromAddr, QByteArray
 
 void Dispatcher::handleReceivedTTHSearchQuestion(QHostAddress &fromAddr, QByteArray &datagram)
 {
-    QHostAddress allegedFromAddr = QHostAddress(datagram.mid(2, 4).toUInt());
+    QByteArray tmp = datagram.mid(2, 4);
+    QHostAddress allegedFromAddr = QHostAddress(getQuint32FromByteArray(&tmp));
     if (fromAddr != allegedFromAddr) // mainly to catch misconfigured nodes behind NAT
         return;
 
@@ -595,24 +597,30 @@ void Dispatcher::handleReceivedTTHSearchQuestion(QHostAddress &fromAddr, QByteAr
 
 // ------------------=====================   Data transfer functions   =====================----------------------
 
-void Dispatcher::handleIncomingUploadRequest(quint8 protocolInstruction, QHostAddress &fromHost, QByteArray &datagram)
+void Dispatcher::handleIncomingUploadRequest(QHostAddress &fromHost, QByteArray &datagram)
 {
     QByteArray tth = datagram.mid(2, 24);
-    quint64 offset = datagram.mid(26, 2).toULongLong();
-    quint64 length = datagram.mid(28, 2).toULongLong();
-    emit incomingUploadRequest(protocolInstruction, fromHost, tth, offset, length);
+    QByteArray tmp;
+    tmp = datagram.mid(26, 2);
+    quint64 offset = getQuint16FromByteArray(&tmp);
+    tmp = datagram.mid(28, 2);
+    quint64 length = getQuint16FromByteArray(&tmp);
+    QByteArray protocolHint = datagram.mid(30);
+    emit incomingUploadRequest(protocolHint, fromHost, tth, offset, length);
 }
 
-void Dispatcher::sendDownloadRequest(quint8 protocol, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length)
+// the transfer object typically does this
+/*void Dispatcher::sendDownloadRequest(QByteArray protocolHint, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length)
 {
     QByteArray datagram;
     datagram.append(UnicastPacket);
-    datagram.append(protocol);
+    datagram.append(DownloadRequestPacket);
     datagram.append(tth);
     datagram.append(toQByteArray(offset));
     datagram.append(toQByteArray(length));
+    datagram.append(protocolHint);
     sendUnicastRawDatagram(dstHost, datagram);
-}
+}*/
 
 void Dispatcher::sendTransferError(QHostAddress &dstHost, quint8 error)
 {
@@ -630,6 +638,13 @@ void Dispatcher::sendTTHTreeRequest(QHostAddress &host, QByteArray &tthRoot)
     datagram.append(TTHTreeRequestPacket);
     datagram.append(tthRoot);
     sendUnicastRawDatagram(host, datagram);
+}
+
+void Dispatcher::handleReceivedTTHTree(QByteArray &datagram)
+{
+    QByteArray tth = datagram.mid(0, 24);
+    QByteArray tree = datagram.mid(24);
+    emit receivedTTHTree(tth, tree);
 }
 
 // ------------------=====================   CID functions   =====================----------------------
@@ -690,7 +705,8 @@ void Dispatcher::handleCIDPingForwardedReply(QByteArray &data)
     if (CID == data.mid(6))
     {
         QByteArray datagram;
-        QHostAddress dst = QHostAddress(data.mid(2, 4).toUInt());
+        QByteArray tmp = data.mid(2, 4);
+        QHostAddress dst = QHostAddress(getQuint32FromByteArray(&tmp));
         datagram.append(UnicastPacket);
         datagram.append(CIDPingReplyPacket);
         datagram.append(CID);
@@ -717,7 +733,8 @@ void Dispatcher::handleCIDPingReply(QByteArray &data, QHostAddress &dstHost)
 // forward the CID ping to own bucket on request
 void Dispatcher::handleReceivedCIDPingForwardRequest(QHostAddress &fromAddr, QByteArray &data)
 {
-    QHostAddress allegedFromHost = QHostAddress(data.mid(2, 4).toUInt());
+    QByteArray tmp = data.mid(2, 4);
+    QHostAddress allegedFromHost = QHostAddress(getQuint32FromByteArray(&tmp));
     if (fromAddr != allegedFromHost)
         return;
 

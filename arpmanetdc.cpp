@@ -67,15 +67,23 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 
     // Create Transfer manager
     pTransferManager = new TransferManager();
+    pTransferManager->setMaximumSimultaneousDownloads(30);
 
     //Connect Dispatcher to TransferManager - handles upload/download requests and transfers
-    connect(pDispatcher, SIGNAL(incomingUploadRequest(quint8,QHostAddress&,QByteArray&,quint64&,quint64&)),
-            pTransferManager, SLOT(incomingUploadRequest(quint8,QHostAddress&,QByteArray&,quint64&,quint64&))); //This slot doesn't work since Dispatcher hasn't been modified to work with protocolhints
-
+    connect(pDispatcher, SIGNAL(incomingUploadRequest(QByteArray,QHostAddress,QByteArray,quint64,quint64)),
+            pTransferManager, SLOT(incomingUploadRequest(QByteArray,QHostAddress,QByteArray,quint64,quint64)));
     connect(pDispatcher, SIGNAL(incomingDataPacket(quint8,QByteArray&)),
             pTransferManager, SLOT(incomingDataPacket(quint8,QByteArray&)));
     connect(pTransferManager, SIGNAL(transmitDatagram(QHostAddress&,QByteArray&)),
             pDispatcher, SLOT(sendUnicastRawDatagram(QHostAddress&,QByteArray&)));
+    connect(pDispatcher, SIGNAL(receivedTTHTree(QByteArray,QByteArray)),
+            pTransferManager, SLOT(incomingTTHTree(QByteArray,QByteArray)));
+    connect(pTransferManager, SIGNAL(TTHTreeRequest(QHostAddress&,QByteArray&)),
+            pDispatcher, SLOT(sendTTHTreeRequest(QHostAddress&,QByteArray&)));
+    connect(pDispatcher, SIGNAL(TTHSearchResultsReceived(QByteArray,QHostAddress)),
+            pTransferManager, SLOT(incomingTTHSource(QByteArray,QHostAddress)));
+    connect(pTransferManager, SIGNAL(searchTTHAlternateSources(QByteArray&)),
+            pDispatcher, SLOT(initiateTTHSearch(QByteArray&)));
 
     // Set network scan ranges in Dispatcher, initial shotgun approach
     pDispatcher->addNetworkScanRange(QHostAddress("143.160.0.1").toIPv4Address(), 65534);

@@ -16,52 +16,11 @@
 #include "networkbootstrap.h"
 #include "networktopology.h"
 #include "util.h"
+#include "protocoldef.h"
 
 class Dispatcher : public QObject
 {
     Q_OBJECT
-
-    enum MajorPacketType
-    {
-        DataPacket=0xaa,
-        UnicastPacket=0x55,
-        BroadcastPacket=0x5a,
-        MulticastPacket=0xa5
-    };
-
-    enum MinorPacketType
-    {
-        SearchRequestPacket=0x11,
-        SearchForwardRequestPacket=0x12,
-        SearchResultPacket=0x13,
-        TTHSearchRequestPacket=0x14,
-        TTHSearchForwardRequestPacket=0x15,
-        TTHSearchResultPacket=0x16,
-        TransferErrorPacket=0x20,
-        DownloadProtocolARequestPacket=0x21,
-        DownloadProtocolBRequestPacket=0x22,
-        DownloadProtocolCRequestPacket=0x23,
-        DownloadProtocolDRequestPacket=0x24,
-        DataPacketA=0x31,
-        DataPacketB=0x32,
-        DataPacketC=0x33,
-        DataPacketD=0x34,
-        TTHTreeRequestPacket=0x41,
-        TTHTreeReplyPacket=0x42,
-        AnnouncePacket=0x71,
-        AnnounceForwardRequestPacket=0x72,
-        AnnounceForwardedPacket=0x73,
-        AnnounceReplyPacket=0x74,
-        RequestBucketPacket=0x81,
-        RequestAllBucketsPacket=0x82,
-        BucketExchangePacket=0x83,
-        CIDPingPacket=0x91,
-        CIDPingForwardRequestPacket=0x92,
-        CIDPingForwardedPacket=0x93,
-        CIDPingReplyPacket=0x94,
-        RevConnectPacket=0xa1,
-        RevConnectReplyPacket=0xa2
-    };
 
 public:
     explicit Dispatcher(QHostAddress dispatchIP, quint16 dispatchPort, QObject *parent = 0);
@@ -85,7 +44,7 @@ signals:
     void searchResultsReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult);
     void searchQuestionReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchQuery);
     void searchForwardReceived();  // for stats
-    void TTHSearchResultsReceived(QByteArray &tth, QHostAddress &peer);
+    void TTHSearchResultsReceived(QByteArray tth, QHostAddress peer);
     void TTHSearchQuestionReceived(QByteArray &tth, QHostAddress &senderHost);
 
     // P2P network control data arrival signals
@@ -107,11 +66,11 @@ signals:
     void CIDReplyArrived(QHostAddress &fromAddr, QByteArray &cid);
 
     // TTH Tree
-    void incomingTTHTreeDatagram(QByteArray &datagram);
+    void receivedTTHTree(QByteArray tthRoot, QByteArray tthTree);
     void incomingTTHTreeRequest(QHostAddress &fromHost, QByteArray &datagram);
 
     // Transfers
-    void incomingUploadRequest(quint8 protocolInstruction, QHostAddress &fromHost, QByteArray &tth, quint64 &offset, quint64 &length);
+    void incomingUploadRequest(QByteArray protocolHint, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length);
     void incomingDataPacket(quint8 protocolInstruction, QByteArray &datagram);
 
 public slots:
@@ -132,7 +91,7 @@ public slots:
     void sendTTHSearchResult(QHostAddress &toHost, QByteArray &tth);
 
     // Transfers
-    void sendDownloadRequest(quint8 protocol, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
+    //void sendDownloadRequest(QByteArray protocolHint, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
     void sendTransferError(QHostAddress &dstHost, quint8 error);
 
     // Buckets
@@ -184,6 +143,7 @@ private:
     void handleReceivedTTHSearchForwardRequest(QHostAddress &fromAddr, QByteArray &datagram);
     void handleArrivedTTHSearchResult(QHostAddress &fromAddr, QByteArray &datagram);
     void handleReceivedTTHSearchQuestion(QHostAddress &fromHost, QByteArray &datagram);
+    void handleReceivedTTHTree(QByteArray &datagram);
 
     // CID related network functions
     void sendBroadcastCIDPing(QByteArray &cid);
@@ -210,7 +170,7 @@ private:
     void processIncomingTTHTreeRequest(QHostAddress &host, QByteArray &datagram);
 
     // Transfers
-    void handleIncomingUploadRequest(quint8 protocolInstruction, QHostAddress &fromHost, QByteArray &datagram);
+    void handleIncomingUploadRequest(QHostAddress &fromHost, QByteArray &datagram);
 
     // Bootstrap object
     NetworkBootstrap *networkBootstrap;

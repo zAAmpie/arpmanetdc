@@ -67,12 +67,14 @@ HEADERS  += arpmanetdc.h \
     settingswidget.h \
     helpwidget.h \
     resourceextractor.h \
-    transferwidget.h
+    transferwidget.h \
+    protocoldef.h
 
 #FORMS    += arpmanetdc.ui
 
 RESOURCES += \
     arpmanetdc.qrc
+
 
 
 
