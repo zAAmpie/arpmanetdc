@@ -17,6 +17,8 @@
 
 class ArpmanetDC;
 
+#define MAX_TTHTREE_PACKET_SIZE 1000 //This should be at least sizeOf(TTH + quint16 + quint32) less than the MTU (For TTH this is 24+2+4=30 bytes less than MTU)
+
 struct SearchStruct //Used to return search results
 {
 	QByteArray tthRoot;
@@ -81,6 +83,16 @@ public slots:
 	
     //Release all sources for a particular TTH
 	void deleteTTHSources(QByteArray tthRoot);
+
+    //----------========== TTH REQUESTS FOR ALTERNATE SEARCHING ==========----------
+
+    //Request whether a file is being shared
+    void TTHSearchQuestionReceived(QByteArray tth, QHostAddress host);
+
+    //----------========== TTH TREE REQUEST FOR TRANSFERS ==========----------
+
+    //Request a tth tree for a file
+    void incomingTTHTreeRequest(QHostAddress host, QByteArray tth);
 
 	//----------========== UPDATE SHARES (GUI) ==========----------
 	
@@ -148,6 +160,16 @@ signals:
 	
     //TTH source load reply
 	void tthSourceLoaded(QByteArray tthRoot, QHostAddress peerAddress);
+
+    //----------========== TTH REQUESTS FOR ALTERNATE SEARCHING ==========----------
+
+    //If this signal is emitted, it means the tth is shared!
+    void sendTTHSearchResult(QHostAddress host, QByteArray tth);
+
+    //----------========== TTH TREE REQUEST FOR TRANSFERS ==========----------
+
+    //Reply with the TTH Tree packet for the file
+    void sendTTHTreeReply(QHostAddress host, QByteArray tthTreePacket);
 
 	//----------========== QUEUED DOWNLOADS (DOWNLOAD QUEUE WIDGET) ==========----------
 	

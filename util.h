@@ -41,6 +41,7 @@ QByteArray toQByteArray(quint64 n);
 QByteArray quint16ToByteArray(quint16 num);
 QByteArray qint16ToByteArray(qint16 num);
 QByteArray quint64ToByteArray(quint64 num);
+QByteArray quint32ToByteArray(quint32 num);
 QByteArray stringToByteArray(QString str);
 QByteArray sizeOfByteArray(QByteArray *data);
 

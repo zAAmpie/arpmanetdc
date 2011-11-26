@@ -113,15 +113,15 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
             pDispatcher, SLOT(sendSearchResult(QHostAddress, QByteArray, quint64, QByteArray)), Qt::QueuedConnection);
     connect(pDispatcher, SIGNAL(searchQuestionReceived(QHostAddress, QByteArray, quint64, QByteArray)), 
             pShare, SLOT(querySearchString(QHostAddress, QByteArray, quint64, QByteArray)), Qt::QueuedConnection);
-    //TODO
-//    connect(pDispatcher, SIGNAL(TTHSearchQuestionReceived(QByteArray,QHostAddress)),
-//            pShare, SLOT(), Qt::QueuedConnection);
-//    connect(pShare, SIGNAL(),
-//            pDispatcher, SLOT(sendTTHSearchResult(QHostAddress,QByteArray)), Qt::QueuedConnection);
-//    connect(pDispatcher, SIGNAL(incomingTTHTreeRequest(QHostAddress,QByteArray)),
-//            pShare, SLOT(), Qt::QueuedConnection);
-//    connect(pShare, SIGNAL(),
-//            pDispatcher, SLOT(sendTTHTreeReply(QHostAddress,QByteArray)), Qt::QueuedConnection);
+    
+    connect(pDispatcher, SIGNAL(TTHSearchQuestionReceived(QByteArray,QHostAddress)),
+            pShare, SLOT(TTHSearchQuestionReceived(QByteArray, QHostAddress)), Qt::QueuedConnection);
+    connect(pShare, SIGNAL(sendTTHSearchResult(QHostAddress, QByteArray)),
+            pDispatcher, SLOT(sendTTHSearchResult(QHostAddress,QByteArray)), Qt::QueuedConnection);
+    connect(pDispatcher, SIGNAL(incomingTTHTreeRequest(QHostAddress,QByteArray)),
+            pShare, SLOT(incomingTTHTreeRequest(QHostAddress, QByteArray)), Qt::QueuedConnection);
+    connect(pShare, SIGNAL(sendTTHTreeReply(QHostAddress, QByteArray)),
+            pDispatcher, SLOT(sendTTHTreeReply(QHostAddress,QByteArray)), Qt::QueuedConnection);
 
     //Connect ShareSearch to TransferManager - loads and saves a set of sources to the database
     connect(pTransferManager, SIGNAL(filePathNameRequest(QByteArray)), pShare, SLOT(requestFilePath(QByteArray)), Qt::QueuedConnection);

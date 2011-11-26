@@ -1065,7 +1065,116 @@ void ShareSearch::deleteTTHSources(QByteArray tthRoot)
 		QString error = "error";
 }
 
-//===== DOWNLOAD QUEUE =====
+//----------========== TTH REQUESTS FOR ALTERNATE SEARCHING ==========----------
+
+//Request whether a file is being shared
+void ShareSearch::TTHSearchQuestionReceived(QByteArray tth, QHostAddress host)
+{
+    //Request a small parameter from an active share entry corresponding to the given TTH
+	QString queryStr = tr("SELECT [active] FROM FileShares WHERE tth = ? AND [active] = 1;");
+
+	SearchStruct results;
+	sqlite3 *db = pParent->database();	
+	sqlite3_stmt *statement;
+
+	//Prepare a query
+	QByteArray query;
+	query.append(queryStr);
+	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+	{
+        //Bind the TTH parameter
+        QString tthStr(tth);
+        int res = sqlite3_bind_text16(statement, 1, tthStr.utf16(), tthStr.size()*2, SQLITE_STATIC);
+
+		int cols = sqlite3_column_count(statement);
+		int result = 0;
+		while (sqlite3_step(statement) == SQLITE_ROW)
+		{
+            //Don't care about the parameter, the fact that a row is returned shows the record exists
+            //If this signal is emitted, it means the tth is shared!
+            emit sendTTHSearchResult(host, tth);
+            break; //Only emit once
+		}
+		sqlite3_finalize(statement);	
+	}
+
+	//Catch all error messages
+	QString error = sqlite3_errmsg(db);
+	if (error != "not an error")
+		QString error = "error";
+}
+
+//----------========== TTH TREE REQUEST FOR TRANSFERS ==========----------
+
+//Request a tth tree for a file
+void ShareSearch::incomingTTHTreeRequest(QHostAddress host, QByteArray tth)
+{
+    QByteArray tthTreePacket;
+
+    //Return all 1MB TTHs for a root TTH
+	QString queryStr = tr("SELECT [oneMBtth], [offset] FROM OneMBTTH WHERE [tth] = ? ORDER BY [offset] ASC;");
+
+	QByteArray results;
+	sqlite3 *db = pParent->database();	
+	sqlite3_stmt *statement;
+
+	//Prepare a query
+	QByteArray query;
+	query.append(queryStr);
+	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+	{
+        QString tthStr = tth.toBase64();
+        int res = sqlite3_bind_text16(statement, 1, tthStr.utf16(), tthStr.size()*2, SQLITE_STATIC);
+
+		int cols = sqlite3_column_count(statement);
+		int result = 0;
+		while (sqlite3_step(statement) == SQLITE_ROW)
+		{
+            //Get 1MB TTH and its offset
+            QByteArray oneMBTTH;
+            oneMBTTH.append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0)));
+            oneMBTTH = QByteArray::fromBase64(oneMBTTH);
+            qint64 offset = sqlite3_column_int64(statement, 1);
+
+            //Assume 1MB bucket size
+            quint32 bucketNumber = offset / (1 << 20); //Thus bucketNumber 0 is the 1MB chunk between 0 and 1MB, 1 is between 1MB and 2MB etc... 
+            //This number *should* divide cleanly as the TTH size is specified in HashThread.cpp as 1MB
+
+            //Build tthTree packet structure
+            //===============================================================
+            //BucketNumber              quint32
+            //TTH size                  quint16
+            //TTH                       QByteArray (variable size = TTH size)
+
+            tthTreePacket.append(quint32ToByteArray(bucketNumber));
+            tthTreePacket.append(quint16ToByteArray((quint16)oneMBTTH.size()));
+            tthTreePacket.append(oneMBTTH);
+
+            //Send the packet if it's full
+            if (tthTreePacket.size() >= MAX_TTHTREE_PACKET_SIZE)
+            {
+                emit sendTTHTreeReply(host, tthTreePacket);
+                //Clear packet for next data
+                tthTreePacket.clear();
+            }
+		}
+		sqlite3_finalize(statement);	
+	}
+
+	//Catch all error messages
+	QString error = sqlite3_errmsg(db);
+	if (error != "not an error")
+		QString error = "error";
+
+    //Send the data in the packet if everything is not sent already
+    if (!tthTreePacket.isEmpty())
+    {	
+        emit sendTTHTreeReply(host, tthTreePacket);
+    }
+}
+
+//----------========== DOWNLOAD QUEUE (DOWNLOAD QUEUE WIDGET) ==========----------
+
 //Save a new entry
 void ShareSearch::saveQueuedDownload(QueueStruct file)
 {

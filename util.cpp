@@ -223,6 +223,16 @@ QByteArray qint16ToByteArray(qint16 num)
 	return numBA;
 }
 
+QByteArray quint32ToByteArray(quint32 num)
+{
+	//Convert quint32 to QByteArray
+	QByteArray numBA;
+	QDataStream ds(&numBA,QIODevice::WriteOnly);
+	ds.setVersion(QDataStream::Qt_4_6);
+	ds << (quint32)num;
+	return numBA;
+}
+
 QByteArray quint64ToByteArray(quint64 num)
 {
 	//Convert quint64 to QByteArray
