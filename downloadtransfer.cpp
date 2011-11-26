@@ -5,6 +5,9 @@ DownloadTransfer::DownloadTransfer()
     transferRate = 0;
     transferProgress = 0;
     bytesWrittenSinceUpdate = 0;
+    requestingOffset = 0;
+    requestingLength = 65536;
+    requestingTargetOffset = 0;
     status = TRANSFER_STATE_INITIALIZING;
     remoteHost = QHostAddress("0.0.0.0");
 
@@ -37,6 +40,11 @@ void DownloadTransfer::incomingDataPacket(quint8 transferPacketType, quint64 &of
 {
     // we are interested in which transfer protocol the packet is encoded with, since a download object may receive packets from various sources
     // transmitted with different transfer protocols.
+
+    // we can later break this up into protocols, currently I just want to see it working.
+    if (offset != requestingOffset)
+        return;
+
     int bucketNumber = calculateBucketNumber(offset);
     if (!downloadBucketTable.contains(bucketNumber))
     {
@@ -60,6 +68,16 @@ void DownloadTransfer::incomingDataPacket(quint8 transferPacketType, quint64 &of
 
     if (downloadBucketTable.value(bucketNumber)->length() == BUCKET_SIZE)
         emit hashBucketRequest(TTH, bucketNumber, downloadBucketTable.value(bucketNumber));
+
+    requestingOffset += data.length();
+    if (requestingOffset == requestingTargetOffset)
+    {
+        if (requestingLength < TRANSFER_MAXIMUM_SEGMENT / 2)
+            requestingLength *= 2;
+
+        requestingTargetOffset += requestingLength;
+        emit sendDownloadRequest(protocolPreference, listOfPeers.first(), TTH, requestingOffset, requestingLength);
+    }
 }
 
 void DownloadTransfer::hashBucketReply(int &bucketNumber, QByteArray &bucketTTH)
@@ -85,18 +103,6 @@ void DownloadTransfer::TTHTreeReply(QByteArray &tree)
         tree.remove(0, 28);
         downloadBucketHashLookupTable.insert(bucketNumber, bucketHash);
     }
-}
-
-void DownloadTransfer::sendDownloadRequest(QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length)
-{
-    QByteArray datagram;
-    datagram.append(UnicastPacket);
-    datagram.append(DownloadRequestPacket);
-    datagram.append(tth);
-    datagram.append(toQByteArray(offset));
-    datagram.append(toQByteArray(length));
-    datagram.append(protocolPreference);
-    emit transmitDatagram(dstHost, datagram);
 }
 
 int DownloadTransfer::getTransferType()
@@ -169,9 +175,15 @@ void DownloadTransfer::transferTimerEvent()
             emit TTHTreeRequest(listOfPeers.first(), TTH);
         }
     }
-    else if ((status == TRANSFER_STATE_RUNNING) || (status == TRANSFER_STATE_STALLED))
+    else if (status == TRANSFER_STATE_STALLED)
     {
         // Transfer some data
+        if (requestingLength > PACKET_DATA_MTU)
+            requestingLength /= 2;
+
+        status = TRANSFER_STATE_RUNNING;
+        requestingTargetOffset = requestingOffset + requestingLength;
+        emit sendDownloadRequest(protocolPreference, listOfPeers.first(), TTH, requestingOffset, requestingLength);
     }
 
 }

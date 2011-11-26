@@ -617,8 +617,8 @@ void Dispatcher::handleIncomingUploadRequest(QHostAddress &fromHost, QByteArray 
     emit incomingUploadRequest(protocolHint, fromHost, tth, offset, length);
 }
 
-// the transfer object typically does this
-/*void Dispatcher::sendDownloadRequest(QByteArray protocolHint, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length)
+
+void Dispatcher::sendDownloadRequest(QByteArray &protocolPreference, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length)
 {
     QByteArray datagram;
     datagram.append(UnicastPacket);
@@ -626,9 +626,9 @@ void Dispatcher::handleIncomingUploadRequest(QHostAddress &fromHost, QByteArray 
     datagram.append(tth);
     datagram.append(toQByteArray(offset));
     datagram.append(toQByteArray(length));
-    datagram.append(protocolHint);
+    datagram.append(protocolPreference);
     sendUnicastRawDatagram(dstHost, datagram);
-}*/
+}
 
 void Dispatcher::sendTransferError(QHostAddress &dstHost, quint8 error)
 {

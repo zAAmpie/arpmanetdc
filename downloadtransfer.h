@@ -27,8 +27,6 @@ private:
     void abortTransfer();
     void transferRateCalculation();
 
-    void sendDownloadRequest(QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
-
     int calculateBucketNumber(quint64 fileOffset);
     void flushBucketToDisk(int &bucketNumber);
 
@@ -38,7 +36,9 @@ private:
     int bytesWrittenSinceUpdate;
     QByteArray protocolPreference;
 
-    QTimer *transferTimer;
+    quint64 requestingOffset;
+    quint64 requestingLength;
+    quint64 requestingTargetOffset;
 };
 
 #endif // DOWNLOADTRANSFER_H

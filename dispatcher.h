@@ -91,7 +91,7 @@ public slots:
     void sendTTHSearchResult(QHostAddress &toHost, QByteArray &tth);
 
     // Transfers
-    //void sendDownloadRequest(QByteArray protocolHint, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
+    void sendDownloadRequest(QByteArray &protocolPreference, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
     void sendTransferError(QHostAddress &dstHost, quint8 error);
 
     // Buckets

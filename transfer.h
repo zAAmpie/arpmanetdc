@@ -19,6 +19,10 @@
 #define TRANSFER_TYPE_UPLOAD 0
 #define TRANSFER_TYPE_DOWNLOAD 1
 
+#define PACKET_MTU 1436
+#define PACKET_DATA_MTU 1434
+#define TRANSFER_MAXIMUM_SEGMENT 262144
+
 class Transfer : public QObject
 {
     Q_OBJECT
@@ -32,6 +36,7 @@ signals:
     void TTHTreeRequest(QHostAddress &hostAddr, QByteArray &rootTTH);
     void searchTTHAlternateSources(QByteArray &tth);
     void loadTTHSourcesFromDatabase(QByteArray tth);
+    void sendDownloadRequest(QByteArray &protocolPreference, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
     void transmitDatagram(QHostAddress &dstHost, QByteArray &datagram);
 
 public slots:
@@ -51,6 +56,7 @@ public slots:
     void hashBucketReply(int &bucketNumber, QByteArray &bucketTTH);
     void addPeer(QHostAddress &peer);
     void TTHTreeReply(QByteArray &tree);
+
     virtual void incomingDataPacket(quint8 transferProtocolVersion, quint64 &offset, QByteArray &data);
     virtual int getTransferType() = 0;
     virtual void startTransfer() = 0;
@@ -59,6 +65,9 @@ public slots:
     virtual void transferRateCalculation() = 0;
 
  //   virtual void receiveData(QByteArray &data) = 0;
+
+protected slots:
+    void transferTimerEvent();
 
 protected:
     QByteArray TTH;
@@ -72,6 +81,7 @@ protected:
     int status;
     QList<QHostAddress> listOfPeers;
     QTimer *transferRateCalculationTimer;
+    QTimer *transferTimer;
     quint64 transferRate;
     int transferProgress;
 };
