@@ -151,7 +151,7 @@ void SearchWidget::downloadActionPressed()
 	    QString tthBase32 = resultsModel->data(resultsModel->index(selectedIndex.row(), 8)).toString();
         QString fileName = resultsModel->data(resultsModel->index(selectedIndex.row(), 0)).toString();
         quint64 fileSize = resultsModel->data(resultsModel->index(selectedIndex.row(), 5)).toULongLong();
-        QHostAddress senderIP = QHostAddress(resultsModel->data(resultsModel->index(selectedIndex.row(), 9)).toUInt());
+        QHostAddress senderIP = QHostAddress(resultsModel->data(resultsModel->index(selectedIndex.row(), 9)).toString());
 
         //Convert TTH back to binary from Base32
         QByteArray tthRoot;
@@ -169,6 +169,7 @@ void SearchWidget::downloadActionPressed()
         pParent->addDownloadToQueue(item);
 
         QString finalPath = path + fileName;
+        qDebug() << "SearchWidget downloadActionPressed() pTransferManager->queueDownload() " << senderIP;
         pTransferManager->queueDownload((int)NormalQueuePriority, tthRoot, finalPath, fileSize, senderIP);
     }
 }
@@ -188,7 +189,7 @@ void SearchWidget::downloadToActionPressed()
 	    QString tthBase32 = resultsModel->data(resultsModel->index(selectedIndex.row(), 8)).toString();
         QString fileName = resultsModel->data(resultsModel->index(selectedIndex.row(), 0)).toString();
         quint64 fileSize = resultsModel->data(resultsModel->index(selectedIndex.row(), 5)).toULongLong();
-        QHostAddress senderIP = QHostAddress(resultsModel->data(resultsModel->index(selectedIndex.row(), 9)).toUInt());
+        QHostAddress senderIP = QHostAddress(resultsModel->data(resultsModel->index(selectedIndex.row(), 9)).toString());
 
         //Convert TTH back to binary from Base32
         QByteArray tthRoot;

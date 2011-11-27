@@ -30,7 +30,7 @@ DownloadTransfer::~DownloadTransfer()
     while (itdb.hasNext())
     {
         // TODO: save halwe buckets na files toe
-        delete itdb.next();
+        delete itdb.next().value();
     }
     QHashIterator<int, QByteArray*> ithb(downloadBucketHashLookupTable);
     while (ithb.hasNext())
@@ -99,7 +99,7 @@ void DownloadTransfer::hashBucketReply(int &bucketNumber, QByteArray &bucketTTH)
     // TODO: must check that tth tree item was received before requesting bucket hash.
 }
 
-void DownloadTransfer::TTHTreeReply(QByteArray &tree)
+void DownloadTransfer::TTHTreeReply(QByteArray tree)
 {
     while (tree.length() >= 30)
     {
@@ -194,6 +194,7 @@ void DownloadTransfer::transferTimerEvent()
         else if (!(downloadBucketHashLookupTable.size() - 1 == lastBucketNumber))
         {
             // simple and stupid for now...
+            qDebug() << listOfPeers;
             emit TTHTreeRequest(listOfPeers.first(), TTH);
         }
         else

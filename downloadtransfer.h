@@ -13,7 +13,7 @@ public:
 
 public slots:
     void hashBucketReply(int &bucketNumber, QByteArray &bucketTTH);
-    void TTHTreeReply(QByteArray &tree);
+    void TTHTreeReply(QByteArray tree);
     void setProtocolPreference(QByteArray &preference);
 
 private slots:

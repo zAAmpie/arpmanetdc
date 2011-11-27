@@ -55,8 +55,8 @@ public slots:
     int getTransferStatus();
     int getTransferProgress();
     void hashBucketReply(int &bucketNumber, QByteArray &bucketTTH);
-    void addPeer(QHostAddress &peer);
-    void TTHTreeReply(QByteArray &tree);
+    void addPeer(QHostAddress peer);
+    void TTHTreeReply(QByteArray tree);
 
     virtual void incomingDataPacket(quint8 transferProtocolVersion, quint64 &offset, QByteArray &data);
     virtual int getTransferType() = 0;
@@ -66,9 +66,7 @@ public slots:
     virtual void transferRateCalculation() = 0;
 
  //   virtual void receiveData(QByteArray &data) = 0;
-
-protected slots:
-    void transferTimerEvent();
+    virtual void transferTimerEvent();
 
 protected:
     QByteArray TTH;

@@ -12,7 +12,7 @@ Transfer::~Transfer()
 // empty base class definitions, since these do not make sense for uploads
 void Transfer::incomingDataPacket(quint8, quint64&, QByteArray&){}
 void Transfer::hashBucketReply(int&, QByteArray&){}
-void Transfer::TTHTreeReply(QByteArray&){}
+void Transfer::TTHTreeReply(QByteArray){}
 void Transfer::transferTimerEvent(){}
 
 // ------------------------------------------------------------------------
@@ -92,7 +92,7 @@ int Transfer::getTransferProgress()
     return transferProgress;
 }
 
-void Transfer::addPeer(QHostAddress &peer)
+void Transfer::addPeer(QHostAddress peer)
 {
     if (!listOfPeers.contains(peer))
         listOfPeers.append(peer);

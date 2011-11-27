@@ -645,6 +645,7 @@ void Dispatcher::sendTTHTreeRequest(QHostAddress host, QByteArray tthRoot)
     datagram.append(UnicastPacket);
     datagram.append(TTHTreeRequestPacket);
     datagram.append(tthRoot);
+    qDebug() << "sendUnicastRawDatagram() " << host << datagram;
     sendUnicastRawDatagram(host, datagram);
 }
 
@@ -850,6 +851,7 @@ void Dispatcher::sendUnicastRawDatagram(QHostAddress &dstAddress, QByteArray &da
     // split hom toe maar in 'n bound socket vir read en 'n unbound socket vir write.
     // hoop dit werk.
 
+    //quint32 dst = dstAddress.toIPv4Address();  // watch in debugger
     if (senderUdpSocket->writeDatagram(datagram, dstAddress, dispatchPort) == -1)
         emit writeUdpUnicastFailed();
 }
