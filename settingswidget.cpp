@@ -61,6 +61,12 @@ void SettingsWidget::createWidgets()
 
     //========== MISC ==========
     saveButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Save changes"), (QWidget *)pParent);
+    toggleAdvancedCheckBox = new QCheckBox(tr("Show advanced settings"), (QWidget *)pParent);
+    if (pSettings->value("showAdvanced") == "1")
+        toggleAdvancedCheckBox->setChecked(true);
+    else
+        toggleAdvancedCheckBox->setChecked(false);
+    advancedWidget = new QWidget();
 }
 
 void SettingsWidget::placeWidgets()
@@ -99,13 +105,16 @@ void SettingsWidget::placeWidgets()
 	flayoutR->addRow(new QLabel("<font color=\"red\">External port:</font>"), externalPortLineEdit);
     flayoutR->addRow(new QLabel("<font color=\"red\">Transfer protocol preferences</font>"), protocolLayout);
 
+    advancedWidget->setLayout(flayoutR);
+
     QHBoxLayout *formLayouts = new QHBoxLayout();
     formLayouts->addLayout(flayout);
     formLayouts->addSpacing(20);
-    formLayouts->addLayout(flayoutR);  
+    formLayouts->addWidget(advancedWidget);  
 
 	QHBoxLayout *hlayout = new QHBoxLayout();
-	hlayout->addStretch(1);
+	hlayout->addWidget(toggleAdvancedCheckBox);
+    hlayout->addStretch(1);
 	hlayout->addWidget(saveButton);
 
 	QVBoxLayout *layout = new QVBoxLayout();
@@ -115,6 +124,9 @@ void SettingsWidget::placeWidgets()
 
 	pWidget = new QWidget();
 	pWidget->setLayout(layout);
+    
+    if (!toggleAdvancedCheckBox->isChecked())
+        advancedWidget->hide();    
 }
 
 void SettingsWidget::connectWidgets()
@@ -125,6 +137,8 @@ void SettingsWidget::connectWidgets()
 
     connect(protocolUpButton, SIGNAL(clicked()), this, SLOT(protocolUpPressed()));
     connect(protocolDownButton, SIGNAL(clicked()), this, SLOT(protocolDownPressed()));
+
+    connect(toggleAdvancedCheckBox, SIGNAL(stateChanged(int)), this, SLOT(advancedCheckBoxToggled(int)));
 }
 
 void SettingsWidget::savePressed()
@@ -167,6 +181,12 @@ void SettingsWidget::savePressed()
             protocolHint.append(protocolList->item(i)->text());
         }
         (*pSettings)["protocolHint"] = protocolHint;
+
+        //Save checkbox state
+        if (toggleAdvancedCheckBox->isChecked())
+            (*pSettings)["showAdvanced"] = "1";
+        else
+            (*pSettings)["showAdvanced"] = "0";
 
 		emit settingsSaved();
 	}
@@ -226,6 +246,15 @@ void SettingsWidget::protocolDownPressed()
     //Add to list
     protocolList->insertItem(index, selectedItems.first());
     protocolList->setCurrentItem(selectedItems.first());
+}
+
+void SettingsWidget::advancedCheckBoxToggled(int state)
+{
+    if (state == Qt::Checked)
+        advancedWidget->show();
+    else
+        advancedWidget->hide();
+    QApplication::processEvents();
 }
 
 QWidget *SettingsWidget::widget()

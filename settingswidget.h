@@ -34,6 +34,9 @@ private slots:
     //Down pressed
     void protocolDownPressed();
 
+    //Display advanced settings toggled
+    void advancedCheckBoxToggled(int state);
+
 signals:
 	//Signalled when settings were saved
 	void settingsSaved();
@@ -51,10 +54,11 @@ private:
 	QHash<QString, QString> *pSettings;
 
 	//GUI
+    QWidget *advancedWidget;
     QListWidget *protocolList;
 
+    QCheckBox *toggleAdvancedCheckBox;
 	QLineEdit *hubAddressLineEdit, *hubPortLineEdit, *nickLineEdit, *passwordLineEdit, *ipLineEdit, *externalPortLineEdit, *downloadPathLineEdit;
-	
     QPushButton *saveButton, *guessIPButton, *browseDownloadPathButton, *protocolUpButton, *protocolDownButton;
 
 };

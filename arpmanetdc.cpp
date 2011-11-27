@@ -34,8 +34,9 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
         pSettings->insert("downloadPath", getDefaultDownloadPath());
     if (!pSettings->contains("protocolHint"))
         pSettings->insert("protocolHint", SUPPORTED_TRANSFER_PROTOCOLS);
+    if (!pSettings->contains("showAdvanced"))
+        pSettings->insert("showAdvanced", DEFAULT_HIDE_ADVANCED);
     
-
 	mainChatBlocks = 0;
 
 	//Set window title
