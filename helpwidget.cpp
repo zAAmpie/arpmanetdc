@@ -24,7 +24,7 @@ void HelpWidget::createWidgets()
 void HelpWidget::placeWidgets()
 {
     QLabel *iconLabel = new QLabel();
-    iconLabel->setPixmap(QPixmap(":/ArpmanetDC/Resources/ServerIcon.png"));
+    iconLabel->setPixmap(QPixmap(":/ArpmanetDC/Resources/Logo.png").scaled(100,100, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
    
     QHBoxLayout *aboutLayout = new QHBoxLayout();
     aboutLayout->addWidget(iconLabel);

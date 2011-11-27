@@ -159,6 +159,9 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     helpWidget = 0;
     transferWidget = 0;
 
+    //Set window icon
+    setWindowIcon(QIcon(QPixmap(":/ArpmanetDC/Resources/Logo.png").scaled(128, 128, Qt::IgnoreAspectRatio, Qt::SmoothTransformation)));
+
 	//Icon generation
 	userIcon = new QPixmap();
 	*userIcon = QPixmap(":/ArpmanetDC/Resources/UserIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
