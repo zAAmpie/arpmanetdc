@@ -17,15 +17,14 @@ ShareWidget::ShareWidget(ShareSearch *share, ArpmanetDC *parent)
 	{
 		QDir currentPath = shares->takeFirst();
 		pSharesList.append(currentPath.absolutePath());
-		changeRoot(currentPath.absolutePath());
+        changeRoot(currentPath.absolutePath());
 		while (currentPath.cdUp())
 			changeRoot(currentPath.absolutePath());
 
 		//QModelIndex index = fileModel->index(currentPath.absolutePath(), 0);
 		//bool res = checkProxyModel->setSourceIndexCheckedState(index, true);
 	}
-
-
+    finishedLoading = true;
 }
 
 ShareWidget::~ShareWidget()
@@ -59,11 +58,15 @@ void ShareWidget::createWidgets()
 
 	checkProxyModel->setDefaultCheckState(Qt::Unchecked);	
 	//checkProxyModel->sort(0, Qt::AscendingOrder);
+
+    busyLabel = new QLabel(tr("<font color=\"red\">Busy loading directory structure. Please wait...</font>"));
 }
 
 void ShareWidget::placeWidgets()
 {
 	QHBoxLayout *hlayout = new QHBoxLayout;
+    hlayout->addSpacing(10);
+    hlayout->addWidget(busyLabel);
 	hlayout->addStretch(1);
 	hlayout->addWidget(saveButton);
 
@@ -81,11 +84,15 @@ void ShareWidget::connectWidgets()
 	//TODO: Connect all widgets
 	connect(checkProxyModel, SIGNAL(checkedNodesChanged()), this, SLOT(selectedItemsChanged()));
 	connect(saveButton, SIGNAL(clicked()), this, SLOT(saveSharePressed()));
-	//connect(fileModel, SIGNAL(directoryLoaded(QString)), this, SLOT(modelDirectoryLoaded(QString)));
+	connect(fileModel, SIGNAL(directoryLoaded(QString)), this, SLOT(pathLoaded(QString)));
 }
 
 void ShareWidget::changeRoot(QString path)
 {
+    QFileInfo fi(path);
+    if (fi.isDir())
+        pLoadingPaths.append(path);
+
 	fileModel->setRootPath(path);
 	//QModelIndex index = checkProxyModel->index(0,0, fileModel->index(path,0));
 	//QModelIndex index2 = checkProxyModel->mapFromSource(fileModel->index(path));
@@ -93,6 +100,18 @@ void ShareWidget::changeRoot(QString path)
 	if (pSharesList.contains(path))
 		checkProxyModel->setSourceIndexCheckedState(fileModel->index(path,0), true);
 	//fileTree->setRootIndex(index);
+}
+
+void ShareWidget::pathLoaded(QString path)
+{
+    pLoadingPaths.removeAll(path);
+    pLoadingPaths.removeAll(path + "/");
+
+    //Check if loading is complete
+    if (pLoadingPaths.isEmpty() && finishedLoading)
+    {
+        busyLabel->hide();   
+    }
 }
 
 void ShareWidget::selectedItemsChanged()

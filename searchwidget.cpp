@@ -97,6 +97,7 @@ void SearchWidget::createWidgets()
     resultsTable->sortByColumn(1, Qt::DescendingOrder);
     resultsTable->setContextMenuPolicy(Qt::CustomContextMenu);
     resultsTable->header()->setHighlightSections(false);
+    resultsTable->setExpandsOnDoubleClick(false);
 
     parentItem = resultsModel->invisibleRootItem();
 
@@ -148,6 +149,7 @@ void SearchWidget::placeWidgets()
 void SearchWidget::connectWidgets()
 {
 	connect(resultsTable, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showContextMenu(const QPoint&)));
+    connect(resultsTable, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(resultDoubleClicked(QModelIndex)));
 
     connect(downloadAction, SIGNAL(triggered()), this, SLOT(downloadActionPressed()));
     connect(downloadToAction, SIGNAL(triggered()), this, SLOT(downloadToActionPressed()));
@@ -401,6 +403,12 @@ void SearchWidget::showContextMenu(const QPoint &pos)
 	QPoint globalPos = resultsTable->viewport()->mapToGlobal(pos);
 
 	resultsMenu->popup(globalPos);
+}
+
+void SearchWidget::resultDoubleClicked(QModelIndex index)
+{
+    //Invoke download action - since you can't double click on something without selecting it as well
+    downloadActionPressed();
 }
 
 //===== GET FUNCTIONS =====

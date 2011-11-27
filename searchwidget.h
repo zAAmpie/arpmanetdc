@@ -38,6 +38,9 @@ private slots:
     //Actions
     void downloadActionPressed();
     void downloadToActionPressed();
+    
+    //User double clicked on a result
+    void resultDoubleClicked(QModelIndex index);
 
     //Sort results
     void sortTimeout();

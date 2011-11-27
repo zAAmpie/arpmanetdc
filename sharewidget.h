@@ -28,6 +28,8 @@ private slots:
 
 	void changeRoot(QString path);
 
+    void pathLoaded(QString path);
+
 signals:
 	//Signals
 	void saveButtonPressed();
@@ -46,10 +48,16 @@ private:
 	//Params
 	QList<QString> pSharesList;
 
+    //Loading paths
+    QList<QString> pLoadingPaths;
+    bool finishedLoading;
+
 	//GUI elements
 	QTreeView *fileTree;
 	QFileSystemModel *fileModel;
 	CheckableProxyModel *checkProxyModel;
+
+    QLabel *busyLabel;
 
 	QPushButton *saveButton;
 
