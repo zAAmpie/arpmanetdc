@@ -147,6 +147,14 @@ void SearchWidget::downloadActionPressed()
     {
         //Get a result
 	    QModelIndex selectedIndex = resultsTable->selectionModel()->selectedRows().at(i);
+                
+        //Get the selected item in column 0 and its parent
+        QStandardItem *selItem = resultsModel->itemFromIndex(selectedIndex);
+        QStandardItem *parent = selItem->parent();
+        //If the item has a parent -> use the data from the parent
+        if (parent)
+            selectedIndex = parent->index();
+
 	    //Get TTH and filename of the result
 	    QString tthBase32 = resultsModel->data(resultsModel->index(selectedIndex.row(), 8)).toString();
         QString fileName = resultsModel->data(resultsModel->index(selectedIndex.row(), 0)).toString();
@@ -177,14 +185,22 @@ void SearchWidget::downloadActionPressed()
 void SearchWidget::downloadToActionPressed()
 {
     //TODO: Download to specific folder
-    QString path = QFileDialog::getExistingDirectory((QWidget *)pParent, tr("Select download path"), pParent->downloadPath());
+    QString path = QFileDialog::getExistingDirectory((QWidget *)pParent, tr("Select download path"), pParent->downloadPath()).replace("\\","/");
     if (path.right(1).compare("/") != 0)
         path.append("/");
 
     for (int i = 0; i < resultsTable->selectionModel()->selectedRows().size(); i++)
     {
-        //Get a result
+        //Get the selected row index
 	    QModelIndex selectedIndex = resultsTable->selectionModel()->selectedRows().at(i);
+
+        //Get the selected item in column 0 and its parent
+        QStandardItem *selItem = resultsModel->itemFromIndex(selectedIndex);
+        QStandardItem *parent = selItem->parent();
+        //If the item has a parent -> use the data from the parent
+        if (parent)
+            selectedIndex = parent->index();
+
 	    //Get TTH and filename of the result
 	    QString tthBase32 = resultsModel->data(resultsModel->index(selectedIndex.row(), 8)).toString();
         QString fileName = resultsModel->data(resultsModel->index(selectedIndex.row(), 0)).toString();

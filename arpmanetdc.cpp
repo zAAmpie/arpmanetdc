@@ -244,7 +244,7 @@ bool ArpmanetDC::setupDatabase()
     queries.append("CREATE INDEX IDX_TTHSOURCES_TTHROOT on TTHSources(tthRoot);");
 	
 	//Create QueuedDownloads table - saves all queued downloads to restart transfers after restart
-	queries.append("CREATE TABLE QueuedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, fileSize INTEGER, priority INTEGER, tthRoot TEXT, UNIQUE(tthRoot));");
+	queries.append("CREATE TABLE QueuedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, fileSize INTEGER, priority INTEGER, tthRoot TEXT, hostIP TEXT, UNIQUE(tthRoot));");
     queries.append("CREATE INDEX IDX_QUEUED_FILEPATH on QueuedDownloads(filePath);");
 
 	//Create FinishedDownloads table - saves download paths that were downloaded for list
@@ -457,6 +457,7 @@ void ArpmanetDC::createWidgets()
 	toolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 	//toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 	toolBar->setMovable(false);
+    toolBar->setContextMenuPolicy(Qt::CustomContextMenu);
 
 	//Menu bar
 	menuBar = new QMenuBar(this);

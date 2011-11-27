@@ -1163,7 +1163,7 @@ void ShareSearch::incomingTTHTreeRequest(QHostAddress host, QByteArray tth)
 void ShareSearch::saveQueuedDownload(QueueStruct file)
 {
 	//Save a queued download
-	QString queryStr = tr("INSERT INTO QueuedDownloads ([fileName], [filePath], [fileSize], [priority], [tthRoot]) VALUES (?, ?, ?, ?, ?);");
+	QString queryStr = tr("INSERT INTO QueuedDownloads ([fileName], [filePath], [fileSize], [priority], [tthRoot], [hostIP]) VALUES (?, ?, ?, ?, ?, ?);");
 
 	QByteArray results;
 	sqlite3 *db = pParent->database();	
@@ -1183,7 +1183,9 @@ void ShareSearch::saveQueuedDownload(QueueStruct file)
 		res = res | sqlite3_bind_text16(statement, 4, priority.utf16(), priority.size()*2, SQLITE_STATIC);
 		QString tthRoot = QString(file.tthRoot->toBase64().data());
 		res = res | sqlite3_bind_text16(statement, 5, tthRoot.utf16(), tthRoot.size()*2, SQLITE_STATIC);
-
+        QString hostIP = file.fileHost.toString();
+        res = res | sqlite3_bind_text16(statement, 6, hostIP.utf16(), hostIP.size()*2, SQLITE_STATIC);
+        
 		int cols = sqlite3_column_count(statement);
 		int result = 0;
 		while (sqlite3_step(statement) == SQLITE_ROW);
@@ -1271,7 +1273,7 @@ void ShareSearch::setQueuedDownloadPriority(QByteArray tthRoot, QueuePriority pr
 void ShareSearch::requestQueueList()
 {
 	//Return the list of queued downloads
-	QString queryStr = tr("SELECT [fileName], [filePath], [fileSize], [priority], [tthRoot] FROM QueuedDownloads;");
+	QString queryStr = tr("SELECT [fileName], [filePath], [fileSize], [priority], [tthRoot], [hostIP] FROM QueuedDownloads;");
 
 	QHash<QByteArray, QueueStruct> *results = new QHash<QByteArray, QueueStruct>();
 	sqlite3 *db = pParent->database();	
@@ -1294,6 +1296,7 @@ void ShareSearch::requestQueueList()
 			s.tthRoot = new QByteArray();
 			s.tthRoot->append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 4)));
             (*s.tthRoot) = QByteArray::fromBase64(*s.tthRoot);
+            s.fileHost = QHostAddress(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 5)));
 
             results->insert(*s.tthRoot, s);
 		}
