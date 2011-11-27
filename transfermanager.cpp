@@ -194,7 +194,7 @@ Transfer* TransferManager::getTransferObjectPointer(QByteArray &tth, int transfe
     if (transferObjectTable.contains(tth))
     {
         QListIterator<Transfer*> it(transferObjectTable.values(tth));
-        while (it.hasNext());
+        while (it.hasNext())
         {
             Transfer* p = it.next();
             if ((p->getTransferType() == transferType) && (*p->getRemoteHost() == hostAddr))
