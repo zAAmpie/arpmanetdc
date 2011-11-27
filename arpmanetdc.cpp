@@ -423,6 +423,9 @@ void ArpmanetDC::createWidgets()
 	mainChatTextEdit->setOpenExternalLinks(true);
 	
 	chatLineEdit = new QLineEdit(this);
+
+    quickSearchLineEdit = new QLineEdit(this);
+    quickSearchLineEdit->setPlaceholderText("Type here to search");
 	
 	//===== User list =====
 	//Model
@@ -526,7 +529,7 @@ void ArpmanetDC::placeWidgets()
 
 	QVBoxLayout *searchVertLayout = new QVBoxLayout;
 	searchVertLayout->addStretch(1);
-	searchVertLayout->addWidget(new QLineEdit());
+	searchVertLayout->addWidget(quickSearchLineEdit);
 	searchVertLayout->addStretch(1);
 	searchLayout->addLayout(searchVertLayout);
 	searchLayout->setContentsMargins(0,0,0,0);
@@ -588,6 +591,9 @@ void ArpmanetDC::connectWidgets()
 
 	//Send chat message when enter is pressed
     connect(chatLineEdit, SIGNAL(returnPressed()), this, SLOT(chatLineEditReturnPressed()));
+
+    //Quick search
+    connect(quickSearchLineEdit, SIGNAL(returnPressed()), this, SLOT(quickSearchPressed()));
 	
 	//Connect actions
 	connect(queueAction, SIGNAL(triggered()), this, SLOT(queueActionPressed()));
@@ -631,6 +637,28 @@ void ArpmanetDC::sendChatMessage()
 		pHub->sendChatMessage(chatLineEdit->text());
 		chatLineEdit->setText("");
 	}
+}
+
+void ArpmanetDC::quickSearchPressed()
+{
+    //Search for text
+    SearchWidget *sWidget = new SearchWidget(pTypeIconList, pTransferManager, quickSearchLineEdit->text(), this);
+    quickSearchLineEdit->clear();  
+
+    connect(sWidget, SIGNAL(search(quint64, QString, QByteArray, SearchWidget *)), this, SLOT(searchButtonPressed(quint64, QString, QByteArray, SearchWidget *)));
+
+	searchWidgetHash.insert(sWidget->widget(), sWidget);
+    searchWidgetIDHash.insert(sWidget->id(), sWidget);
+
+	tabs->addTab(sWidget->widget(), QIcon(":/ArpmanetDC/Resources/SearchIcon.png"), tr("Search"));
+
+	tabs->setCurrentIndex(tabs->indexOf(sWidget->widget()));
+
+    //Wait for widget to open
+    QApplication::processEvents();
+
+    //Search
+    sWidget->searchPressed();
 }
 
 void ArpmanetDC::searchActionPressed()

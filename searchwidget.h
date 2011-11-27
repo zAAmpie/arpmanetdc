@@ -17,6 +17,8 @@ class SearchWidget : public QObject
 
 public:
 	SearchWidget(ResourceExtractor *mappedIconList, TransferManager *transferManager, ArpmanetDC *parent);
+    //Overloaded constructor to automatically search for a string
+    SearchWidget(ResourceExtractor *mappedIconList, TransferManager *transferManager, QString startupSearchString, ArpmanetDC *parent);
 	~SearchWidget();
 
 	//Get the encapsulating widget
@@ -27,6 +29,8 @@ public slots:
 	//Populate search results
 	void addSearchResult(QHostAddress sender, QByteArray cid, QByteArray result);
 
+    //Search button pressed
+    void searchPressed();
 private slots:
     //Right-click menu
     void showContextMenu(const QPoint&);
@@ -34,9 +38,6 @@ private slots:
     //Actions
     void downloadActionPressed();
     void downloadToActionPressed();
-
-	//Search button pressed
-	void searchPressed();
 
     //Sort results
     void sortTimeout();

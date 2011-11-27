@@ -123,6 +123,7 @@ private slots:
 	//GUI interaction
     void chatLineEditReturnPressed();
 	void sendChatMessage();
+    void quickSearchPressed();
 
 	//Direct user interaction with actions
 	void searchActionPressed();
@@ -204,6 +205,10 @@ private:
 	QAction *reconnectAction, *shareAction, *searchAction, *queueAction, *downloadFinishedAction, *settingsAction, *helpAction, *privateMessageAction;
 
 	//-----===== Widgets =====-----
+
+    //Quicksearch
+    QLineEdit *quickSearchLineEdit;
+
 	//Labels
 	QLabel *userHubCountLabel;
 	QLabel *additionalInfoLabel;

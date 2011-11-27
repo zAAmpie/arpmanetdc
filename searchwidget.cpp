@@ -24,6 +24,28 @@ SearchWidget::SearchWidget(ResourceExtractor *mappedIconList, TransferManager *t
     sortTimer->start(500); //Sort every 500msec if necessary
 }
 
+SearchWidget::SearchWidget(ResourceExtractor *mappedIconList, TransferManager *transferManager, QString startupSearchString, ArpmanetDC *parent)
+{
+	//Constructor
+	pParent = parent;
+    pIconList = mappedIconList;
+    pTransferManager = transferManager;
+
+	createWidgets();
+	placeWidgets();
+	connectWidgets();
+
+	pID = staticID++;
+
+    sortDue = false;
+    sortTimer = new QTimer();
+    connect(sortTimer, SIGNAL(timeout()), this, SLOT(sortTimeout()));
+    sortTimer->start(500); //Sort every 500msec if necessary
+
+    //Search for startup string
+    searchLineEdit->setText(startupSearchString);
+}
+
 SearchWidget::~SearchWidget()
 {
 	//Destructor
