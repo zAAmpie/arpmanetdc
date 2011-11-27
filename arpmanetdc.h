@@ -32,6 +32,8 @@
 
 #define SHARE_DATABASE_PATH "arpmanetdc.sqlite"
 
+#define SUPPORTED_TRANSFER_PROTOCOLS "ProtocolA;ProtocolB;ProtocolC;ProtocolD" //Semi-colon separated
+
 #define MAX_SEARCH_RESULTS 100 //Max to give a query, not max to display
 
 #define MAX_MAINCHAT_BLOCKS 1000
@@ -75,7 +77,7 @@ public slots:
     //Change queue item priority
     void setQueuePriority(QByteArray tth, QueuePriority priority);
     //Returns a queuelist
-    void returnQueueList(QHash<QByteArray , QueueStruct> *);
+    void returnQueueList(QHash<QByteArray, QueueStruct> *queue);
 
 private slots:
     //-----===== OBJECT SLOTS =====-----

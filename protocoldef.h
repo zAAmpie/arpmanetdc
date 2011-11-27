@@ -1,6 +1,14 @@
 #ifndef PROTOCOLDEF_H
 #define PROTOCOLDEF_H
 
+enum TransferProtocol
+{
+    ProtocolA=0x01,
+    ProtocolB=0x02,
+    ProtocolC=0x04,
+    ProtocolD=0x08
+};
+
 enum MajorPacketType
 {
     DataPacket=0xaa,

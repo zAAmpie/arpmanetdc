@@ -29,6 +29,10 @@ private slots:
     void guessIPPressed();
     //Pressed download path browse button
     void browseDownloadPathPressed();
+    //Up pressed
+    void protocolUpPressed();
+    //Down pressed
+    void protocolDownPressed();
 
 signals:
 	//Signalled when settings were saved
@@ -47,8 +51,11 @@ private:
 	QHash<QString, QString> *pSettings;
 
 	//GUI
+    QListWidget *protocolList;
+
 	QLineEdit *hubAddressLineEdit, *hubPortLineEdit, *nickLineEdit, *passwordLineEdit, *ipLineEdit, *externalPortLineEdit, *downloadPathLineEdit;
-	QPushButton *saveButton, *guessIPButton, *browseDownloadPathButton;
+	
+    QPushButton *saveButton, *guessIPButton, *browseDownloadPathButton, *protocolUpButton, *protocolDownButton;
 
 };
 

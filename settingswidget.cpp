@@ -19,8 +19,9 @@ SettingsWidget::~SettingsWidget()
 
 void SettingsWidget::createWidgets()
 {
+    //========== BASIC SETTINGS ==========
+
 	hubAddressLineEdit = new QLineEdit(pSettings->value("hubAddress"),(QWidget *)pParent);
-	//hubAddressLineEdit->setValidator(new IPValidator(this));                              //Determine if IP validator is needed, most likely a hostname will suffice
 	
 	hubPortLineEdit = new QLineEdit(pSettings->value("hubPort"), (QWidget *)pParent);
 	hubPortLineEdit->setValidator(new QIntValidator(0, 65535, this));
@@ -29,18 +30,37 @@ void SettingsWidget::createWidgets()
 	
 	passwordLineEdit = new QLineEdit(pSettings->value("password"), (QWidget *)pParent);
 	passwordLineEdit->setEchoMode(QLineEdit::Password);
+    
+    downloadPathLineEdit = new QLineEdit(pSettings->value("downloadPath"), (QWidget *)pParent);
+
+    browseDownloadPathButton = new QPushButton(tr("Browse"), (QWidget *)pParent);
 	
+    //========== ADVANCED SETTINGS ==========
+
 	ipLineEdit = new QLineEdit(pSettings->value("externalIP"), (QWidget *)pParent);
 	ipLineEdit->setValidator(new IPValidator(this));
 
 	externalPortLineEdit = new QLineEdit(pSettings->value("externalPort"), (QWidget *)pParent);
 	externalPortLineEdit->setValidator(new QIntValidator(0, 65535, this));
 
-    downloadPathLineEdit = new QLineEdit(pSettings->value("downloadPath"), (QWidget *)pParent);
+    protocolList = new QListWidget((QWidget *)pParent);
+    protocolList->setMaximumHeight(150);
+    protocolList->setSelectionMode(QAbstractItemView::SingleSelection);
 
-	saveButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Save changes"), (QWidget *)pParent);
     guessIPButton = new QPushButton(tr("Guess External IP"), (QWidget *)pParent);
-    browseDownloadPathButton = new QPushButton(tr("Browse"), (QWidget *)pParent);
+    
+    protocolUpButton = new QPushButton(tr("Up"), (QWidget *)pParent);
+    protocolDownButton = new QPushButton(tr("Down"), (QWidget *)pParent);
+
+    //Enqueue supported protocols
+    QStringList supportedProtocols = pSettings->value("protocolHint").split(";");
+    foreach (QString prot, supportedProtocols)
+    {
+        new QListWidgetItem(prot, protocolList); 
+    }
+
+    //========== MISC ==========
+    saveButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Save changes"), (QWidget *)pParent);
 }
 
 void SettingsWidget::placeWidgets()
@@ -63,10 +83,21 @@ void SettingsWidget::placeWidgets()
     guessLayout->addWidget(ipLineEdit);
     guessLayout->addWidget(guessIPButton);	
 
+    QVBoxLayout *protocolButtonLayout = new QVBoxLayout();
+    protocolButtonLayout->addStretch(1);
+    protocolButtonLayout->addWidget(protocolUpButton);
+    protocolButtonLayout->addWidget(protocolDownButton);
+    protocolButtonLayout->addStretch(1);
+
+    QHBoxLayout *protocolLayout = new QHBoxLayout();
+    protocolLayout->addWidget(protocolList);
+    protocolLayout->addLayout(protocolButtonLayout);
+
     QFormLayout *flayoutR = new QFormLayout();
     flayoutR->addRow(new QLabel("<font color=\"red\"><b>Warning: Advanced users only!</b></font>"));
 	flayoutR->addRow(new QLabel("<font color=\"red\">External IP:</font>"), guessLayout);
 	flayoutR->addRow(new QLabel("<font color=\"red\">External port:</font>"), externalPortLineEdit);
+    flayoutR->addRow(new QLabel("<font color=\"red\">Transfer protocol preferences</font>"), protocolLayout);
 
     QHBoxLayout *formLayouts = new QHBoxLayout();
     formLayouts->addLayout(flayout);
@@ -91,6 +122,9 @@ void SettingsWidget::connectWidgets()
 	connect(saveButton, SIGNAL(clicked()), this, SLOT(savePressed()));
     connect(guessIPButton, SIGNAL(clicked()), this, SLOT(guessIPPressed()));
     connect(browseDownloadPathButton, SIGNAL(clicked()), this, SLOT(browseDownloadPathPressed()));
+
+    connect(protocolUpButton, SIGNAL(clicked()), this, SLOT(protocolUpPressed()));
+    connect(protocolDownButton, SIGNAL(clicked()), this, SLOT(protocolDownPressed()));
 }
 
 void SettingsWidget::savePressed()
@@ -124,6 +158,16 @@ void SettingsWidget::savePressed()
         (*pSettings)["externalPort"] = externalPortLineEdit->text();
         (*pSettings)["downloadPath"] = downloadPathLineEdit->text().replace("\\","/");
 
+        //Build protocolHint string
+        QString protocolHint;
+        for (int i = 0; i < protocolList->count(); i++)
+        {
+            if (i != 0)
+                protocolHint.append(";");
+            protocolHint.append(protocolList->item(i)->text());
+        }
+        (*pSettings)["protocolHint"] = protocolHint;
+
 		emit settingsSaved();
 	}
 }
@@ -139,6 +183,49 @@ void SettingsWidget::browseDownloadPathPressed()
     QString downloadPath = QFileDialog::getExistingDirectory((QWidget *)pParent, tr("Select download path"), downloadPathLineEdit->text());
     if (!downloadPath.isEmpty())
         downloadPathLineEdit->setText(downloadPath.replace("\\","/"));
+}
+
+//Up pressed
+void SettingsWidget::protocolUpPressed()
+{
+    QList<QListWidgetItem *> selectedItems = protocolList->selectedItems();
+
+    if (selectedItems.isEmpty())
+        return;
+
+    //Calculate new index
+    int index = protocolList->row(selectedItems.first())-1;
+    protocolList->takeItem(index+1);
+
+    //Check indexes to make sure they are valid
+    if (index < 0)
+        index++;
+    
+    //Add to list
+    protocolList->insertItem(index, selectedItems.first());
+    protocolList->setCurrentItem(selectedItems.first());
+}
+
+//Down pressed
+void SettingsWidget::protocolDownPressed()
+{
+    QList<QListWidgetItem *> selectedItems = protocolList->selectedItems();
+    int count = protocolList->count();
+
+    if (selectedItems.isEmpty())
+        return;
+
+    //Calculate new index
+    int index = protocolList->row(selectedItems.first())+1;
+    protocolList->takeItem(index-1);
+
+    //Check indexes to make sure they are valid
+    if (index >= count)
+        index--;
+    
+    //Add to list
+    protocolList->insertItem(index, selectedItems.first());
+    protocolList->setCurrentItem(selectedItems.first());
 }
 
 QWidget *SettingsWidget::widget()

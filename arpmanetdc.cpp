@@ -17,16 +17,24 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     pSettings = new QHash<QString, QString>();
 
     //Load settings from database or initialize settings from defaults
-   	if (!loadSettings())
-    {
+   	loadSettings();
+    if (!pSettings->contains("nick"))
         pSettings->insert("nick", DEFAULT_NICK);
+    if (!pSettings->contains("password"))
         pSettings->insert("password", DEFAULT_PASSWORD);
+    if (!pSettings->contains("hubAddress"))
         pSettings->insert("hubAddress", DEFAULT_HUB_ADDRESS);
+    if (!pSettings->contains("hubPort"))
         pSettings->insert("hubPort", DEFAULT_HUB_PORT);
+    if (!pSettings->contains("externalIP"))
         pSettings->insert("externalIP", getIPGuess().toString());
+    if (!pSettings->contains("externalPort"))
         pSettings->insert("externalPort", DEFAULT_EXTERNAL_PORT);
+    if (!pSettings->contains("downloadPath"))
         pSettings->insert("downloadPath", getDefaultDownloadPath());
-    }
+    if (!pSettings->contains("protocolHint"))
+        pSettings->insert("protocolHint", SUPPORTED_TRANSFER_PROTOCOLS);
+    
 
 	mainChatBlocks = 0;
 
@@ -106,8 +114,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     connect(this, SIGNAL(setQueuedDownloadPriority(QByteArray, QueuePriority)), pShare, SLOT(setQueuedDownloadPriority(QByteArray, QueuePriority)), Qt::QueuedConnection);
     connect(this, SIGNAL(removeQueuedDownload(QByteArray)), pShare, SLOT(removeQueuedDownload(QByteArray)), Qt::QueuedConnection);
     connect(this, SIGNAL(saveQueuedDownload(QueueStruct)), pShare, SLOT(saveQueuedDownload(QueueStruct)), Qt::QueuedConnection);
-    emit requestQueueList();    
-
+   
     //Connect ShareSearch to Dispatcher - reply to search request from other clients
     connect(pShare, SIGNAL(returnSearchResult(QHostAddress, QByteArray, quint64, QByteArray)), 
             pDispatcher, SLOT(sendSearchResult(QHostAddress, QByteArray, quint64, QByteArray)), Qt::QueuedConnection);
@@ -147,9 +154,13 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     pStatusHistoryList = new QList<QString>();
     pQueueList = new QHash<QByteArray, QueueStruct>();
 
+    //Get queue
+    setStatus(tr("Loading download queue from database..."));
+    emit requestQueueList();     
+
     //Update shares
-	emit updateShares();
-    setStatus(tr("Share update procedure started. Parsing directories/paths..."));
+	setStatus(tr("Share update procedure started. Parsing directories/paths..."));
+    emit updateShares();    
 
 	downloadQueueWidget = 0;
 	shareWidget = 0;
@@ -1211,13 +1222,13 @@ void ArpmanetDC::userListNickListReceived(QStringList list)
 void ArpmanetDC::hubOffline()
 {
 	tabs->setTabIcon(0, QIcon(":/ArpmanetDC/Resources/ServerOfflineIcon.png"));
-	setStatus("Hub offline");
+	setStatus("ArpmanetDC hub went offline");
 }
 
 void ArpmanetDC::hubOnline()
 {
 	tabs->setTabIcon(0, QIcon(":/ArpmanetDC/Resources/ServerIcon.png"));
-	setStatus("Hub online");
+	setStatus("ArpmanetDC hub online");
 }
 
 void ArpmanetDC::bootstrapStatusChanged(int status)
@@ -1266,11 +1277,21 @@ void ArpmanetDC::setStatus(QString msg)
 }
 
 //Get the queue from the database
-void ArpmanetDC::returnQueueList(QHash<QByteArray , QueueStruct> *queue)
+void ArpmanetDC::returnQueueList(QHash<QByteArray, QueueStruct> *queue)
 {
     if (pQueueList)
         delete pQueueList;
     pQueueList = queue;
+
+    //Readd the queue to transfermanager
+    QString finalPath;
+    foreach (QueueStruct item, *pQueueList)
+    {
+        finalPath = item.filePath + item.fileName;
+        pTransferManager->queueDownload((int)item.priority, *item.tthRoot, finalPath, item.fileSize, item.fileHost);
+    }
+
+    setStatus(tr("Download queue loaded"));
 }
 
 //Add a download to the queue
