@@ -1,5 +1,12 @@
 #include "dispatcher.h"
 
+#ifdef Q_WS_WIN
+#include <winsock2.h>
+#else //If Q_WS_X11
+#include <sys/socket.h>
+#include <sys/types.h>
+#endif
+
 Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     QObject(parent)
 {
@@ -18,6 +25,13 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     receiverUdpSocket->setSocketOption(QAbstractSocket::MulticastLoopbackOption, false);
 #endif
     connect(receiverUdpSocket, SIGNAL(readyRead()), this, SLOT(receiveP2PData()));
+
+    //Set UDP receiving buffer to 10MB
+    int size = 10 * 1<<20;
+    if (::setsockopt(receiverUdpSocket->socketDescriptor(), SOL_SOCKET, SO_RCVBUF, (char *)&size, sizeof(size)) == -1)
+    {
+        qDebug("Could not set receiving buffer to 10MB");
+    }
 
     senderUdpSocket = new QUdpSocket(this);
 
@@ -66,6 +80,8 @@ void Dispatcher::reconfigureDispatchHostPort(QHostAddress ip, quint16 port)
 #endif
     receiverUdpSocket->close();
     receiverUdpSocket->bind(dispatchPort, QUdpSocket::ShareAddress);
+
+
     connect(receiverUdpSocket, SIGNAL(readyRead()), this, SLOT(receiveP2PData()));
 #if QT_VERSION >= 0x040800
     receiverUdpSocket->joinMulticastGroup(mcastAddress);
