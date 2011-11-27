@@ -33,12 +33,13 @@ void DownloadQueueWidget::createWidgets()
 	queueTable->setContextMenuPolicy(Qt::CustomContextMenu);
 
 	//Model
-	queueModel = new QStandardItemModel(0, 5);
+	queueModel = new QStandardItemModel(0, 6);
 	queueModel->setHeaderData(0, Qt::Horizontal, tr("Filename"));
 	queueModel->setHeaderData(1, Qt::Horizontal, tr("Path"));
 	queueModel->setHeaderData(2, Qt::Horizontal, tr("Size"));
 	queueModel->setHeaderData(3, Qt::Horizontal, tr("Priority"));
 	queueModel->setHeaderData(4, Qt::Horizontal, tr("TTH"));
+    queueModel->setHeaderData(5, Qt::Horizontal, tr("Host IP"));
 
 	//Set model
 	queueTable->setModel(queueModel);
@@ -203,14 +204,16 @@ void DownloadQueueWidget::loadQueueList()
 		}
         row.append(new CStandardItem(CStandardItem::PriorityType, priorityStr));
         
-        QByteArray tthBase32(list.at(i).tthRoot->data());
+        QByteArray tthBase32(list.at(i).tthRoot->data(), list.at(i).tthRoot->size());
         base32Encode(tthBase32);
         row.append(new QStandardItem(tthBase32.data()));
+        row.append(new QStandardItem(list.at(i).fileHost.toString()));
 		
         queueModel->appendRow(row);
     }
 
     resizeRowsToContents(queueTable);
+    queueTable->sortByColumn(0, Qt::AscendingOrder);
 }
 
 void DownloadQueueWidget::addQueuedDownload(QueueStruct file)
@@ -235,9 +238,10 @@ void DownloadQueueWidget::addQueuedDownload(QueueStruct file)
 	}
     row.append(new CStandardItem(CStandardItem::PriorityType, priorityStr));
 
-    QByteArray tthBase32(file.tthRoot->data());
+    QByteArray tthBase32(file.tthRoot->data(), file.tthRoot->size());
     base32Encode(tthBase32);
     row.append(new QStandardItem(tthBase32.data()));
+    row.append(new QStandardItem(file.fileHost.toString()));
 	
     queueModel->appendRow(row); 
 
