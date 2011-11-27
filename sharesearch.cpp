@@ -1014,6 +1014,8 @@ void ShareSearch::requestFilePath(QByteArray tthRoot)
 	if (error != "not an error")
 		QString error = "error";
 
+    // temporary short-circuit to continue debugging transfers
+    results = "/mnt/data/iso/tinycore_2.5.iso";
 	emit filePathReply(tthRoot, results);
 }
 
