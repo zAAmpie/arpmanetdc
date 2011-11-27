@@ -31,7 +31,8 @@ void TransferManager::incomingDataPacket(quint8 transferPacket, QByteArray &data
 {
     if (transferPacket == ProtocolADataPacket)
     {
-        quint64 offset = datagram.mid(2, 8).toULongLong();
+        QByteArray tmp = datagram.mid(2, 8);
+        quint64 offset = getQuint64FromByteArray(&tmp);
         QByteArray tth = datagram.mid(10, 24);
         QByteArray data = datagram.mid(34);
         if ((data.length() == datagram.length() - 34) && (transferObjectTable.contains(tth)))
@@ -49,6 +50,7 @@ void TransferManager::incomingDataPacket(quint8 transferPacket, QByteArray &data
 // incoming requests for files we share
 void TransferManager::incomingUploadRequest(QByteArray transferProtocolHint, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length)
 {
+    qDebug() << "Data request offset " << offset << " length " << length;
     Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_UPLOAD, fromHost);
     if (t)
     {
@@ -66,6 +68,30 @@ void TransferManager::incomingUploadRequest(QByteArray transferProtocolHint, QHo
         uploadTransferQueue.insertMulti(tth, i);
         emit filePathNameRequest(tth);
     }
+}
+
+// sharing engine replies with file name for tth being requested for download
+// this structure assumes only one user requests a specific file during the time it takes to dispatch the request to a transfer object.
+// should more than one user try simultaneously, their requests will be deleted off the queue in .remove(tth) and they should try again. oops.
+void TransferManager::filePathNameReply(QByteArray tth, QString filename)
+{
+    if (filename == "")
+    {
+        uploadTransferQueue.remove(tth);
+        return; // TODO: stuur error terug na requesting host
+    }
+    Transfer *t = new UploadTransfer();
+    connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
+    connect(t, SIGNAL(transmitDatagram(QHostAddress&,QByteArray&)), this, SIGNAL(transmitDatagram(QHostAddress&,QByteArray&)));
+    t->setFileName(filename);
+    t->setTTH(tth);
+    t->setFileOffset(uploadTransferQueue.value(tth)->fileOffset);
+    t->setSegmentLength(uploadTransferQueue.value(tth)->requestLength);
+    t->setRemoteHost(uploadTransferQueue.value(tth)->requestingHost);
+    t->setTransferProtocolHint(uploadTransferQueue.value(tth)->transferProtocolHint);
+    uploadTransferQueue.remove(tth);
+    transferObjectTable.insertMulti(tth, t);
+    t->startTransfer();
 }
 
 // incoming requests from user interface for files we want to download
@@ -194,7 +220,7 @@ Transfer* TransferManager::getTransferObjectPointer(QByteArray &tth, int transfe
     if (transferObjectTable.contains(tth))
     {
         QListIterator<Transfer*> it(transferObjectTable.values(tth));
-        while (it.hasNext());
+        while (it.hasNext())
         {
             Transfer* p = it.next();
             if ((p->getTransferType() == transferType) && (*p->getRemoteHost() == hostAddr))
@@ -202,30 +228,6 @@ Transfer* TransferManager::getTransferObjectPointer(QByteArray &tth, int transfe
         }
     }
     return 0;
-}
-
-// sharing engine replies with file name for tth being requested for download
-// this structure assumes only one user requests a specific file during the time it takes to dispatch the request to a transfer object.
-// should more than one user try simultaneously, their requests will be deleted off the queue in .remove(tth) and they should try again. oops.
-void TransferManager::filePathNameReply(QByteArray tth, QString filename)
-{
-    if (filename == "")
-    {
-        uploadTransferQueue.remove(tth);
-        return; // TODO: stuur error terug na requesting host
-    }
-    Transfer *t = new UploadTransfer();
-    connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
-    connect(t, SIGNAL(transmitDatagram(QHostAddress&,QByteArray&)), this, SIGNAL(transmitDatagram(QHostAddress&,QByteArray&)));
-    t->setFileName(filename);
-    t->setTTH(tth);
-    t->setFileOffset(uploadTransferQueue.value(tth)->fileOffset);
-    t->setSegmentLength(uploadTransferQueue.value(tth)->requestLength);
-    t->setRemoteHost(uploadTransferQueue.value(tth)->requestingHost);
-    t->setTransferProtocolHint(uploadTransferQueue.value(tth)->transferProtocolHint);
-    uploadTransferQueue.remove(tth);
-    transferObjectTable.insertMulti(tth, t);
-    t->startTransfer();
 }
 
 // return a list of structs that contain the status of all the current transfers

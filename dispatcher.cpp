@@ -227,7 +227,7 @@ void Dispatcher::handleProtocolInstruction(quint8 &quint8DatagramType, quint8 &q
         break;
 
     case TTHTreeRequestPacket:
-        emit incomingTTHTreeRequest(senderHost, datagram);
+        handleReceivedTTHTreeRequest(senderHost, datagram);
         break;
 
     case TTHTreeReplyPacket:
@@ -625,11 +625,11 @@ void Dispatcher::handleIncomingUploadRequest(QHostAddress &fromHost, QByteArray 
 {
     QByteArray tth = datagram.mid(2, 24);
     QByteArray tmp;
-    tmp = datagram.mid(26, 2);
-    quint64 offset = getQuint16FromByteArray(&tmp);
-    tmp = datagram.mid(28, 2);
-    quint64 length = getQuint16FromByteArray(&tmp);
-    QByteArray protocolHint = datagram.mid(30);
+    tmp = datagram.mid(26, 8);
+    quint64 offset = getQuint64FromByteArray(&tmp);
+    tmp = datagram.mid(34, 8);
+    quint64 length = getQuint64FromByteArray(&tmp);
+    QByteArray protocolHint = datagram.mid(42);
     emit incomingUploadRequest(protocolHint, fromHost, tth, offset, length);
 }
 
@@ -674,10 +674,16 @@ void Dispatcher::sendTTHTreeReply(QHostAddress host, QByteArray tthTreePacket)
     sendUnicastRawDatagram(host, datagram);
 }
 
+void Dispatcher::handleReceivedTTHTreeRequest(QHostAddress &senderHost, QByteArray &datagram)
+{
+    QByteArray tth = datagram.mid(2);
+    emit incomingTTHTreeRequest(senderHost, tth);
+}
+
 void Dispatcher::handleReceivedTTHTree(QByteArray &datagram)
 {
-    QByteArray tth = datagram.mid(0, 24);
-    QByteArray tree = datagram.mid(24);
+    QByteArray tth = datagram.mid(2, 24);
+    QByteArray tree = datagram.mid(26);
     emit receivedTTHTree(tth, tree);
 }
 

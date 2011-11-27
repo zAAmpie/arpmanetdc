@@ -20,7 +20,7 @@
 #define TRANSFER_TYPE_DOWNLOAD 1
 
 #define PACKET_MTU 1436
-#define PACKET_DATA_MTU 1434
+#define PACKET_DATA_MTU 1402
 #define TRANSFER_MAXIMUM_SEGMENT 262144
 
 class Transfer : public QObject
@@ -56,7 +56,7 @@ public slots:
     int getTransferProgress();
     void hashBucketReply(int &bucketNumber, QByteArray &bucketTTH);
     void addPeer(QHostAddress peer);
-    void TTHTreeReply(QByteArray tree);
+    virtual void TTHTreeReply(QByteArray tree);
 
     virtual void incomingDataPacket(quint8 transferProtocolVersion, quint64 &offset, QByteArray &data);
     virtual int getTransferType() = 0;

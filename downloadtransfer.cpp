@@ -211,6 +211,7 @@ void DownloadTransfer::transferTimerEvent()
 
         status = TRANSFER_STATE_RUNNING;
         requestingTargetOffset = requestingOffset + requestingLength;
+        qDebug() << "sendDownloadRequest() peer tth offset length " << listOfPeers.first() << TTH << requestingOffset << requestingLength;
         emit sendDownloadRequest(protocolPreference, listOfPeers.first(), TTH, requestingOffset, requestingLength);
     }
 

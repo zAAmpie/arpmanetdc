@@ -67,7 +67,7 @@ signals:
 
     // TTH Tree
     void receivedTTHTree(QByteArray tthRoot, QByteArray tthTree);
-    void incomingTTHTreeRequest(QHostAddress fromHost, QByteArray datagram);
+    void incomingTTHTreeRequest(QHostAddress fromHost, QByteArray tth);
 
     // Transfers
     void incomingUploadRequest(QByteArray protocolHint, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length);
@@ -168,7 +168,7 @@ private:
     void sendAllBuckets(QHostAddress &host);
 
     // TTH
-    void processIncomingTTHTreeRequest(QHostAddress &host, QByteArray &datagram);
+    void handleReceivedTTHTreeRequest(QHostAddress &host, QByteArray &datagram);
 
     // Transfers
     void handleIncomingUploadRequest(QHostAddress &fromHost, QByteArray &datagram);
