@@ -20,6 +20,8 @@ typedef struct
 {
     QString filePathName;
     QByteArray tth;
+    quint64 fileSize;
+    QHostAddress fileHost;
 } DownloadTransferQueueItem;
 
 typedef struct
@@ -64,7 +66,7 @@ public slots:
     void filePathNameReply(QByteArray tth, QString filename);
 
     void incomingUploadRequest(QByteArray transferProtocolHint, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length);
-    void queueDownload(int priority, QByteArray &tth, QString &filePathName);
+    void queueDownload(int priority, QByteArray &tth, QString &filePathName, quint64 fileSize, QHostAddress fileHost);
     void changeQueuedDownloadPriority(int oldPriority, int newPriority, QByteArray &tth);
     void removeQueuedDownload(int priority, QByteArray &tth);
 

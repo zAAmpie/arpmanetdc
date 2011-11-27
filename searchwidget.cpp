@@ -150,7 +150,8 @@ void SearchWidget::downloadActionPressed()
 	    //Get TTH and filename of the result
 	    QString tthBase32 = resultsModel->data(resultsModel->index(selectedIndex.row(), 8)).toString();
         QString fileName = resultsModel->data(resultsModel->index(selectedIndex.row(), 0)).toString();
-        quint64 fileSize = resultsModel->data(resultsModel->index(selectedIndex.row(), 5)).toInt();
+        quint64 fileSize = resultsModel->data(resultsModel->index(selectedIndex.row(), 5)).toULongLong();
+        QHostAddress senderIP = QHostAddress(resultsModel->data(resultsModel->index(selectedIndex.row(), 9)).toUInt());
 
         //Convert TTH back to binary from Base32
         QByteArray tthRoot;
@@ -162,12 +163,13 @@ void SearchWidget::downloadActionPressed()
         item.fileName = fileName;
         item.filePath = path;
         item.fileSize = fileSize;
+        item.fileHost = senderIP;
         item.priority = NormalQueuePriority;
         item.tthRoot = new QByteArray(tthRoot);
         pParent->addDownloadToQueue(item);
 
         QString finalPath = path + fileName;
-        pTransferManager->queueDownload((int)NormalQueuePriority, tthRoot, finalPath);
+        pTransferManager->queueDownload((int)NormalQueuePriority, tthRoot, finalPath, fileSize, senderIP);
     }
 }
 
@@ -185,7 +187,8 @@ void SearchWidget::downloadToActionPressed()
 	    //Get TTH and filename of the result
 	    QString tthBase32 = resultsModel->data(resultsModel->index(selectedIndex.row(), 8)).toString();
         QString fileName = resultsModel->data(resultsModel->index(selectedIndex.row(), 0)).toString();
-        quint64 fileSize = resultsModel->data(resultsModel->index(selectedIndex.row(), 5)).toInt();
+        quint64 fileSize = resultsModel->data(resultsModel->index(selectedIndex.row(), 5)).toULongLong();
+        QHostAddress senderIP = QHostAddress(resultsModel->data(resultsModel->index(selectedIndex.row(), 9)).toUInt());
 
         //Convert TTH back to binary from Base32
         QByteArray tthRoot;
@@ -197,13 +200,14 @@ void SearchWidget::downloadToActionPressed()
         item.fileName = fileName;
         item.filePath = path;
         item.fileSize = fileSize;
+        item.fileHost = senderIP;
         item.priority = NormalQueuePriority;
         item.tthRoot = new QByteArray(tthRoot);
         pParent->addDownloadToQueue(item);
 
         //I'm totally guessing the protocol here??? How should I distinguish?
         QString finalPath = path + fileName;
-        pTransferManager->queueDownload((int)NormalQueuePriority, tthRoot, finalPath);
+        pTransferManager->queueDownload((int)NormalQueuePriority, tthRoot, finalPath, fileSize, senderIP);
     }
 }
 

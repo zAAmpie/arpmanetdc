@@ -2,6 +2,7 @@
 #define DOWNLOADQUEUEWIDGET_H
 
 #include <QtGui>
+#include <QHostAddress>
 
 class ArpmanetDC;
 class ShareSearch;
@@ -15,6 +16,7 @@ struct QueueStruct
 	qint64 fileSize;
 	QueuePriority priority;
 	QByteArray *tthRoot;
+    QHostAddress fileHost;
     bool operator==(const QueueStruct &other) const { return tthRoot == other.tthRoot; }
 };
 

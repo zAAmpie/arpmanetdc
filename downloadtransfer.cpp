@@ -8,6 +8,7 @@ DownloadTransfer::DownloadTransfer()
     requestingOffset = 0;
     requestingLength = 65536;
     requestingTargetOffset = 0;
+    initializationStateTimerBrakes = 0;
     status = TRANSFER_STATE_INITIALIZING;
     remoteHost = QHostAddress("0.0.0.0");
 
@@ -33,7 +34,7 @@ DownloadTransfer::~DownloadTransfer()
     }
     QHashIterator<int, QByteArray*> ithb(downloadBucketHashLookupTable);
     while (ithb.hasNext())
-        delete ithb.next();
+        delete ithb.next().value();
 }
 
 void DownloadTransfer::incomingDataPacket(quint8 transferPacketType, quint64 &offset, QByteArray &data)
@@ -100,11 +101,14 @@ void DownloadTransfer::hashBucketReply(int &bucketNumber, QByteArray &bucketTTH)
 
 void DownloadTransfer::TTHTreeReply(QByteArray &tree)
 {
-    while (tree.length() >= 28)
+    while (tree.length() >= 30)
     {
-        int bucketNumber = tree.mid(0, 4).toInt();
-        QByteArray *bucketHash = new QByteArray(tree.mid(4, 24));
-        tree.remove(0, 28);
+        QByteArray tmp = tree.mid(0, 4);
+        int bucketNumber = getQuint32FromByteArray(&tmp);
+        tmp = tree.mid(4, 2);
+        int tthLength = getQuint16FromByteArray(&tmp);
+        QByteArray *bucketHash = new QByteArray(tree.mid(6, tthLength));
+        tree.remove(0, 6 + tthLength);
         downloadBucketHashLookupTable.insert(bucketNumber, bucketHash);
     }
 }
@@ -116,6 +120,7 @@ int DownloadTransfer::getTransferType()
 
 void DownloadTransfer::startTransfer()
 {
+    lastBucketNumber = calculateBucketNumber(fileSize);
     transferTimer->start(100);
 }
 
@@ -172,11 +177,29 @@ void DownloadTransfer::transferTimerEvent()
 {
     if (status == TRANSFER_STATE_INITIALIZING)
     {
+        // this is really primitive
+        initializationStateTimerBrakes++;
+        if (initializationStateTimerBrakes > 1)
+        {
+            if (initializationStateTimerBrakes == 100) // 10s with 100ms timer period
+                initializationStateTimerBrakes = 0;
+            return;
+        }
+
         // Get peers and TTH tree
-        if (!listOfPeers.isEmpty())
+        if (listOfPeers.isEmpty())
+        {
+            emit searchTTHAlternateSources(TTH);
+        }
+        else if (!(downloadBucketHashLookupTable.size() - 1 == lastBucketNumber))
         {
             // simple and stupid for now...
             emit TTHTreeRequest(listOfPeers.first(), TTH);
+        }
+        else
+        {
+            emit sendDownloadRequest(protocolPreference, listOfPeers.first(), TTH, requestingOffset, requestingLength);
+            status = TRANSFER_STATE_RUNNING;
         }
     }
     else if (status == TRANSFER_STATE_STALLED)

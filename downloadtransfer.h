@@ -33,6 +33,9 @@ private:
     QHash<int, QByteArray*> downloadBucketTable;
     QHash<int, QByteArray*> downloadBucketHashLookupTable;
 
+    int lastBucketNumber;
+    int initializationStateTimerBrakes;
+
     int bytesWrittenSinceUpdate;
     QByteArray protocolPreference;
 

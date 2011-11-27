@@ -14,6 +14,7 @@ void Transfer::incomingDataPacket(quint8, quint64&, QByteArray&){}
 void Transfer::hashBucketReply(int&, QByteArray&){}
 void Transfer::TTHTreeReply(QByteArray&){}
 void Transfer::transferTimerEvent(){}
+
 // ------------------------------------------------------------------------
 
 void Transfer::setFileName(QString &filename)
@@ -54,6 +55,11 @@ void Transfer::setTransferProtocol(quint8 protocol)
 void Transfer::setTransferProtocolHint(QByteArray &protocolHint)
 {
     transferProtocolHint = protocolHint;
+}
+
+void Transfer::setFileSize(quint64 size)
+{
+    fileSize = size;
 }
 
 QByteArray* Transfer::getTTH()

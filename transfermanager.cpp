@@ -70,7 +70,7 @@ void TransferManager::incomingUploadRequest(QByteArray transferProtocolHint, QHo
 
 // incoming requests from user interface for files we want to download
 // the higher the priority, the lower the number.
-void TransferManager::queueDownload(int priority, QByteArray &tth, QString &filePathName)
+void TransferManager::queueDownload(int priority, QByteArray &tth, QString &filePathName, quint64 fileSize, QHostAddress fileHost)
 {
     if (!downloadTransferQueue.contains(priority))
     {
@@ -80,6 +80,8 @@ void TransferManager::queueDownload(int priority, QByteArray &tth, QString &file
     DownloadTransferQueueItem i;
     i.filePathName = filePathName;
     i.tth = tth;
+    i.fileSize = fileSize;
+    i.fileHost = fileHost;
     downloadTransferQueue.value(priority)->append(i);
     // start the next highest priority queued download, unless max downloads active.
     if (currentDownloadCount < maximumSimultaneousDownloads)
@@ -116,13 +118,15 @@ void TransferManager::startNextDownload()
     Transfer *t = new DownloadTransfer();
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
     connect(t, SIGNAL(hashBucketRequest(QByteArray&,int&,QByteArray*)), this, SIGNAL(hashBucketRequest(QByteArray&,int&,QByteArray*)));
-    connect(t, SIGNAL(TTHTreeRequest(QHostAddress&,QByteArray&)), this, SIGNAL(TTHTreeRequest(QHostAddress&,QByteArray&)));
+    connect(t, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray)), this, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray)));
     connect(t, SIGNAL(searchTTHAlternateSources(QByteArray&)), this, SIGNAL(searchTTHAlternateSources(QByteArray&)));
     connect(t, SIGNAL(loadTTHSourcesFromDatabase(QByteArray)), this, SIGNAL(loadTTHSourcesFromDatabase(QByteArray)));
     connect(t, SIGNAL(sendDownloadRequest(QByteArray&,QHostAddress&,QByteArray&,quint64&,quint64&)),
             this, SIGNAL(sendDownloadRequest(QByteArray&,QHostAddress&,QByteArray&,quint64&,quint64&)));
     t->setFileName(i.filePathName);
     t->setTTH(i.tth);
+    t->setFileSize(i.fileSize);
+    t->addPeer(i.fileHost);
     //t->setTransferProtocol(protocolVersion);
     transferObjectTable.insertMulti(i.tth, t);
     emit loadTTHSourcesFromDatabase(i.tth);

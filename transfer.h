@@ -33,7 +33,7 @@ public:
 signals:
     void abort(Transfer*);
     void hashBucketRequest(QByteArray &rootTTH, int &bucketNumber, QByteArray *bucket);
-    void TTHTreeRequest(QHostAddress &hostAddr, QByteArray &rootTTH);
+    void TTHTreeRequest(QHostAddress hostAddr, QByteArray rootTTH);
     void searchTTHAlternateSources(QByteArray &tth);
     void loadTTHSourcesFromDatabase(QByteArray tth);
     void sendDownloadRequest(QByteArray &protocolPreference, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
@@ -47,6 +47,7 @@ public slots:
     void setRemoteHost(QHostAddress remote);
     void setTransferProtocol(quint8 protocol);
     void setTransferProtocolHint(QByteArray &protocolHint);
+    void setFileSize(quint64 size);
     QByteArray* getTTH();
     QString* getFileName();
     QHostAddress* getRemoteHost();
@@ -84,6 +85,7 @@ protected:
     QTimer *transferTimer;
     quint64 transferRate;
     int transferProgress;
+    quint64 fileSize;
 };
 
 #endif // TRANSFER_H
