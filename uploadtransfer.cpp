@@ -27,6 +27,7 @@ UploadTransfer::~UploadTransfer()
 void UploadTransfer::setFileName(QString &filename)
 {
     filePathName = filename;
+    inputFile.setFileName(filePathName);
     inputFile.open(QIODevice::ReadOnly);
     fileSize = inputFile.size();
 }
