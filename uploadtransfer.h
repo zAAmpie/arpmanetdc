@@ -10,6 +10,7 @@ class UploadTransfer : public Transfer
 public:
     UploadTransfer();
     ~UploadTransfer();
+    void setFileName(QString &filename);
 
 private:
     QTimer* transferInactivityTimer;
