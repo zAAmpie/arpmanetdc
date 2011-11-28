@@ -77,6 +77,7 @@ void DownloadTransfer::incomingDataPacket(quint8 transferPacketType, quint64 &of
     if ((bucketNumber == lastBucketNumber) && (lastBucketSize == downloadBucketTable.value(bucketNumber)->length()))
     {
         status = TRANSFER_STATE_FINISHED;
+        emit transferFinished(TTH);
         return;
     }
 
@@ -176,6 +177,8 @@ void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
     {
         // TODO: emit MISTAKE!, pause download
     }
+    delete downloadBucketTable.value(bucketNumber);
+    downloadBucketTable.remove(bucketNumber);
     file.close();
 }
 

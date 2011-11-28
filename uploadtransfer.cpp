@@ -34,6 +34,7 @@ void UploadTransfer::startTransfer()
     status = TRANSFER_STATE_RUNNING;
     inputFile.setFileName(filePathName);
     inputFile.open(QIODevice::ReadOnly);
+    // TODO: get file size and shrink segmentLength accordingly or abort if fileOffset past EoF.
     const char * f = (char*)inputFile.map(fileOffset, segmentLength);
     inputFile.close();
     quint64 wptr = 0;

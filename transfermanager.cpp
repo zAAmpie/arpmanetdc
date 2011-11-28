@@ -143,7 +143,7 @@ void TransferManager::startNextDownload()
     currentDownloadCount++;
     Transfer *t = new DownloadTransfer();
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
-    connect(t, SIGNAL(hashBucketRequest(QByteArray&,int&,QByteArray*)), this, SIGNAL(hashBucketRequest(QByteArray&,int&,QByteArray*)));
+    connect(t, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)), this, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)));
     connect(t, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray)), this, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray)));
     connect(t, SIGNAL(searchTTHAlternateSources(QByteArray&)), this, SIGNAL(searchTTHAlternateSources(QByteArray&)));
     connect(t, SIGNAL(loadTTHSourcesFromDatabase(QByteArray)), this, SIGNAL(loadTTHSourcesFromDatabase(QByteArray)));
@@ -266,7 +266,7 @@ void TransferManager::incomingTTHTree(QByteArray tth, QByteArray tree)
         t->TTHTreeReply(tree);
 }
 
-void TransferManager::hashBucketReply(QByteArray &rootTTH, int &bucketNumber, QByteArray &bucketTTH)
+void TransferManager::hashBucketReply(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH)
 {
     Transfer *t = getTransferObjectPointer(rootTTH, TRANSFER_TYPE_DOWNLOAD);
     if (t)
