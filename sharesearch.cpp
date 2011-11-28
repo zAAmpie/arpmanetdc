@@ -685,7 +685,7 @@ void ShareSearch::querySearchString(QHostAddress senderHost, QByteArray cid, qui
 	QStringList wordList = searchStr.split(" ");
 
 	//Query the database with the search string
-	QString queryStr = tr("SELECT [tth], [fileName], [fileSize], [majorVersion], [minorVersion], [relativePath] FROM FileShares WHERE ");
+	QString queryStr = tr("SELECT [tth], [fileName], [fileSize], [majorVersion], [minorVersion], [relativePath] FROM FileShares WHERE [active] = 1 AND (");
 
     bool first = true;
 
@@ -766,7 +766,7 @@ void ShareSearch::querySearchString(QHostAddress senderHost, QByteArray cid, qui
 		first = false;
 	}
 
-	queryStr.append(tr(" LIMIT %1;").arg(pMaxResults));
+	queryStr.append(tr(") LIMIT %1;").arg(pMaxResults));
 
 	sqlite3 *db = pParent->database();	
 	sqlite3_stmt *statement;
@@ -837,7 +837,7 @@ void ShareSearch::querySearchString(QHostAddress senderHost, QByteArray cid, qui
 void ShareSearch::queryTTH(QByteArray tthRoot)
 {
 	//Query the database with the search string
-	QString queryStr = tr("SELECT DISTINCT [tth], [fileName], [fileSize] FROM FileShares WHERE tth = '%1';").arg(QString(tthRoot.toBase64()));
+	QString queryStr = tr("SELECT DISTINCT [tth], [fileName], [fileSize] FROM FileShares WHERE [active] = 1 AND tth = '%1';").arg(QString(tthRoot.toBase64()));
 
 	SearchStruct results;
 	sqlite3 *db = pParent->database();	
