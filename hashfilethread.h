@@ -27,11 +27,16 @@ public:
 public slots:
 	//Hashes a particular file
 	void processFile(QString filePath, QString rootDir);
+    //Hashes a bucket
+    void processBucket(QByteArray rootTTH, int bucketNumber, QByteArray *bucket, ReturnEncoding encoding = BinaryEncoded);
 
 signals:
 	//Done hashing the file - return the data
 	void done(QString filePath, QString fileName, qint64 fileSize, QString tthRoot, QString rootDir, QString modifiedDate, QList<QString> *oneMBList, HashFileThread *hashObj);
 	void failed(QString filePath, HashFileThread *hashObj);
+
+    //Done hashing the bucket
+    void doneBucket(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH);
 
 private:
     //QString base32Encode(byte *input, int inputLength);

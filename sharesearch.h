@@ -70,6 +70,11 @@ public slots:
     //Return the 1MB TTH given a TTH root and file offset
 	void query1MBTTH(QByteArray tthRoot, qint64 offset);
 
+    //----------========== HASH 1MB BUCKET (TRANSFER MANAGER) ==========----------
+
+    //Hashes a 1MB bucket
+    void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
+
 	//----------========== TTH SOURCES FOR TRANSFERS (TRANSFER MANAGER) ==========----------
 	
     //Save a source for a particular TTH
@@ -92,7 +97,7 @@ public slots:
     //----------========== TTH TREE REQUEST FOR TRANSFERS ==========----------
 
     //Request a tth tree for a file
-    void incomingTTHTreeRequest(QHostAddress host, QByteArray tth);
+    void incomingTTHTreeRequest(QHostAddress host, QByteArray tth);  
 
 	//----------========== UPDATE SHARES (GUI) ==========----------
 	
@@ -138,6 +143,9 @@ private slots:
 	//Parse directory thread failed
 	void parseDirectoryThreadFailed(QString rootDir, ParseDirectoryThread *parseObj);
 
+    //Hash bucket thread done
+    void hashBucketDone(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH);
+
 	//Database commands
 	void commitTransaction(bool startNewTransaction = true);
 
@@ -152,6 +160,11 @@ signals:
 	
     //Signal to return 1MB TTH
 	void return1MBTTH(QByteArray tth1MB);
+
+    //----------========== HASH 1MB BUCKET (TRANSFER MANAGER) ==========----------
+
+    //Signal the reply of the 1MB bucket hash
+    void hashBucketReply(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH);
 
 	//----------========== TRANSFERS (TRANSFER MANAGER) ==========----------
 	
@@ -205,6 +218,7 @@ signals:
 	//Signals to interface with hashing thread objects
 	void runHashThread(QString filePath, QString rootDir);
 	void runParseThread(QString directoryPath);
+    void runHashBucket(QByteArray rootTTH, int bucketNumber, QByteArray *bucket, ReturnEncoding encoding);
 
 private:
 	//Functions to start threads

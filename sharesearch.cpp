@@ -4,6 +4,8 @@
 ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
 {
 	//Constructor
+    qRegisterMetaType<ReturnEncoding>("ReturnEncoding");
+
 	pParent = parent;
 	pMaxResults = maxSearchResults;
 
@@ -24,7 +26,10 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
 	connect(pHashFileThread, SIGNAL(done(QString, QString, qint64, QString, QString, QString, QList<QString> *, HashFileThread *)),
 		this, SLOT(hashFileThreadDone(QString, QString, qint64, QString, QString, QString, QList<QString> *, HashFileThread *)), Qt::QueuedConnection);
 	connect(pHashFileThread, SIGNAL(failed(QString, HashFileThread *)), this, SLOT(hashFileFailed(QString, HashFileThread *)), Qt::QueuedConnection);
+    connect(pHashFileThread, SIGNAL(doneBucket(QByteArray, int, QByteArray)), this, SLOT(hashBucketDone(QByteArray, int, QByteArray)), Qt::QueuedConnection);
 	connect(this, SIGNAL(runHashThread(QString, QString)), pHashFileThread, SLOT(processFile(QString, QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(runHashBucket(QByteArray, int, QByteArray *, ReturnEncoding)), pHashFileThread, SLOT(processBucket(QByteArray, int, QByteArray *, ReturnEncoding)), Qt::QueuedConnection);
+
 	pHashFileThread->moveToThread(hashThread);
 
 	pParseDirectoryThread = new ParseDirectoryThread();
@@ -905,6 +910,26 @@ void ShareSearch::query1MBTTH(QByteArray tthRoot, qint64 offset)
 
 	//Report results
 	emit return1MBTTH(results);
+}
+
+//------------------------------============================== HASH 1MB BUCKET (TRANSFER MANAGER) ==============================------------------------------
+
+//Hashes a 1MB bucket
+void ShareSearch::hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray *bucket)
+{
+    if (!bucket->isEmpty())
+        //Start hash bucket thread
+        emit runHashBucket(rootTTH, bucketNumber, bucket, BinaryEncoded);
+    else
+        //Meh. Not going to hash an empty bucket
+        emit hashBucketReply(rootTTH, bucketNumber, QByteArray());
+}
+
+//Hash bucket thread done
+void ShareSearch::hashBucketDone(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH)
+{
+    //Signal the reply of the 1MB bucket hash
+    emit hashBucketReply(rootTTH, bucketNumber, bucketTTH);
 }
 
 //------------------------------============================== TTH SOURCES FOR TRANSFERS (TRANSFER MANAGER) ==============================------------------------------

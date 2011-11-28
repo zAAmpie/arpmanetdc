@@ -89,23 +89,25 @@ void HashFileThread::processFile(QString filePath, QString rootDir)
 		emit failed(filePath, this);	
 }
 
-/*
-QString HashFileThread::base32Encode(byte *input, int inputLength)
+//Hashes a bucket
+void HashFileThread::processBucket(QByteArray rootTTH, int bucketNumber, QByteArray *bucket, ReturnEncoding encoding)
 {
-	int encodedLength = Base32::GetEncode32Length(inputLength);
-	byte *b32text = new byte[encodedLength];
-	if (!Base32::Encode32(input, inputLength, b32text))
-	{
-		return "";
-	}
+    Tiger totalTTH;
+	QByteArray tth;
+	
+    //Calculate TTH of bucket - can be any size
+    totalTTH.Update((byte *)bucket->data(), bucket->size());
 
-	char *alpha = new char[32];
-	memcpy(alpha, "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567", 32);
-	Base32::Map32(b32text, encodedLength, (byte *)alpha);
+    byte *digestTTH = new byte[totalTTH.DigestSize()];
+	totalTTH.Final(digestTTH);
 
-	QString output = QByteArray((const char*)b32text, encodedLength);
+    if (encoding == Base64Encoded)
+		tth = QByteArray((char *)digestTTH, totalTTH.DigestSize()).toBase64(); //Base64
+	else if (encoding == BinaryEncoded)
+		tth = QByteArray((char *)digestTTH, totalTTH.DigestSize()); //8-bit
+	else if (encoding == Base32Encoded)
+		tth = base32Encode(digestTTH, totalTTH.DigestSize()); //Base32
 
-	delete [] b32text;
-	delete [] alpha;
-	return output;
-}*/
+    //Done hashing the bucket
+    emit doneBucket(rootTTH, bucketNumber, tth);
+}

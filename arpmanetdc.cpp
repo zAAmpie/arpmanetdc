@@ -140,10 +140,10 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     connect(pShare, SIGNAL(tthSourceLoaded(QByteArray, QHostAddress)), pTransferManager, SLOT(incomingTTHSource(QByteArray, QHostAddress)), Qt::QueuedConnection);
     
     // Connect TransferManager to
-//    connect(pTransferManager, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)),
-//            , SLOT());
-//    connect( , SIGNAL(),
-//             pTransferManager, SLOT(hashBucketReply(QByteArray,int,QByteArray)))
+    connect(pTransferManager, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)),
+            pShare, SLOT(hashBucketRequest(QByteArray, int, QByteArray *)));
+    connect(pShare, SIGNAL(hashBucketReply(QByteArray, int, QByteArray)),
+            pTransferManager, SLOT(hashBucketReply(QByteArray,int,QByteArray)));
 
     //Temporary signal to search local database
 
