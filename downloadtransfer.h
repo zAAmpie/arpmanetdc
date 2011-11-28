@@ -27,13 +27,15 @@ private:
     void abortTransfer();
     void transferRateCalculation();
 
-    int calculateBucketNumber(quint64 fileOffset);
+    inline int calculateBucketNumber(quint64 fileOffset);
+    inline void checkSendDownloadRequest(QByteArray &protocolPreference, QHostAddress peer, QByteArray &TTH, quint64 requestingOffset, quint64 requestingLength);
     void flushBucketToDisk(int &bucketNumber);
 
     QHash<int, QByteArray*> downloadBucketTable;
     QHash<int, QByteArray*> downloadBucketHashLookupTable;
 
     int lastBucketNumber;
+    int lastBucketSize;
     int initializationStateTimerBrakes;
 
     int bytesWrittenSinceUpdate;

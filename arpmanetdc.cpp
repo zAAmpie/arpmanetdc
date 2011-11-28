@@ -139,6 +139,12 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     connect(pShare, SIGNAL(filePathReply(QByteArray, QString)), pTransferManager, SLOT(filePathNameReply(QByteArray, QString)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(tthSourceLoaded(QByteArray, QHostAddress)), pTransferManager, SLOT(incomingTTHSource(QByteArray, QHostAddress)), Qt::QueuedConnection);
     
+    // Connect TransferManager to
+//    connect(pTransferManager, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)),
+//            , SLOT());
+//    connect( , SIGNAL(),
+//             pTransferManager, SLOT(hashBucketReply(QByteArray,int,QByteArray)))
+
     //Temporary signal to search local database
 
     connect(pShare, SIGNAL(returnSearchResult(QHostAddress,QByteArray,quint64,QByteArray)),

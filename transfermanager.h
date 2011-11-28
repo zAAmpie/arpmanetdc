@@ -51,7 +51,7 @@ signals:
     void sendDownloadRequest(QByteArray &protocolPreference, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
 
     // Request hashing of a bucket that has finished downloading
-    void hashBucketRequest(QByteArray &rootTTH, int &bucketNumber, QByteArray *bucket);
+    void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
 
     void transmitDatagram(QHostAddress &dstHost, QByteArray &datagram);
 
@@ -71,7 +71,7 @@ public slots:
     void removeQueuedDownload(int priority, QByteArray &tth);
 
     // Response from hashing engine when bucket finished hashing
-    void hashBucketReply(QByteArray &rootTTH, int &bucketNumber, QByteArray &bucketTTH);
+    void hashBucketReply(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH);
 
     void incomingTTHSource(QByteArray tth, QHostAddress sourcePeer);
     void incomingTTHTree(QByteArray tth, QByteArray tree);

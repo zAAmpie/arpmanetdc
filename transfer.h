@@ -36,11 +36,12 @@ signals:
     void TTHTreeRequest(QHostAddress hostAddr, QByteArray rootTTH);
     void searchTTHAlternateSources(QByteArray &tth);
     void loadTTHSourcesFromDatabase(QByteArray tth);
-    void sendDownloadRequest(QByteArray &protocolPreference, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
+    void sendDownloadRequest(QByteArray &erence, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
     void transmitDatagram(QHostAddress &dstHost, QByteArray &datagram);
+    void transferFinished(QByteArray tth);
 
 public slots:
-    void setFileName(QString &filename);
+    virtual void setFileName(QString &filename);
     void setTTH(QByteArray &tth);
     void setFileOffset(quint64 offset);
     void setSegmentLength(quint64 length);
@@ -54,8 +55,8 @@ public slots:
     quint64 getTransferRate();
     int getTransferStatus();
     int getTransferProgress();
-    void hashBucketReply(int &bucketNumber, QByteArray &bucketTTH);
     void addPeer(QHostAddress peer);
+    virtual void hashBucketReply(int &bucketNumber, QByteArray &bucketTTH);
     virtual void TTHTreeReply(QByteArray tree);
 
     virtual void incomingDataPacket(quint8 transferProtocolVersion, quint64 &offset, QByteArray &data);

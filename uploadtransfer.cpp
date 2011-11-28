@@ -24,6 +24,13 @@ UploadTransfer::~UploadTransfer()
     delete transferInactivityTimer;
 }
 
+void UploadTransfer::setFileName(QString &filename)
+{
+    filePathName = filename;
+    inputFile.open(QIODevice::ReadOnly);
+    fileSize = inputFile.size();
+}
+
 int UploadTransfer::getTransferType()
 {
     return TRANSFER_TYPE_UPLOAD;
@@ -32,10 +39,12 @@ int UploadTransfer::getTransferType()
 void UploadTransfer::startTransfer()
 {
     status = TRANSFER_STATE_RUNNING;
-    inputFile.setFileName(filePathName);
-    inputFile.open(QIODevice::ReadOnly);
+    if (fileOffset > fileSize)
+        return;
+    else if (fileOffset + segmentLength > fileSize)
+        segmentLength = fileSize - fileOffset;
+
     const char * f = (char*)inputFile.map(fileOffset, segmentLength);
-    inputFile.close();
     quint64 wptr = 0;
     QByteArray header;
     header.append(DataPacket);
@@ -60,6 +69,7 @@ void UploadTransfer::startTransfer()
         emit transmitDatagram(remoteHost, packet);
     }
     bytesWrittenSinceUpdate += segmentLength;
+    inputFile.unmap((unsigned char *)f);
     transferInactivityTimer->start(TIMER_INACTIVITY_MSECS);
 }
 

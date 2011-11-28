@@ -74,6 +74,13 @@ void DownloadTransfer::incomingDataPacket(quint8 transferPacketType, quint64 &of
     if (downloadBucketTable.value(bucketNumber)->length() == BUCKET_SIZE)
         emit hashBucketRequest(TTH, bucketNumber, downloadBucketTable.value(bucketNumber));
 
+    if ((bucketNumber == lastBucketNumber) && (lastBucketSize == downloadBucketTable.value(bucketNumber)->length()))
+    {
+        status = TRANSFER_STATE_FINISHED;
+        emit transferFinished(TTH);
+        return;
+    }
+
     requestingOffset += data.length();
     if (requestingOffset == requestingTargetOffset)
     {
@@ -81,7 +88,7 @@ void DownloadTransfer::incomingDataPacket(quint8 transferPacketType, quint64 &of
             requestingLength *= 2;
 
         requestingTargetOffset += requestingLength;
-        emit sendDownloadRequest(protocolPreference, listOfPeers.first(), TTH, requestingOffset, requestingLength);
+        checkSendDownloadRequest(protocolPreference, listOfPeers.first(), TTH, requestingOffset, requestingLength);
     }
 }
 
@@ -121,6 +128,7 @@ int DownloadTransfer::getTransferType()
 void DownloadTransfer::startTransfer()
 {
     lastBucketNumber = calculateBucketNumber(fileSize);
+    lastBucketSize = fileSize % BUCKET_SIZE;
     transferTimer->start(100);
 }
 
@@ -149,7 +157,7 @@ void DownloadTransfer::transferRateCalculation()
     bytesWrittenSinceUpdate = 0;
 }
 
-int DownloadTransfer::calculateBucketNumber(quint64 fileOffset)
+inline int DownloadTransfer::calculateBucketNumber(quint64 fileOffset)
 {
     return (int)(fileOffset >> 20);
 }
@@ -169,6 +177,8 @@ void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
     {
         // TODO: emit MISTAKE!, pause download
     }
+    delete downloadBucketTable.value(bucketNumber);
+    downloadBucketTable.remove(bucketNumber);
     file.close();
 }
 
@@ -199,7 +209,7 @@ void DownloadTransfer::transferTimerEvent()
         }
         else
         {
-            emit sendDownloadRequest(protocolPreference, listOfPeers.first(), TTH, requestingOffset, requestingLength);
+            checkSendDownloadRequest(protocolPreference, listOfPeers.first(), TTH, requestingOffset, requestingLength);
             status = TRANSFER_STATE_RUNNING;
         }
     }
@@ -212,9 +222,17 @@ void DownloadTransfer::transferTimerEvent()
         status = TRANSFER_STATE_RUNNING;
         requestingTargetOffset = requestingOffset + requestingLength;
         qDebug() << "sendDownloadRequest() peer tth offset length " << listOfPeers.first() << TTH << requestingOffset << requestingLength;
-        emit sendDownloadRequest(protocolPreference, listOfPeers.first(), TTH, requestingOffset, requestingLength);
+        checkSendDownloadRequest(protocolPreference, listOfPeers.first(), TTH, requestingOffset, requestingLength);
     }
 
+}
+
+inline void DownloadTransfer::checkSendDownloadRequest(QByteArray &protocolPreference, QHostAddress peer, QByteArray &TTH,
+                                                       quint64 requestingOffset, quint64 requestingLength)
+{
+    if (fileSize < requestingOffset + requestingLength)
+        requestingLength = fileSize - requestingOffset;
+    emit sendDownloadRequest(protocolPreference, listOfPeers.first(), TTH, requestingOffset, requestingLength);
 }
 
 void DownloadTransfer::setProtocolPreference(QByteArray &preference)
