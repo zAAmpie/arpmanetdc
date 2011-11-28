@@ -81,6 +81,12 @@ void Dispatcher::reconfigureDispatchHostPort(QHostAddress ip, quint16 port)
     receiverUdpSocket->close();
     receiverUdpSocket->bind(dispatchPort, QUdpSocket::ShareAddress);
 
+    //Set UDP receiving buffer to 10MB
+    int size = 10 * 1<<20;
+    if (::setsockopt(receiverUdpSocket->socketDescriptor(), SOL_SOCKET, SO_RCVBUF, (char *)&size, sizeof(size)) == -1)
+    {
+        qDebug("Could not set receiving buffer to 10MB");
+    }
 
     connect(receiverUdpSocket, SIGNAL(readyRead()), this, SLOT(receiveP2PData()));
 #if QT_VERSION >= 0x040800
