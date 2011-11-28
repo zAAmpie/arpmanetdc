@@ -67,7 +67,7 @@ void SearchWidget::createWidgets()
 	searchButton = new QPushButton(QIcon(tr(":/ArpmanetDC/Resources/SearchIcon.png")),tr("Search"));
 	searchButton->setIconSize(QSize(16,16));
 
-	searchProgress = new QProgressBar();
+	searchProgress = new TextProgressBar(tr("Searching"));
 	searchProgress->setStyle(new QPlastiqueStyle());
 	searchProgress->setValue(0);
 	searchProgress->setRange(0,0);

@@ -106,3 +106,27 @@ CTabWidget::CTabWidget(QWidget *parent) : QTabWidget(parent)
 {
 
 }
+
+QString TextProgressBar::topText() const
+{
+    return pText;
+}
+
+void TextProgressBar::setTopText(const QString &text)
+{
+    pText = text;
+}
+
+void TextProgressBar::paintEvent(QPaintEvent *paintEvent)
+{
+    QProgressBar::paintEvent(paintEvent);
+
+    if (minimum() == 0 && maximum() == 0)
+    {
+        QRect rect = paintEvent->rect();
+        
+        QPainter painter(this);
+        painter.setPen(Qt::gray);
+        painter.drawText(rect, Qt::AlignCenter, pText);
+    }
+}
