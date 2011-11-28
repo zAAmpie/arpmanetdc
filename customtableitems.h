@@ -8,6 +8,7 @@
 #include <QPen>
 #include <QString>
 #include <QSet>
+#include <QProgressBar>
 
 //Custom delegate to display HTML code in QTableView
 class HTMLDelegate : public QStyledItemDelegate
@@ -41,6 +42,22 @@ class CTabWidget : public QTabWidget
 public:
 	CTabWidget(QWidget *parent = 0);
 	QTabBar *tabBar() const { return (QTabWidget::tabBar()); }
+};
+
+//Custom progressbar that shows text on top
+class TextProgressBar : public QProgressBar
+{
+public:
+    //No implementation
+    TextProgressBar(QString text, QWidget *parent = 0) : QProgressBar(parent) {pText = text;}
+
+    QString topText() const;
+    void setTopText(const QString &text);
+protected:
+    void paintEvent(QPaintEvent *);
+
+private:
+    QString pText;
 };
 
 #endif

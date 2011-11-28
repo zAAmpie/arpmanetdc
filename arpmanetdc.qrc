@@ -17,5 +17,6 @@
         <file>Resources/TypeIcons.png</file>
         <file>Resources/CheckIcon.png</file>
         <file>Resources/Logo.png</file>
+        <file>Resources/Logo128x128.png</file>
     </qresource>
 </RCC>

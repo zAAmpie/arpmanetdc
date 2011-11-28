@@ -172,7 +172,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     transferWidget = 0;
 
     //Set window icon
-    setWindowIcon(QIcon(QPixmap(":/ArpmanetDC/Resources/Logo.png").scaled(128, 128, Qt::IgnoreAspectRatio, Qt::SmoothTransformation)));
+    setWindowIcon(QIcon(QPixmap(":/ArpmanetDC/Resources/Logo128x128.png")));
 
 	//Icon generation
 	userIcon = new QPixmap();
@@ -404,10 +404,12 @@ void ArpmanetDC::createWidgets()
 	//connectionIconLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
 	//Progress bar
-	hashingProgressBar = new QProgressBar(this);
+	hashingProgressBar = new TextProgressBar(tr("Hashing"), this);
 	hashingProgressBar->setRange(0,0);
 	hashingProgressBar->setStyle(new QPlastiqueStyle());
 	hashingProgressBar->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Ignored);
+    hashingProgressBar->setFormat(tr("H"));
+    hashingProgressBar->setTextVisible(true);
 
 	//Splitters
 	splitterVertical = new QSplitter(this);
@@ -567,6 +569,7 @@ void ArpmanetDC::placeWidgets()
 	tabs->addTab(tabWidget, QIcon(":/ArpmanetDC/Resources/ServerOfflineIcon.png"), tr("Arpmanet Chat"));
 	tabs->setTabPosition(QTabWidget::North);
 	tabTextColorNormal = tabs->tabBar()->tabTextColor(tabs->indexOf(tabWidget));
+    tabs->tabBar()->tabButton(0,QTabBar::RightSide)->hide();
 
 	//Place horizontal widgets
 	splitterHorizontal->addWidget(tabs);
