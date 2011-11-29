@@ -53,6 +53,7 @@ void TransferWidget::createWidgets()
 	transferListTable->setGridStyle(Qt::DotLine);
 	transferListTable->verticalHeader()->hide();
     transferListTable->horizontalHeader()->setHighlightSections(false);
+    transferListTable->setColumnWidth(3, 300);
 	//transferListTable->setItemDelegate(new HTMLDelegate(transferListTable));
 
     //Action

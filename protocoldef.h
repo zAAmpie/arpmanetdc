@@ -3,10 +3,10 @@
 
 enum TransferProtocol
 {
-    ProtocolA=0x01,
-    ProtocolB=0x02,
-    ProtocolC=0x04,
-    ProtocolD=0x08
+    FailsafeTransferProtocol=0x01,
+    BasicTransferProtocol=0x02,
+    uTPProtocol=0x04,
+    ArpmanetFECProtocol=0x08
 };
 
 enum MajorPacketType

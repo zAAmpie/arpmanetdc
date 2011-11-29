@@ -9,6 +9,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     qRegisterMetaType<QHostAddress>("QHostAddress");
     qRegisterMetaType<QueueStruct>("QueueStruct");
     qRegisterMetaType<QueuePriority>("QueuePriority");
+    qRegisterMetaType<FinishedDownloadStruct>("FinishedDownloadStruct");
 
     //Set database pointer to zero at start
 	db = 0;
@@ -96,6 +97,10 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     connect(pTransferManager, SIGNAL(sendDownloadRequest(QByteArray&,QHostAddress&,QByteArray&,quint64&,quint64&)),
             pDispatcher, SLOT(sendDownloadRequest(QByteArray&,QHostAddress&,QByteArray&,quint64&,quint64&)));
 
+    //Connect TransferManager to GUI - notify of started/completed transfers
+    connect(pTransferManager, SIGNAL(downloadStarted(QByteArray)), this, SLOT(downloadStarted(QByteArray)));
+    connect(pTransferManager, SIGNAL(downloadCompleted(QByteArray)), this, SLOT(downloadCompleted(QByteArray)));
+
     // Set network scan ranges in Dispatcher, initial shotgun approach
     pDispatcher->addNetworkScanRange(QHostAddress("143.160.0.1").toIPv4Address(), 65534);
     pDispatcher->addNetworkScanRange(QHostAddress("172.31.0.1").toIPv4Address(), 65534);
@@ -110,11 +115,15 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	connect(pShare, SIGNAL(hashingDone(int, int)), this, SLOT(hashingDone(int, int)), Qt::QueuedConnection);
 	connect(pShare, SIGNAL(parsingDone()), this, SLOT(parsingDone()), Qt::QueuedConnection);
 	connect(pShare, SIGNAL(returnQueueList(QHash<QByteArray, QueueStruct> *)), this, SLOT(returnQueueList(QHash<QByteArray, QueueStruct> *)), Qt::QueuedConnection);
+    connect(pShare, SIGNAL(returnFinishedList(QHash<QByteArray, FinishedDownloadStruct> *)), this, SLOT(returnFinishedList(QHash<QByteArray, FinishedDownloadStruct> *)), Qt::QueuedConnection);
     connect(this, SIGNAL(updateShares()), pShare, SLOT(updateShares()), Qt::QueuedConnection);
     connect(this, SIGNAL(requestQueueList()), pShare, SLOT(requestQueueList()), Qt::QueuedConnection);
     connect(this, SIGNAL(setQueuedDownloadPriority(QByteArray, QueuePriority)), pShare, SLOT(setQueuedDownloadPriority(QByteArray, QueuePriority)), Qt::QueuedConnection);
     connect(this, SIGNAL(removeQueuedDownload(QByteArray)), pShare, SLOT(removeQueuedDownload(QByteArray)), Qt::QueuedConnection);
     connect(this, SIGNAL(saveQueuedDownload(QueueStruct)), pShare, SLOT(saveQueuedDownload(QueueStruct)), Qt::QueuedConnection);
+    connect(this, SIGNAL(requestFinishedList()), pShare, SLOT(requestFinishedList()), Qt::QueuedConnection);
+    connect(this, SIGNAL(saveFinishedDownload(FinishedDownloadStruct)), pShare, SLOT(saveFinishedDownload(FinishedDownloadStruct)), Qt::QueuedConnection);
+    connect(this, SIGNAL(clearFinishedDownloads()), pShare, SLOT(clearFinishedDownloads()), Qt::QueuedConnection);
    
     //Connect ShareSearch to Dispatcher - reply to search request from other clients
     connect(pShare, SIGNAL(returnSearchResult(QHostAddress, QByteArray, quint64, QByteArray)), 
@@ -160,13 +169,19 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 
     pStatusHistoryList = new QList<QString>();
     pQueueList = new QHash<QByteArray, QueueStruct>();
+    pFinishedList = new QHash<QByteArray, FinishedDownloadStruct>();
 
     //Get queue
     setStatus(tr("Loading download queue from database..."));
-    emit requestQueueList();     
+    emit requestQueueList();   
+
+    //Get finished list
+    setStatus(tr("Loading finished downloads from database..."));
+    emit requestFinishedList();
 
     //Update shares
 	setStatus(tr("Share update procedure started. Parsing directories/paths..."));
+    hashingProgressBar->setTopText("Parsing");
     emit updateShares();    
 
 	downloadQueueWidget = 0;
@@ -720,13 +735,8 @@ void ArpmanetDC::downloadFinishedActionPressed()
 	}
 
 	//Otherwise, create it
-	finishedWidget = new DownloadFinishedWidget(this);
-
-	connect(finishedWidget, SIGNAL(requestFinishedList()), pShare, SLOT(requestFinishedList()));
-	connect(pShare, SIGNAL(returnFinishedList(QList<FinishedDownloadStruct> *)), finishedWidget, SLOT(returnFinishedList(QList<FinishedDownloadStruct> *)));
-	connect(finishedWidget, SIGNAL(clearFinishedList()), pShare, SLOT(clearFinishedDownloads()));
-	connect(pShare, SIGNAL(finishedDownloadAdded(FinishedDownloadStruct)), finishedWidget, SLOT(addFinishedDownload(FinishedDownloadStruct)));
-	
+	finishedWidget = new DownloadFinishedWidget(pFinishedList, this);
+		
 	tabs->addTab(finishedWidget->widget(), QIcon(":/ArpmanetDC/Resources/DownloadFinishedIcon.png"), tr("Finished Downloads"));
 
 	tabs->setCurrentIndex(tabs->indexOf(finishedWidget->widget()));
@@ -948,6 +958,7 @@ void ArpmanetDC::shareSaveButtonPressed()
 		shareWidget->deleteLater();
 		shareWidget = 0;
 		//Show hashing progress
+        hashingProgressBar->setTopText("Parsing");
 		hashingProgressBar->setRange(0,0);
 	}
 }
@@ -1014,6 +1025,39 @@ void ArpmanetDC::parsingDone()
 {
 	//Show on GUI when directory parsing is completed
 	setStatus(tr("Finished directory/path parsing. Checking for new/modified files..."));
+    hashingProgressBar->setTopText("Hashing");
+}
+
+void ArpmanetDC::downloadCompleted(QByteArray tth)
+{
+    //Remove download from queue
+    QueueStruct file;
+    if (pQueueList->contains(tth))
+    {
+        file = pQueueList->value(tth);
+        pQueueList->remove(tth);
+    }
+    else
+        return;
+
+    //Add file to finished downloads list
+    FinishedDownloadStruct item;
+    item.fileName = file.fileName;
+    item.filePath = file.filePath;
+    item.fileSize = file.fileSize;
+    item.tthRoot = file.tthRoot;
+    item.downloadedDate = QDateTime::currentDateTime().toString("dd-MM-yyyy HH:mm:ss:zzz");
+    
+    addFinishedDownloadToList(item);
+
+    //Set status
+    setStatus(tr("Download completed: %1").arg(item.fileName));
+}
+
+void ArpmanetDC::downloadStarted(QByteArray tth)
+{
+    if (pQueueList->contains(tth))
+        setStatus(tr("Download started: %1").arg(pQueueList->value(tth).fileName));
 }
 
 void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)
@@ -1361,6 +1405,9 @@ void ArpmanetDC::deleteFromQueue(QByteArray tth)
         //Remove from transfer manager queue
         pTransferManager->removeQueuedDownload((int)pQueueList->value(tth).priority, tth);
 
+        //Delete tth from queue list
+        delete pQueueList->value(tth).tthRoot;
+            
         //Remove from queue
         pQueueList->remove(tth);
 
@@ -1387,6 +1434,55 @@ void ArpmanetDC::setQueuePriority(QByteArray tth, QueuePriority priority)
         emit setQueuedDownloadPriority(tth, priority);
     }
 }
+
+//Add a finished download to the finished list
+void ArpmanetDC::addFinishedDownloadToList(FinishedDownloadStruct item)
+{
+    if (!pFinishedList->contains(*item.tthRoot))
+    {
+        //Insert into global queue structure
+        pFinishedList->insert(*item.tthRoot, item);
+        
+        //Insert into database
+        emit saveFinishedDownload(item);
+
+        //Insert into finishedWidget
+        if (finishedWidget)
+        {
+            //Check if finishedWidget is open
+            if (tabs->indexOf(finishedWidget->widget()) != -1)
+                finishedWidget->addFinishedDownload(item);
+        }
+    }
+}
+
+//Remove all downloads from the list
+void ArpmanetDC::clearFinishedDownloadList()
+{
+    //Delete list pointers
+    QList<QByteArray> keys = pFinishedList->keys();
+    for (int i = 0; i < keys.size(); i++)
+        if (pFinishedList->contains(keys.at(i)))
+            if (pFinishedList->value(keys.at(i)).tthRoot)
+                delete pFinishedList->value(keys.at(i)).tthRoot;
+
+    //Clear list
+    pFinishedList->clear();
+
+    //Signal the database to clear everything
+    emit clearFinishedDownloads();
+}
+
+//Returns the finished download list
+void ArpmanetDC::returnFinishedList(QHash<QByteArray, FinishedDownloadStruct> *list)
+{
+    if (pFinishedList)
+        delete pFinishedList;
+    pFinishedList = list;
+
+    setStatus(tr("Finished downloads list loaded"));
+}
+
 
 void ArpmanetDC::convertHTMLLinks(QString &msg)
 {

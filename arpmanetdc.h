@@ -34,7 +34,7 @@
 
 #define SHARE_DATABASE_PATH "arpmanetdc.sqlite"
 
-#define SUPPORTED_TRANSFER_PROTOCOLS "ProtocolA;ProtocolB;ProtocolC;ProtocolD" //Semi-colon separated
+#define SUPPORTED_TRANSFER_PROTOCOLS "FSTP;BTP;uTP;FECTP" //Semi-colon separated
 
 #define MAX_SEARCH_RESULTS 100 //Max to give a query, not max to display
 
@@ -81,6 +81,14 @@ public slots:
     //Returns a queuelist
     void returnQueueList(QHash<QByteArray, QueueStruct> *queue);
 
+    //Add a finished download to the finished list
+    void addFinishedDownloadToList(FinishedDownloadStruct item);
+    //Remove all downloads from the list
+    void clearFinishedDownloadList();
+    //Returns the finished download list
+    void returnFinishedList(QHash<QByteArray, FinishedDownloadStruct> *list);
+
+
 private slots:
     //-----===== OBJECT SLOTS =====-----
 
@@ -91,6 +99,10 @@ private slots:
 	void userListNickListReceived(QStringList list);
 	void hubOnline();
 	void hubOffline();
+
+    //TransferManager slots
+    void downloadStarted(QByteArray tth);
+    void downloadCompleted(QByteArray tth);
 
 	//Dispatcher slots
 	void bootstrapStatusChanged(int status);
@@ -154,6 +166,11 @@ signals:
     void requestQueueList();
     void setQueuedDownloadPriority(QByteArray tth, QueuePriority priority);
 
+    //Signals for finished downloads
+    void clearFinishedDownloads();
+    void saveFinishedDownload(FinishedDownloadStruct item);
+    void requestFinishedList();
+
 private:
 	//GUI setup functions
 	void createWidgets();
@@ -187,6 +204,7 @@ private:
 
 	//Global lists
 	QHash<QByteArray, QueueStruct> *pQueueList;
+    QHash<QByteArray, FinishedDownloadStruct> *pFinishedList;
     QList<QString> *pStatusHistoryList;
 
 	//-----===== Main GUI parameters =====-----
@@ -220,7 +238,7 @@ private:
 	QLabel *bootstrapStatusLabel;
 
 	//Progressbar
-	QProgressBar *hashingProgressBar;
+	TextProgressBar *hashingProgressBar;
 
 	//Tab
 	CTabWidget *tabs;

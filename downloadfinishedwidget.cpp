@@ -2,17 +2,15 @@
 #include "customtableitems.h"
 #include "arpmanetdc.h"
 
-DownloadFinishedWidget::DownloadFinishedWidget(ArpmanetDC *parent)
+DownloadFinishedWidget::DownloadFinishedWidget(QHash<QByteArray, FinishedDownloadStruct> *finishedList, ArpmanetDC *parent)
 {
 	//Constructor
 	pParent = parent;
+    pFinishedList = finishedList;
 
 	createWidgets();
 	placeWidgets();
 	connectWidgets();
-
-	//Load list from database
-	loadFinishedDownloads();
 }
 
 DownloadFinishedWidget::~DownloadFinishedWidget()
@@ -67,6 +65,29 @@ void DownloadFinishedWidget::connectWidgets()
 	connect(clearAction, SIGNAL(triggered()), this, SLOT(clearActionPressed()));
 }
 
+void DownloadFinishedWidget::loadList()
+{
+	//Remove all rows
+	finishedModel->removeRows(0, finishedModel->rowCount());
+
+	//Populate model
+	foreach (FinishedDownloadStruct file, *pFinishedList)
+	{
+        QList<CStandardItem *> row;
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.fileName));
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.filePath));
+        row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(file.fileSize)));
+
+        QByteArray tth = *file.tthRoot;
+        base32Encode(tth);
+
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, tth.data()));
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.downloadedDate));
+	}
+
+    resizeRowsToContents(finishedTable);
+}
+
 void DownloadFinishedWidget::showFinishedTableContextMenu(const QPoint &point)
 {	
 	//Show menu on right-click
@@ -81,10 +102,10 @@ void DownloadFinishedWidget::showFinishedTableContextMenu(const QPoint &point)
 //Actions
 void DownloadFinishedWidget::clearActionPressed()
 {
-	pFinishedList->clear();
-	finishedModel->removeRows(0, finishedModel->rowCount());
+	finishedModel->clear();
 
-	emit clearFinishedList();
+    pParent->clearFinishedDownloadList();
+	//emit clearFinishedList();
 }
 
 void DownloadFinishedWidget::openActionPressed()
@@ -98,27 +119,7 @@ void DownloadFinishedWidget::openActionPressed()
 	QProcess::startDetached(filePath);
 }
 
-void DownloadFinishedWidget::returnFinishedList(QList<FinishedDownloadStruct> *list)
-{
-	//List returned
-	setFinishedList(list);
 
-	//Remove all rows
-	finishedModel->removeRows(0, finishedModel->rowCount());
-
-	//Populate model
-	for (int i = 0; i < pFinishedList->size(); i++)
-	{
-		finishedModel->appendRow(new QStandardItem());
-		finishedModel->setItem(i, 0, new QStandardItem(pFinishedList->at(i).fileName));
-		finishedModel->setItem(i, 1, new QStandardItem(pFinishedList->at(i).filePath));
-		finishedModel->setItem(i, 2, new QStandardItem(tr("%1").arg(pFinishedList->at(i).fileSize)));
-		finishedModel->setItem(i, 4, new QStandardItem(pFinishedList->at(i).tthRoot->toBase64().data()));
-		finishedModel->setItem(i, 5, new QStandardItem(pFinishedList->at(i).downloadedDate));
-	}
-
-    resizeRowsToContents(finishedTable);
-}
 
 //Add an entry
 void DownloadFinishedWidget::addFinishedDownload(FinishedDownloadStruct file)
@@ -134,26 +135,8 @@ void DownloadFinishedWidget::addFinishedDownload(FinishedDownloadStruct file)
     resizeRowsToContents(finishedTable);
 }
 
-void DownloadFinishedWidget::loadFinishedDownloads()
-{
-	emit requestFinishedList();
-}
-
-
 QWidget *DownloadFinishedWidget::widget()
 {
 	//TODO: Return widget containing all search widgets
 	return pWidget;
-}
-
-QList<FinishedDownloadStruct> *DownloadFinishedWidget::finishedList()
-{
-	return pFinishedList;
-}
-
-void DownloadFinishedWidget::setFinishedList(QList<FinishedDownloadStruct> *list)
-{
-	if (pFinishedList != list)
-		delete pFinishedList;
-	pFinishedList = list;
 }

@@ -20,19 +20,13 @@ class DownloadFinishedWidget : public QObject
 	Q_OBJECT
 
 public:
-	DownloadFinishedWidget(ArpmanetDC *parent);
+	DownloadFinishedWidget(QHash<QByteArray, FinishedDownloadStruct> *finishedList, ArpmanetDC *parent);
 	~DownloadFinishedWidget();
 
 	//Get the encapsulating widget
 	QWidget *widget();
 
-	QList<FinishedDownloadStruct> *finishedList();
-	void setFinishedList(QList<FinishedDownloadStruct> *list);
-
 public slots:
-	//Return requested list
-	void returnFinishedList(QList<FinishedDownloadStruct> *list);
-
 	//Add an entry
 	void addFinishedDownload(FinishedDownloadStruct file);
 
@@ -45,10 +39,8 @@ private slots:
 	void openActionPressed();
 
 signals:
-	//Signals for the finished downloads list from the database
-	void requestFinishedList();
 	//Signals to clear the database list
-	void clearFinishedList();
+	//void clearFinishedList();
 	
 private:
 	//Functions
@@ -56,14 +48,14 @@ private:
 	void placeWidgets();
 	void connectWidgets();
 
-	//Load list from database
-	void loadFinishedDownloads();
+    //Return requested list
+	void loadList();
 
 	//Objects
 	QWidget *pWidget;
 	ArpmanetDC *pParent;
 
-	QList<FinishedDownloadStruct> *pFinishedList;
+	QHash<QByteArray, FinishedDownloadStruct> *pFinishedList;
 
 	//GUI
 	QTableView *finishedTable;

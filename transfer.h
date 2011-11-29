@@ -32,7 +32,7 @@ public:
 
 signals:
     void abort(Transfer*);
-    void hashBucketRequest(QByteArray &rootTTH, int &bucketNumber, QByteArray *bucket);
+    void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
     void TTHTreeRequest(QHostAddress hostAddr, QByteArray rootTTH);
     void searchTTHAlternateSources(QByteArray &tth);
     void loadTTHSourcesFromDatabase(QByteArray tth);

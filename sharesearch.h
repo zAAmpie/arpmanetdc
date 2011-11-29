@@ -195,7 +195,7 @@ signals:
 	//----------========== FINISHED DOWNLOADS (FINISHED DOWNLOAD WIDGET) ==========----------
 	
     //Signals incoming finished downloads list
-	void returnFinishedList(QList<FinishedDownloadStruct> *list);
+	void returnFinishedList(QHash<QByteArray, FinishedDownloadStruct> *list);
 	
     //Signals that an entry has been added
 	void finishedDownloadAdded(FinishedDownloadStruct file);

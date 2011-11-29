@@ -1412,7 +1412,7 @@ void ShareSearch::requestFinishedList()
 	//Return the list of finished downloads
 	QString queryStr = tr("SELECT [fileName], [filePath], [fileSize], [tthRoot], [downloadDate] FROM FinishedDownloads;");
 
-	QList<FinishedDownloadStruct> *results = new QList<FinishedDownloadStruct>();
+	QHash<QByteArray, FinishedDownloadStruct> *results = new QHash<QByteArray, FinishedDownloadStruct>();
 	sqlite3 *db = pParent->database();	
 	sqlite3_stmt *statement;
 
@@ -1434,7 +1434,7 @@ void ShareSearch::requestFinishedList()
             (*s.tthRoot) = QByteArray::fromBase64(*s.tthRoot);
 			s.downloadedDate = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 4));
 
-			results->append(s);
+            results->insert(*s.tthRoot, s);
 		}
 		sqlite3_finalize(statement);	
 	}
