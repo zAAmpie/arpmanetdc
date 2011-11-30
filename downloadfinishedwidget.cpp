@@ -26,7 +26,7 @@ void DownloadFinishedWidget::createWidgets()
 	finishedTable->setGridStyle(Qt::DotLine);
 	finishedTable->verticalHeader()->hide();
 	finishedTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-	finishedTable->setItemDelegate(new HTMLDelegate(finishedTable));
+    finishedTable->setItemDelegate(new HTMLDelegate(finishedTable));
 	finishedTable->setContextMenuPolicy(Qt::CustomContextMenu);
     finishedTable->horizontalHeader()->setHighlightSections(false);
 
@@ -42,6 +42,9 @@ void DownloadFinishedWidget::createWidgets()
 	finishedTable->setModel(finishedModel);
 	//queueTable->hideColumn(3);
 	finishedTable->setSortingEnabled(true);
+    finishedTable->setColumnWidth(0, 300);
+    finishedTable->setColumnWidth(1, 200);
+    finishedTable->setColumnWidth(2, 75);
 
 	//===== Actions =====
 	openAction = new QAction(QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Open file"), this);

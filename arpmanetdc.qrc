@@ -18,5 +18,8 @@
         <file>Resources/CheckIcon.png</file>
         <file>Resources/Logo.png</file>
         <file>Resources/Logo128x128.png</file>
+        <file>Resources/BlueArrow.png</file>
+        <file>Resources/GreenArrow.png</file>
+        <file>Resources/RedArrow.png</file>
     </qresource>
 </RCC>

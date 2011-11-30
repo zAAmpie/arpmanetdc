@@ -45,6 +45,7 @@ void SettingsWidget::createWidgets()
 
     protocolList = new QListWidget((QWidget *)pParent);
     protocolList->setMaximumHeight(150);
+    protocolList->setMaximumWidth(100);
     protocolList->setSelectionMode(QAbstractItemView::SingleSelection);
 
     guessIPButton = new QPushButton(tr("Guess External IP"), (QWidget *)pParent);
@@ -98,6 +99,7 @@ void SettingsWidget::placeWidgets()
     QHBoxLayout *protocolLayout = new QHBoxLayout();
     protocolLayout->addWidget(protocolList);
     protocolLayout->addLayout(protocolButtonLayout);
+    protocolLayout->addStretch(1);
 
     QFormLayout *flayoutR = new QFormLayout();
     flayoutR->addRow(new QLabel("<font color=\"red\"><b>Warning: Advanced users only!</b></font>"));

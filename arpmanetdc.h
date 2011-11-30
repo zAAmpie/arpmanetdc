@@ -56,6 +56,7 @@ public:
 	QString nick();
 	QString password();
     QString downloadPath();
+    QueueStruct queueEntry(QByteArray tth);
 
 	//HTML link converters
 	void convertHTMLLinks(QString &msg);
@@ -67,6 +68,13 @@ public:
 
     //Guess the computer's IP
     QHostAddress getIPGuess();
+
+    //Get access to the GUI's objects
+    TransferManager *transferManagerObject() const;
+    ShareSearch *shareSearchObject() const;
+    Dispatcher *dispatcherObject() const;
+    TransferWidget *transferWidgetObject() const;
+    ResourceExtractor *resourceExtractorObject() const;
 
 public slots:
     //Sets the global status label in the status bar to msg

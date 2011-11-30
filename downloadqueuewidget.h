@@ -38,6 +38,12 @@ public slots:
     //Add a new queued download
 	void addQueuedDownload(QueueStruct file);
 
+    //Remove from queue
+    void removeQueuedDownload(QByteArray tth);
+
+    //Set a download busy (i.e. the download started)
+    void setQueuedDownloadBusy(QByteArray tth);
+
 private slots:
 	//Slots
 	void showQueueTableContextMenu(const QPoint &);
@@ -72,6 +78,8 @@ private:
 
 	QHash<QByteArray, QueueStruct> *pQueueList; //Link to main GUIs queue
 
+    //Icons
+    QIcon lowPriorityIcon, normalPriorityIcon, highPriorityIcon, queuedIcon, busyIcon;
 	//GUI
 	QTableView *queueTable;
 	QStandardItemModel *queueModel;

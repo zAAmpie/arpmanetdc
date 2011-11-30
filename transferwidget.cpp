@@ -7,6 +7,7 @@ TransferWidget::TransferWidget(TransferManager *transferManager, ArpmanetDC *par
 	//Constructor
 	pParent = parent;
     pTransferManager = transferManager;
+    pTransferList = new QHash<QByteArray, TransferItemStatus>();
 
 	createWidgets();
 	placeWidgets();
@@ -27,13 +28,14 @@ void TransferWidget::createWidgets()
 {
 	//===== Transfer list =====
 	//Model
-	transferListModel = new QStandardItemModel(0,6);
+	transferListModel = new QStandardItemModel(0,7);
 	transferListModel->setHeaderData(0, Qt::Horizontal, tr("Type"));
     transferListModel->setHeaderData(1, Qt::Horizontal, tr("Progress"));
     transferListModel->setHeaderData(2, Qt::Horizontal, tr("Speed"));
     transferListModel->setHeaderData(3, Qt::Horizontal, tr("Filename"));
-    transferListModel->setHeaderData(4, Qt::Horizontal, tr("Status"));
-    transferListModel->setHeaderData(5, Qt::Horizontal, tr("TTH Root"));
+    transferListModel->setHeaderData(4, Qt::Horizontal, tr("Size"));
+    transferListModel->setHeaderData(5, Qt::Horizontal, tr("Status"));
+    transferListModel->setHeaderData(6, Qt::Horizontal, tr("TTH Root"));
 
 	//Table
 	transferListTable = new QTableView((QWidget *)pParent);
@@ -53,11 +55,16 @@ void TransferWidget::createWidgets()
 	transferListTable->setGridStyle(Qt::DotLine);
 	transferListTable->verticalHeader()->hide();
     transferListTable->horizontalHeader()->setHighlightSections(false);
+    transferListTable->setColumnWidth(0, 75);
+    transferListTable->setColumnWidth(2, 75);
     transferListTable->setColumnWidth(3, 300);
-	//transferListTable->setItemDelegate(new HTMLDelegate(transferListTable));
+    transferListTable->setColumnWidth(4, 75);
+    transferListTable->setWordWrap(false);
+    //transferListTable->setItemDelegate(new HTMLDelegate(transferListTable));
+    transferListTable->setItemDelegateForColumn(1, new ProgressDelegate());
 
     //Action
-    deleteAction = new QAction(QIcon(":/ArpmanetDC/Resources/RemoveIcon.png"), tr("Delete transfer"), this);
+    deleteAction = new QAction(QIcon(":/ArpmanetDC/Resources/RemoveIcon.png"), tr("Stop transfer"), this);
 
     //Menu
     transferListMenu = new QMenu((QWidget *)pParent);
@@ -100,24 +107,34 @@ void TransferWidget::updateStatus()
     //Get status from transfer manager
     QList<TransferItemStatus> status = pTransferManager->getGlobalTransferStatus();
 
+    //Update local list
+    pTransferList->clear();
+    foreach (TransferItemStatus s, status)
+        pTransferList->insert(s.TTH, s);
+
     for (int i = 0; i < status.size(); i++)
     {
+        TransferItemStatus s = status.at(i);  
+
         //Base32 encode the tth
-        QByteArray base32TTH(status.at(i).TTH);
+        QByteArray base32TTH(s.TTH);
         base32Encode(base32TTH);
 
+        QueueStruct q = pParent->queueEntry(s.TTH);
+
         //Check if entry exists
-        QList<QStandardItem *> findResults = transferListModel->findItems(base32TTH.data(), Qt::MatchExactly, 5);
+        QList<QStandardItem *> findResults = transferListModel->findItems(base32TTH.data(), Qt::MatchExactly, 6);
 
         //If new transfer - add
         if (findResults.isEmpty())
         {
             QList<QStandardItem *> row;
-            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, typeString(status.at(i).transferStatus)));
-            row.append(new CStandardItem(CStandardItem::IntegerType, tr("%1").arg(status.at(i).transferProgress)));
-            row.append(new CStandardItem(CStandardItem::RateType, bytesToRate(status.at(i).transferRate)));
-            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, status.at(i).filePathName));
-            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, stateString(status.at(i).transferStatus)));
+            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, typeString(s.transferType)));
+            row.append(new CStandardItem(CStandardItem::ProgressType, progressString(s.transferType, s.transferProgress)));
+            row.append(new CStandardItem(CStandardItem::RateType, bytesToRate(s.transferRate)));
+            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, s.filePathName.remove(pParent->downloadPath(), Qt::CaseInsensitive)));
+            row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(q.fileSize)));
+            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, stateString(s.transferStatus)));
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, base32TTH.data()));
             transferListModel->appendRow(row);
         }
@@ -126,16 +143,18 @@ void TransferWidget::updateStatus()
         {
             QStandardItem *item;
             item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 0));
-            item->setText(typeString(status.at(i).transferStatus));
+            item->setText(typeString(s.transferType));
             item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 1));
-            item->setText(tr("%1").arg(status.at(i).transferProgress));
+            item->setText(progressString(s.transferType, s.transferProgress));
             item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 2));
-            item->setText(bytesToRate(status.at(i).transferRate));
+            item->setText(bytesToRate(s.transferRate));
             item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 3));
-            item->setText(status.at(i).filePathName);
+            item->setText(s.filePathName.remove(pParent->downloadPath(), Qt::CaseInsensitive));
             item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 4));
-            item->setText(stateString(status.at(i).transferStatus));
+            item->setText(bytesToSize(q.fileSize));
             item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 5));
+            item->setText(stateString(s.transferStatus));
+            item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 6));
             item->setText(base32TTH.data());
         }
     }
@@ -183,7 +202,27 @@ QString TransferWidget::stateString(int state)
     return "";
 }
 
+QString TransferWidget::progressString(int type, int progress)
+{
+    if (type == TRANSFER_TYPE_DOWNLOAD)
+        return tr("D%1").arg(progress);
+    else if (type == TRANSFER_TYPE_UPLOAD)
+        return tr("U%1").arg(progress);
+
+    return "";
+}
+
 QWidget *TransferWidget::widget()
 {
 	return pWidget;
+}
+
+QHash<QByteArray, TransferItemStatus> *TransferWidget::transferList() const
+{
+    return pTransferList;
+}
+
+bool TransferWidget::isBusy(QByteArray tth)
+{
+    return pTransferList->contains(tth);
 }
