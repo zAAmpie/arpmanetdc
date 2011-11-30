@@ -37,7 +37,7 @@ signals:
     void searchTTHAlternateSources(QByteArray &tth);
     void loadTTHSourcesFromDatabase(QByteArray tth);
     void sendDownloadRequest(QByteArray &erence, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
-    void transmitDatagram(QHostAddress &dstHost, QByteArray &datagram);
+    void transmitDatagram(QHostAddress dstHost, QByteArray *datagram);
     void transferFinished(QByteArray tth);
 
 public slots:

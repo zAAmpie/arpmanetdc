@@ -53,18 +53,18 @@ void UploadTransfer::startTransfer()
     QByteArray data(QByteArray::fromRawData(f, segmentLength));
     while (wptr < segmentLength)
     {
-        QByteArray packet(header);
-        packet.append(toQByteArray((quint64)(fileOffset + wptr)));
-        packet.append(TTH);
+        QByteArray *packet = new QByteArray(header);
+        packet->append(toQByteArray((quint64)(fileOffset + wptr)));
+        packet->append(TTH);
         qDebug() << "Write data fileOffset " << fileOffset << " segmentLength " << segmentLength << " wptr " << wptr;
         if (wptr + PACKET_DATA_MTU < segmentLength)
         {
-            packet.append(data.mid(wptr, PACKET_DATA_MTU));
+            packet->append(data.mid(wptr, PACKET_DATA_MTU));
             wptr += PACKET_DATA_MTU;
         }
         else
         {
-            packet.append(data.mid(wptr, segmentLength - wptr));
+            packet->append(data.mid(wptr, segmentLength - wptr));
             wptr += segmentLength - wptr;
         }
         emit transmitDatagram(remoteHost, packet);

@@ -53,7 +53,7 @@ signals:
     // Request hashing of a bucket that has finished downloading
     void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
 
-    void transmitDatagram(QHostAddress &dstHost, QByteArray &datagram);
+    void transmitDatagram(QHostAddress dstHost, QByteArray *datagram);
 
     // GUI updates
     void downloadStarted(QByteArray tth);

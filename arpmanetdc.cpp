@@ -76,6 +76,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
             this, SLOT(searchResultReceived(QHostAddress, QByteArray, quint64, QByteArray)));
 
     // Create Transfer manager
+    transferThread = new ExecThread();
     pTransferManager = new TransferManager();
     pTransferManager->setMaximumSimultaneousDownloads(30);
 
@@ -84,8 +85,8 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
             pTransferManager, SLOT(incomingUploadRequest(QByteArray,QHostAddress,QByteArray,quint64,quint64)));
     connect(pDispatcher, SIGNAL(incomingDataPacket(quint8,QByteArray&)),
             pTransferManager, SLOT(incomingDataPacket(quint8,QByteArray&)));
-    connect(pTransferManager, SIGNAL(transmitDatagram(QHostAddress&,QByteArray&)),
-            pDispatcher, SLOT(sendUnicastRawDatagram(QHostAddress&,QByteArray&)));
+    connect(pTransferManager, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)),
+            pDispatcher, SLOT(sendUnicastRawDatagram(QHostAddress,QByteArray*)));
     connect(pDispatcher, SIGNAL(receivedTTHTree(QByteArray,QByteArray)),
             pTransferManager, SLOT(incomingTTHTree(QByteArray,QByteArray)));
     connect(pTransferManager, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray)),
@@ -161,6 +162,9 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 
 	pShare->moveToThread(dbThread);
 	dbThread->start();
+
+    pTransferManager->moveToThread(transferThread);
+    transferThread->start();
 
 	//GUI setup
 	createWidgets();

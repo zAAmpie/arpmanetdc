@@ -197,6 +197,7 @@ private:
 
     //Threads
     ExecThread *dbThread;
+    ExecThread *transferThread;
 
 	//Parameters
 	//SettingsStruct pSettings;

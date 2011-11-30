@@ -75,7 +75,7 @@ void DownloadTransfer::incomingDataPacket(quint8 transferPacketType, quint64 &of
     {
         emit hashBucketRequest(TTH, bucketNumber, downloadBucketTable.value(bucketNumber));
         // temp test until signal works
-        flushBucketToDisk(bucketNumber);
+        //flushBucketToDisk(bucketNumber);
     }
 
     if ((bucketNumber == lastBucketNumber) && (lastBucketSize == downloadBucketTable.value(bucketNumber)->length()))
@@ -83,7 +83,7 @@ void DownloadTransfer::incomingDataPacket(quint8 transferPacketType, quint64 &of
         status = TRANSFER_STATE_FINISHED;
         emit hashBucketRequest(TTH, bucketNumber, downloadBucketTable.value(bucketNumber));
         // temp test until signal works
-        flushBucketToDisk(bucketNumber);
+        //flushBucketToDisk(bucketNumber);
         emit transferFinished(TTH);
         return;
     }
