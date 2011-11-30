@@ -22,9 +22,11 @@ QSize HTMLDelegate::sizeHint ( const QStyleOptionViewItem & option, const QModel
     doc.setTextWidth(options.rect.width());
 
 	QSize iconSize = options.icon.actualSize(options.rect.size());
+    quint16 iconWidth = iconSize.width() < 0 ? 0 : iconSize.width();
 	int iconExtra = 10;
 
-    return QSize(doc.idealWidth() + iconSize.width() + iconExtra, doc.size().height());
+    //return QSize(doc.idealWidth() + iconSize.width() + iconExtra, doc.size().height());
+    return QSize(doc.idealWidth() + iconWidth + iconExtra, options.rect.height());
 }
 
 //Draws the HTML code
@@ -50,21 +52,109 @@ void HTMLDelegate::paint(QPainter* painter, const QStyleOptionViewItem & option,
 
     // shift text right to make icon visible
     QSize iconSize = options.icon.actualSize(options.rect.size());
+    quint16 iconWidth = iconSize.width() < 0 ? 0 : iconSize.width();
 	int iconExtra = 10;
-    painter->translate(options.rect.left()+ iconSize.width() + iconExtra, options.rect.top());
-    QRect clip(0, 0, options.rect.width()+ iconSize.width() + iconExtra, options.rect.height());
+    painter->translate(options.rect.left()+ iconWidth + iconExtra, options.rect.top());
+    //QRect clip(0, 0, options.rect.width()+ iconSize.width() + iconExtra, options.rect.height());
+    QRect clip(0, 0, options.rect.width() - iconExtra - iconWidth, options.rect.height());
 
     //doc.drawContents(painter, clip);
 
     painter->setClipRect(clip);
     QAbstractTextDocumentLayout::PaintContext ctx;
     // set text color to red for selected item
-    if (option.state & QStyle::State_Selected)
+    if (option.state & QStyle::State_Selected && options.state & QStyle::State_Active)
         ctx.palette.setColor(QPalette::Text, QColor("white"));
+    else if (option.state & QStyle::State_Selected)
+        ctx.palette.setColor(QPalette::Text, QColor("black"));
     ctx.clip = clip;
     doc.documentLayout()->draw(painter, ctx);
 
-	
+    painter->restore();
+}
+
+ProgressDelegate::ProgressDelegate()
+{
+    //Constructor
+}
+
+QSize ProgressDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    QStyleOptionViewItemV4 options = option;
+    initStyleOption(&options, index);
+
+    return QSize(options.rect.width(), options.rect.height());
+}
+
+void ProgressDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    QStyleOptionViewItemV4 options = option;
+    initStyleOption(&options, index);
+
+    painter->save();
+
+    //Get value
+    bool ok;
+    QChar type = options.text.at(0);
+    int value = options.text.mid(1).toInt(&ok);
+    
+    //Draw the main control
+    options.text = "";
+    options.widget->style()->drawControl(QStyle::CE_ItemViewItem, &options, painter);
+
+    if (!ok)
+    {
+        painter->restore();
+        return;
+    }
+
+    //Colors
+    QColor frameColor(Qt::darkGray);
+    QColor textColor(Qt::black);
+    if (options.state & QStyle::State_Selected && options.state & QStyle::State_Active)
+    {
+        frameColor = QColor(Qt::white);
+        textColor = QColor(Qt::white);
+    }
+    else if (options.state & QStyle::State_Selected)
+        frameColor = QColor(Qt::darkGray);
+    
+    QColor progressColor;
+    if (type == 'D') //TRANSFER_TYPE_DOWNLOAD
+        progressColor = QColor(79, 189, 54); //Green
+    else if (type == 'U') //TRANSFER_TYPE_UPLOAD
+        progressColor = QColor(37, 149, 214); //Blue
+
+    //Draw the progress bar frame
+    painter->setRenderHint(QPainter::Antialiasing);
+
+    int width = options.rect.width();
+    int height = options.rect.height();
+    QRectF rect(options.rect);
+    rect.adjust(1,2,-1,-2);
+
+    painter->setPen(frameColor);
+    painter->setBrush(Qt::NoBrush);
+    painter->drawRoundedRect(rect, 3, 3);
+
+    //Draw the progress bar
+    if (value > 0)
+    {
+        qreal valWidth = ((qreal)value * (qreal)rect.width()) / 100;
+        QRectF valRect(rect.left(), rect.top(), valWidth, rect.height());
+        valRect.adjust(2,2,-2,-2);
+
+        if (valRect.right() < valRect.left())
+            valRect.setRight(valRect.left());
+           
+        painter->setBrush(QBrush(progressColor));
+        painter->setPen(progressColor);
+        painter->drawRoundedRect(valRect, 2, 2);
+    }
+
+    //Draw the percentage text
+    painter->setPen(textColor);
+    painter->drawText(rect, Qt::AlignCenter, tr("%1%").arg(value));
 
     painter->restore();
 }
@@ -97,6 +187,12 @@ bool CStandardItem::operator<(const QStandardItem &other) const
         QString thisText = text().replace("High","C").replace("Normal","B").replace("Low","A");
         QString otherText = other.text().replace("High","C").replace("Normal","B").replace("Low","A");
         return thisText < otherText;
+    }
+    else if (pType == ProgressType)
+    {
+        QString thisText = text().mid(1);
+        QString otherText = other.text().mid(1);
+        return thisText.toLongLong() < otherText.toLongLong();
     }
 
     return text() < other.text();

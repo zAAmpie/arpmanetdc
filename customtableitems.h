@@ -22,12 +22,22 @@ private:
 	QPen pGridPen;
 };
 
+//Custom delegate to display progress bars in QTableView
+class ProgressDelegate : public QStyledItemDelegate
+{
+public:
+    ProgressDelegate();
+protected:
+    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
+};
+
 
 //Custom QStandardItem to allow for integer/size sorting
 class CStandardItem : public QStandardItem
 {
 public:
-    enum CStandardItemType {IntegerType, DoubleType, SizeType, RateType, CaseInsensitiveTextType, PriorityType};
+    enum CStandardItemType {IntegerType, DoubleType, SizeType, RateType, CaseInsensitiveTextType, PriorityType, ProgressType};
     CStandardItem(CStandardItemType type, const QString &value) : QStandardItem(value) {pType = type; setEditable(false);}
     CStandardItem(CStandardItemType type, const QString &value, const QIcon &icon) : QStandardItem(icon, value) {pType = type; setEditable(false);}
 

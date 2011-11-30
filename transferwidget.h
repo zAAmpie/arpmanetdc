@@ -2,9 +2,9 @@
 #define TRANSFERWIDGET_H
 
 #include <QtGui>
+#include "transfermanager.h"
 
 class ArpmanetDC;
-class TransferManager;
 
 //Displays help
 class TransferWidget : public QObject
@@ -17,6 +17,9 @@ public:
 
 	//Get the encapsulating widget
 	QWidget *widget();
+
+    QHash<QByteArray, TransferItemStatus> *transferList() const;
+    bool isBusy(QByteArray tth);
 
 private slots:
     //Right-click menu
@@ -37,11 +40,15 @@ private:
     //String conversion functions
     QString typeString(int type);
     QString stateString(int state);
+    QString progressString(int state, int progress);
 
 	//Objects
 	QWidget *pWidget;
 	ArpmanetDC *pParent;
     TransferManager *pTransferManager;
+
+    //List of transfers
+    QHash<QByteArray, TransferItemStatus> *pTransferList;
 
     //Update timer
     QTimer *updateStatusTimer;

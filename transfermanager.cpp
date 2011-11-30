@@ -75,7 +75,7 @@ void TransferManager::incomingUploadRequest(QByteArray transferProtocolHint, QHo
 // should more than one user try simultaneously, their requests will be deleted off the queue in .remove(tth) and they should try again. oops.
 void TransferManager::filePathNameReply(QByteArray tth, QString filename)
 {
-    if (filename == "")
+    if (filename == "" || !uploadTransferQueue.contains(tth))
     {
         uploadTransferQueue.remove(tth);
         return; // TODO: stuur error terug na requesting host
@@ -158,6 +158,8 @@ void TransferManager::startNextDownload()
     emit loadTTHSourcesFromDatabase(i.tth);
     emit searchTTHAlternateSources(i.tth);
     t->startTransfer();
+
+    emit downloadStarted(i.tth);
 }
 
 void TransferManager::changeQueuedDownloadPriority(int oldPriority, int newPriority, QByteArray &tth)

@@ -77,7 +77,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 
     // Create Transfer manager
     pTransferManager = new TransferManager();
-    pTransferManager->setMaximumSimultaneousDownloads(30);
+    pTransferManager->setMaximumSimultaneousDownloads(3);
 
     //Connect Dispatcher to TransferManager - handles upload/download requests and transfers
     connect(pDispatcher, SIGNAL(incomingUploadRequest(QByteArray,QHostAddress,QByteArray,quint64,quint64)),
@@ -190,7 +190,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	finishedWidget = 0;
 	settingsWidget = 0;
     helpWidget = 0;
-    transferWidget = 0;
+    //transferWidget = 0;
 
     //Set window icon
     setWindowIcon(QIcon(QPixmap(":/ArpmanetDC/Resources/Logo128x128.png")));
@@ -482,7 +482,7 @@ void ArpmanetDC::createWidgets()
 	userListTable->setGridStyle(Qt::DotLine);
 	userListTable->verticalHeader()->hide();
 	userListTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-	userListTable->setItemDelegate(new HTMLDelegate(userListTable));
+    userListTable->setItemDelegate(new HTMLDelegate(userListTable));
 
 	userListTable->hideColumn(2);
 	userListTable->hideColumn(3);
@@ -1040,6 +1040,9 @@ void ArpmanetDC::downloadCompleted(QByteArray tth)
     else
         return;
 
+    if (queueWidget)
+        queueWidget->removeQueuedDownload(tth);
+
     //Add file to finished downloads list
     FinishedDownloadStruct item;
     item.fileName = file.fileName;
@@ -1047,7 +1050,7 @@ void ArpmanetDC::downloadCompleted(QByteArray tth)
     item.fileSize = file.fileSize;
     item.tthRoot = file.tthRoot;
     item.downloadedDate = QDateTime::currentDateTime().toString("dd-MM-yyyy HH:mm:ss:zzz");
-    
+   
     addFinishedDownloadToList(item);
 
     //Set status
@@ -1058,6 +1061,9 @@ void ArpmanetDC::downloadStarted(QByteArray tth)
 {
     if (pQueueList->contains(tth))
         setStatus(tr("Download started: %1").arg(pQueueList->value(tth).fileName));
+
+    if (queueWidget)
+        queueWidget->setQueuedDownloadBusy(tth);
 }
 
 void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)
@@ -1629,4 +1635,36 @@ QString ArpmanetDC::password()
 sqlite3 *ArpmanetDC::database() const
 {
 	return db;
+}
+
+QueueStruct ArpmanetDC::queueEntry(QByteArray tth)
+{
+    if (pQueueList->contains(tth))
+        return pQueueList->value(tth);
+    return QueueStruct();
+}
+
+TransferManager *ArpmanetDC::transferManagerObject() const
+{
+    return pTransferManager;
+}
+
+ShareSearch *ArpmanetDC::shareSearchObject() const
+{
+    return pShare;
+}
+
+Dispatcher *ArpmanetDC::dispatcherObject() const
+{
+    return pDispatcher;
+}
+
+TransferWidget *ArpmanetDC::transferWidgetObject() const
+{
+    return transferWidget;
+}
+
+ResourceExtractor *ArpmanetDC::resourceExtractorObject() const
+{
+    return pTypeIconList;
 }

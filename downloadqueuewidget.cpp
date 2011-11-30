@@ -9,6 +9,12 @@ DownloadQueueWidget::DownloadQueueWidget(QHash<QByteArray, QueueStruct> *queueLi
     pQueueList = queueList;
     pShare = share;
 
+    lowPriorityIcon = QIcon(":/ArpmanetDC/Resources/LowPriorityIcon.png");
+    normalPriorityIcon = QIcon(":/ArpmanetDC/Resources/QueueIcon.png");
+    highPriorityIcon = QIcon(":/ArpmanetDC/Resources/HighPriorityIcon.png");
+    queuedIcon = QIcon(":/ArpmanetDC/Resources/QueueIcon.png");
+    busyIcon = QIcon(":/ArpmanetDC/Resources/CheckIcon.png");
+
 	createWidgets();
 	placeWidgets();
 	connectWidgets();
@@ -33,13 +39,14 @@ void DownloadQueueWidget::createWidgets()
 	queueTable->setContextMenuPolicy(Qt::CustomContextMenu);
 
 	//Model
-	queueModel = new QStandardItemModel(0, 6);
+	queueModel = new QStandardItemModel(0, 7);
 	queueModel->setHeaderData(0, Qt::Horizontal, tr("Filename"));
 	queueModel->setHeaderData(1, Qt::Horizontal, tr("Path"));
-	queueModel->setHeaderData(2, Qt::Horizontal, tr("Size"));
-	queueModel->setHeaderData(3, Qt::Horizontal, tr("Priority"));
-	queueModel->setHeaderData(4, Qt::Horizontal, tr("TTH"));
-    queueModel->setHeaderData(5, Qt::Horizontal, tr("Host IP"));
+    queueModel->setHeaderData(2, Qt::Horizontal, tr("Status"));
+	queueModel->setHeaderData(3, Qt::Horizontal, tr("Size"));
+	queueModel->setHeaderData(4, Qt::Horizontal, tr("Priority"));
+	queueModel->setHeaderData(5, Qt::Horizontal, tr("TTH"));
+    queueModel->setHeaderData(6, Qt::Horizontal, tr("Host IP"));
 
 	//Set model
 	queueTable->setModel(queueModel);
@@ -48,11 +55,13 @@ void DownloadQueueWidget::createWidgets()
     queueTable->horizontalHeader()->setHighlightSections(false);
     queueTable->horizontalHeader()->setStretchLastSection(true);
     queueTable->setColumnWidth(0, 300);
+    queueTable->setColumnWidth(1, 200);
+    queueTable->setColumnWidth(3, 75);
 
 	//===== Actions =====
-	setPriorityLowAction = new QAction(QIcon(":/ArpmanetDC/Resources/LowPriorityIcon.png"), tr("Low priority"), this);
-	setPriorityNormalAction = new QAction(QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Normal priority"), this);
-	setPriorityHighAction = new QAction(QIcon(":/ArpmanetDC/Resources/HighPriorityIcon.png"), tr("High priority"), this);
+	setPriorityLowAction = new QAction(lowPriorityIcon, tr("Low priority"), this);
+	setPriorityNormalAction = new QAction(normalPriorityIcon, tr("Normal priority"), this);
+	setPriorityHighAction = new QAction(highPriorityIcon, tr("High priority"), this);
 	deleteAction = new QAction(QIcon(":/ArpmanetDC/Resources/RemoveIcon.png"), tr("Delete"), this);
 
     //===== Menus =====
@@ -105,14 +114,15 @@ void DownloadQueueWidget::setPriorityLowActionPressed()
         //Get selected files
 	    QModelIndex selectedIndex = queueTable->selectionModel()->selectedRows().at(i);//userListTable->selectionModel()->selection().indexes().first();
 	    //Get TTH of file
-	    QString base32TTH = queueModel->data(queueModel->index(selectedIndex.row(), 4)).toString();
+	    QString base32TTH = queueModel->data(queueModel->index(selectedIndex.row(), 5)).toString();
 
         QByteArray tthRoot;
         tthRoot.append(base32TTH);
         base32Decode(tthRoot);  
         
 	    pParent->setQueuePriority(tthRoot, LowQueuePriority);
-        queueModel->item(selectedIndex.row(), 3)->setText("Low");
+        queueModel->item(selectedIndex.row(), 4)->setText("Low");
+        queueModel->item(selectedIndex.row(), 4)->setIcon(lowPriorityIcon);
     }
 }
 
@@ -123,14 +133,15 @@ void DownloadQueueWidget::setPriorityNormalActionPressed()
         //Get selected files
 	    QModelIndex selectedIndex = queueTable->selectionModel()->selectedRows().at(i);//userListTable->selectionModel()->selection().indexes().first();
 	    //Get TTH of file
-	    QString base32TTH = queueModel->data(queueModel->index(selectedIndex.row(), 4)).toString();
+	    QString base32TTH = queueModel->data(queueModel->index(selectedIndex.row(), 5)).toString();
 
         QByteArray tthRoot;
         tthRoot.append(base32TTH);
         base32Decode(tthRoot); 
         
 	    pParent->setQueuePriority(tthRoot, NormalQueuePriority);
-        queueModel->item(selectedIndex.row(), 3)->setText("Normal");
+        queueModel->item(selectedIndex.row(), 4)->setText("Normal");
+        queueModel->item(selectedIndex.row(), 4)->setIcon(normalPriorityIcon);
     }
 }
 
@@ -141,34 +152,41 @@ void DownloadQueueWidget::setPriorityHighActionPressed()
         //Get selected files
 	    QModelIndex selectedIndex = queueTable->selectionModel()->selectedRows().at(i);//userListTable->selectionModel()->selection().indexes().first();
 	    //Get TTH of file
-	    QString base32TTH = queueModel->data(queueModel->index(selectedIndex.row(), 4)).toString();
+	    QString base32TTH = queueModel->data(queueModel->index(selectedIndex.row(), 5)).toString();
 
         QByteArray tthRoot;
         tthRoot.append(base32TTH);
         base32Decode(tthRoot);   
         
 	    pParent->setQueuePriority(tthRoot, HighQueuePriority);
-        queueModel->item(selectedIndex.row(), 3)->setText("High");
+        queueModel->item(selectedIndex.row(), 4)->setText("High");
+        queueModel->item(selectedIndex.row(), 4)->setIcon(highPriorityIcon);
     }
 }
 
 void DownloadQueueWidget::deleteActionPressed()
 {
+    QList<QModelIndex> selectedRows = queueTable->selectionModel()->selectedRows();
+
+    //Remove rows from parent queue
 	for (int i = 0; i < queueTable->selectionModel()->selectedRows().size(); i++)
     {
         //Get selected files
 	    QModelIndex selectedIndex = queueTable->selectionModel()->selectedRows().at(i);//userListTable->selectionModel()->selection().indexes().first();
 	    //Get TTH of file
-	    QString base32TTH = queueModel->data(queueModel->index(selectedIndex.row(), 4)).toString();
-
-        //Remove that row
-        queueModel->removeRow(selectedIndex.row());
+	    QString base32TTH = queueModel->data(queueModel->index(selectedIndex.row(), 5)).toString();
 
         QByteArray tthRoot;
         tthRoot.append(base32TTH);
         base32Decode(tthRoot);   
 
 	    pParent->deleteFromQueue(tthRoot);
+    }
+
+    //Remove rows from model
+    while (!queueTable->selectionModel()->selectedRows().isEmpty())
+    {
+        queueModel->removeRow(queueTable->selectionModel()->selectedRows().first().row());
     }
 }
 
@@ -184,59 +202,84 @@ void DownloadQueueWidget::loadQueueList()
 
 	for (int i = 0; i < list.size(); i++)
 	{
-		QList<QStandardItem *> row;
-        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, list.at(i).fileName));
-        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, list.at(i).filePath));
-        row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(list.at(i).fileSize)));
+        QueueStruct q = list.at(i);
+
+       	QList<QStandardItem *> row;
+        QFileInfo fi(q.fileName);
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, q.fileName, pParent->resourceExtractorObject()->getIconFromName(fi.suffix())));
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, q.filePath));
+
+        if (pParent->transferWidgetObject()->isBusy(*q.tthRoot))
+            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, "Busy", busyIcon));
+        else
+            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, "Queued", queuedIcon));
+
+        row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(q.fileSize)));
 
 		QString priorityStr;
-		switch (list.at(i).priority)
+        QIcon icon;
+		switch (q.priority)
 		{
 		case LowQueuePriority:
 			priorityStr = "Low";
+            icon = lowPriorityIcon;
 			break;
 		case NormalQueuePriority:
 			priorityStr = "Normal";
+            icon = normalPriorityIcon;
 			break;
 		case HighQueuePriority:
 			priorityStr = "High";
+            icon = highPriorityIcon;
 			break;
 		}
-        row.append(new CStandardItem(CStandardItem::PriorityType, priorityStr));
+        row.append(new CStandardItem(CStandardItem::PriorityType, priorityStr, icon));
         
-        QByteArray tthBase32(list.at(i).tthRoot->data(), list.at(i).tthRoot->size());
+        QByteArray tthBase32(q.tthRoot->data(), q.tthRoot->size());
         base32Encode(tthBase32);
         row.append(new QStandardItem(tthBase32.data()));
-        row.append(new QStandardItem(list.at(i).fileHost.toString()));
+        row.append(new QStandardItem(q.fileHost.toString()));
 		
         queueModel->appendRow(row);
     }
 
     resizeRowsToContents(queueTable);
-    queueTable->sortByColumn(0, Qt::AscendingOrder);
+    queueTable->sortByColumn(2, Qt::AscendingOrder);
 }
 
 void DownloadQueueWidget::addQueuedDownload(QueueStruct file)
 {
 	QList<QStandardItem *> row;
-    row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.fileName));
+    QFileInfo fi(file.fileName);
+       
+    row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.fileName, pParent->resourceExtractorObject()->getIconFromName(fi.suffix())));
     row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.filePath));
+
+    if (pParent->transferWidgetObject()->isBusy(*file.tthRoot))
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, "Busy", busyIcon));
+    else
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, "Queued", queuedIcon));
+
     row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(file.fileSize)));
 
 	QString priorityStr;
+    QIcon icon;
 	switch (file.priority)
 	{
 	case LowQueuePriority:
 		priorityStr = "Low";
+        icon = lowPriorityIcon;
 		break;
 	case NormalQueuePriority:
 		priorityStr = "Normal";
+        icon = normalPriorityIcon;
 		break;
 	case HighQueuePriority:
 		priorityStr = "High";
+        icon = highPriorityIcon;
 		break;
 	}
-    row.append(new CStandardItem(CStandardItem::PriorityType, priorityStr));
+    row.append(new CStandardItem(CStandardItem::PriorityType, priorityStr, icon));
 
     QByteArray tthBase32(file.tthRoot->data(), file.tthRoot->size());
     base32Encode(tthBase32);
@@ -246,6 +289,38 @@ void DownloadQueueWidget::addQueuedDownload(QueueStruct file)
     queueModel->appendRow(row); 
 
     resizeRowsToContents(queueTable);
+    queueTable->sortByColumn(queueTable->horizontalHeader()->sortIndicatorSection(), queueTable->horizontalHeader()->sortIndicatorOrder());
+}
+
+//Remove from queue
+void DownloadQueueWidget::removeQueuedDownload(QByteArray tth)
+{
+    QByteArray base32TTH(tth);
+    base32Encode(base32TTH);
+
+    QList<QStandardItem *> findResults = queueModel->findItems(base32TTH.data(), Qt::MatchExactly, 5);
+
+    if (findResults.isEmpty())
+        return;
+    
+    int row = findResults.first()->row();
+    queueModel->removeRow(row);
+}
+
+//Set a download busy (i.e. the download started)
+void DownloadQueueWidget::setQueuedDownloadBusy(QByteArray tth)
+{
+    QByteArray base32TTH(tth);
+    base32Encode(base32TTH);
+
+    QList<QStandardItem *> findResults = queueModel->findItems(base32TTH.data(), Qt::MatchExactly, 5);
+
+    if (findResults.isEmpty())
+        return;
+    
+    int row = findResults.first()->row();
+    queueModel->item(row, 2)->setIcon(busyIcon);
+    queueModel->item(row, 2)->setText("Busy");
 }
 
 QWidget *DownloadQueueWidget::widget()
