@@ -206,7 +206,8 @@ void DownloadQueueWidget::loadQueueList()
 
        	QList<QStandardItem *> row;
         QFileInfo fi(q.fileName);
-        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, q.fileName, pParent->resourceExtractorObject()->getIconFromName(fi.suffix())));
+        QString suffix = fi.suffix();
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, q.fileName, pParent->resourceExtractorObject()->getIconFromName(suffix)));
         row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, q.filePath));
 
         if (pParent->transferWidgetObject()->isBusy(*q.tthRoot))
@@ -251,8 +252,9 @@ void DownloadQueueWidget::addQueuedDownload(QueueStruct file)
 {
 	QList<QStandardItem *> row;
     QFileInfo fi(file.fileName);
-       
-    row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.fileName, pParent->resourceExtractorObject()->getIconFromName(fi.suffix())));
+
+    QString suffix = fi.suffix();
+    row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.fileName, pParent->resourceExtractorObject()->getIconFromName(suffix)));
     row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.filePath));
 
     if (pParent->transferWidgetObject()->isBusy(*file.tthRoot))
