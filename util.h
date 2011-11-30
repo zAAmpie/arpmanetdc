@@ -8,6 +8,7 @@
 #include <QDataStream>
 #include <QTableView>
 #include "base32.h"
+#include "protocoldef.h"
 
 typedef unsigned char byte;
 static const char *base32Alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"; //Used for Base32 conversions - RFC4648 standard
@@ -51,6 +52,7 @@ quint16 getQuint16FromByteArray(QByteArray *data);
 qint16 getQint16FromByteArray(QByteArray *data);
 quint32 getQuint32FromByteArray(QByteArray *data);
 quint64 getQuint64FromByteArray(QByteArray *data);
+
 
 
 #endif // UTIL_H

@@ -9,20 +9,6 @@
 #include <QTimer>
 #include "util.h"
 
-#define TRANSFER_STATE_PAUSED 0
-#define TRANSFER_STATE_INITIALIZING 1
-#define TRANSFER_STATE_RUNNING 2
-#define TRANSFER_STATE_STALLED 3
-#define TRANSFER_STATE_ABORTING 4
-#define TRANSFER_STATE_FINISHED 5
-
-#define TRANSFER_TYPE_UPLOAD 0
-#define TRANSFER_TYPE_DOWNLOAD 1
-
-#define PACKET_MTU 1436
-#define PACKET_DATA_MTU 1402
-#define TRANSFER_MAXIMUM_SEGMENT 262144
-
 class Transfer : public QObject
 {
     Q_OBJECT
@@ -34,15 +20,15 @@ signals:
     void abort(Transfer*);
     void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
     void TTHTreeRequest(QHostAddress hostAddr, QByteArray rootTTH);
-    void searchTTHAlternateSources(QByteArray &tth);
+    void searchTTHAlternateSources(QByteArray tth);
     void loadTTHSourcesFromDatabase(QByteArray tth);
-    void sendDownloadRequest(QByteArray &erence, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
+    void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length);
     void transmitDatagram(QHostAddress dstHost, QByteArray *datagram);
     void transferFinished(QByteArray tth);
 
 public slots:
-    virtual void setFileName(QString &filename);
-    void setTTH(QByteArray &tth);
+    virtual void setFileName(QString filename);
+    virtual void setTTH(QByteArray tth);
     void setFileOffset(quint64 offset);
     void setSegmentLength(quint64 length);
     void setRemoteHost(QHostAddress remote);
@@ -59,7 +45,7 @@ public slots:
     virtual void hashBucketReply(int &bucketNumber, QByteArray &bucketTTH);
     virtual void TTHTreeReply(QByteArray tree);
 
-    virtual void incomingDataPacket(quint8 transferProtocolVersion, quint64 &offset, QByteArray &data);
+    virtual void incomingDataPacket(quint8 transferProtocolVersion, quint64 offset, QByteArray data);
     virtual int getTransferType() = 0;
     virtual void startTransfer() = 0;
     virtual void pauseTransfer() = 0;

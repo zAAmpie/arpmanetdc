@@ -29,21 +29,14 @@ void TransferManager::destroyTransferObject(Transfer* transferObject)
 // incoming data packets
 void TransferManager::incomingDataPacket(quint8 transferPacket, QByteArray datagram)
 {
-    if (transferPacket == ProtocolADataPacket)
+    QByteArray tmp = datagram.mid(2, 8);
+    quint64 offset = getQuint64FromByteArray(&tmp);
+    QByteArray tth = datagram.mid(10, 24);
+    QByteArray data = datagram.mid(34);
+    if ((data.length() == datagram.length() - 34) && (transferObjectTable.contains(tth)))
     {
-        QByteArray tmp = datagram.mid(2, 8);
-        quint64 offset = getQuint64FromByteArray(&tmp);
-        QByteArray tth = datagram.mid(10, 24);
-        QByteArray data = datagram.mid(34);
-        if ((data.length() == datagram.length() - 34) && (transferObjectTable.contains(tth)))
-        {
-            Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_DOWNLOAD);
-            t->incomingDataPacket(transferPacket, offset, data);
-        }
-    }
-    else if (transferPacket == ProtocolAControlPacket)
-    {
-
+        Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_DOWNLOAD);
+        t->incomingDataPacket(transferPacket, offset, data);
     }
 }
 

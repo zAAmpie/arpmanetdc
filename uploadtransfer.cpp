@@ -2,6 +2,7 @@
 
 UploadTransfer::UploadTransfer()
 {
+    upload = 0;
     bytesWrittenSinceUpdate = 0;
 
     // perhaps 0 is sufficient, it is anyway retarded to draw progress bars for partial upload segments...
@@ -16,20 +17,29 @@ UploadTransfer::UploadTransfer()
     transferInactivityTimer = new QTimer(this);
     connect(transferInactivityTimer, SIGNAL(timeout()), this, SLOT(abortTransfer()));
     transferInactivityTimer->start(TIMER_INACTIVITY_MSECS);
+
+    // temp, just get it working again in new structure
+    upload = new FSTPTransferSegment;
 }
 
 UploadTransfer::~UploadTransfer()
 {
     delete transferRateCalculationTimer;
     delete transferInactivityTimer;
+    delete upload;
 }
 
-void UploadTransfer::setFileName(QString &filename)
+void UploadTransfer::setFileName(QString filename)
 {
     filePathName = filename;
-    inputFile.setFileName(filePathName);
-    inputFile.open(QIODevice::ReadOnly);
-    fileSize = inputFile.size();
+    if (upload)
+        upload->setFileName(filename);
+}
+
+void UploadTransfer::setTTH(QByteArray tth)
+{
+    TTH = tth;
+    upload->setTTH(TTH);
 }
 
 int UploadTransfer::getTransferType()
@@ -39,38 +49,11 @@ int UploadTransfer::getTransferType()
 
 void UploadTransfer::startTransfer()
 {
+    upload->setFileOffset(fileOffset);
+    upload->setFileOffsetLength(segmentLength);
     status = TRANSFER_STATE_RUNNING;
-    if (fileOffset > fileSize)
-        return;
-    else if (fileOffset + segmentLength > fileSize)
-        segmentLength = fileSize - fileOffset;
-
-    const char * f = (char*)inputFile.map(fileOffset, segmentLength);
-    quint64 wptr = 0;
-    QByteArray header;
-    header.append(DataPacket);
-    header.append(ProtocolADataPacket);
-    QByteArray data(QByteArray::fromRawData(f, segmentLength));
-    while (wptr < segmentLength)
-    {
-        QByteArray *packet = new QByteArray(header);
-        packet->append(toQByteArray((quint64)(fileOffset + wptr)));
-        packet->append(TTH);
-        qDebug() << "Write data fileOffset " << fileOffset << " segmentLength " << segmentLength << " wptr " << wptr;
-        if (wptr + PACKET_DATA_MTU < segmentLength)
-        {
-            packet->append(data.mid(wptr, PACKET_DATA_MTU));
-            wptr += PACKET_DATA_MTU;
-        }
-        else
-        {
-            packet->append(data.mid(wptr, segmentLength - wptr));
-            wptr += segmentLength - wptr;
-        }
-        emit transmitDatagram(remoteHost, packet);
-    }
+    upload->startUploading();
     bytesWrittenSinceUpdate += segmentLength;
-    inputFile.unmap((unsigned char *)f);
     transferInactivityTimer->start(TIMER_INACTIVITY_MSECS);
 }
 
@@ -82,7 +65,6 @@ void UploadTransfer::pauseTransfer()
 void UploadTransfer::abortTransfer()
 {
     status = TRANSFER_STATE_ABORTING;
-    inputFile.close();
     emit abort(this);
 }
 
