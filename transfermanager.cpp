@@ -27,7 +27,7 @@ void TransferManager::destroyTransferObject(Transfer* transferObject)
 }
 
 // incoming data packets
-void TransferManager::incomingDataPacket(quint8 transferPacket, QByteArray &datagram)
+void TransferManager::incomingDataPacket(quint8 transferPacket, QByteArray datagram)
 {
     if (transferPacket == ProtocolADataPacket)
     {

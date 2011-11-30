@@ -83,8 +83,8 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     //Connect Dispatcher to TransferManager - handles upload/download requests and transfers
     connect(pDispatcher, SIGNAL(incomingUploadRequest(QByteArray,QHostAddress,QByteArray,quint64,quint64)),
             pTransferManager, SLOT(incomingUploadRequest(QByteArray,QHostAddress,QByteArray,quint64,quint64)));
-    connect(pDispatcher, SIGNAL(incomingDataPacket(quint8,QByteArray&)),
-            pTransferManager, SLOT(incomingDataPacket(quint8,QByteArray&)));
+    connect(pDispatcher, SIGNAL(incomingDataPacket(quint8,QByteArray)),
+            pTransferManager, SLOT(incomingDataPacket(quint8,QByteArray)));
     connect(pTransferManager, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)),
             pDispatcher, SLOT(sendUnicastRawDatagram(QHostAddress,QByteArray*)));
     connect(pDispatcher, SIGNAL(receivedTTHTree(QByteArray,QByteArray)),
@@ -95,8 +95,8 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
             pTransferManager, SLOT(incomingTTHSource(QByteArray,QHostAddress)));
     connect(pTransferManager, SIGNAL(searchTTHAlternateSources(QByteArray&)),
             pDispatcher, SLOT(initiateTTHSearch(QByteArray&)));
-    connect(pTransferManager, SIGNAL(sendDownloadRequest(QByteArray&,QHostAddress&,QByteArray&,quint64&,quint64&)),
-            pDispatcher, SLOT(sendDownloadRequest(QByteArray&,QHostAddress&,QByteArray&,quint64&,quint64&)));
+    connect(pTransferManager, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)),
+            pDispatcher, SLOT(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)));
 
     //Connect TransferManager to GUI - notify of started/completed transfers
     connect(pTransferManager, SIGNAL(downloadStarted(QByteArray)), this, SLOT(downloadStarted(QByteArray)));

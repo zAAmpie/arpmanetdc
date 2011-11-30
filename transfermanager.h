@@ -48,7 +48,7 @@ signals:
     void deleteTTHSourcesFromDatabase(QByteArray tth);
     void searchTTHAlternateSources(QByteArray &tth);
     void TTHTreeRequest(QHostAddress hostAddr,QByteArray rootTTH);
-    void sendDownloadRequest(QByteArray &protocolPreference, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
+    void sendDownloadRequest(quint8 protocolPreference, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length);
 
     // Request hashing of a bucket that has finished downloading
     void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
@@ -60,7 +60,7 @@ signals:
     void downloadCompleted(QByteArray tth);
 
 public slots:
-    void incomingDataPacket(quint8 transferProtocolVersion, QByteArray &datagram);
+    void incomingDataPacket(quint8 transferProtocolVersion, QByteArray datagram);
 
     // Request file name for given TTH from sharing engine, reply with empty string if not found.
     void filePathNameReply(QByteArray tth, QString filename);
