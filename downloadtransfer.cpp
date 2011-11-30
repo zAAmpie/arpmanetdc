@@ -125,16 +125,11 @@ void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
     tempFileName.append(".");
     tempFileName.append(QString::number(bucketNumber));
 
-    QFile file(tempFileName);
-    if (file.open(QIODevice::WriteOnly | QIODevice::Truncate))
-        file.write(*downloadBucketTable->value(bucketNumber));
-    else
-    {
-        // TODO: emit MISTAKE!, pause download
-    }
-    delete downloadBucketTable->value(bucketNumber);
+    emit flushBucket(tempFileName, downloadBucketTable->value(bucketNumber));
+    emit assembleOutputFile(TTHBase32, filePathName, bucketNumber, lastBucketNumber);
+
+    // just remove entry, bucket pointer gets deleted in BucketFlushThread
     downloadBucketTable->remove(bucketNumber);
-    file.close();
 }
 
 void DownloadTransfer::transferTimerEvent()

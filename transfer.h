@@ -25,6 +25,8 @@ signals:
     void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length);
     void transmitDatagram(QHostAddress dstHost, QByteArray *datagram);
     void transferFinished(QByteArray tth);
+    void flushBucket(QString filename, QByteArray *bucket);
+    void assembleOutputFile(QString tmpfilebase, QString outfile, int startbucket, int lastbucket);
 
 public slots:
     virtual void setFileName(QString filename);

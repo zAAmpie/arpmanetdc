@@ -41,7 +41,8 @@ SOURCES += main.cpp\
     resourceextractor.cpp \
     transferwidget.cpp \
     transfersegment.cpp \
-    fstptransfersegment.cpp
+    fstptransfersegment.cpp \
+    bucketflushthread.cpp
 
 HEADERS  += arpmanetdc.h \
     hubconnection.h \
@@ -72,12 +73,15 @@ HEADERS  += arpmanetdc.h \
     transferwidget.h \
     protocoldef.h \
     transfersegment.h \
-    fstptransfersegment.h
+    fstptransfersegment.h \
+    bucketflushthread.h
 
 #FORMS    += arpmanetdc.ui
 
 RESOURCES += \
     arpmanetdc.qrc
+
+
 
 
 

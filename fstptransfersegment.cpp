@@ -111,8 +111,6 @@ void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
     if (pDownloadBucketTable->value(bucketNumber)->length() == HASH_BUCKET_SIZE)
     {
         emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber));
-        // temp test until signal works
-        //flushBucketToDisk(bucketNumber);
     }
 
     if ((bucketNumber == lastBucketNumber) && (lastBucketSize == pDownloadBucketTable->value(bucketNumber)->length()))
