@@ -298,23 +298,23 @@ void Dispatcher::sendBroadcastAnnounceReply()
 
 void Dispatcher::sendUnicastAnnounceReply(QHostAddress &dstHost)
 {
-    QByteArray datagram;
-    datagram.append(UnicastPacket);
-    datagram.append(AnnounceReplyPacket);
-    datagram.append(CID);
-    datagram.append(networkTopology->getOwnBucketId());
-    sendUnicastRawDatagram(dstHost, &datagram);
+    QByteArray *datagram = new QByteArray;
+    datagram->append(UnicastPacket);
+    datagram->append(AnnounceReplyPacket);
+    datagram->append(CID);
+    datagram->append(networkTopology->getOwnBucketId());
+    sendUnicastRawDatagram(dstHost, datagram);
 }
 
 void Dispatcher::sendUnicastAnnounceForwardRequest(QHostAddress &toAddr)
 {
-    QByteArray datagram;
-    datagram.append(UnicastPacket);
-    datagram.append(AnnounceForwardRequestPacket);
-    datagram.append(toQByteArray(dispatchIP.toIPv4Address()));
-    datagram.append(CID);
-    datagram.append(networkTopology->getOwnBucketId());
-    sendUnicastRawDatagram(toAddr, &datagram);
+    QByteArray *datagram = new QByteArray;
+    datagram->append(UnicastPacket);
+    datagram->append(AnnounceForwardRequestPacket);
+    datagram->append(toQByteArray(dispatchIP.toIPv4Address()));
+    datagram->append(CID);
+    datagram->append(networkTopology->getOwnBucketId());
+    sendUnicastRawDatagram(toAddr, datagram);
 }
 
 void Dispatcher::handleReceivedAnnounceForwardRequest(QHostAddress &fromHost, QByteArray &datagram)
@@ -398,11 +398,11 @@ bool Dispatcher::initiateSearch(quint64 &searchId, QByteArray &searchData)
 void Dispatcher::sendSearchResult(QHostAddress toHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult)
 {
     // TODO: we can lose senderCID in the function call since it is our own CID we are sending here.
-    QByteArray datagram;
-    datagram.append(UnicastPacket);
-    datagram.append(SearchResultPacket);
-    datagram.append(assembleSearchPacket(dispatchIP, searchID, searchResult, false));  // TODO: add bucket on first result per host
-    sendUnicastRawDatagram(toHost, &datagram);
+    QByteArray *datagram = new QByteArray;
+    datagram->append(UnicastPacket);
+    datagram->append(SearchResultPacket);
+    datagram->append(assembleSearchPacket(dispatchIP, searchID, searchResult, false));  // TODO: add bucket on first result per host
+    sendUnicastRawDatagram(toHost, datagram);
 }
 
 QByteArray Dispatcher::assembleSearchPacket(QHostAddress &searchingHost, quint64 &searchID, QByteArray &searchData, bool appendBucket)
