@@ -87,7 +87,7 @@ public slots:
     // Search
     bool initiateSearch(quint64 &searchID, QByteArray &searchPacket);
     void sendSearchResult(QHostAddress toHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult);
-    bool initiateTTHSearch(QByteArray &tth);
+    bool initiateTTHSearch(QByteArray tth);
     void sendTTHSearchResult(QHostAddress toHost, QByteArray tth);
 
     // Transfers

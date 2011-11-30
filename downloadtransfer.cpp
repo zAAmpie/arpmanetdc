@@ -156,6 +156,16 @@ void DownloadTransfer::transferTimerEvent()
             qDebug() << listOfPeers;
             emit TTHTreeRequest(listOfPeers.first(), TTH);
         }
+        else
+        {
+            status = TRANSFER_STATE_RUNNING;
+            download->setFileOffset(0);
+            download->setFileOffsetLength(fileSize);
+            download->setDownloadBucketTablePointer(downloadBucketTable);
+            download->setRemoteHost(listOfPeers.first());
+            download->setTTH(TTH);
+            download->startDownloading();
+        }
     }
 }
 

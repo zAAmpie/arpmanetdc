@@ -134,17 +134,15 @@ void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
 void FSTPTransferSegment::transferTimerEvent()
 {
     if (status == TRANSFER_STATE_STALLED)
-        {
-            // Transfer some data
-            if (requestingLength > PACKET_DATA_MTU)
-                requestingLength /= 2;
-
-            status = TRANSFER_STATE_RUNNING;
-            requestingTargetOffset = requestingOffset + requestingLength;
-            //qDebug() << "sendDownloadRequest() peer tth offset length " << listOfPeers.first() << TTH << requestingOffset << requestingLength;
-            checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
-        }
-
+    {
+        // Transfer some data
+        if (requestingLength > PACKET_DATA_MTU)
+            requestingLength /= 2;
+        status = TRANSFER_STATE_RUNNING;
+        requestingTargetOffset = requestingOffset + requestingLength;
+        qDebug() << "sendDownloadRequest() peer tth offset length " << remoteHost << TTH << requestingOffset << requestingLength;
+        checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
+    }
 }
 
 inline int FSTPTransferSegment::calculateBucketNumber(quint64 fileOffset)

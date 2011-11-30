@@ -46,7 +46,7 @@ signals:
     void saveTTHSourceToDatabase(QByteArray tth, QHostAddress peerAddress);
     void loadTTHSourcesFromDatabase(QByteArray tth);
     void deleteTTHSourcesFromDatabase(QByteArray tth);
-    void searchTTHAlternateSources(QByteArray &tth);
+    void searchTTHAlternateSources(QByteArray tth);
     void TTHTreeRequest(QHostAddress hostAddr,QByteArray rootTTH);
     void sendDownloadRequest(quint8 protocolPreference, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length);
 

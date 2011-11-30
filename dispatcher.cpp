@@ -512,7 +512,7 @@ void Dispatcher::handleReceivedSearchQuestion(QHostAddress &fromHost, QByteArray
 
 }
 
-bool Dispatcher::initiateTTHSearch(QByteArray &tth)
+bool Dispatcher::initiateTTHSearch(QByteArray tth)
 {
     QByteArray datagram;
     if (networkBootstrap->getBootstrapStatus() == NETWORK_MCAST)
