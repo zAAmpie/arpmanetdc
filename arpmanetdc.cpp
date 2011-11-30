@@ -231,6 +231,15 @@ ArpmanetDC::~ArpmanetDC()
     //saveSettings();
     delete pSettings;
 
+    transferThread->quit();
+    if (transferThread->wait(1000))
+        delete transferThread;
+    else
+    {
+        transferThread->terminate();
+        delete transferThread;
+    }
+
 	dbThread->quit();
 	if (dbThread->wait(5000))
 		delete dbThread;
