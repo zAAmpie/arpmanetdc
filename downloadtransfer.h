@@ -2,8 +2,7 @@
 #define DOWNLOADTRANSFER_H
 #include "transfer.h"
 #include "protocoldef.h"
-
-#define BUCKET_SIZE (1<<20)
+#include "fstptransfersegment.h"
 
 class DownloadTransfer : public Transfer
 {
@@ -20,18 +19,17 @@ private slots:
     void transferTimerEvent();
 
 private:
-    void incomingDataPacket(quint8 transferProtocolVersion, quint64 &offset, QByteArray &data);
+    void incomingDataPacket(quint8 transferProtocolVersion, quint64 offset, QByteArray data);
     int getTransferType();
     void startTransfer();
     void pauseTransfer();
     void abortTransfer();
     void transferRateCalculation();
 
-    inline int calculateBucketNumber(quint64 fileOffset);
-    inline void checkSendDownloadRequest(QByteArray &protocolPreference, QHostAddress peer, QByteArray &TTH, quint64 requestingOffset, quint64 requestingLength);
     void flushBucketToDisk(int &bucketNumber);
+    inline int calculateBucketNumber(quint64 fileOffset);
 
-    QHash<int, QByteArray*> downloadBucketTable;
+    QHash<int, QByteArray*> *downloadBucketTable;
     QHash<int, QByteArray*> downloadBucketHashLookupTable;
 
     int lastBucketNumber;
@@ -41,9 +39,7 @@ private:
     int bytesWrittenSinceUpdate;
     QByteArray protocolPreference;
 
-    quint64 requestingOffset;
-    quint64 requestingLength;
-    quint64 requestingTargetOffset;
+    TransferSegment *download;
 };
 
 #endif // DOWNLOADTRANSFER_H

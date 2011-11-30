@@ -10,19 +10,19 @@ Transfer::~Transfer()
 }
 
 // empty base class definitions, since these do not make sense for uploads
-void Transfer::incomingDataPacket(quint8, quint64&, QByteArray&){}
+void Transfer::incomingDataPacket(quint8, quint64, QByteArray){}
 void Transfer::hashBucketReply(int&, QByteArray&){}
 void Transfer::TTHTreeReply(QByteArray){}
 void Transfer::transferTimerEvent(){}
 
 // ------------------------------------------------------------------------
 
-void Transfer::setFileName(QString &filename)
+void Transfer::setFileName(QString filename)
 {
     filePathName = filename;
 }
 
-void Transfer::setTTH(QByteArray &tth)
+void Transfer::setTTH(QByteArray tth)
 {
     TTH = tth;
     TTHBase32 = tth;

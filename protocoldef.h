@@ -48,7 +48,7 @@ enum MinorPacketType
     RevConnectReplyPacket=0xa2
 };
 
-enum DownloadProtocolInstructions
+/*enum DownloadProtocolInstructions
 {
     ProtocolADataPacket=0x21,
     ProtocolBDataPacket=0x22,
@@ -58,6 +58,23 @@ enum DownloadProtocolInstructions
     ProtocolBControlPacket=0x42,
     ProtocolCControlPacket=0x43,
     ProtocolDControlPacket=0x44
-};
+};*/
+
+
+#define HASH_BUCKET_SIZE (1<<20)
+
+#define PACKET_MTU 1436
+#define PACKET_DATA_MTU 1402
+#define TRANSFER_MAXIMUM_SEGMENT 262144
+
+#define TRANSFER_STATE_PAUSED 0
+#define TRANSFER_STATE_INITIALIZING 1
+#define TRANSFER_STATE_RUNNING 2
+#define TRANSFER_STATE_STALLED 3
+#define TRANSFER_STATE_ABORTING 4
+#define TRANSFER_STATE_FINISHED 5
+
+#define TRANSFER_TYPE_UPLOAD 0
+#define TRANSFER_TYPE_DOWNLOAD 1
 
 #endif // PROTOCOLDEF_H

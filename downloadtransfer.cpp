@@ -2,12 +2,10 @@
 
 DownloadTransfer::DownloadTransfer()
 {
+    downloadBucketTable = new QHash<int, QByteArray*>;
     transferRate = 0;
     transferProgress = 0;
     bytesWrittenSinceUpdate = 0;
-    requestingOffset = 0;
-    requestingLength = 65536;
-    requestingTargetOffset = 0;
     initializationStateTimerBrakes = 0;
     status = TRANSFER_STATE_INITIALIZING;
     remoteHost = QHostAddress("0.0.0.0");
@@ -20,13 +18,21 @@ DownloadTransfer::DownloadTransfer()
     transferTimer = new QTimer(this);
     connect(transferTimer, SIGNAL(timeout()), this, SLOT(transferTimerEvent()));
     transferTimer->setSingleShot(false);
+
+    // Temp test
+    download = new FSTPTransferSegment;
+    connect(download, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)), this, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)));
+    connect(download, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)),
+            this, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)));
+    connect(download, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
+    connect(transferTimer, SIGNAL(timeout()), download, SLOT(transferTimerEvent()));
 }
 
 DownloadTransfer::~DownloadTransfer()
 {
     delete transferRateCalculationTimer;
     delete transferTimer;
-    QHashIterator<int, QByteArray*> itdb(downloadBucketTable);
+    QHashIterator<int, QByteArray*> itdb(*downloadBucketTable);
     while (itdb.hasNext())
     {
         // TODO: save halwe buckets na files toe
@@ -35,68 +41,15 @@ DownloadTransfer::~DownloadTransfer()
     QHashIterator<int, QByteArray*> ithb(downloadBucketHashLookupTable);
     while (ithb.hasNext())
         delete ithb.next().value();
+
+    // tmp
+    delete download;
 }
 
-void DownloadTransfer::incomingDataPacket(quint8 transferPacketType, quint64 &offset, QByteArray &data)
+void DownloadTransfer::incomingDataPacket(quint8 transferPacketType, quint64 offset, QByteArray data)
 {
-    // we are interested in which transfer protocol the packet is encoded with, since a download object may receive packets from various sources
-    // transmitted with different transfer protocols.
-
-    // we can later break this up into protocols, currently I just want to see it working.
-    if (offset != requestingOffset)
-    {
-        status = TRANSFER_STATE_STALLED;
-        return;
-    }
-    status = TRANSFER_STATE_RUNNING;
-
-    int bucketNumber = calculateBucketNumber(offset);
-    if (!downloadBucketTable.contains(bucketNumber))
-    {
-        QByteArray *bucket = new QByteArray();
-        downloadBucketTable.insert(bucketNumber, bucket);
-    }
-    if ((downloadBucketTable.value(bucketNumber)->length() + data.length()) > BUCKET_SIZE)
-    {
-        int bucketRemaining = BUCKET_SIZE - downloadBucketTable.value(bucketNumber)->length();
-        downloadBucketTable.value(bucketNumber)->append(data.mid(0, bucketRemaining));
-        if (!downloadBucketTable.contains(bucketNumber + 1))
-        {
-            QByteArray *nextBucket = new QByteArray(data.mid(bucketRemaining));
-            downloadBucketTable.insert(bucketNumber + 1, nextBucket);
-        }
-        // there should be no else - if the next bucket exists and data is sticking over, there is an error,
-        // since we segment on bucket boundaries. tth checksumming will catch the problems.
-    }
-    else
-        downloadBucketTable.value(bucketNumber)->append(data);
-
-    if (downloadBucketTable.value(bucketNumber)->length() == BUCKET_SIZE)
-    {
-        emit hashBucketRequest(TTH, bucketNumber, downloadBucketTable.value(bucketNumber));
-        // temp test until signal works
-        flushBucketToDisk(bucketNumber);
-    }
-
-    if ((bucketNumber == lastBucketNumber) && (lastBucketSize == downloadBucketTable.value(bucketNumber)->length()))
-    {
-        status = TRANSFER_STATE_FINISHED;
-        emit hashBucketRequest(TTH, bucketNumber, downloadBucketTable.value(bucketNumber));
-        // temp test until signal works
-        flushBucketToDisk(bucketNumber);
-        emit transferFinished(TTH);
-        return;
-    }
-
-    requestingOffset += data.length();
-    if (requestingOffset == requestingTargetOffset)
-    {
-        if (requestingLength < TRANSFER_MAXIMUM_SEGMENT / 2)
-            requestingLength *= 2;
-
-        requestingTargetOffset += requestingLength;
-        checkSendDownloadRequest(protocolPreference, listOfPeers.first(), TTH, requestingOffset, requestingLength);
-    }
+    // TODO: select segment object from range and dispatch
+    download->incomingDataPacket(offset, data);
 }
 
 void DownloadTransfer::hashBucketReply(int &bucketNumber, QByteArray &bucketTTH)
@@ -135,7 +88,7 @@ int DownloadTransfer::getTransferType()
 void DownloadTransfer::startTransfer()
 {
     lastBucketNumber = calculateBucketNumber(fileSize);
-    lastBucketSize = fileSize % BUCKET_SIZE;
+    lastBucketSize = fileSize % HASH_BUCKET_SIZE;
     transferTimer->start(100);
 }
 
@@ -164,11 +117,6 @@ void DownloadTransfer::transferRateCalculation()
     bytesWrittenSinceUpdate = 0;
 }
 
-inline int DownloadTransfer::calculateBucketNumber(quint64 fileOffset)
-{
-    return (int)(fileOffset >> 20);
-}
-
 void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
 {
     // TODO: decide where to store these files
@@ -177,19 +125,13 @@ void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
     tempFileName.append(".");
     tempFileName.append(QString::number(bucketNumber));
 
-    QFile file(tempFileName);
-    if (file.open(QIODevice::WriteOnly | QIODevice::Truncate))
-        file.write(*downloadBucketTable.value(bucketNumber));
-    else
-    {
-        // TODO: emit MISTAKE!, pause download
-    }
-    delete downloadBucketTable.value(bucketNumber);
-    downloadBucketTable.remove(bucketNumber);
-    file.close();
+    emit flushBucket(tempFileName, downloadBucketTable->value(bucketNumber));
+    emit assembleOutputFile(TTHBase32, filePathName, bucketNumber, lastBucketNumber);
+
+    // just remove entry, bucket pointer gets deleted in BucketFlushThread
+    downloadBucketTable->remove(bucketNumber);
 }
 
-// We keep the transfer alive in here
 void DownloadTransfer::transferTimerEvent()
 {
     if (status == TRANSFER_STATE_INITIALIZING)
@@ -214,35 +156,16 @@ void DownloadTransfer::transferTimerEvent()
             qDebug() << listOfPeers;
             emit TTHTreeRequest(listOfPeers.first(), TTH);
         }
-        else
-        {
-            checkSendDownloadRequest(protocolPreference, listOfPeers.first(), TTH, requestingOffset, requestingLength);
-            status = TRANSFER_STATE_RUNNING;
-        }
     }
-    else if (status == TRANSFER_STATE_STALLED)
-    {
-        // Transfer some data
-        if (requestingLength > PACKET_DATA_MTU)
-            requestingLength /= 2;
-
-        status = TRANSFER_STATE_RUNNING;
-        requestingTargetOffset = requestingOffset + requestingLength;
-        qDebug() << "sendDownloadRequest() peer tth offset length " << listOfPeers.first() << TTH << requestingOffset << requestingLength;
-        checkSendDownloadRequest(protocolPreference, listOfPeers.first(), TTH, requestingOffset, requestingLength);
-    }
-
-}
-
-inline void DownloadTransfer::checkSendDownloadRequest(QByteArray &protocolPreference, QHostAddress peer, QByteArray &TTH,
-                                                       quint64 requestingOffset, quint64 requestingLength)
-{
-    if (fileSize < requestingOffset + requestingLength)
-        requestingLength = fileSize - requestingOffset;
-    emit sendDownloadRequest(protocolPreference, listOfPeers.first(), TTH, requestingOffset, requestingLength);
 }
 
 void DownloadTransfer::setProtocolPreference(QByteArray &preference)
 {
     protocolPreference = preference;
 }
+
+inline int DownloadTransfer::calculateBucketNumber(quint64 fileOffset)
+{
+    return (int)(fileOffset >> 20);
+}
+

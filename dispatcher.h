@@ -71,7 +71,7 @@ signals:
 
     // Transfers
     void incomingUploadRequest(QByteArray protocolHint, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length);
-    void incomingDataPacket(quint8 protocolInstruction, QByteArray &datagram);
+    void incomingDataPacket(quint8 protocolInstruction, QByteArray datagram);
 
 public slots:
     // Bootstrapping
@@ -91,8 +91,8 @@ public slots:
     void sendTTHSearchResult(QHostAddress toHost, QByteArray tth);
 
     // Transfers
-    void sendDownloadRequest(QByteArray &protocolPreference, QHostAddress &dstHost, QByteArray &tth, quint64 &offset, quint64 &length);
-    void sendTransferError(QHostAddress &dstHost, quint8 error);
+    void sendDownloadRequest(quint8 protocolPreference, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length);
+    void sendTransferError(QHostAddress dstHost, quint8 error);
 
     // Buckets
     void requestBucketContents(QHostAddress host);
@@ -106,7 +106,7 @@ public slots:
     void dispatchCIDPing(QByteArray &cid);
 
     // Misc
-    void sendUnicastRawDatagram(QHostAddress &dstAddress, QByteArray &datagram);
+    void sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *datagram);
     void sendBroadcastRawDatagram(QByteArray &datagram);
     void sendMulticastRawDatagram(QByteArray &datagram);
 

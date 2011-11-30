@@ -1,6 +1,7 @@
 #ifndef UPLOADTRANSFER_H
 #define UPLOADTRANSFER_H
 #include "transfer.h"
+#include "fstptransfersegment.h"
 #include "protocoldef.h"
 
 #define TIMER_INACTIVITY_MSECS 60000
@@ -10,7 +11,8 @@ class UploadTransfer : public Transfer
 public:
     UploadTransfer();
     ~UploadTransfer();
-    void setFileName(QString &filename);
+    void setFileName(QString filename);
+    void setTTH(QByteArray tth);
 
 private:
     QTimer* transferInactivityTimer;
@@ -20,8 +22,9 @@ private:
     void abortTransfer();
     void transferRateCalculation();
 
-    QFile inputFile;
     quint64 bytesWrittenSinceUpdate;
+
+    TransferSegment *upload;
 };
 
 #endif // UPLOADTRANSFER_H
