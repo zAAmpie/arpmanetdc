@@ -24,7 +24,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     if (!pSettings->contains("password"))
         pSettings->insert("password", DEFAULT_PASSWORD);
     if (!pSettings->contains("hubAddress"))
-        pSettings->insert("hubAddress", DEFAULT_HUB_ADDRESS);
+        pSettings->insert("hubAddress", DEFAULT_HUB_ADDRESS); 
     if (!pSettings->contains("hubPort"))
         pSettings->insert("hubPort", DEFAULT_HUB_PORT);
     if (!pSettings->contains("externalIP"))

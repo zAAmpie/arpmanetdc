@@ -109,21 +109,24 @@ void ProgressDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
     }
 
     //Colors
+    QColor progressColor;
+    if (type == 'D') //TRANSFER_TYPE_DOWNLOAD
+        progressColor = QColor(79, 189, 54); //Green
+    else if (type == 'U') //TRANSFER_TYPE_UPLOAD
+        progressColor = QColor(37, 149, 214); //Blue
+
     QColor frameColor(Qt::darkGray);
     QColor textColor(Qt::black);
     if (options.state & QStyle::State_Selected && options.state & QStyle::State_Active)
     {
         frameColor = QColor(Qt::white);
         textColor = QColor(Qt::white);
+        progressColor = QColor(Qt::lightGray);
     }
     else if (options.state & QStyle::State_Selected)
         frameColor = QColor(Qt::darkGray);
     
-    QColor progressColor;
-    if (type == 'D') //TRANSFER_TYPE_DOWNLOAD
-        progressColor = QColor(79, 189, 54); //Green
-    else if (type == 'U') //TRANSFER_TYPE_UPLOAD
-        progressColor = QColor(37, 149, 214); //Blue
+    
 
     //Draw the progress bar frame
     painter->setRenderHint(QPainter::Antialiasing);
@@ -147,7 +150,12 @@ void ProgressDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
         if (valRect.right() < valRect.left())
             valRect.setRight(valRect.left());
            
-        painter->setBrush(QBrush(progressColor));
+        QLinearGradient gradient(valRect.topLeft(), valRect.bottomLeft());
+        gradient.setColorAt(1, progressColor.darker(150));
+        gradient.setColorAt(0, progressColor);
+
+        painter->setBrush(QBrush(gradient));
+        //painter->setBrush(QBrush(progressColor));
         painter->setPen(progressColor);
         painter->drawRoundedRect(valRect, 2, 2);
     }

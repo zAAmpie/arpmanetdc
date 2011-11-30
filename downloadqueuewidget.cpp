@@ -9,9 +9,9 @@ DownloadQueueWidget::DownloadQueueWidget(QHash<QByteArray, QueueStruct> *queueLi
     pQueueList = queueList;
     pShare = share;
 
-    lowPriorityIcon = QIcon(":/ArpmanetDC/Resources/LowPriorityIcon.png");
-    normalPriorityIcon = QIcon(":/ArpmanetDC/Resources/QueueIcon.png");
-    highPriorityIcon = QIcon(":/ArpmanetDC/Resources/HighPriorityIcon.png");
+    lowPriorityIcon = QIcon(":/ArpmanetDC/Resources/BlueArrow.png");
+    normalPriorityIcon = QIcon(":/ArpmanetDC/Resources/GreenArrow.png");
+    highPriorityIcon = QIcon(":/ArpmanetDC/Resources/RedArrow.png");
     queuedIcon = QIcon(":/ArpmanetDC/Resources/QueueIcon.png");
     busyIcon = QIcon(":/ArpmanetDC/Resources/CheckIcon.png");
 
@@ -212,7 +212,7 @@ void DownloadQueueWidget::loadQueueList()
         if (pParent->transferWidgetObject()->isBusy(*q.tthRoot))
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, "Busy", busyIcon));
         else
-            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, "Queued", queuedIcon));
+            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, "Queued"));//, queuedIcon));
 
         row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(q.fileSize)));
 
@@ -258,7 +258,7 @@ void DownloadQueueWidget::addQueuedDownload(QueueStruct file)
     if (pParent->transferWidgetObject()->isBusy(*file.tthRoot))
         row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, "Busy", busyIcon));
     else
-        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, "Queued", queuedIcon));
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, "Queued"));//, queuedIcon));
 
     row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(file.fileSize)));
 
