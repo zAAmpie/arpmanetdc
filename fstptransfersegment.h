@@ -5,7 +5,7 @@
 class FSTPTransferSegment : public TransferSegment
 {
 public:
-    FSTPTransferSegment();
+    FSTPTransferSegment(QObject *parent = 0);
     ~FSTPTransferSegment();
 
 public slots:

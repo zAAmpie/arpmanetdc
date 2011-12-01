@@ -1,6 +1,7 @@
 #include "downloadtransfer.h"
+#include <QThread>
 
-DownloadTransfer::DownloadTransfer()
+DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
 {
     downloadBucketTable = new QHash<int, QByteArray*>;
     transferRate = 0;
@@ -10,17 +11,17 @@ DownloadTransfer::DownloadTransfer()
     status = TRANSFER_STATE_INITIALIZING;
     remoteHost = QHostAddress("0.0.0.0");
 
-    transferRateCalculationTimer = new QTimer(this);
+    transferRateCalculationTimer = new QTimer();
     connect(transferRateCalculationTimer, SIGNAL(timeout()), this, SLOT(transferRateCalculation()));
     transferRateCalculationTimer->setSingleShot(false);
     transferRateCalculationTimer->start(1000);
 
-    transferTimer = new QTimer(this);
+    transferTimer = new QTimer();
     connect(transferTimer, SIGNAL(timeout()), this, SLOT(transferTimerEvent()));
     transferTimer->setSingleShot(false);
 
     // Temp test
-    download = new FSTPTransferSegment;
+    download = new FSTPTransferSegment(this);
     connect(download, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)), this, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)));
     connect(download, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)),
             this, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)));
@@ -30,20 +31,23 @@ DownloadTransfer::DownloadTransfer()
 
 DownloadTransfer::~DownloadTransfer()
 {
-    delete transferRateCalculationTimer;
-    delete transferTimer;
+    transferRateCalculationTimer->deleteLater();
+    transferTimer->deleteLater();
     QHashIterator<int, QByteArray*> itdb(*downloadBucketTable);
     while (itdb.hasNext())
     {
         // TODO: save halwe buckets na files toe
         delete itdb.next().value();
     }
-    QHashIterator<int, QByteArray*> ithb(downloadBucketHashLookupTable);
-    while (ithb.hasNext())
-        delete ithb.next().value();
+
+    //Sover ek verstaan gaan downloadBucketHashLookupTable al uit scope uit voor jy by hierdie destructor kom?
+    //So jy moet of hom 'n pointer maak of net hierdie stap heeltemal uithaal
+    //QHashIterator<int, QByteArray*> ithb(downloadBucketHashLookupTable);
+    //while (ithb.hasNext())
+    //    delete ithb.next().value();
 
     // tmp
-    delete download;
+    download->deleteLater();
 }
 
 void DownloadTransfer::incomingDataPacket(quint8 transferPacketType, quint64 offset, QByteArray data)
@@ -87,9 +91,12 @@ int DownloadTransfer::getTransferType()
 
 void DownloadTransfer::startTransfer()
 {
+    QThread *thisThread = QThread::currentThread();
+    QThread *thatThread = transferTimer->thread();
     lastBucketNumber = calculateBucketNumber(fileSize);
     lastBucketSize = fileSize % HASH_BUCKET_SIZE;
     transferTimer->start(100);
+    
 }
 
 void DownloadTransfer::pauseTransfer()

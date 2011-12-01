@@ -10,6 +10,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     qRegisterMetaType<QueueStruct>("QueueStruct");
     qRegisterMetaType<QueuePriority>("QueuePriority");
     qRegisterMetaType<FinishedDownloadStruct>("FinishedDownloadStruct");
+    qRegisterMetaType<QDir>("QDir");
 
     //Set database pointer to zero at start
 	db = 0;
@@ -99,8 +100,16 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
             pDispatcher, SLOT(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)), Qt::QueuedConnection);
 
     //Connect TransferManager to GUI - notify of started/completed transfers
-    connect(pTransferManager, SIGNAL(downloadStarted(QByteArray)), this, SLOT(downloadStarted(QByteArray)), Qt::QueuedConnection);
-    connect(pTransferManager, SIGNAL(downloadCompleted(QByteArray)), this, SLOT(downloadCompleted(QByteArray)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(downloadStarted(QByteArray)), 
+            this, SLOT(downloadStarted(QByteArray)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(downloadCompleted(QByteArray)), 
+            this, SLOT(downloadCompleted(QByteArray)), Qt::QueuedConnection);
+    connect(this, SIGNAL(removeQueuedDownload(int, QByteArray)), 
+            pTransferManager, SLOT(removeQueuedDownload(int, QByteArray)), Qt::QueuedConnection);
+    connect(this, SIGNAL(queueDownload(int, QByteArray, QString, quint64, QHostAddress)), 
+            pTransferManager, SLOT(queueDownload(int, QByteArray, QString, quint64, QHostAddress)), Qt::QueuedConnection);
+    connect(this, SIGNAL(changeQueuedDownloadPriority(int, int, QByteArray)),
+            pTransferManager, SLOT(changeQueuedDownloadPriority(int, int, QByteArray)), Qt::QueuedConnection);
 
     // Set network scan ranges in Dispatcher, initial shotgun approach
     pDispatcher->addNetworkScanRange(QHostAddress("143.160.0.1").toIPv4Address(), 65534);
@@ -162,8 +171,8 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 
     //Temporary signal to search local database
 
-    connect(pShare, SIGNAL(returnSearchResult(QHostAddress,QByteArray,quint64,QByteArray)),
-            this, SLOT(searchResultReceived(QHostAddress,QByteArray,quint64,QByteArray)));
+    //connect(pShare, SIGNAL(returnSearchResult(QHostAddress,QByteArray,quint64,QByteArray)),
+    //        this, SLOT(searchResultReceived(QHostAddress,QByteArray,quint64,QByteArray)));
 
 	pShare->moveToThread(dbThread);
 	dbThread->start();
@@ -237,7 +246,7 @@ ArpmanetDC::~ArpmanetDC()
     delete pSettings;
 
     transferThread->quit();
-    if (transferThread->wait(1000))
+    if (transferThread->wait(5000))
         delete transferThread;
     else
     {
@@ -1394,7 +1403,7 @@ void ArpmanetDC::returnQueueList(QHash<QByteArray, QueueStruct> *queue)
     foreach (QueueStruct item, *pQueueList)
     {
         finalPath = item.filePath + item.fileName;
-        pTransferManager->queueDownload((int)item.priority, *item.tthRoot, finalPath, item.fileSize, item.fileHost);
+        emit queueDownload((int)item.priority, *item.tthRoot, finalPath, item.fileSize, item.fileHost);
     }
 
     setStatus(tr("Download queue loaded"));
@@ -1427,7 +1436,7 @@ void ArpmanetDC::deleteFromQueue(QByteArray tth)
     if (pQueueList->contains(tth))
     {
         //Remove from transfer manager queue
-        pTransferManager->removeQueuedDownload((int)pQueueList->value(tth).priority, tth);
+        emit removeQueuedDownload((int)pQueueList->value(tth).priority, tth);
 
         //Delete tth from queue list
         delete pQueueList->value(tth).tthRoot;
@@ -1448,7 +1457,7 @@ void ArpmanetDC::setQueuePriority(QByteArray tth, QueuePriority priority)
         QueueStruct s = pQueueList->take(tth);
 
         //Set transfer manager priority
-        pTransferManager->changeQueuedDownloadPriority((int)s.priority, (int)priority, *s.tthRoot);
+        emit changeQueuedDownloadPriority((int)s.priority, (int)priority, *s.tthRoot);
 
         //Set priority in queue
         s.priority = priority;

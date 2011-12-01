@@ -7,6 +7,8 @@ ShareWidget::ShareWidget(ShareSearch *share, ArpmanetDC *parent)
 	pParent = parent;
 	pShare = share;
 
+    connect(this, SIGNAL(updateShares(QList<QDir> *)), pShare, SLOT(updateShares(QList<QDir> *)), Qt::QueuedConnection);
+
 	createWidgets();
 	placeWidgets();
 	connectWidgets();
@@ -154,7 +156,8 @@ void ShareWidget::saveSharePressed()
 
 	QMessageBox::information(0, tr("ArpmanetDC"), list);*/
 	
-   	pShare->updateShares(dirList);
+   	//pShare->updateShares(dirList);
+    emit updateShares(dirList);
 
 	emit saveButtonPressed();
 }

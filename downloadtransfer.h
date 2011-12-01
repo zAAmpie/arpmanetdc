@@ -7,7 +7,7 @@
 class DownloadTransfer : public Transfer
 {
 public:
-    DownloadTransfer();
+    DownloadTransfer(QObject *parent = 0);
     ~DownloadTransfer();
 
 public slots:

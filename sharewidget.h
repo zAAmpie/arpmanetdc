@@ -34,6 +34,9 @@ signals:
 	//Signals
 	void saveButtonPressed();
 
+    //Private signal - update shares
+    void updateShares(QList<QDir> *list);
+
 private:
 	//Functions
 	void createWidgets();

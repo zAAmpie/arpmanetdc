@@ -168,6 +168,8 @@ signals:
     //Private queued signal for cross-thread comms
 	void updateShares();
 
+    //----------========== SHARESEARCH SIGNALS ==========----------
+
     //Signals for queues
     void saveQueuedDownload(QueueStruct item);
     void removeQueuedDownload(QByteArray tth);
@@ -178,6 +180,13 @@ signals:
     void clearFinishedDownloads();
     void saveFinishedDownload(FinishedDownloadStruct item);
     void requestFinishedList();
+
+    //----------========== TRANSFERMANAGER SIGNALS ==========----------
+
+    //Signals for queue
+    void removeQueuedDownload(int priority, QByteArray tth);
+    void queueDownload(int priority, QByteArray tth, QString filePath, quint64 fileSize, QHostAddress host);
+    void changeQueuedDownloadPriority(int oldpriority, int newpriority, QByteArray tth);
 
 private:
 	//GUI setup functions

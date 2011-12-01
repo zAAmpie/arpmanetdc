@@ -23,7 +23,7 @@ TransferManager::~TransferManager()
 void TransferManager::destroyTransferObject(Transfer* transferObject)
 {
     transferObjectTable.remove(*transferObject->getTTH(), transferObject);
-    delete transferObject;
+    transferObject->deleteLater();
 }
 
 // incoming data packets
@@ -73,7 +73,7 @@ void TransferManager::filePathNameReply(QByteArray tth, QString filename)
         uploadTransferQueue.remove(tth);
         return; // TODO: stuur error terug na requesting host
     }
-    Transfer *t = new UploadTransfer();
+    Transfer *t = new UploadTransfer(this);
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
     connect(t, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
     t->setFileName(filename);
@@ -89,7 +89,7 @@ void TransferManager::filePathNameReply(QByteArray tth, QString filename)
 
 // incoming requests from user interface for files we want to download
 // the higher the priority, the lower the number.
-void TransferManager::queueDownload(int priority, QByteArray &tth, QString &filePathName, quint64 fileSize, QHostAddress fileHost)
+void TransferManager::queueDownload(int priority, QByteArray tth, QString filePathName, quint64 fileSize, QHostAddress fileHost)
 {
     if (!downloadTransferQueue.contains(priority))
     {
@@ -134,7 +134,7 @@ void TransferManager::startNextDownload()
         return;
 
     currentDownloadCount++;
-    Transfer *t = new DownloadTransfer();
+    Transfer *t = new DownloadTransfer(this);
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
     connect(t, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)), this, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)));
     connect(t, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray)), this, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray)));
@@ -155,7 +155,7 @@ void TransferManager::startNextDownload()
     emit downloadStarted(i.tth);
 }
 
-void TransferManager::changeQueuedDownloadPriority(int oldPriority, int newPriority, QByteArray &tth)
+void TransferManager::changeQueuedDownloadPriority(int oldPriority, int newPriority, QByteArray tth)
 {
     DownloadTransferQueueItem item;
     if (downloadTransferQueue.contains(oldPriority))
@@ -186,7 +186,7 @@ void TransferManager::changeQueuedDownloadPriority(int oldPriority, int newPrior
 }
 
 // downloads that are still queued can just be lifted off the queue, their transfer objects do not exist yet.
-void TransferManager::removeQueuedDownload(int priority, QByteArray &tth)
+void TransferManager::removeQueuedDownload(int priority, QByteArray tth)
 {
     if (downloadTransferQueue.contains(priority))
     {

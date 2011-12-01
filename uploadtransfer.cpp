@@ -1,6 +1,6 @@
 #include "uploadtransfer.h"
 
-UploadTransfer::UploadTransfer()
+UploadTransfer::UploadTransfer(QObject *parent) : Transfer(parent)
 {
     upload = 0;
     bytesWrittenSinceUpdate = 0;

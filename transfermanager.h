@@ -7,6 +7,7 @@
 //#include "transfer.h"
 #include "uploadtransfer.h"
 #include "downloadtransfer.h"
+#include "execthread.h"
 
 typedef struct
 {
@@ -66,9 +67,9 @@ public slots:
     void filePathNameReply(QByteArray tth, QString filename);
 
     void incomingUploadRequest(QByteArray transferProtocolHint, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length);
-    void queueDownload(int priority, QByteArray &tth, QString &filePathName, quint64 fileSize, QHostAddress fileHost);
-    void changeQueuedDownloadPriority(int oldPriority, int newPriority, QByteArray &tth);
-    void removeQueuedDownload(int priority, QByteArray &tth);
+    void queueDownload(int priority, QByteArray tth, QString filePathName, quint64 fileSize, QHostAddress fileHost);
+    void changeQueuedDownloadPriority(int oldPriority, int newPriority, QByteArray tth);
+    void removeQueuedDownload(int priority, QByteArray tth);
 
     // Response from hashing engine when bucket finished hashing
     void hashBucketReply(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH);

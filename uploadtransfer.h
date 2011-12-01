@@ -9,7 +9,7 @@
 class UploadTransfer : public Transfer
 {
 public:
-    UploadTransfer();
+    UploadTransfer(QObject *parent = 0);
     ~UploadTransfer();
     void setFileName(QString filename);
     void setTTH(QByteArray tth);

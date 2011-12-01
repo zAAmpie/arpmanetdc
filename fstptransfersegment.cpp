@@ -1,6 +1,6 @@
 #include "fstptransfersegment.h"
 
-FSTPTransferSegment::FSTPTransferSegment()
+FSTPTransferSegment::FSTPTransferSegment(QObject *parent) : TransferSegment(parent)
 {
     requestingOffset = 0;
     requestingLength = 65536;
