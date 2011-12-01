@@ -50,6 +50,8 @@ signals:
     void searchTTHAlternateSources(QByteArray tth);
     void TTHTreeRequest(QHostAddress hostAddr,QByteArray rootTTH);
     void sendDownloadRequest(quint8 protocolPreference, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length);
+    void flushBucket(QString filename, QByteArray *bucket);
+    void assembleOutputFile(QString tmpfilebase, QString outfile, int startbucket, int lastbucket);
 
     // Request hashing of a bucket that has finished downloading
     void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
