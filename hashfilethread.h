@@ -30,6 +30,9 @@ public slots:
     //Hashes a bucket
     void processBucket(QByteArray rootTTH, int bucketNumber, QByteArray *bucket, ReturnEncoding encoding = BinaryEncoded);
 
+    //Stops hashing
+    void stopHashing();
+
 signals:
 	//Done hashing the file - return the data
 	void done(QString filePath, QString fileName, qint64 fileSize, QString tthRoot, QString rootDir, QString modifiedDate, QList<QString> *oneMBList, HashFileThread *hashObj);
@@ -40,6 +43,8 @@ signals:
 
 private:
     //QString base32Encode(byte *input, int inputLength);
+
+    bool pStopHashing;
 
 	ReturnEncoding pEncoding;
 };

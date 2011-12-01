@@ -1,21 +1,28 @@
 #include "parsedirectorythread.h"
+#include <QtGui>
 
 //Constructor
 ParseDirectoryThread::ParseDirectoryThread(QObject *parent) : QObject(parent)
 {
 	recursionLimit = 0;
+    pStopParsing = false;
 }
 
 void ParseDirectoryThread::parseDirectory(QString dirPath)
 {
+    //Reset parsing to be able to stop tasks individually.
+    //Comment this out to enable a single use stop for all parsing
+    pStopParsing = false;
+
 	pFileList = new QList<QString>();
 	parse(QDir(dirPath));	
 
 	//Check if recursion limit has been reached somewhere in the structure
 	//if (recursionLimit < RECURSION_LIMIT)
-		emit done(dirPath, pFileList, this);
-	//else
-	//	emit failed(dirPath, this);		
+    if (!pStopParsing)
+	    emit done(dirPath, pFileList, this);
+	else
+		emit failed(dirPath, this);		
 }
 
 void ParseDirectoryThread::parse(QDir dir)
@@ -24,6 +31,10 @@ void ParseDirectoryThread::parse(QDir dir)
 	//if (recursionLimit >= RECURSION_LIMIT)
 	//	return;
 	
+    //Stop parsing if variable is changed
+    if (pStopParsing)
+        return;
+
 	//Get only files for now
 	dir.setFilter(QDir::Files | QDir::NoSymLinks);
 
@@ -56,4 +67,9 @@ void ParseDirectoryThread::parse(QDir dir)
 			parse(nextDir);
 		}
 	}
+}
+
+void ParseDirectoryThread::stopParsing()
+{
+    pStopParsing = true;
 }

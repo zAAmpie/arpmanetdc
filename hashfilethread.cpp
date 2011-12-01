@@ -1,10 +1,11 @@
 #include "hashfilethread.h"
-
+#include <QtGui>
 
 //Constructor
 HashFileThread::HashFileThread(ReturnEncoding encoding, QObject *parent) : QObject(parent)
 {
 	pEncoding = encoding;
+    pStopHashing = false;
 }
 
 //Destructor
@@ -16,6 +17,13 @@ HashFileThread::~HashFileThread()
 //Main exec function
 void HashFileThread::processFile(QString filePath, QString rootDir)
 {
+    //Reset hashing to be able to stop tasks individually.
+    //Comment this out to enable a single use stop for all hashing
+    pStopHashing = false;
+
+    if (pStopHashing)
+        return;
+
 	//Get file info
 	QFileInfo fi(filePath);
 	qint64 fileSize = fi.size();
@@ -34,6 +42,17 @@ void HashFileThread::processFile(QString filePath, QString rootDir)
 
 		while (!file.atEnd())
 		{
+            //Stop hashing if variable is set
+            if (pStopHashing)
+            {
+                file.close();
+                return;
+            }
+            else
+                //Process events to allow variable to be set
+                QApplication::processEvents();
+                
+
 			//Read file in 1MB chunks
 			QByteArray iochunk = file.read(1*1048576);
 
@@ -110,4 +129,9 @@ void HashFileThread::processBucket(QByteArray rootTTH, int bucketNumber, QByteAr
 
     //Done hashing the bucket
     emit doneBucket(rootTTH, bucketNumber, tth);
+}
+
+void HashFileThread::stopHashing()
+{
+    pStopHashing = true;
 }

@@ -18,6 +18,9 @@ public slots:
 	//Called by another thread to parse a directory
 	void parseDirectory(QString directoryPath);
 
+    //Stop parsing
+    void stopParsing();
+
 signals:
 	//Done parsing directory
 	void done(QString rootDir, QList<QString> *fileList, ParseDirectoryThread *parseObj);
@@ -26,10 +29,12 @@ signals:
 
 private:
 	//Recursive private function
-        void parse(QDir directory);
+    void parse(QDir directory);
 
 	QList<QString> *pFileList;
 	QDir pDir;
+
+    bool pStopParsing;
 
 	quint8 recursionLimit;
 };
