@@ -28,7 +28,7 @@ void TransferWidget::createWidgets()
 {
 	//===== Transfer list =====
 	//Model
-	transferListModel = new QStandardItemModel(0,7);
+	transferListModel = new QStandardItemModel(0,8);
 	transferListModel->setHeaderData(0, Qt::Horizontal, tr("Type"));
     transferListModel->setHeaderData(1, Qt::Horizontal, tr("Progress"));
     transferListModel->setHeaderData(2, Qt::Horizontal, tr("Speed"));
@@ -36,6 +36,7 @@ void TransferWidget::createWidgets()
     transferListModel->setHeaderData(4, Qt::Horizontal, tr("Size"));
     transferListModel->setHeaderData(5, Qt::Horizontal, tr("Status"));
     transferListModel->setHeaderData(6, Qt::Horizontal, tr("TTH Root"));
+    transferListModel->setHeaderData(7, Qt::Horizontal, tr("Host"));
 
 	//Table
 	transferListTable = new QTableView((QWidget *)pParent);
@@ -98,7 +99,34 @@ void TransferWidget::showTransferListContextMenu(const QPoint &pos)
 
 void TransferWidget::deleteActionPressed()
 {
-    //TODO: signal?
+    QList<QModelIndex> selectedRows = transferListTable->selectionModel()->selectedRows();
+
+    //Remove rows from parent queue
+	for (int i = 0; i < transferListTable->selectionModel()->selectedRows().size(); i++)
+    {
+        //Get selected files
+	    QModelIndex selectedIndex = transferListTable->selectionModel()->selectedRows().at(i);//userListTable->selectionModel()->selection().indexes().first();
+	    //Get TTH of file
+	    QString base32TTH = transferListModel->data(transferListModel->index(selectedIndex.row(), 6)).toString();
+        
+        QByteArray tthRoot;
+        tthRoot.append(base32TTH);
+        base32Decode(tthRoot);   
+
+        //Get type of file
+        QString typeStr = transferListModel->data(transferListModel->index(selectedIndex.row(), 0)).toString();
+
+        //Get host address
+        QHostAddress hostAddr = QHostAddress(transferListModel->data(transferListModel->index(selectedIndex.row(), 7)).toString());
+
+	    pParent->removeTransfer(tthRoot, typeFromString(typeStr), hostAddr);
+    }
+
+    //Remove rows from model
+    while (!transferListTable->selectionModel()->selectedRows().isEmpty())
+    {
+        transferListModel->removeRow(transferListTable->selectionModel()->selectedRows().first().row());
+    }    
 }
 
 //Update status
@@ -136,6 +164,7 @@ void TransferWidget::updateStatus()
             row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(q.fileSize)));
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, stateString(s.transferStatus)));
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, base32TTH.data()));
+            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, q.fileHost.toString()));
             transferListModel->appendRow(row);
         }
         //If existing transfer - update
@@ -156,6 +185,8 @@ void TransferWidget::updateStatus()
             item->setText(stateString(s.transferStatus));
             item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 6));
             item->setText(base32TTH.data());
+            item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 7));
+            item->setText(q.fileHost.toString());
         }
     }
 
@@ -179,6 +210,15 @@ QString TransferWidget::typeString(int type)
             return "Upload";
     }
     return "";
+}
+
+int TransferWidget::typeFromString(QString typeStr)
+{
+    //Determine transfer type
+    if (typeStr == "Download")
+        return TRANSFER_TYPE_DOWNLOAD;
+    if (typeStr == "Upload")
+        return TRANSFER_TYPE_UPLOAD;
 }
 
 QString TransferWidget::stateString(int state)

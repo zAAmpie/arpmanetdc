@@ -110,10 +110,14 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
             pTransferManager, SLOT(queueDownload(int, QByteArray, QString, quint64, QHostAddress)), Qt::QueuedConnection);
     connect(this, SIGNAL(changeQueuedDownloadPriority(int, int, QByteArray)),
             pTransferManager, SLOT(changeQueuedDownloadPriority(int, int, QByteArray)), Qt::QueuedConnection);
+    connect(this, SIGNAL(stopTransfer(QByteArray, int, QHostAddress)),
+            pTransferManager, SLOT(stopTransfer(QByteArray, int, QHostAddress)));
 
     // Set network scan ranges in Dispatcher, initial shotgun approach
-    pDispatcher->addNetworkScanRange(QHostAddress("143.160.0.1").toIPv4Address(), 65534);
-    pDispatcher->addNetworkScanRange(QHostAddress("172.31.0.1").toIPv4Address(), 65534);
+    //pDispatcher->addNetworkScanRange(QHostAddress("143.160.0.1").toIPv4Address(), 65534);
+    //pDispatcher->addNetworkScanRange(QHostAddress("10.22.4.1").toIPv4Address(), 254);
+    pDispatcher->addNetworkScanRange(QHostAddress("192.168.0.2").toIPv4Address(), 4);
+    //pDispatcher->addNetworkScanRange(QHostAddress("172.31.0.1").toIPv4Address(), 65534);
 
 	//Set up thread for database / ShareSearch
 	dbThread = new ExecThread();
@@ -1516,6 +1520,15 @@ void ArpmanetDC::returnFinishedList(QHash<QByteArray, FinishedDownloadStruct> *l
     setStatus(tr("Finished downloads list loaded"));
 }
 
+//Stops a transfer
+void ArpmanetDC::removeTransfer(QByteArray tth, int transferType, QHostAddress hostAddr)
+{
+    deleteFromQueue(tth);
+    emit stopTransfer(tth, transferType, hostAddr);
+
+    if (queueWidget)
+        queueWidget->removeQueuedDownload(tth);
+}
 
 void ArpmanetDC::convertHTMLLinks(QString &msg)
 {

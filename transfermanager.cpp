@@ -209,6 +209,27 @@ void TransferManager::removeQueuedDownload(int priority, QByteArray tth)
     }
 }
 
+//Stop a transfer already running
+void TransferManager::stopTransfer(QByteArray tth, int transferType, QHostAddress hostAddr)
+{
+    Transfer *t;
+
+    if (transferType == TRANSFER_TYPE_DOWNLOAD)
+        t = getTransferObjectPointer(tth, transferType);
+    else
+        t = getTransferObjectPointer(tth, transferType, hostAddr);
+    if (t)
+    {
+        //Abort transfer before deletion
+        t->abortTransfer();
+        t->deleteLater();
+        transferObjectTable.remove(tth, t);
+
+        //Start next transfer
+        startNextDownload();
+    }
+}
+
 // look for pointer to Transfer object matching tth, transfer type and host address
 Transfer* TransferManager::getTransferObjectPointer(QByteArray &tth, int transferType, QHostAddress hostAddr)
 {

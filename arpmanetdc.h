@@ -80,6 +80,8 @@ public slots:
     //Sets the global status label in the status bar to msg
     void setStatus(QString msg);
 
+    //-----------========== QUEUED DOWNLOADS ==========----------
+
     //Add a download to the queue
     void addDownloadToQueue(QueueStruct item);
     //Remove download from the queue
@@ -89,6 +91,8 @@ public slots:
     //Returns a queuelist
     void returnQueueList(QHash<QByteArray, QueueStruct> *queue);
 
+    //-----------========== FINISHED DOWNLOADS ==========----------
+
     //Add a finished download to the finished list
     void addFinishedDownloadToList(FinishedDownloadStruct item);
     //Remove all downloads from the list
@@ -96,6 +100,10 @@ public slots:
     //Returns the finished download list
     void returnFinishedList(QHash<QByteArray, FinishedDownloadStruct> *list);
 
+    //-----------========== TRANSFER WIDGET ==========----------
+    
+    //Stops a transfer
+    void removeTransfer(QByteArray tth, int transferType, QHostAddress hostAddr);
 
 private slots:
     //-----===== OBJECT SLOTS =====-----
@@ -187,6 +195,9 @@ signals:
     void removeQueuedDownload(int priority, QByteArray tth);
     void queueDownload(int priority, QByteArray tth, QString filePath, quint64 fileSize, QHostAddress host);
     void changeQueuedDownloadPriority(int oldpriority, int newpriority, QByteArray tth);
+    
+    //Signals for transferWidget
+    void stopTransfer(QByteArray tth, int transferType, QHostAddress hostAddr);
 
 private:
 	//GUI setup functions

@@ -19,14 +19,14 @@ UploadTransfer::UploadTransfer(QObject *parent) : Transfer(parent)
     transferInactivityTimer->start(TIMER_INACTIVITY_MSECS);
 
     // temp, just get it working again in new structure
-    upload = new FSTPTransferSegment;
+    upload = new FSTPTransferSegment(this);
 }
 
 UploadTransfer::~UploadTransfer()
 {
-    delete transferRateCalculationTimer;
-    delete transferInactivityTimer;
-    delete upload;
+    transferRateCalculationTimer->deleteLater();
+    transferInactivityTimer->deleteLater();
+    upload->deleteLater();
 }
 
 void UploadTransfer::setFileName(QString filename)

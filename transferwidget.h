@@ -41,6 +41,7 @@ private:
     QString typeString(int type);
     QString stateString(int state);
     QString progressString(int state, int progress);
+    int typeFromString(QString typeStr);
 
 	//Objects
 	QWidget *pWidget;

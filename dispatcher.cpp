@@ -44,7 +44,7 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
             this, SLOT(sendUnicastAnnounceForwardRequest(QHostAddress&)));
     connect(networkBootstrap, SIGNAL(sendRequestAllBuckets(QHostAddress)),
             this, SLOT(requestAllBuckets(QHostAddress)));
-
+        
     // Network topology manager
     networkTopology = new NetworkTopology(this);
     connect(this, SIGNAL(announceReplyArrived(bool,QHostAddress&,QByteArray&,QByteArray&)),

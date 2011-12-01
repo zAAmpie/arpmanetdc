@@ -71,6 +71,9 @@ public slots:
     void changeQueuedDownloadPriority(int oldPriority, int newPriority, QByteArray tth);
     void removeQueuedDownload(int priority, QByteArray tth);
 
+    //Stop a transfer already running
+    void stopTransfer(QByteArray tth, int type, QHostAddress host);
+
     // Response from hashing engine when bucket finished hashing
     void hashBucketReply(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH);
 
