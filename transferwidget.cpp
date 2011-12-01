@@ -219,6 +219,7 @@ int TransferWidget::typeFromString(QString typeStr)
         return TRANSFER_TYPE_DOWNLOAD;
     if (typeStr == "Upload")
         return TRANSFER_TYPE_UPLOAD;
+    return -1;
 }
 
 QString TransferWidget::stateString(int state)

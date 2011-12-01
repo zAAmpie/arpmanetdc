@@ -12,6 +12,9 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
 	pFileList = new QList<FileListStruct>();
 	pTotalShare = 0;
 
+    pStopHashing = false;
+    pStopParsing = false;
+
 	//Commit transactions every minute
 	commitTimer = new QTimer(this);
 	connect(commitTimer, SIGNAL(timeout()), this, SLOT(commitTransaction()));
@@ -29,6 +32,7 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
     connect(pHashFileThread, SIGNAL(doneBucket(QByteArray, int, QByteArray)), this, SLOT(hashBucketDone(QByteArray, int, QByteArray)), Qt::QueuedConnection);
 	connect(this, SIGNAL(runHashThread(QString, QString)), pHashFileThread, SLOT(processFile(QString, QString)), Qt::QueuedConnection);
     connect(this, SIGNAL(runHashBucket(QByteArray, int, QByteArray *, ReturnEncoding)), pHashFileThread, SLOT(processBucket(QByteArray, int, QByteArray *, ReturnEncoding)), Qt::QueuedConnection);
+    connect(this, SIGNAL(stopHashingThread()), pHashFileThread, SLOT(stopHashing()));
 
 	pHashFileThread->moveToThread(hashThread);
 
@@ -37,6 +41,8 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
 		this, SLOT(parseDirectoryThreadDone(QString, QList<QString> *, ParseDirectoryThread *)), Qt::QueuedConnection);
 	connect(pParseDirectoryThread, SIGNAL(failed(QString, ParseDirectoryThread *)), this, SLOT(parseDirectoryThreadFailed(QString, ParseDirectoryThread *)), Qt::QueuedConnection);
 	connect(this, SIGNAL(runParseThread(QString)), pParseDirectoryThread, SLOT(parseDirectory(QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(stopParsingThread()), pParseDirectoryThread, SLOT(stopParsing()));
+
 	pParseDirectoryThread->moveToThread(hashThread);
 
 	hashThread->start();
@@ -443,7 +449,7 @@ void ShareSearch::hashFileFailed(QString filePath, HashFileThread *hashObj)
 
 void ShareSearch::startFileHashing()
 {
-	//Start file hashing and start new thread
+    //Start file hashing and start new thread
 	FileListStruct f;
 	bool notModified;
 
@@ -451,6 +457,8 @@ void ShareSearch::startFileHashing()
 	{
 		if (!pFileList->isEmpty())
 		{
+            QApplication::processEvents();
+
 			f = pFileList->takeFirst();
 			//Check if modified
 			notModified = fileNotModified(f.fileName, f.rootDir);
@@ -475,6 +483,13 @@ void ShareSearch::startFileHashing()
 		int totalUpdateTime = updateTime->elapsed();
 		emit hashingDone(totalUpdateTime, numberOfFilesShared);
 	}
+}
+
+
+//Stop hashing
+void ShareSearch::stopHashing()
+{
+    emit stopHashingThread();
 }
 
 //------------------------------============================== DIRECTORY PARSING (FILE LIST EXTRACTION) ==============================------------------------------
@@ -513,7 +528,9 @@ void ShareSearch::startDirectoryParsing()
 {
 	//Start directory parsing and start new thread
 	if (!pDirList->isEmpty())
-		startParseDirectoryThread(pDirList->takeFirst());
+    {
+        startParseDirectoryThread(pDirList->takeFirst());
+    }
 	else
 	{		
 		emit parsingDone();
@@ -523,6 +540,12 @@ void ShareSearch::startDirectoryParsing()
 		//Start file hashing on file list
 		startFileHashing();
 	}
+}
+
+//Stop parsing
+void ShareSearch::stopParsing()
+{
+    emit stopParsingThread();
 }
 
 //------------------------------============================== CHECK IF FILE IN DATABASE WAS MODIFIED FROM LAST VISIT ==============================------------------------------

@@ -224,6 +224,7 @@ void TransferManager::stopTransfer(QByteArray tth, int transferType, QHostAddres
     {
         //Abort transfer before deletion
         t->abortTransfer();
+        t->blockSignals(true);
         t->deleteLater();
         transferObjectTable.remove(tth, t);
 

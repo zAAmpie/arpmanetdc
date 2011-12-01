@@ -132,6 +132,13 @@ public slots:
     //Request list
 	void requestFinishedList();
 
+    //----------========== STOP HASHING/PARSING ==========----------
+
+    //Stop parsing
+    void stopParsing();
+    //Stop hashing
+    void stopHashing();
+
 private slots:
 	//Hash file thread completed
 	void hashFileThreadDone(QString filePath, QString fileName, qint64 fileSize, QString tthRoot, QString rootDir, QString lastModified, QList<QString> *oneMBList, HashFileThread *hashObj);
@@ -220,6 +227,10 @@ signals:
 	void runParseThread(QString directoryPath);
     void runHashBucket(QByteArray rootTTH, int bucketNumber, QByteArray *bucket, ReturnEncoding encoding);
 
+    //Signals to stop processing
+    void stopHashingThread();
+    void stopParsingThread();
+
 private:
 	//Functions to start threads
 	void startHashFileThread(QString filePath, QString rootDir);
@@ -259,6 +270,7 @@ private:
 	//Measure the time taken to update the share db
 	QTime *updateTime;
     
+    bool pStopHashing, pStopParsing;
 
 	ExecThread *hashThread;
 
