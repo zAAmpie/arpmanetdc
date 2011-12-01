@@ -5,6 +5,7 @@ FSTPTransferSegment::FSTPTransferSegment(QObject *parent) : TransferSegment(pare
     requestingOffset = 0;
     requestingLength = 65536;
     requestingTargetOffset = 0;
+    retransmitTimeoutCounter = 0;
 }
 
 FSTPTransferSegment::~FSTPTransferSegment()
@@ -86,6 +87,7 @@ void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
         return;
     }
     status = TRANSFER_STATE_RUNNING;
+    packetsSinceUpdate++;
 
     int bucketNumber = calculateBucketNumber(offset);
     if (!pDownloadBucketTable->contains(bucketNumber))
@@ -142,6 +144,20 @@ void FSTPTransferSegment::transferTimerEvent()
         requestingTargetOffset = requestingOffset + requestingLength;
         qDebug() << "sendDownloadRequest() peer tth offset length " << remoteHost << TTH << requestingOffset << requestingLength;
         checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
+    }
+    else if (status == TRANSFER_STATE_RUNNING)
+    {
+        if (packetsSinceUpdate == 0)
+        {
+            retransmitTimeoutCounter++;
+            if (retransmitTimeoutCounter > 20)
+            {
+                status = TRANSFER_STATE_STALLED;
+                retransmitTimeoutCounter = 0;
+            }
+        }
+        else
+            packetsSinceUpdate = 0;
     }
 }
 

@@ -24,6 +24,7 @@ public slots:
     virtual void incomingDataPacket(quint64 offset, QByteArray data) = 0;
     virtual void transferTimerEvent();
     virtual void setFileName(QString filename) = 0;
+    virtual void setFileSize(qint64 size);
     void setTTH(QByteArray tth);
     void setFileOffset(quint64 offset);
     void setFileOffsetLength(quint64 length);

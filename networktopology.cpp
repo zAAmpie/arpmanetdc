@@ -162,6 +162,9 @@ QByteArray NetworkTopology::getBucket(QByteArray bucketid)
 {
     qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
     QByteArray bucket;
+    // send at least the bucket ID for empty buckets (typically our own) in case somebody scans us.
+    // this is to aid detection of clients that are sitting alone in a container.
+    bucket.append(bucketid);
     if (!buckets.contains(bucketid))
         return bucket;
 
@@ -169,7 +172,6 @@ QByteArray NetworkTopology::getBucket(QByteArray bucketid)
     if (count > 20)
         count = 20;
 
-    bucket.append(bucketid);
     for (int i = 0; i < count; i++)
     {
         QHostAddress host = buckets.value(bucketid)->first->at(i);

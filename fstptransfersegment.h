@@ -26,6 +26,8 @@ private:
     quint64 requestingOffset;
     quint64 requestingLength;
     quint64 requestingTargetOffset;
+    int packetsSinceUpdate;
+    int retransmitTimeoutCounter;
 };
 
 #endif // FSTPTRANSFERSEGMENT_H

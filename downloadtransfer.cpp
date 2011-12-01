@@ -43,6 +43,7 @@ DownloadTransfer::~DownloadTransfer()
 
     //Sover ek verstaan gaan downloadBucketHashLookupTable al uit scope uit voor jy by hierdie destructor kom?
     //So jy moet of hom 'n pointer maak of net hierdie stap heeltemal uithaal
+    //A: DownloadTransfer class variable, hy behoort nog hier te wees. ons wil die qbytearray pointers binne-in die ding delete.
     QHashIterator<int, QByteArray*> ithb(downloadBucketHashLookupTable);
     while (ithb.hasNext())
         delete ithb.next().value();
@@ -172,6 +173,8 @@ void DownloadTransfer::transferTimerEvent()
             download->setDownloadBucketTablePointer(downloadBucketTable);
             download->setRemoteHost(listOfPeers.first());
             download->setTTH(TTH);
+            download->setLastBucketNumber(lastBucketNumber);
+            download->setLastBucketSize(lastBucketSize);
             download->startDownloading();
         }
     }
