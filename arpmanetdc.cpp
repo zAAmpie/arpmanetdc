@@ -178,8 +178,20 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     //connect(pShare, SIGNAL(returnSearchResult(QHostAddress,QByteArray,quint64,QByteArray)),
     //        this, SLOT(searchResultReceived(QHostAddress,QByteArray,quint64,QByteArray)));
 
+    bucketFlushThread = new ExecThread();
+    pBucketFlushThread = new BucketFlushThread();
+
+    //Connect BucketFlushThread to TransferManager
+    connect(pTransferManager, SIGNAL(flushBucket(QString,QByteArray*)),
+            pBucketFlushThread, SLOT(flushBucket(QString,QByteArray*)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(assembleOutputFile(QString,QString,int,int)),
+            pBucketFlushThread, SLOT(assembleOutputFile(QString,QString,int,int)), Qt::QueuedConnection);
+
 	pShare->moveToThread(dbThread);
 	dbThread->start();
+
+    pBucketFlushThread->moveToThread(bucketFlushThread);
+    bucketFlushThread->start();
 
     pTransferManager->moveToThread(transferThread);
     transferThread->start();
@@ -256,6 +268,16 @@ ArpmanetDC::~ArpmanetDC()
     {
         transferThread->terminate();
         delete transferThread;
+    }
+
+    bucketFlushThread->quit();
+    statusLabel->setText(tr("Flushing downloaded data to disk, please wait."));
+    if (bucketFlushThread->wait(ULONG_MAX))
+        delete bucketFlushThread;
+    else
+    {
+        bucketFlushThread->terminate();
+        delete bucketFlushThread;
     }
 
 	dbThread->quit();

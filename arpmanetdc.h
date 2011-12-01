@@ -18,6 +18,7 @@
 #include "sharesearch.h"
 #include "dispatcher.h"
 #include "transfermanager.h"
+#include "bucketflushthread.h"
 #include "resourceextractor.h"
 #include "util.h"
 #include <sqlite/sqlite3.h>
@@ -221,11 +222,13 @@ private:
 	Dispatcher *pDispatcher;
     TransferManager *pTransferManager;
 	ShareSearch *pShare;
+    BucketFlushThread *pBucketFlushThread;
     ResourceExtractor *pTypeIconList;
 
     //Threads
     ExecThread *dbThread;
     ExecThread *transferThread;
+    ExecThread *bucketFlushThread;
 
 	//Parameters
 	//SettingsStruct pSettings;

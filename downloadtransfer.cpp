@@ -39,12 +39,13 @@ DownloadTransfer::~DownloadTransfer()
         // TODO: save halwe buckets na files toe
         delete itdb.next().value();
     }
+    delete downloadBucketTable;
 
     //Sover ek verstaan gaan downloadBucketHashLookupTable al uit scope uit voor jy by hierdie destructor kom?
     //So jy moet of hom 'n pointer maak of net hierdie stap heeltemal uithaal
-    //QHashIterator<int, QByteArray*> ithb(downloadBucketHashLookupTable);
-    //while (ithb.hasNext())
-    //    delete ithb.next().value();
+    QHashIterator<int, QByteArray*> ithb(downloadBucketHashLookupTable);
+    while (ithb.hasNext())
+        delete ithb.next().value();
 
     // tmp
     download->deleteLater();
