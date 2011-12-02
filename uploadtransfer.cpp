@@ -21,6 +21,8 @@ UploadTransfer::UploadTransfer(QObject *parent) : Transfer(parent)
     // temp, just get it working again in new structure
     upload = new FSTPTransferSegment(this);
     connect(upload, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)), this, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)));
+    //Used to intercept the amount of data actually transmitted
+    connect(upload, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)), this, SLOT(dataTransmitted(QHostAddress, QByteArray *)));
 }
 
 UploadTransfer::~UploadTransfer()
@@ -52,9 +54,11 @@ void UploadTransfer::startTransfer()
 {
     upload->setFileOffset(fileOffset);
     upload->setFileOffsetLength(segmentLength);
+    upload->setRemoteHost(remoteHost);
     status = TRANSFER_STATE_RUNNING;
     upload->startUploading();
-    bytesWrittenSinceUpdate += segmentLength;
+    //We cannot assume that the whole segment will be sent in a second. It will either be more or less.
+    //bytesWrittenSinceUpdate += segmentLength;
     transferInactivityTimer->start(TIMER_INACTIVITY_MSECS);
 }
 
@@ -83,4 +87,10 @@ void UploadTransfer::transferRateCalculation()
         bytesWrittenSinceUpdate = 0;
         transferInactivityTimer->start(TIMER_INACTIVITY_MSECS);
     }
+}
+
+void UploadTransfer::dataTransmitted(QHostAddress host, QByteArray *data)
+{
+    //Measure the true amount of data sent from the segment to Dispatcher by intercepting the data and getting its size
+    bytesWrittenSinceUpdate += data->size();
 }

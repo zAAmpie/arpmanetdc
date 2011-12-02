@@ -56,6 +56,8 @@ void DownloadTransfer::incomingDataPacket(quint8 transferPacketType, quint64 off
 {
     // TODO: select segment object from range and dispatch
     download->incomingDataPacket(offset, data);
+
+    bytesWrittenSinceUpdate += data.size();
 }
 
 void DownloadTransfer::hashBucketReply(int &bucketNumber, QByteArray &bucketTTH)
@@ -175,6 +177,7 @@ void DownloadTransfer::transferTimerEvent()
             download->setTTH(TTH);
             download->setLastBucketNumber(lastBucketNumber);
             download->setLastBucketSize(lastBucketSize);
+            download->setFileSize(fileSize);
             download->startDownloading();
         }
     }

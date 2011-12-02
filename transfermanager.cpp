@@ -242,7 +242,8 @@ Transfer* TransferManager::getTransferObjectPointer(QByteArray &tth, int transfe
         while (it.hasNext())
         {
             Transfer* p = it.next();
-            if ((p->getTransferType() == transferType) && (p->getRemoteHost()->toString() == hostAddr.toString()))
+            //if ((p->getTransferType() == transferType) && (p->getRemoteHost()->toString() == hostAddr.toString()))
+            if ((p->getTransferType() == transferType) && (*p->getRemoteHost() == hostAddr))
                 return p;
         }
     }

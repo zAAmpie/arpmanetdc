@@ -82,6 +82,11 @@ quint64 Transfer::getTransferRate()
     return transferRate;
 }
 
+quint64 Transfer::getFileSize()
+{
+    return fileSize;
+}
+
 int Transfer::getTransferStatus()
 {
     return status;

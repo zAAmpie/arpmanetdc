@@ -3,7 +3,8 @@
 FSTPTransferSegment::FSTPTransferSegment(Transfer *parent) : TransferSegment(parent)
 {
     requestingOffset = 0;
-    requestingLength = 65536;
+    //requestingLength = 65536;
+    requestingLength = 131072;
     requestingTargetOffset = 0;
     retransmitTimeoutCounter = 0;
 
@@ -62,14 +63,14 @@ void FSTPTransferSegment::startUploading()
             packet->append(data.mid(wptr, segmentLength - wptr));
             wptr += segmentLength - wptr;
         }
-        emit transmitDatagram(*pParent->getRemoteHost(), packet);
+        emit transmitDatagram(remoteHost, packet);
     }
     inputFile.unmap((unsigned char *)f);
 }
 
 void FSTPTransferSegment::startDownloading()
 {
-    checkSendDownloadRequest(FailsafeTransferProtocol, *pParent->getRemoteHost(), TTH, requestingOffset, requestingLength);
+    checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
     status = TRANSFER_STATE_RUNNING;
 }
 
@@ -131,7 +132,7 @@ void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
             requestingLength *= 2;
 
         requestingTargetOffset += requestingLength;
-        checkSendDownloadRequest(FailsafeTransferProtocol, *pParent->getRemoteHost(), TTH, requestingOffset, requestingLength);
+        checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
     }
 }
 
@@ -140,11 +141,11 @@ void FSTPTransferSegment::transferTimerEvent()
     if (status == TRANSFER_STATE_STALLED)
     {
         // Transfer some data
-        if (requestingLength > PACKET_DATA_MTU)
-            requestingLength /= 2;
+        //if (requestingLength > PACKET_DATA_MTU)
+        //    requestingLength /= 2;
         status = TRANSFER_STATE_RUNNING;
         requestingTargetOffset = requestingOffset + requestingLength;
-        qDebug() << "sendDownloadRequest() peer tth offset length " << *pParent->getRemoteHost() << TTH << requestingOffset << requestingLength;
+        qDebug() << "sendDownloadRequest() peer tth offset length " << remoteHost << TTH.toBase64() << requestingOffset << requestingLength;
         checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
     }
     else if (status == TRANSFER_STATE_RUNNING)
