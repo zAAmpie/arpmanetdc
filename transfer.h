@@ -41,6 +41,7 @@ public slots:
     QString* getFileName();
     QHostAddress* getRemoteHost();
     quint64 getTransferRate();
+    quint64 getFileSize();
     int getTransferStatus();
     int getTransferProgress();
     void addPeer(QHostAddress peer);

@@ -8,11 +8,15 @@
 
 class UploadTransfer : public Transfer
 {
+    Q_OBJECT
 public:
     UploadTransfer(QObject *parent = 0);
     ~UploadTransfer();
     void setFileName(QString filename);
     void setTTH(QByteArray tth);
+
+private slots:
+    void dataTransmitted(QHostAddress host, QByteArray *data);
 
 private:
     QTimer* transferInactivityTimer;
