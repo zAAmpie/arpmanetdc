@@ -8,7 +8,7 @@
 
 class UploadTransfer : public Transfer
 {
-    Q_OBJECT
+    //Q_OBJECT
 public:
     UploadTransfer(QObject *parent = 0);
     ~UploadTransfer();

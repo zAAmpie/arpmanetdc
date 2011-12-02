@@ -145,11 +145,7 @@ void FSTPTransferSegment::transferTimerEvent()
         //    requestingLength /= 2;
         status = TRANSFER_STATE_RUNNING;
         requestingTargetOffset = requestingOffset + requestingLength;
-<<<<<<< HEAD
-        qDebug() << "sendDownloadRequest() peer tth offset length " << remoteHost << TTH << requestingOffset << requestingLength;
-=======
         qDebug() << "sendDownloadRequest() peer tth offset length " << remoteHost << TTH.toBase64() << requestingOffset << requestingLength;
->>>>>>> b7ff31674ea4b75e7e94ffe4513dea02982e1e41
         checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
     }
     else if (status == TRANSFER_STATE_RUNNING)
