@@ -20,9 +20,9 @@ UploadTransfer::UploadTransfer(QObject *parent) : Transfer(parent)
 
     // temp, just get it working again in new structure
     upload = new FSTPTransferSegment(this);
-    connect(upload, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)), this, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)));
     //Used to intercept the amount of data actually transmitted
     connect(upload, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)), this, SLOT(dataTransmitted(QHostAddress, QByteArray *)));
+    connect(upload, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)), this, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)));
 }
 
 UploadTransfer::~UploadTransfer()

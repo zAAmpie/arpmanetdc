@@ -52,6 +52,9 @@ signals:
 	//Search for string
 	void search(quint64 id, QString searchStr, QByteArray searchPacket, SearchWidget *sWidget);
 
+    //Queue download
+    void queueDownload(int priority, QByteArray tth, QString finalPath, quint64 fileSize, QHostAddress senderIP);
+
 private:
 	//Functions
 	void createWidgets();

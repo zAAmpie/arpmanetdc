@@ -10,7 +10,7 @@ TransferSegment::~TransferSegment(){}
 void TransferSegment::transferTimerEvent(){}
 void TransferSegment::setLastBucketNumber(int){}
 void TransferSegment::setLastBucketSize(int){}
-void TransferSegment::setFileSize(qint64){}
+void TransferSegment::setFileSize(quint64){}
 
 void TransferSegment::setFileOffset(quint64 offset)
 {

@@ -24,6 +24,11 @@ void FSTPTransferSegment::setFileName(QString filename)
     fileSize = inputFile.size();
 }
 
+void FSTPTransferSegment::setFileSize(quint64 size)
+{
+    fileSize = size;
+}
+
 void FSTPTransferSegment::setLastBucketNumber(int n)
 {
     lastBucketNumber = n;
@@ -145,7 +150,7 @@ void FSTPTransferSegment::transferTimerEvent()
         //    requestingLength /= 2;
         status = TRANSFER_STATE_RUNNING;
         requestingTargetOffset = requestingOffset + requestingLength;
-        qDebug() << "sendDownloadRequest() peer tth offset length " << remoteHost << TTH.toBase64() << requestingOffset << requestingLength;
+        qDebug() << "FSTPTransferSegment:: emit sendDownloadRequest() peer tth offset length " << remoteHost << TTH.toBase64() << requestingOffset << requestingLength;
         checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
     }
     else if (status == TRANSFER_STATE_RUNNING)

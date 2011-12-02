@@ -201,8 +201,8 @@ void SearchWidget::downloadActionPressed()
         pParent->addDownloadToQueue(item);
 
         QString finalPath = path + fileName;
-        qDebug() << "SearchWidget downloadActionPressed() pTransferManager->queueDownload() " << senderIP;
-        pTransferManager->queueDownload((int)NormalQueuePriority, tthRoot, finalPath, fileSize, senderIP);
+        qDebug() << "SearchWidget::downloadActionPressed() queueDownload: " << senderIP;
+        emit queueDownload((int)NormalQueuePriority, tthRoot, finalPath, fileSize, senderIP);
     }
 }
 
@@ -248,7 +248,7 @@ void SearchWidget::downloadToActionPressed()
 
         //I'm totally guessing the protocol here??? How should I distinguish?
         QString finalPath = path + fileName;
-        pTransferManager->queueDownload((int)NormalQueuePriority, tthRoot, finalPath, fileSize, senderIP);
+        emit queueDownload((int)NormalQueuePriority, tthRoot, finalPath, fileSize, senderIP);
     }
 }
 

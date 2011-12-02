@@ -119,7 +119,7 @@ void NetworkBootstrap::networkScanTimerEvent()
             if (scanHostOffset <= currentOffset)
             {
                 scanHost = QHostAddress(it.peekNext().key() + scanHostOffset % it.peekNext().value());
-                qDebug() << "Scanning host:" << scanHost.toString();
+                qDebug() << "NetworkBootstrap::networkScanTimerEvent(): Scanning host:" << scanHost.toString();
                 break;
             }
             else

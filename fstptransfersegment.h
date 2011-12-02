@@ -15,6 +15,7 @@ public slots:
     void incomingDataPacket(quint64 offset, QByteArray data);
     void transferTimerEvent();
     void setFileName(QString filename);
+    void setFileSize(quint64 size);
     void setLastBucketSize(int size);
     void setLastBucketNumber(int n);
     void startUploading();

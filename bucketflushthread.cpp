@@ -33,7 +33,10 @@ void BucketFlushThread::assembleOutputFile(QString tmpfilebase, QString outfile,
         QString infile = tmpfilebase + "." + QString::number(bucket);
         inf.setFileName(infile);
         if (!inf.open(QIODevice::ReadOnly))
+        {
             ok = false;
+            break;
+        }
         else
         {
             QByteArray buf = inf.readAll();

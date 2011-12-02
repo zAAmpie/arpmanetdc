@@ -78,12 +78,21 @@ void DownloadTransfer::TTHTreeReply(QByteArray tree)
 {
     while (tree.length() >= 30)
     {
-        QByteArray tmp = tree.mid(0, 4);
-        int bucketNumber = getQuint32FromByteArray(&tmp);
-        tmp = tree.mid(4, 2);
-        int tthLength = getQuint16FromByteArray(&tmp);
-        QByteArray *bucketHash = new QByteArray(tree.mid(6, tthLength));
-        tree.remove(0, 6 + tthLength);
+        //This is what the getVarFromByteArray functions were made for... 
+        //You don't need to use temporary bytearrays if you're going to remove it anyway - the functions already do that
+
+        //QByteArray tmp = tree.mid(0, 4);
+        //int bucketNumber = getQuint32FromByteArray(&tmp);
+        //tmp = tree.mid(4, 2);
+        //int tthLength = getQuint16FromByteArray(&tmp);
+        //QByteArray *bucketHash = new QByteArray(tree.mid(6, tthLength));
+        //tree.remove(0, 6 + tthLength);
+        //downloadBucketHashLookupTable.insert(bucketNumber, bucketHash);
+
+        int bucketNumber = getQuint32FromByteArray(&tree);
+        int tthLength = getQuint16FromByteArray(&tree);
+        QByteArray *bucketHash = new QByteArray(tree.left(tthLength));
+        tree.remove(0, tthLength);
         downloadBucketHashLookupTable.insert(bucketNumber, bucketHash);
     }
 }
@@ -164,7 +173,7 @@ void DownloadTransfer::transferTimerEvent()
         else if (!(downloadBucketHashLookupTable.size() - 1 == lastBucketNumber))
         {
             // simple and stupid for now...
-            qDebug() << listOfPeers;
+            qDebug() << "DownloadTransfer::transferTimerEvent(): " << listOfPeers;
             emit TTHTreeRequest(listOfPeers.first(), TTH);
         }
         else
@@ -190,6 +199,6 @@ void DownloadTransfer::setProtocolPreference(QByteArray &preference)
 
 inline int DownloadTransfer::calculateBucketNumber(quint64 fileOffset)
 {
-    return (int)(fileOffset >> 20);
+    return (int)fileOffset >> 20;
 }
 

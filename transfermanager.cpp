@@ -43,7 +43,7 @@ void TransferManager::incomingDataPacket(quint8 transferPacket, QByteArray datag
 // incoming requests for files we share
 void TransferManager::incomingUploadRequest(QByteArray transferProtocolHint, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length)
 {
-    qDebug() << "Data request offset " << offset << " length " << length;
+    qDebug() << "TransferManager::incomingUploadRequest(): Data request offset " << offset << " length " << length;
     Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_UPLOAD, fromHost);
     if (t)
     {
@@ -73,7 +73,7 @@ void TransferManager::filePathNameReply(QByteArray tth, QString filename)
         uploadTransferQueue.remove(tth);
         return; // TODO: stuur error terug na requesting host
     }
-    Transfer *t = new UploadTransfer(this);
+    Transfer *t = new UploadTransfer();
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
     connect(t, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
     t->setFileName(filename);
@@ -134,7 +134,7 @@ void TransferManager::startNextDownload()
         return;
 
     currentDownloadCount++;
-    Transfer *t = new DownloadTransfer(this);
+    Transfer *t = new DownloadTransfer();
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
     connect(t, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)), this, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)));
     connect(t, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray)), this, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray)));

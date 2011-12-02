@@ -30,7 +30,7 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     int size = 10 * 1<<20;
     if (::setsockopt(receiverUdpSocket->socketDescriptor(), SOL_SOCKET, SO_RCVBUF, (char *)&size, sizeof(size)) == -1)
     {
-        qDebug("Could not set receiving buffer to 10MB");
+        qDebug() << "Dispatcher::Constructor: Could not set receiving buffer to 10MB";
     }
 
     senderUdpSocket = new QUdpSocket(this);
@@ -85,7 +85,7 @@ void Dispatcher::reconfigureDispatchHostPort(QHostAddress ip, quint16 port)
     int size = 10 * 1<<20;
     if (::setsockopt(receiverUdpSocket->socketDescriptor(), SOL_SOCKET, SO_RCVBUF, (char *)&size, sizeof(size)) == -1)
     {
-        qDebug("Could not set receiving buffer to 10MB");
+        qDebug() << "Dispatcher::Constructor: Could not set receiving buffer to 10MB";
     }
 
     connect(receiverUdpSocket, SIGNAL(readyRead()), this, SLOT(receiveP2PData()));

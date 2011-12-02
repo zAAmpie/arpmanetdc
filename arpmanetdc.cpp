@@ -744,6 +744,7 @@ void ArpmanetDC::searchActionPressed()
 	SearchWidget *sWidget = new SearchWidget(pTypeIconList, pTransferManager, this);
 	
     connect(sWidget, SIGNAL(search(quint64, QString, QByteArray, SearchWidget *)), this, SLOT(searchButtonPressed(quint64, QString, QByteArray, SearchWidget *)));
+    connect(sWidget, SIGNAL(queueDownload(int, QByteArray, QString, quint64, QHostAddress)), pTransferManager, SLOT(queueDownload(int, QByteArray, QString, quint64, QHostAddress)));
 
 	searchWidgetHash.insert(sWidget->widget(), sWidget);
     searchWidgetIDHash.insert(sWidget->id(), sWidget);
