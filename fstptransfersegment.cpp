@@ -69,7 +69,7 @@ void FSTPTransferSegment::startUploading()
 
 void FSTPTransferSegment::startDownloading()
 {
-    checkSendDownloadRequest(FailsafeTransferProtocol, *pParent->getRemoteHost(), TTH, requestingOffset, requestingLength);
+    checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
     status = TRANSFER_STATE_RUNNING;
 }
 
@@ -131,7 +131,7 @@ void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
             requestingLength *= 2;
 
         requestingTargetOffset += requestingLength;
-        checkSendDownloadRequest(FailsafeTransferProtocol, *pParent->getRemoteHost(), TTH, requestingOffset, requestingLength);
+        checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
     }
 }
 
@@ -144,7 +144,7 @@ void FSTPTransferSegment::transferTimerEvent()
             requestingLength /= 2;
         status = TRANSFER_STATE_RUNNING;
         requestingTargetOffset = requestingOffset + requestingLength;
-        qDebug() << "sendDownloadRequest() peer tth offset length " << *pParent->getRemoteHost() << TTH << requestingOffset << requestingLength;
+        qDebug() << "sendDownloadRequest() peer tth offset length " << remoteHost << TTH << requestingOffset << requestingLength;
         checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
     }
     else if (status == TRANSFER_STATE_RUNNING)
