@@ -75,11 +75,12 @@ void FSTPTransferSegment::startDownloading()
 }
 
 inline void FSTPTransferSegment::checkSendDownloadRequest(quint8 protocol, QHostAddress peer, QByteArray TTH,
-                                                       quint64 requestingOffset, quint64 requestingLength)
+                                                       quint64 requestingOffset, qint64 requestingLength)
 {
     if (fileSize < requestingOffset + requestingLength)
         requestingLength = fileSize - requestingOffset;
-    emit sendDownloadRequest(protocol, peer, TTH, requestingOffset, requestingLength);
+    if (requestingLength > 0)
+        emit sendDownloadRequest(protocol, peer, TTH, requestingOffset, requestingLength);
 }
 
 void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
@@ -118,17 +119,20 @@ void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
         emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber));
     }
 
+    // these last bucket numbers are for the *segment*, not the file.
+    // the length check is for in case it is also the last segment of the file.
     if ((bucketNumber == lastBucketNumber) && (lastBucketSize == pDownloadBucketTable->value(bucketNumber)->length()))
     {
         status = TRANSFER_STATE_FINISHED;  // local segment
         emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber));
+        emit requestNextSegment(this);
         return;
     }
 
     requestingOffset += data.length();
     if (requestingOffset == requestingTargetOffset)
     {
-        if (requestingLength < TRANSFER_MAXIMUM_SEGMENT / 2)
+        if (requestingLength <= FSTP_TRANSFER_MAXIMUM_SEGMENT / 2)
             requestingLength *= 2;
 
         requestingTargetOffset += requestingLength;
@@ -141,8 +145,8 @@ void FSTPTransferSegment::transferTimerEvent()
     if (status == TRANSFER_STATE_STALLED)
     {
         // Transfer some data
-        //if (requestingLength > PACKET_DATA_MTU)
-        //    requestingLength /= 2;
+        if (requestingLength > FSTP_TRANSFER_MINIMUM_SEGMENT)
+            requestingLength /= 2;
         status = TRANSFER_STATE_RUNNING;
         requestingTargetOffset = requestingOffset + requestingLength;
         qDebug() << "sendDownloadRequest() peer tth offset length " << remoteHost << TTH.toBase64() << requestingOffset << requestingLength;
