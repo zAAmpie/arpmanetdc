@@ -1,11 +1,14 @@
 #ifndef FSTPTRANSFERSEGMENT_H
 #define FSTPTRANSFERSEGMENT_H
 #include "transfersegment.h"
+#include "transfer.h"
+
+class Transfer;
 
 class FSTPTransferSegment : public TransferSegment
 {
 public:
-    FSTPTransferSegment(QObject *parent = 0);
+    FSTPTransferSegment(Transfer *parent = 0);
     ~FSTPTransferSegment();
 
 public slots:
@@ -28,6 +31,8 @@ private:
     quint64 requestingTargetOffset;
     int packetsSinceUpdate;
     int retransmitTimeoutCounter;
+
+    Transfer *pParent;
 };
 
 #endif // FSTPTRANSFERSEGMENT_H
