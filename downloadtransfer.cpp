@@ -60,7 +60,7 @@ void DownloadTransfer::incomingDataPacket(quint8 transferPacketType, quint64 off
     bytesWrittenSinceUpdate += data.size();
 }
 
-void DownloadTransfer::hashBucketReply(int &bucketNumber, QByteArray &bucketTTH)
+void DownloadTransfer::hashBucketReply(int bucketNumber, QByteArray bucketTTH)
 {
     if (downloadBucketHashLookupTable.contains(bucketNumber))
     {

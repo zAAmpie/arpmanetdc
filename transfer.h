@@ -45,7 +45,7 @@ public slots:
     int getTransferStatus();
     int getTransferProgress();
     void addPeer(QHostAddress peer);
-    virtual void hashBucketReply(int &bucketNumber, QByteArray &bucketTTH);
+    virtual void hashBucketReply(int bucketNumber, QByteArray bucketTTH);
     virtual void TTHTreeReply(QByteArray tree);
 
     virtual void incomingDataPacket(quint8 transferProtocolVersion, quint64 offset, QByteArray data);

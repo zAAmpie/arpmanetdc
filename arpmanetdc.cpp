@@ -116,8 +116,33 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     // Set network scan ranges in Dispatcher, initial shotgun approach
     //pDispatcher->addNetworkScanRange(QHostAddress("143.160.0.1").toIPv4Address(), 65534);
     //pDispatcher->addNetworkScanRange(QHostAddress("10.22.4.1").toIPv4Address(), 254);
-    pDispatcher->addNetworkScanRange(QHostAddress("192.168.0.2").toIPv4Address(), 4);
+    //pDispatcher->addNetworkScanRange(QHostAddress("192.168.0.2").toIPv4Address(), 4);
     //pDispatcher->addNetworkScanRange(QHostAddress("172.31.0.1").toIPv4Address(), 65534);
+    // Changed to accept begin and end host addresses, calculate range internally.
+    // Perhaps we should later read these from config and manage them somewhere decent.
+    pDispatcher->addNetworkScanRange(QHostAddress("143.160.9.1").toIPv4Address(), QHostAddress("143.160.11.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("143.160.13.1").toIPv4Address(), QHostAddress("143.160.15.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("143.160.17.1").toIPv4Address(), QHostAddress("143.160.19.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("143.160.21.1").toIPv4Address(), QHostAddress("143.160.23.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("143.160.25.1").toIPv4Address(), QHostAddress("143.160.27.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("143.160.29.1").toIPv4Address(), QHostAddress("143.160.31.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("143.160.41.1").toIPv4Address(), QHostAddress("143.160.43.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("143.160.45.1").toIPv4Address(), QHostAddress("143.160.47.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("143.160.57.1").toIPv4Address(), QHostAddress("143.160.59.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("143.160.61.1").toIPv4Address(), QHostAddress("143.160.63.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("143.160.69.1").toIPv4Address(), QHostAddress("143.160.71.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("143.160.77.1").toIPv4Address(), QHostAddress("143.160.79.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("143.160.93.1").toIPv4Address(), QHostAddress("143.160.95.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("143.160.109.1").toIPv4Address(), QHostAddress("143.160.111.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("143.160.125.1").toIPv4Address(), QHostAddress("143.160.127.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("143.160.133.1").toIPv4Address(), QHostAddress("143.160.159.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("172.31.65.1").toIPv4Address(), QHostAddress("172.31.65.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("172.31.94.1").toIPv4Address(), QHostAddress("172.31.95.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("172.31.113.1").toIPv4Address(), QHostAddress("172.31.114.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("172.31.157.1").toIPv4Address(), QHostAddress("172.31.162.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("172.31.164.1").toIPv4Address(), QHostAddress("172.31.164.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("172.31.180.1").toIPv4Address(), QHostAddress("172.31.180.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("172.31.187.1").toIPv4Address(), QHostAddress("172.31.189.254").toIPv4Address());
 
 	//Set up thread for database / ShareSearch
 	dbThread = new ExecThread();

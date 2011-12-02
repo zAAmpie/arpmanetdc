@@ -3,6 +3,9 @@
 #include "transfersegment.h"
 #include "transfer.h"
 
+#define FSTP_TRANSFER_MINIMUM_SEGMENT 16384
+#define FSTP_TRANSFER_MAXIMUM_SEGMENT 524288
+
 class Transfer;
 
 class FSTPTransferSegment : public TransferSegment
@@ -23,7 +26,7 @@ public slots:
 
 private:
     inline void checkSendDownloadRequest(quint8 protocol, QHostAddress peer, QByteArray TTH,
-                                         quint64 requestingOffset, quint64 requestingLength);
+                                         quint64 requestingOffset, qint64 requestingLength);
     inline int calculateBucketNumber(quint64 fileOffset);
 
     int status;

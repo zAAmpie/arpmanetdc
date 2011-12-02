@@ -857,8 +857,9 @@ void Dispatcher::requestAllBuckets(QHostAddress host)
 
 // ------------------=====================   Set network scanning ranges   =====================----------------------
 
-void Dispatcher::addNetworkScanRange(quint32 rangeBase, quint32 rangeLength)
+void Dispatcher::addNetworkScanRange(quint32 rangeBase, quint32 rangeEnd)
 {
+    quint32 rangeLength = rangeEnd - rangeBase;
     networkBootstrap->addNetworkScanRange(rangeBase, rangeLength);
 }
 
