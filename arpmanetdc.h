@@ -173,6 +173,9 @@ private slots:
 	//Right-click menus
 	void showUserListContextMenu(const QPoint&);
 
+    //-----===== SYSTEM TRAY ICON =====-----
+    void systemTrayActivated(QSystemTrayIcon::ActivationReason reason);
+
 signals:
     //Private queued signal for cross-thread comms
 	void updateShares();
@@ -199,6 +202,10 @@ signals:
     
     //Signals for transferWidget
     void stopTransfer(QByteArray tth, int transferType, QHostAddress hostAddr);
+
+protected:
+    void changeEvent(QEvent *e);
+    void closeEvent(QCloseEvent *e);
 
 private:
 	//GUI setup functions
@@ -255,6 +262,12 @@ private:
 
 	//Actions
 	QAction *reconnectAction, *shareAction, *searchAction, *queueAction, *downloadFinishedAction, *settingsAction, *helpAction, *privateMessageAction;
+
+    //-----===== System tray =====-----
+
+    QSystemTrayIcon *systemTrayIcon;
+    QMenu *systemTrayMenu;
+    QAction *restoreAction, *quitAction;
 
 	//-----===== Widgets =====-----
 

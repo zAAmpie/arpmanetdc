@@ -608,6 +608,22 @@ void ArpmanetDC::createWidgets()
     //===== Menus =====
     userListMenu = new QMenu(this);
 	userListMenu->addAction(privateMessageAction);
+
+    //========== System tray ==========
+    systemTrayIcon = new QSystemTrayIcon(this);
+    systemTrayIcon->setIcon(QIcon(":/ArpmanetDC/Resources/Logo128x128.png"));
+    systemTrayIcon->show();
+
+    systemTrayMenu = new QMenu(this);
+
+    quitAction = new QAction("Quit", this);
+    restoreAction = new QAction("Restore", this);
+    restoreAction->setEnabled(false);
+
+    systemTrayMenu->addAction(restoreAction);
+    systemTrayMenu->addAction(quitAction);
+
+    systemTrayIcon->setContextMenu(systemTrayMenu);
 }
 
 void ArpmanetDC::placeWidgets()
@@ -707,6 +723,12 @@ void ArpmanetDC::connectWidgets()
 	connect(helpAction, SIGNAL(triggered()), this, SLOT(helpActionPressed()));
 	connect(privateMessageAction, SIGNAL(triggered()), this, SLOT(privateMessageActionPressed()));
 	connect(reconnectAction, SIGNAL(triggered()), this, SLOT(reconnectActionPressed()));
+
+    connect(restoreAction, SIGNAL(triggered()), this, SLOT(showNormal()));
+    connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
+
+    //Connect system tray
+    connect(systemTrayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(systemTrayActivated(QSystemTrayIcon::ActivationReason)));
 
 	//Tab widget
 	connect(tabs, SIGNAL(tabCloseRequested(int)), this, SLOT(tabDeleted(int)));
@@ -1578,6 +1600,13 @@ void ArpmanetDC::removeTransfer(QByteArray tth, int transferType, QHostAddress h
         queueWidget->removeQueuedDownload(tth);
 }
 
+//System tray was activated
+void ArpmanetDC::systemTrayActivated(QSystemTrayIcon::ActivationReason reason)
+{
+    if (reason == QSystemTrayIcon::DoubleClick && restoreAction->isEnabled())
+        restoreAction->trigger();
+}
+
 void ArpmanetDC::convertHTMLLinks(QString &msg)
 {
 	//Replace html links with hrefs
@@ -1755,4 +1784,32 @@ TransferWidget *ArpmanetDC::transferWidgetObject() const
 ResourceExtractor *ArpmanetDC::resourceExtractorObject() const
 {
     return pTypeIconList;
+}
+
+//Event handlers
+void ArpmanetDC::changeEvent(QEvent *e)
+{
+    QMainWindow::changeEvent(e);
+
+    if (e->type() == QEvent::WindowStateChange)
+    {
+        QWindowStateChangeEvent *wEvent = (QWindowStateChangeEvent*)e;
+        if (wEvent->oldState() != Qt::WindowMinimized && isMinimized())
+        {
+            //Trick necessary to hide window in Windows 7 (the call to hide should not be in the event function)
+            QTimer::singleShot(0, this, SLOT(hide()));
+            restoreAction->setEnabled(true);
+        }
+        else
+        {
+            restoreAction->setEnabled(false);
+        }
+    }
+}
+
+void ArpmanetDC::closeEvent(QCloseEvent *e)
+{
+    //Will maybe later add an option to bypass the close operation and ask the user 
+    //if the program should be minimized to tray rather than closed... For now it works normally
+    QMainWindow::closeEvent(e);
 }
