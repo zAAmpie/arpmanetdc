@@ -45,6 +45,7 @@ private:
     void flushBucketToDisk(int &bucketNumber);
     inline int calculateBucketNumber(quint64 fileOffset);
     SegmentOffsetLengthStruct getSegmentForDownloading(int segmentNumberOfBucketsHint);
+    TransferSegment* newConnectedTransferSegment(TransferProtocol p);
 
     QHash<int, QByteArray*> *downloadBucketTable;
     QHash<int, QByteArray*> downloadBucketHashLookupTable;
@@ -54,9 +55,10 @@ private:
     int initializationStateTimerBrakes;
 
     int bytesWrittenSinceUpdate;
+    int totalBucketsFlushed;
     QByteArray protocolPreference;
 
-    QHash<QHostAddress, TransferSegment*> transferSegmentTable;
+    QMap<quint64, TransferSegment*> transferSegmentTable;
     QByteArray transferSegmentStateBitmap;
 
     TransferSegment *download;
