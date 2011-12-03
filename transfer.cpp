@@ -99,6 +99,6 @@ int Transfer::getTransferProgress()
 
 void Transfer::addPeer(QHostAddress peer)
 {
-    if (!listOfPeers.contains(peer))
+    if (peer.toIPv4Address() > 0 && !listOfPeers.contains(peer))
         listOfPeers.append(peer);
 }
