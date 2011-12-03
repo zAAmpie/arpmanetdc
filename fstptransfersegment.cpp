@@ -99,11 +99,14 @@ inline void FSTPTransferSegment::checkSendDownloadRequest(quint8 protocol, QHost
 
 void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
 {
-    if (offset != requestingOffset)
+    if (offset > requestingOffset)
     {
         status = TRANSFER_STATE_STALLED;
         return;
     }
+    if (offset < requestingOffset)
+        return;
+
     status = TRANSFER_STATE_RUNNING;
     packetsSinceUpdate++;
 
@@ -141,11 +144,6 @@ void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
         emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber));
         return;
     }
-    if ((lastBucketSize == 0) && (pDownloadBucketTable->value(lastBucketNumber - 1))
-            && (pDownloadBucketTable->value(lastBucketNumber - 1)->length() == HASH_BUCKET_SIZE))        // Bucket boundary
-    {
-        emit requestNextSegment(this);
-    }
 
     requestingOffset += data.length();
     if (requestingOffset == requestingTargetOffset)
@@ -156,6 +154,10 @@ void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
         requestingTargetOffset += requestingLength;
         qDebug() << "FSTPTransferSegment::incomingDataPacket() call checkSendDownloadRequest()";
         checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
+    }
+    if (requestingOffset >= segmentEnd)
+    {
+        emit requestNextSegment(this);
     }
 }
 
@@ -168,7 +170,7 @@ void FSTPTransferSegment::transferTimerEvent()
             requestingLength /= 2;
         status = TRANSFER_STATE_RUNNING;
         requestingTargetOffset = requestingOffset + requestingLength;
-        qDebug() << "FSTPTransferSegment::transferTimerEvent() call checkSendDownloadRequest()";
+        qDebug() << "FSTPTransferSegment::transferTimerEvent() call checkSendDownloadRequest()" << requestingOffset << requestingLength;
         checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
         retransmitRetryCounter++;
         if (retransmitRetryCounter == 30)
