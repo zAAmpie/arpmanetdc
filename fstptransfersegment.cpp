@@ -76,6 +76,8 @@ void FSTPTransferSegment::startUploading()
 
 void FSTPTransferSegment::startDownloading()
 {
+    segmentStartTime = QDateTime::currentMSecsSinceEpoch();
+    requestingOffset = segmentStart;
     checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
     status = TRANSFER_STATE_RUNNING;
 }
@@ -127,7 +129,8 @@ void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
 
     // these last bucket numbers are for the *segment*, not the file.
     // the length check is for in case it is also the last segment of the file.
-    if ((bucketNumber == lastBucketNumber) && (lastBucketSize == pDownloadBucketTable->value(bucketNumber)->length()))
+    if ((bucketNumber == lastBucketNumber) &&
+            (((lastBucketSize > 0) && (lastBucketSize == pDownloadBucketTable->value(bucketNumber)->length())) || (lastBucketSize == 0)))
     {
         status = TRANSFER_STATE_FINISHED;  // local segment
         emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber));

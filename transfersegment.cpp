@@ -17,6 +17,7 @@ void TransferSegment::setSegmentStart(quint64 start)
     segmentStart = start;
     if (segmentEnd - segmentStart > 0)
         segmentLength = segmentEnd - segmentStart;
+    calculateLastBucketParams();
 }
 
 void TransferSegment::setSegmentEnd(quint64 end)
@@ -31,6 +32,13 @@ void TransferSegment::setSegmentEnd(quint64 end)
         segmentLength = 0;
         segmentEnd = segmentStart;
     }
+    calculateLastBucketParams();
+}
+
+void TransferSegment::calculateLastBucketParams()
+{
+    lastBucketNumber = segmentEnd >> 20;
+    lastBucketSize = segmentEnd % HASH_BUCKET_SIZE;
 }
 
 quint64 TransferSegment::getSegmentStart()
@@ -41,6 +49,11 @@ quint64 TransferSegment::getSegmentStart()
 quint64 TransferSegment::getSegmentEnd()
 {
     return segmentEnd;
+}
+
+qint64 TransferSegment::getSegmentStartTime()
+{
+    return segmentStartTime;
 }
 
 void TransferSegment::setTTH(QByteArray tth)

@@ -5,6 +5,7 @@
 #include <QHostAddress>
 #include <QFile>
 #include <QHash>
+#include <QDateTime>
 #include "protocoldef.h"
 #include "util.h"
 
@@ -32,6 +33,7 @@ public slots:
     void setSegmentEnd(quint64 end);
     quint64 getSegmentStart();
     quint64 getSegmentEnd();
+    qint64 getSegmentStartTime();
     void setRemoteHost(QHostAddress host);
     virtual void startUploading() = 0;
     virtual void startDownloading() = 0;
@@ -40,6 +42,7 @@ public slots:
     virtual void setLastBucketNumber(int n);
 
 protected:
+    void calculateLastBucketParams();
     QByteArray TTH;
     QString filePathName;
     quint64 fileSize;
@@ -47,6 +50,7 @@ protected:
     quint64 segmentStart;
     quint64 segmentLength;
     quint64 segmentEnd;
+    qint64 segmentStartTime;
 
     int lastBucketNumber;
     int lastBucketSize;
