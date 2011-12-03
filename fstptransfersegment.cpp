@@ -7,6 +7,7 @@ FSTPTransferSegment::FSTPTransferSegment(Transfer *parent) : TransferSegment(par
     requestingLength = 131072;
     requestingTargetOffset = 0;
     retransmitTimeoutCounter = 0;
+    retransmitRetryCounter = 0;
 
     pParent = parent;
 }
@@ -41,12 +42,12 @@ void FSTPTransferSegment::setLastBucketSize(int size)
 
 void FSTPTransferSegment::startUploading()
 {
-    if (fileOffset > fileSize)
+    if (segmentStart > fileSize)
         return;
-    else if (fileOffset + segmentLength > fileSize)
-        segmentLength = fileSize - fileOffset;
+    else if (segmentStart + segmentLength > fileSize)
+        segmentLength = fileSize - segmentStart;
 
-    const char * f = (char*)inputFile.map(fileOffset, segmentLength);
+    const char * f = (char*)inputFile.map(segmentStart, segmentLength);
     quint64 wptr = 0;
     QByteArray header;
     header.append(DataPacket);
@@ -55,9 +56,9 @@ void FSTPTransferSegment::startUploading()
     while (wptr < segmentLength)
     {
         QByteArray *packet = new QByteArray(header);
-        packet->append(toQByteArray((quint64)(fileOffset + wptr)));
+        packet->append(toQByteArray((quint64)(segmentStart + wptr)));
         packet->append(TTH);
-        //qDebug() << "Write data fileOffset " << fileOffset << " segmentLength " << segmentLength << " wptr " << wptr;
+        //qDebug() << "Write data segmentStart " << segmentStart << " segmentLength " << segmentLength << " wptr " << wptr;
         if (wptr + PACKET_DATA_MTU < segmentLength)
         {
             packet->append(data.mid(wptr, PACKET_DATA_MTU));
@@ -156,6 +157,12 @@ void FSTPTransferSegment::transferTimerEvent()
         requestingTargetOffset = requestingOffset + requestingLength;
         qDebug() << "FSTPTransferSegment:: emit sendDownloadRequest() peer tth offset length " << remoteHost << TTH.toBase64() << requestingOffset << requestingLength;
         checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
+        retransmitRetryCounter++;
+        if (retransmitRetryCounter == 30)
+        {
+            status = TRANSFER_STATE_FAILED;
+            emit transferRequestFailed(this);
+        }
     }
     else if (status == TRANSFER_STATE_RUNNING)
     {

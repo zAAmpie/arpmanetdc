@@ -52,8 +52,8 @@ int UploadTransfer::getTransferType()
 
 void UploadTransfer::startTransfer()
 {
-    upload->setFileOffset(fileOffset);
-    upload->setFileOffsetLength(segmentLength);
+    upload->setSegmentStart(fileOffset);
+    upload->setSegmentEnd(fileOffset + segmentLength);
     upload->setRemoteHost(remoteHost);
     status = TRANSFER_STATE_RUNNING;
     upload->startUploading();

@@ -12,14 +12,35 @@ void TransferSegment::setLastBucketNumber(int){}
 void TransferSegment::setLastBucketSize(int){}
 void TransferSegment::setFileSize(quint64){}
 
-void TransferSegment::setFileOffset(quint64 offset)
+void TransferSegment::setSegmentStart(quint64 start)
 {
-    fileOffset = offset;
+    segmentStart = start;
+    if (segmentEnd - segmentStart > 0)
+        segmentLength = segmentEnd - segmentStart;
 }
 
-void TransferSegment::setFileOffsetLength(quint64 length)
+void TransferSegment::setSegmentEnd(quint64 end)
 {
-    segmentLength = length;
+    if (segmentEnd - segmentStart > 0)
+    {
+        segmentLength = segmentEnd - segmentStart;
+        segmentEnd = end;
+    }
+    else
+    {
+        segmentLength = 0;
+        segmentEnd = segmentStart;
+    }
+}
+
+quint64 TransferSegment::getSegmentStart()
+{
+    return segmentStart;
+}
+
+quint64 TransferSegment::getSegmentEnd()
+{
+    return segmentEnd;
 }
 
 void TransferSegment::setTTH(QByteArray tth)

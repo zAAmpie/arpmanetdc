@@ -35,6 +35,7 @@ private:
     quint64 requestingTargetOffset;
     int packetsSinceUpdate;
     int retransmitTimeoutCounter;
+    int retransmitRetryCounter;
 
     Transfer *pParent;
 };

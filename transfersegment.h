@@ -20,6 +20,7 @@ signals:
     void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length);
     void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
     void requestNextSegment(TransferSegment *requestingSegmentObject);
+    void transferRequestFailed(TransferSegment *requestingSegmentObject);
 
 public slots:
     virtual void incomingDataPacket(quint64 offset, QByteArray data) = 0;
@@ -27,8 +28,10 @@ public slots:
     virtual void setFileName(QString filename) = 0;
     virtual void setFileSize(quint64 size);
     void setTTH(QByteArray tth);
-    void setFileOffset(quint64 offset);
-    void setFileOffsetLength(quint64 length);
+    void setSegmentStart(quint64 start);
+    void setSegmentEnd(quint64 end);
+    quint64 getSegmentStart();
+    quint64 getSegmentEnd();
     void setRemoteHost(QHostAddress host);
     virtual void startUploading() = 0;
     virtual void startDownloading() = 0;
@@ -41,8 +44,9 @@ protected:
     QString filePathName;
     quint64 fileSize;
     QHostAddress remoteHost;
-    quint64 fileOffset;
+    quint64 segmentStart;
     quint64 segmentLength;
+    quint64 segmentEnd;
 
     int lastBucketNumber;
     int lastBucketSize;

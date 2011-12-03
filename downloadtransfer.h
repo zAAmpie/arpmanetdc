@@ -4,8 +4,22 @@
 #include "protocoldef.h"
 #include "fstptransfersegment.h"
 
+enum transferSegmentState
+{
+    SegmentNotDownloaded = 0x00,
+    SegmentDownloaded = 0x01,
+    SegmentCurrentlyDownloading=0x02
+};
+
+typedef struct
+{
+    int segmentBucketOffset;
+    int segmentBucketCount;
+} SegmentOffsetLengthStruct;
+
 class DownloadTransfer : public Transfer
 {
+    Q_OBJECT
 public:
     DownloadTransfer(QObject *parent = 0);
     ~DownloadTransfer();
@@ -17,6 +31,8 @@ public slots:
 
 private slots:
     void transferTimerEvent();
+    void segmentCompleted(TransferSegment *segment);
+    void segmentFailed(TransferSegment *segment);
 
 private:
     void incomingDataPacket(quint8 transferProtocolVersion, quint64 offset, QByteArray data);
@@ -28,6 +44,7 @@ private:
 
     void flushBucketToDisk(int &bucketNumber);
     inline int calculateBucketNumber(quint64 fileOffset);
+    SegmentOffsetLengthStruct getSegmentForDownloading(int segmentNumberOfBucketsHint);
 
     QHash<int, QByteArray*> *downloadBucketTable;
     QHash<int, QByteArray*> downloadBucketHashLookupTable;
@@ -38,6 +55,9 @@ private:
 
     int bytesWrittenSinceUpdate;
     QByteArray protocolPreference;
+
+    QHash<QHostAddress, TransferSegment*> transferSegmentTable;
+    QByteArray transferSegmentStateBitmap;
 
     TransferSegment *download;
 };

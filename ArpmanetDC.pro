@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui network sqlite
+QT       += core gui network #sqlite
 
 LIBS += /usr/lib64/libsqlite3.so /usr/lib64/libcryptopp.so
 
@@ -80,19 +80,3 @@ HEADERS  += arpmanetdc.h \
 
 RESOURCES += \
     arpmanetdc.qrc
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

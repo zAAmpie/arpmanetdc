@@ -3,6 +3,7 @@
 
 DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
 {
+    //TODO: load transferSegmentStateBitmap from db
     downloadBucketTable = new QHash<int, QByteArray*>;
     transferRate = 0;
     transferProgress = 0;
@@ -31,6 +32,7 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
 
 DownloadTransfer::~DownloadTransfer()
 {
+    //TODO: save transferSegmentStateBitmap to db
     transferRateCalculationTimer->deleteLater();
     transferTimer->deleteLater();
     QHashIterator<int, QByteArray*> itdb(*downloadBucketTable);
@@ -104,12 +106,15 @@ int DownloadTransfer::getTransferType()
 
 void DownloadTransfer::startTransfer()
 {
-    QThread *thisThread = QThread::currentThread();
-    QThread *thatThread = transferTimer->thread();
+    //QThread *thisThread = QThread::currentThread();
+    //QThread *thatThread = transferTimer->thread();
     lastBucketNumber = calculateBucketNumber(fileSize);
     lastBucketSize = fileSize % HASH_BUCKET_SIZE;
+    if (transferSegmentStateBitmap.length() == 0)
+        for (int i = 0; i <= lastBucketNumber; i++)
+            transferSegmentStateBitmap.append(SegmentNotDownloaded);
+
     transferTimer->start(100);
-    
 }
 
 void DownloadTransfer::pauseTransfer()
@@ -150,6 +155,7 @@ void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
 
     // just remove entry, bucket pointer gets deleted in BucketFlushThread
     downloadBucketTable->remove(bucketNumber);
+    transferSegmentStateBitmap[bucketNumber] = SegmentDownloaded;
 }
 
 void DownloadTransfer::transferTimerEvent()
@@ -179,13 +185,13 @@ void DownloadTransfer::transferTimerEvent()
         else
         {
             status = TRANSFER_STATE_RUNNING;
-            download->setFileOffset(0);
-            download->setFileOffsetLength(fileSize);
+            download->setSegmentStart(0);
+            download->setSegmentEnd(fileSize);
             download->setDownloadBucketTablePointer(downloadBucketTable);
             download->setRemoteHost(listOfPeers.first());
             download->setTTH(TTH);
-            download->setLastBucketNumber(lastBucketNumber);
-            download->setLastBucketSize(lastBucketSize);
+            download->setLastBucketNumber(lastBucketNumber); // for *segment*
+            download->setLastBucketSize(lastBucketSize);     // for *segment*
             download->setFileSize(fileSize);
             download->startDownloading();
         }
@@ -202,3 +208,63 @@ inline int DownloadTransfer::calculateBucketNumber(quint64 fileOffset)
     return (int)fileOffset >> 20;
 }
 
+void DownloadTransfer::segmentCompleted(TransferSegment *segment)
+{
+
+}
+
+void DownloadTransfer::segmentFailed(TransferSegment *segment)
+{
+    int startBucket = calculateBucketNumber(segment->getSegmentStart());
+    int endBucket = calculateBucketNumber(segment->getSegmentEnd());
+    for (int i = startBucket; i <= endBucket; i++)
+        if (transferSegmentStateBitmap.at(i) == SegmentCurrentlyDownloading)
+            transferSegmentStateBitmap[i] = SegmentNotDownloaded;
+}
+
+SegmentOffsetLengthStruct DownloadTransfer::getSegmentForDownloading(int segmentNumberOfBucketsHint)
+{
+    // Ideas for quick and dirty block allocator:
+    // Scan once over bitmap, taking note of starting point and length of longest open segment
+    // Allocate block immediately if long enough gap found, otherwise allocate longest possible gap
+    SegmentOffsetLengthStruct segment;
+    int longestSegmentStart = 0;
+    int longestSegmentLength = 0;
+    int currentSegmentStart = 0;
+    int currentSegmentLength = 0;
+    char lastSegmentState = SegmentDownloaded;
+    for (int i = 0; i < transferSegmentStateBitmap.length(); i++)
+    {
+        if (transferSegmentStateBitmap.at(i) == SegmentNotDownloaded)
+        {
+            if (lastSegmentState != SegmentNotDownloaded)
+            {
+                currentSegmentStart = i;
+                currentSegmentLength = 1;
+            }
+            else
+            {
+                currentSegmentLength++;
+            }
+            lastSegmentState = transferSegmentStateBitmap.at(i);
+            if (currentSegmentLength == segmentNumberOfBucketsHint)
+            {
+                segment.segmentBucketOffset = currentSegmentStart;
+                segment.segmentBucketCount = currentSegmentLength;
+                for (int j = currentSegmentStart; j < currentSegmentLength; j++)
+                    transferSegmentStateBitmap[j] = SegmentCurrentlyDownloading;
+                return segment;
+            }
+            if (currentSegmentLength > longestSegmentLength)
+            {
+                longestSegmentStart = currentSegmentStart;
+                longestSegmentLength = currentSegmentLength;
+            }
+        }
+    }
+    segment.segmentBucketOffset = longestSegmentStart;
+    segment.segmentBucketCount = longestSegmentLength;
+    for (int j = 0; j < longestSegmentStart; j++)
+        transferSegmentStateBitmap[j] = SegmentCurrentlyDownloading;
+    return segment;
+}
