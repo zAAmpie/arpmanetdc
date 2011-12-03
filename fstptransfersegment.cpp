@@ -169,7 +169,11 @@ void FSTPTransferSegment::transferTimerEvent()
             }
         }
         else
+        {
             packetsSinceUpdate = 0;
+            //By adding this we only set a transfer as STALLED when 20 *sequential* updates produced no packets, vs just 20 overall
+            retransmitTimeoutCounter = 0;
+        }
     }
 }
 

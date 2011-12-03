@@ -3,7 +3,7 @@
 #include "transfersegment.h"
 #include "transfer.h"
 
-#define FSTP_TRANSFER_MINIMUM_SEGMENT 16384
+#define FSTP_TRANSFER_MINIMUM_SEGMENT 65536
 #define FSTP_TRANSFER_MAXIMUM_SEGMENT 524288
 
 class Transfer;
