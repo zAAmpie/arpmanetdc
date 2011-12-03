@@ -8,6 +8,7 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
     transferRate = 0;
     transferProgress = 0;
     bytesWrittenSinceUpdate = 0;
+    totalBucketsFlushed = 0;
     initializationStateTimerBrakes = 0;
     status = TRANSFER_STATE_INITIALIZING;
     remoteHost = QHostAddress("0.0.0.0");
@@ -22,14 +23,7 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
     transferTimer->setSingleShot(false);
 
     // Temp test
-    download = new FSTPTransferSegment(this);
-    connect(download, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)), this, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)));
-    connect(download, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)),
-            this, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)));
-    connect(download, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
-    connect(transferTimer, SIGNAL(timeout()), download, SLOT(transferTimerEvent()));
-    connect(download, SIGNAL(requestNextSegment(TransferSegment*)), this, SLOT(segmentCompleted(TransferSegment*)));
-    connect(download, SIGNAL(transferRequestFailed(TransferSegment*)), this, SLOT(segmentFailed(TransferSegment*)));
+    download = newConnectedTransferSegment(FailsafeTransferProtocol);
 }
 
 DownloadTransfer::~DownloadTransfer()
@@ -142,6 +136,8 @@ void DownloadTransfer::transferRateCalculation()
     // snapshot the transfer rate as the amount of bytes written in the last second
     transferRate = bytesWrittenSinceUpdate;
     bytesWrittenSinceUpdate = 0;
+
+    transferProgress = (int)(((double)totalBucketsFlushed / (calculateBucketNumber(fileSize) + 1)) * 100);
 }
 
 void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
@@ -158,6 +154,12 @@ void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
     // just remove entry, bucket pointer gets deleted in BucketFlushThread
     downloadBucketTable->remove(bucketNumber);
     transferSegmentStateBitmap[bucketNumber] = SegmentDownloaded;
+    totalBucketsFlushed++;
+    if (totalBucketsFlushed == calculateBucketNumber(fileSize) + 1)
+    {
+        status = TRANSFER_STATE_FINISHED;
+        emit transferFinished(TTH);
+    }
 }
 
 void DownloadTransfer::transferTimerEvent()
@@ -267,7 +269,7 @@ SegmentOffsetLengthStruct DownloadTransfer::getSegmentForDownloading(int segment
             {
                 segment.segmentBucketOffset = currentSegmentStart;
                 segment.segmentBucketCount = currentSegmentLength;
-                for (int j = currentSegmentStart; j < currentSegmentLength; j++)
+                for (int j = currentSegmentStart; j < currentSegmentStart+currentSegmentLength; j++)
                     transferSegmentStateBitmap[j] = SegmentCurrentlyDownloading;
                 return segment;
             }
@@ -281,7 +283,30 @@ SegmentOffsetLengthStruct DownloadTransfer::getSegmentForDownloading(int segment
     }
     segment.segmentBucketOffset = longestSegmentStart;
     segment.segmentBucketCount = longestSegmentLength;
-    for (int j = 0; j < longestSegmentStart; j++)
+    for (int j = longestSegmentStart; j < longestSegmentStart+longestSegmentLength; j++)
         transferSegmentStateBitmap[j] = SegmentCurrentlyDownloading;
     return segment;
+}
+
+TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol p)
+{
+    TransferSegment* download = 0;
+    switch(p)
+    {
+    case FailsafeTransferProtocol:
+        download = new FSTPTransferSegment;
+        break;
+    case BasicTransferProtocol:
+    case uTPProtocol:
+    case ArpmanetFECProtocol:
+        break;
+    }
+    connect(download, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)), this, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)));
+    connect(download, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)),
+            this, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)));
+    connect(download, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
+    connect(transferTimer, SIGNAL(timeout()), download, SLOT(transferTimerEvent()));
+    connect(download, SIGNAL(requestNextSegment(TransferSegment*)), this, SLOT(segmentCompleted(TransferSegment*)));
+    connect(download, SIGNAL(transferRequestFailed(TransferSegment*)), this, SLOT(segmentFailed(TransferSegment*)));
+    return download;
 }
