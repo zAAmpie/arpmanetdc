@@ -267,7 +267,7 @@ SegmentOffsetLengthStruct DownloadTransfer::getSegmentForDownloading(int segment
             {
                 segment.segmentBucketOffset = currentSegmentStart;
                 segment.segmentBucketCount = currentSegmentLength;
-                for (int j = currentSegmentStart; j < currentSegmentLength; j++)
+                for (int j = currentSegmentStart; j < currentSegmentStart+currentSegmentLength; j++)
                     transferSegmentStateBitmap[j] = SegmentCurrentlyDownloading;
                 return segment;
             }
@@ -281,7 +281,7 @@ SegmentOffsetLengthStruct DownloadTransfer::getSegmentForDownloading(int segment
     }
     segment.segmentBucketOffset = longestSegmentStart;
     segment.segmentBucketCount = longestSegmentLength;
-    for (int j = 0; j < longestSegmentStart; j++)
+    for (int j = longestSegmentStart; j < longestSegmentStart+longestSegmentLength; j++)
         transferSegmentStateBitmap[j] = SegmentCurrentlyDownloading;
     return segment;
 }
