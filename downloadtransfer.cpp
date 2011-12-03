@@ -28,6 +28,8 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
             this, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)));
     connect(download, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
     connect(transferTimer, SIGNAL(timeout()), download, SLOT(transferTimerEvent()));
+    connect(download, SIGNAL(requestNextSegment(TransferSegment*)), this, SLOT(segmentCompleted(TransferSegment*)));
+    connect(download, SIGNAL(transferRequestFailed(TransferSegment*)), this, SLOT(segmentFailed(TransferSegment*)));
 }
 
 DownloadTransfer::~DownloadTransfer()
@@ -185,8 +187,9 @@ void DownloadTransfer::transferTimerEvent()
         else
         {
             status = TRANSFER_STATE_RUNNING;
-            download->setSegmentStart(0);
-            download->setSegmentEnd(fileSize);
+            SegmentOffsetLengthStruct s = getSegmentForDownloading(1);
+            download->setSegmentStart(s.segmentBucketOffset * HASH_BUCKET_SIZE);
+            download->setSegmentEnd(s.segmentBucketCount * HASH_BUCKET_SIZE);
             download->setDownloadBucketTablePointer(downloadBucketTable);
             download->setRemoteHost(listOfPeers.first());
             download->setTTH(TTH);
@@ -213,6 +216,8 @@ void DownloadTransfer::segmentCompleted(TransferSegment *segment)
     qint64 lastTransferTime = QDateTime::currentMSecsSinceEpoch() - segment->getSegmentStartTime();
     int lastSegmentLength = (segment->getSegmentEnd() - segment->getSegmentStart()) / HASH_BUCKET_SIZE;
     int nextSegmentLengthHint = (10000 / lastTransferTime) * lastSegmentLength;
+    if (nextSegmentLengthHint == 0)
+        nextSegmentLengthHint = 1;
     SegmentOffsetLengthStruct s = getSegmentForDownloading(nextSegmentLengthHint);
     if (s.segmentBucketCount > 0)  // otherwise, download is complete. we just wait for other segments to finish.
     {

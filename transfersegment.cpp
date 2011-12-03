@@ -22,10 +22,10 @@ void TransferSegment::setSegmentStart(quint64 start)
 
 void TransferSegment::setSegmentEnd(quint64 end)
 {
+    segmentEnd = end;
     if (segmentEnd - segmentStart > 0)
     {
         segmentLength = segmentEnd - segmentStart;
-        segmentEnd = end;
     }
     else
     {
