@@ -246,7 +246,6 @@ SegmentOffsetLengthStruct DownloadTransfer::getSegmentForDownloading(int segment
             {
                 currentSegmentLength++;
             }
-            lastSegmentState = transferSegmentStateBitmap.at(i);
             if (currentSegmentLength == segmentNumberOfBucketsHint)
             {
                 segment.segmentBucketOffset = currentSegmentStart;
@@ -261,6 +260,7 @@ SegmentOffsetLengthStruct DownloadTransfer::getSegmentForDownloading(int segment
                 longestSegmentLength = currentSegmentLength;
             }
         }
+        lastSegmentState = transferSegmentStateBitmap.at(i);
     }
     segment.segmentBucketOffset = longestSegmentStart;
     segment.segmentBucketCount = longestSegmentLength;
