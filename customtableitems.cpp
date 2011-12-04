@@ -143,7 +143,8 @@ void ProgressDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
     //Draw the progress bar
     if (value > 0)
     {
-        qreal valWidth = ((qreal)value * (qreal)rect.width()) / 100;
+        qreal val = value > 100 ? 100 : value;
+        qreal valWidth = ((qreal)val * (qreal)rect.width()) / 100;
         QRectF valRect(rect.left(), rect.top(), valWidth, rect.height());
         valRect.adjust(2,2,-2,-2);
 
@@ -162,7 +163,10 @@ void ProgressDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
 
     //Draw the percentage text
     painter->setPen(textColor);
-    painter->drawText(rect, Qt::AlignCenter, tr("%1%").arg(value));
+    if (value != 100)
+        painter->drawText(rect, Qt::AlignCenter, tr("%1%").arg(value));
+    else
+        painter->drawText(rect, Qt::AlignCenter, tr("Finished"));
 
     painter->restore();
 }

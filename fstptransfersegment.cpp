@@ -79,6 +79,10 @@ void FSTPTransferSegment::startDownloading()
 {
     segmentStartTime = QDateTime::currentMSecsSinceEpoch();
     requestingOffset = segmentStart;
+    requestingLength = 131072;
+    requestingTargetOffset = requestingOffset + requestingLength;
+    retransmitTimeoutCounter = 0;
+    retransmitRetryCounter = 0;
     qDebug() << "FSTPTransferSegment::startDownloading() call checkSendDownloadRequest()";
     checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
     status = TRANSFER_STATE_RUNNING;
@@ -99,6 +103,10 @@ inline void FSTPTransferSegment::checkSendDownloadRequest(quint8 protocol, QHost
 
 void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
 {
+    //Ignore packet if transfer has failed and has not been restarted
+    if (status == TRANSFER_STATE_FAILED && offset != segmentStart)
+        return;
+
     if (offset > requestingOffset)
     {
         status = TRANSFER_STATE_STALLED;
@@ -173,7 +181,9 @@ void FSTPTransferSegment::transferTimerEvent()
         qDebug() << "FSTPTransferSegment::transferTimerEvent() call checkSendDownloadRequest()" << requestingOffset << requestingLength;
         checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
         retransmitRetryCounter++;
-        if (retransmitRetryCounter == 30)
+        //30 is only 3 seconds worth of stalling for every 1MB segment! WAY too low for poor connections -> they will go into endless loops
+        //Setting this to 300 to test
+        if (retransmitRetryCounter == 300)
         {
             status = TRANSFER_STATE_FAILED;
             emit transferRequestFailed(this);

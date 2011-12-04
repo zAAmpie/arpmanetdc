@@ -612,6 +612,7 @@ void ArpmanetDC::createWidgets()
     //========== System tray ==========
     systemTrayIcon = new QSystemTrayIcon(this);
     systemTrayIcon->setIcon(QIcon(":/ArpmanetDC/Resources/Logo128x128.png"));
+    systemTrayIcon->setToolTip("arpmanetDC v0.1");
     systemTrayIcon->show();
 
     systemTrayMenu = new QMenu(this);

@@ -16,7 +16,7 @@ TransferWidget::TransferWidget(TransferManager *transferManager, ArpmanetDC *par
     //Update status every second
     updateStatusTimer = new QTimer();
     connect(updateStatusTimer, SIGNAL(timeout()), this, SLOT(updateStatus()));
-    updateStatusTimer->start(1000);
+    updateStatusTimer->start(300);
 }
 
 TransferWidget::~TransferWidget()

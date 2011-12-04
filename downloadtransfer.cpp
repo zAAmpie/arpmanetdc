@@ -178,6 +178,7 @@ void DownloadTransfer::transferTimerEvent()
         // Get peers and TTH tree
         if (listOfPeers.isEmpty())
         {
+            //At this stage this will never be called since addPeer() is called as this object is created
             emit searchTTHAlternateSources(TTH);
         }
         else if (!(downloadBucketHashLookupTable.size() - 1 == lastBucketNumber))
@@ -234,16 +235,20 @@ void DownloadTransfer::segmentCompleted(TransferSegment *segment)
 
 void DownloadTransfer::segmentFailed(TransferSegment *segment)
 {
-    int startBucket = calculateBucketNumber(segment->getSegmentStart());
-    int endBucket = calculateBucketNumber(segment->getSegmentEnd());
-    for (int i = startBucket; i <= endBucket; i++)
-        if (transferSegmentStateBitmap.at(i) == SegmentCurrentlyDownloading)
-            transferSegmentStateBitmap[i] = SegmentNotDownloaded;
+    //int startBucket = calculateBucketNumber(segment->getSegmentStart());
+    //int endBucket = calculateBucketNumber(segment->getSegmentEnd());
+    //for (int i = startBucket; i <= endBucket; i++)
+    //    if (transferSegmentStateBitmap.at(i) == SegmentCurrentlyDownloading)
+    //        transferSegmentStateBitmap[i] = SegmentNotDownloaded;
+
+    //Restart the segment download process with the same variables
+    //transferSegmentStateBitmap can be left as is as this segment is still marked as currently downloading
+    segment->startDownloading();
 }
 
 SegmentOffsetLengthStruct DownloadTransfer::getSegmentForDownloading(int segmentNumberOfBucketsHint)
 {
-    // Ideas for quick and dirty block allocator:
+     // Ideas for quick and dirty block allocator:
     // Scan once over bitmap, taking note of starting point and length of longest open segment
     // Allocate block immediately if long enough gap found, otherwise allocate longest possible gap
     SegmentOffsetLengthStruct segment;
