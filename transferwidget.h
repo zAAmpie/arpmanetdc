@@ -21,6 +21,10 @@ public:
     QHash<QByteArray, TransferItemStatus> *transferList() const;
     bool isBusy(QByteArray tth);
 
+public slots:
+    //Remove an entry from the list
+    void removeTransferEntry(QByteArray tth, int type);
+
 private slots:
     //Right-click menu
     void showTransferListContextMenu(const QPoint&);

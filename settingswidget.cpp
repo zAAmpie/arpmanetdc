@@ -54,10 +54,16 @@ void SettingsWidget::createWidgets()
     protocolDownButton = new QPushButton(tr("Down"), (QWidget *)pParent);
 
     //Enqueue supported protocols
-    QStringList supportedProtocols = pSettings->value("protocolHint").split(";");
-    foreach (QString prot, supportedProtocols)
+    QStringList availableProtocols = pSettings->value("protocolHint").split(";");
+    QStringList supportedProtocols = QString(SUPPORTED_TRANSFER_PROTOCOLS).split(";");
+    foreach (QString prot, availableProtocols)
     {
-        new QListWidgetItem(prot, protocolList); 
+        QListWidgetItem *item = new QListWidgetItem(prot, protocolList); 
+        if (!supportedProtocols.contains(prot))
+        {
+            //Items not supported are shown in gray
+            item->setForeground(QBrush(Qt::gray));
+        }
     }
 
     //========== MISC ==========

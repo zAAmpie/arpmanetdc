@@ -140,6 +140,9 @@ void TransferWidget::updateStatus()
     foreach (TransferItemStatus s, status)
         pTransferList->insert(s.TTH, s);
 
+    //Clear model
+    transferListModel->removeRows(0, transferListModel->rowCount());
+
     for (int i = 0; i < status.size(); i++)
     {
         TransferItemStatus s = status.at(i);  
@@ -150,44 +153,17 @@ void TransferWidget::updateStatus()
 
         QueueStruct q = pParent->queueEntry(s.TTH);
 
-        //Check if entry exists
-        QList<QStandardItem *> findResults = transferListModel->findItems(base32TTH.data(), Qt::MatchExactly, 6);
-
-        //If new transfer - add
-        if (findResults.isEmpty())
-        {
-            QList<QStandardItem *> row;
-            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, typeString(s.transferType)));
-            row.append(new CStandardItem(CStandardItem::ProgressType, progressString(s.transferType, s.transferProgress)));
-            row.append(new CStandardItem(CStandardItem::RateType, bytesToRate(s.transferRate)));
-            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, s.filePathName.remove(pParent->downloadPath(), Qt::CaseInsensitive)));
-            row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(q.fileSize)));
-            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, stateString(s.transferStatus)));
-            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, base32TTH.data()));
-            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, q.fileHost.toString()));
-            transferListModel->appendRow(row);
-        }
-        //If existing transfer - update
-        else
-        {
-            QStandardItem *item;
-            item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 0));
-            item->setText(typeString(s.transferType));
-            item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 1));
-            item->setText(progressString(s.transferType, s.transferProgress));
-            item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 2));
-            item->setText(bytesToRate(s.transferRate));
-            item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 3));
-            item->setText(s.filePathName.remove(pParent->downloadPath(), Qt::CaseInsensitive));
-            item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 4));
-            item->setText(bytesToSize(q.fileSize));
-            item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 5));
-            item->setText(stateString(s.transferStatus));
-            item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 6));
-            item->setText(base32TTH.data());
-            item = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 7));
-            item->setText(q.fileHost.toString());
-        }
+        QList<QStandardItem *> row;
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, typeString(s.transferType)));
+        row.append(new CStandardItem(CStandardItem::ProgressType, progressString(s.transferType, s.transferProgress)));
+        row.append(new CStandardItem(CStandardItem::RateType, bytesToRate(s.transferRate)));
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, s.filePathName.remove(pParent->downloadPath(), Qt::CaseInsensitive)));
+        row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(q.fileSize)));
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, stateString(s.transferStatus)));
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, base32TTH.data()));
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, q.fileHost.toString()));
+        transferListModel->appendRow(row);
+        
     }
 
     //Adjust row height
@@ -197,6 +173,28 @@ void TransferWidget::updateStatus()
     int column = transferListTable->horizontalHeader()->sortIndicatorSection();
     Qt::SortOrder order = transferListTable->horizontalHeader()->sortIndicatorOrder();
     transferListTable->sortByColumn(column, order);
+}
+
+//Remove an entry from the list
+void TransferWidget::removeTransferEntry(QByteArray tth, int type)
+{
+    //Base32 encode the tth
+    QByteArray base32TTH(tth);
+    base32Encode(base32TTH);
+
+    QList<QStandardItem *> findResults = transferListModel->findItems(base32TTH.data(), Qt::MatchExactly, 6);
+
+    while (!findResults.isEmpty())
+    {
+        QString typeStr = transferListModel->itemFromIndex(transferListModel->index(findResults.first()->row(), 0))->text();
+
+        if (typeFromString(typeStr) == type)
+        {
+            transferListModel->removeRow(findResults.first()->row());
+        }
+
+        findResults = transferListModel->findItems(base32TTH.data(), Qt::MatchExactly, 6);
+    }
 }
 
 QString TransferWidget::typeString(int type)

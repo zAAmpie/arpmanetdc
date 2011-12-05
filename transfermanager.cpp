@@ -41,7 +41,7 @@ void TransferManager::incomingDataPacket(quint8 transferPacket, QByteArray datag
 }
 
 // incoming requests for files we share
-void TransferManager::incomingUploadRequest(char protocol, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length)
+void TransferManager::incomingUploadRequest(quint8 protocol, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length)
 {
     qDebug() << "TransferManager::incomingUploadRequest(): Data request offset " << offset << " length " << length;
     Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_UPLOAD, fromHost);
@@ -54,7 +54,7 @@ void TransferManager::incomingUploadRequest(char protocol, QHostAddress fromHost
     else
     {
         UploadTransferQueueItem *i = new UploadTransferQueueItem;
-        i->protocol = protocol;
+        i->protocol = (char)protocol;
         i->requestingHost = fromHost;
         i->fileOffset = offset;
         i->requestLength = length;
@@ -208,6 +208,9 @@ void TransferManager::removeQueuedDownload(int priority, QByteArray tth)
             downloadTransferQueue.value(priority)->removeAt(foundPos);
         }
     }
+
+    //Stop the transfer if it's not in the queue (it might've already started)
+    stopTransfer(tth, TRANSFER_TYPE_DOWNLOAD, QHostAddress());
 }
 
 //Stop a transfer already running

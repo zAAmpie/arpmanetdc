@@ -36,9 +36,11 @@
 
 #define SHARE_DATABASE_PATH "arpmanetdc.sqlite"
 
-#define SUPPORTED_TRANSFER_PROTOCOLS "FSTP;BTP;uTP;FECTP" //Semi-colon separated
+#define AVAILABLE_TRANSFER_PROTOCOLS "FSTP;BTP;uTP;FECTP" //Semi-colon separated
+#define SUPPORTED_TRANSFER_PROTOCOLS "FSTP" //Semi-colon separated
 
 #define MAX_SEARCH_RESULTS 100 //Max to give a query, not max to display
+#define MAX_SIMULTANEOUS_DOWNLOADS 3 //Max to download from queue at a time
 
 #define MAX_MAINCHAT_BLOCKS 1000
 #define MAX_STATUS_HISTORY_ENTRIES 20 //Tooltip of status label

@@ -36,7 +36,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     if (!pSettings->contains("downloadPath"))
         pSettings->insert("downloadPath", getDefaultDownloadPath());
     if (!pSettings->contains("protocolHint"))
-        pSettings->insert("protocolHint", SUPPORTED_TRANSFER_PROTOCOLS);
+        pSettings->insert("protocolHint", AVAILABLE_TRANSFER_PROTOCOLS);
     if (!pSettings->contains("showAdvanced"))
         pSettings->insert("showAdvanced", DEFAULT_HIDE_ADVANCED);
     if (!pSettings->contains("lastSeenIP"))
@@ -99,11 +99,11 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     // Create Transfer manager
     transferThread = new ExecThread();
     pTransferManager = new TransferManager();
-    pTransferManager->setMaximumSimultaneousDownloads(3);
+    pTransferManager->setMaximumSimultaneousDownloads(MAX_SIMULTANEOUS_DOWNLOADS);
 
     //Connect Dispatcher to TransferManager - handles upload/download requests and transfers
-    connect(pDispatcher, SIGNAL(incomingUploadRequest(QByteArray,QHostAddress,QByteArray,quint64,quint64)),
-            pTransferManager, SLOT(incomingUploadRequest(QByteArray,QHostAddress,QByteArray,quint64,quint64)), Qt::QueuedConnection);
+    connect(pDispatcher, SIGNAL(incomingUploadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)),
+            pTransferManager, SLOT(incomingUploadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)), Qt::QueuedConnection);
     connect(pDispatcher, SIGNAL(incomingDataPacket(quint8,QByteArray)),
             pTransferManager, SLOT(incomingDataPacket(quint8,QByteArray)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)),
@@ -1459,13 +1459,27 @@ void ArpmanetDC::bootstrapStatusChanged(int status)
 	
 	//If not bootstrapped yet
 	if (status <= 0)
+    {
 		connectionIconLabel->setPixmap(*unbootstrappedIcon);
+        connectionIconLabel->setToolTip(tr("Bootstrapping..."));
+    }
 	//No other nodes nearby, waiting
 	else if (status == 1)
+    {
 		connectionIconLabel->setPixmap(*bootstrappedIcon);
+        connectionIconLabel->setToolTip(tr("Waiting for nodes"));
+    }
     //If bootstrapped in either broadcast/multicast
-    else
+    else if (status == 2)
+    {
         connectionIconLabel->setPixmap(*fullyBootstrappedIcon);
+        connectionIconLabel->setToolTip(tr("Broadcast bootstrapped"));
+    }
+    else if (status == 3)
+    {
+        connectionIconLabel->setPixmap(*fullyBootstrappedIcon);
+        connectionIconLabel->setToolTip(tr("Multicast bootstrapped"));
+    }
 }
 
 void ArpmanetDC::setStatus(QString msg)
@@ -1542,6 +1556,9 @@ void ArpmanetDC::deleteFromQueue(QByteArray tth)
             
         //Remove from queue
         pQueueList->remove(tth);
+
+        //Remove from transfer widget list
+        transferWidget->removeTransferEntry(tth, TRANSFER_TYPE_DOWNLOAD);
 
         //Remove from database
         emit removeQueuedDownload(tth);
@@ -1783,7 +1800,9 @@ QueueStruct ArpmanetDC::queueEntry(QByteArray tth)
 {
     if (pQueueList->contains(tth))
         return pQueueList->value(tth);
-    return QueueStruct();
+    QueueStruct q;
+    q.fileSize = 0;
+    return q;
 }
 
 TransferManager *ArpmanetDC::transferManagerObject() const

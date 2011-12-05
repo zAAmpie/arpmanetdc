@@ -105,7 +105,7 @@ void DownloadFinishedWidget::showFinishedTableContextMenu(const QPoint &point)
 //Actions
 void DownloadFinishedWidget::clearActionPressed()
 {
-	finishedModel->clear();
+	finishedModel->removeRows(0, finishedModel->rowCount());
 
     pParent->clearFinishedDownloadList();
 	//emit clearFinishedList();
