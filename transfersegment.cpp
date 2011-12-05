@@ -8,8 +8,6 @@ TransferSegment::TransferSegment(QObject *parent) :
 
 TransferSegment::~TransferSegment(){}
 void TransferSegment::transferTimerEvent(){}
-void TransferSegment::setLastBucketNumber(int){}
-void TransferSegment::setLastBucketSize(int){}
 void TransferSegment::setFileSize(quint64){}
 void TransferSegment::receivedPeerProtocolCapability(char){}
 

@@ -11,7 +11,7 @@
 
 typedef struct
 {
-    char protocol;
+    quint8 protocol;
     QHostAddress requestingHost;
     quint64 fileOffset;
     quint64 requestLength;

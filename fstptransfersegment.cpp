@@ -31,16 +31,6 @@ void FSTPTransferSegment::setFileSize(quint64 size)
     fileSize = size;
 }
 
-void FSTPTransferSegment::setLastBucketNumber(int n)
-{
-    lastBucketNumber = n;
-}
-
-void FSTPTransferSegment::setLastBucketSize(int size)
-{
-    lastBucketSize = size;
-}
-
 void FSTPTransferSegment::startUploading()
 {
     if (segmentStart > fileSize)
