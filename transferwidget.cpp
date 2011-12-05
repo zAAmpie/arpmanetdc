@@ -141,7 +141,7 @@ void TransferWidget::updateStatus()
         pTransferList->insert(s.TTH, s);
 
     //Clear model
-    transferListModel->removeRows(0, transferListModel->rowCount());
+    //transferListModel->removeRows(0, transferListModel->rowCount());
 
     for (int i = 0; i < status.size(); i++)
     {
@@ -153,17 +153,53 @@ void TransferWidget::updateStatus()
 
         QueueStruct q = pParent->queueEntry(s.TTH);
 
-        QList<QStandardItem *> row;
-        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, typeString(s.transferType)));
-        row.append(new CStandardItem(CStandardItem::ProgressType, progressString(s.transferType, s.transferProgress)));
-        row.append(new CStandardItem(CStandardItem::RateType, bytesToRate(s.transferRate)));
-        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, s.filePathName.remove(pParent->downloadPath(), Qt::CaseInsensitive)));
-        row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(q.fileSize)));
-        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, stateString(s.transferStatus)));
-        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, base32TTH.data()));
-        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, q.fileHost.toString()));
-        transferListModel->appendRow(row);
-        
+        //Get the download host from the queue, upload hosts are contained within the struct
+        if (s.transferType == TRANSFER_TYPE_DOWNLOAD)
+            s.host = q.fileHost;
+
+        //Check if entry exists
+        QList<QStandardItem *> findResults = transferListModel->findItems(base32TTH.data(), Qt::MatchExactly, 6);
+
+        int row = -1;
+
+        //Get the appropriate row
+        for (int k = 0; k < findResults.size(); k++)
+        {
+            //If type and host matches, get first entry.
+            if ((transferListModel->itemFromIndex(transferListModel->index(findResults.at(k)->row(), 0))->text() == typeString(s.transferType))
+                && (transferListModel->itemFromIndex(transferListModel->index(findResults.at(k)->row(), 7))->text() == s.host.toString()))
+            {
+                row = findResults.at(k)->row();
+                break;
+            }
+        }
+
+        //If new transfer - add
+        if (row == -1)
+        {
+            QList<QStandardItem *> row;
+            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, typeString(s.transferType)));
+            row.append(new CStandardItem(CStandardItem::ProgressType, progressString(s.transferType, s.transferProgress)));
+            row.append(new CStandardItem(CStandardItem::RateType, bytesToRate(s.transferRate)));
+            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, s.filePathName.remove(pParent->downloadPath(), Qt::CaseInsensitive)));
+            row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(q.fileSize)));
+            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, stateString(s.transferStatus)));
+            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, base32TTH.data()));
+            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, s.host.toString()));
+            transferListModel->appendRow(row);
+        }
+        //If existing transfer - update
+        else
+        {
+            transferListModel->itemFromIndex(transferListModel->index(row, 0))->setText(typeString(s.transferType));
+            transferListModel->itemFromIndex(transferListModel->index(row, 1))->setText(progressString(s.transferType, s.transferProgress));
+            transferListModel->itemFromIndex(transferListModel->index(row, 2))->setText(bytesToRate(s.transferRate));
+            transferListModel->itemFromIndex(transferListModel->index(row, 3))->setText(s.filePathName.remove(pParent->downloadPath(), Qt::CaseInsensitive));
+            transferListModel->itemFromIndex(transferListModel->index(row, 4))->setText(bytesToSize(q.fileSize));
+            transferListModel->itemFromIndex(transferListModel->index(row, 5))->setText(stateString(s.transferStatus));
+            transferListModel->itemFromIndex(transferListModel->index(row, 6))->setText(base32TTH.data());
+            transferListModel->itemFromIndex(transferListModel->index(row, 7))->setText(s.host.toString());
+        }                    
     }
 
     //Adjust row height

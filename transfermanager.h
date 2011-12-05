@@ -33,6 +33,7 @@ typedef struct
     int transferStatus;
     int transferProgress;
     quint64 transferRate;
+    QHostAddress host;
 } TransferItemStatus;
 
 class TransferManager : public QObject

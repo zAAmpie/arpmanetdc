@@ -96,15 +96,32 @@ void TransferManager::queueDownload(int priority, QByteArray tth, QString filePa
         QList<DownloadTransferQueueItem> *list = new QList<DownloadTransferQueueItem>;
         downloadTransferQueue.insert(priority, list);
     }
-    DownloadTransferQueueItem i;
-    i.filePathName = filePathName;
-    i.tth = tth;
-    i.fileSize = fileSize;
-    i.fileHost = fileHost;
-    downloadTransferQueue.value(priority)->append(i);
-    // start the next highest priority queued download, unless max downloads active.
-    if (currentDownloadCount < maximumSimultaneousDownloads)
-        startNextDownload();
+
+    //Test if item isn't already in the queue
+    bool found = false;
+    int size = downloadTransferQueue.value(priority)->size();
+    foreach (DownloadTransferQueueItem item, *downloadTransferQueue.value(priority))
+    {
+        if (item.tth == tth)
+        {
+            found = true;
+            break;
+        }
+    }
+
+    //Only queue the item if it's not already in the queue and not busy downloading
+    if (!found && !getTransferObjectPointer(tth, TRANSFER_TYPE_DOWNLOAD))
+    {
+        DownloadTransferQueueItem i;
+        i.filePathName = filePathName;
+        i.tth = tth;
+        i.fileSize = fileSize;
+        i.fileHost = fileHost;
+        downloadTransferQueue.value(priority)->append(i);
+        // start the next highest priority queued download, unless max downloads active.
+        if (currentDownloadCount < maximumSimultaneousDownloads)
+            startNextDownload();
+    }
 }
 
 // get next item to be downloaded off the queue
@@ -230,6 +247,9 @@ void TransferManager::stopTransfer(QByteArray tth, int transferType, QHostAddres
         t->deleteLater();
         transferObjectTable.remove(tth, t);
 
+        //Decrease download count
+        currentDownloadCount--;
+
         //Start next transfer
         startNextDownload();
     }
@@ -265,7 +285,8 @@ QList<TransferItemStatus> TransferManager::getGlobalTransferStatus()
         tis.transferType = it.peekNext().value()->getTransferType();
         tis.transferStatus = it.peekNext().value()->getTransferStatus();
         tis.transferProgress = it.peekNext().value()->getTransferProgress();
-        tis.transferRate = it.next().value()->getTransferRate();
+        tis.transferRate = it.peekNext().value()->getTransferRate();
+        tis.host = *it.next().value()->getRemoteHost();
         status.append(tis);
     }
     return status;
