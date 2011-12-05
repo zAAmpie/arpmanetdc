@@ -11,7 +11,7 @@
 
 typedef struct
 {
-    QByteArray transferProtocolHint;
+    char protocol;
     QHostAddress requestingHost;
     quint64 fileOffset;
     quint64 requestLength;
@@ -71,7 +71,7 @@ public slots:
     // Request file name for given TTH from sharing engine, reply with empty string if not found.
     void filePathNameReply(QByteArray tth, QString filename);
 
-    void incomingUploadRequest(QByteArray transferProtocolHint, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length);
+    void incomingUploadRequest(char protocol, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length);
     void queueDownload(int priority, QByteArray tth, QString filePathName, quint64 fileSize, QHostAddress fileHost);
     void changeQueuedDownloadPriority(int oldPriority, int newPriority, QByteArray tth);
     void removeQueuedDownload(int priority, QByteArray tth);

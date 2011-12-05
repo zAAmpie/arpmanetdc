@@ -703,12 +703,13 @@ void Dispatcher::handleReceivedTTHTree(QByteArray &datagram)
     emit receivedTTHTree(tth, tree);
 }
 
-void Dispatcher::handleReceivedProtocolCapabilityQuery(QHostAddress fromHost)
+void Dispatcher::handleReceivedProtocolCapabilityQuery(QHostAddress host)
 {
     QByteArray *datagram = new QByteArray;
     datagram->append(UnicastPacket);
     datagram->append(ProtocolCapabilityResponsePacket);
-
+    datagram->append(protocolCapabilityBitmask);
+    sendUnicastRawDatagram(host, datagram);
 }
 
 void Dispatcher::handleReceivedProtocolCapabilityResponse(QHostAddress fromHost, QByteArray &datagram)

@@ -27,7 +27,7 @@ public:
 public slots:
     void hashBucketReply(int bucketNumber, QByteArray bucketTTH);
     void TTHTreeReply(QByteArray tree);
-    void setProtocolPreference(QByteArray &preference);
+    //void setProtocolPreference(QByteArray &preference);
     void setPeerProtocolCapability(QHostAddress peer, char protocols);
 
 private slots:
@@ -57,7 +57,7 @@ private:
 
     int bytesWrittenSinceUpdate;
     int totalBucketsFlushed;
-    QByteArray protocolPreference;
+    //QByteArray protocolPreference;
 
     QMap<quint64, TransferSegment*> transferSegmentTable;
     QByteArray transferSegmentStateBitmap;

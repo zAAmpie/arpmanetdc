@@ -204,10 +204,10 @@ void DownloadTransfer::transferTimerEvent()
     }
 }
 
-void DownloadTransfer::setProtocolPreference(QByteArray &preference)
+/*void DownloadTransfer::setProtocolPreference(QByteArray &preference)
 {
     protocolPreference = preference;
-}
+}*/
 
 inline int DownloadTransfer::calculateBucketNumber(quint64 fileOffset)
 {

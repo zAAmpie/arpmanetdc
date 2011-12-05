@@ -17,12 +17,6 @@ UploadTransfer::UploadTransfer(QObject *parent) : Transfer(parent)
     transferInactivityTimer = new QTimer(this);
     connect(transferInactivityTimer, SIGNAL(timeout()), this, SLOT(abortTransfer()));
     transferInactivityTimer->start(TIMER_INACTIVITY_MSECS);
-
-    // temp, just get it working again in new structure
-    upload = new FSTPTransferSegment(this);
-    //Used to intercept the amount of data actually transmitted
-    connect(upload, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)), this, SLOT(dataTransmitted(QHostAddress, QByteArray *)));
-    connect(upload, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)), this, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)));
 }
 
 UploadTransfer::~UploadTransfer()
@@ -48,6 +42,30 @@ void UploadTransfer::setTTH(QByteArray tth)
 int UploadTransfer::getTransferType()
 {
     return TRANSFER_TYPE_UPLOAD;
+}
+
+void UploadTransfer::createUploadObject(quint8 protocol)
+{
+    if (upload)
+    {
+        delete upload;
+        upload = 0;
+    }
+
+    switch (protocol)
+    {
+    case FailsafeTransferProtocol:
+        upload = new FSTPTransferSegment(this);
+        break;
+    case BasicTransferProtocol:
+    case uTPProtocol:
+    case ArpmanetFECProtocol:
+        break;
+    }
+
+    //Used to intercept the amount of data actually transmitted
+    connect(upload, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)), this, SLOT(dataTransmitted(QHostAddress, QByteArray *)));
+    connect(upload, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)), this, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)));
 }
 
 void UploadTransfer::startTransfer()

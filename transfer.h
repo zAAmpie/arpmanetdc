@@ -35,8 +35,8 @@ public slots:
     void setFileOffset(quint64 offset);
     void setSegmentLength(quint64 length);
     void setRemoteHost(QHostAddress remote);
-    void setTransferProtocol(quint8 protocol);
-    void setTransferProtocolHint(QByteArray &protocolHint);
+    virtual void createUploadObject(quint8 protocol);
+    //void setTransferProtocolHint(QByteArray &protocolHint);
     void setFileSize(quint64 size);
     QByteArray* getTTH();
     QString* getFileName();
@@ -65,7 +65,7 @@ protected:
     QByteArray TTHBase32;
     QString filePathName;
     quint8 transferProtocol;
-    QByteArray transferProtocolHint;
+    //QByteArray transferProtocolHint;
     QHostAddress remoteHost;
     quint64 fileOffset;
     quint64 segmentLength;
