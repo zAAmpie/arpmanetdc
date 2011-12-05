@@ -39,8 +39,6 @@ public slots:
     virtual void startUploading() = 0;
     virtual void startDownloading() = 0;
     void setDownloadBucketTablePointer(QHash<int, QByteArray*> *dbt);
-    virtual void setLastBucketSize(int size);
-    virtual void setLastBucketNumber(int n);
     virtual void receivedPeerProtocolCapability(char protocols);
 
 protected:

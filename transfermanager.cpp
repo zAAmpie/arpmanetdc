@@ -55,7 +55,7 @@ void TransferManager::incomingUploadRequest(quint8 protocol, QHostAddress fromHo
     else
     {
         UploadTransferQueueItem *i = new UploadTransferQueueItem;
-        i->protocol = (char)protocol;
+        i->protocol = protocol;
         i->requestingHost = fromHost;
         i->fileOffset = offset;
         i->requestLength = length;
@@ -321,7 +321,7 @@ void TransferManager::hashBucketReply(QByteArray rootTTH, int bucketNumber, QByt
 void TransferManager::incomingProtocolCapabilityResponse(QHostAddress peer, char protocols)
 {
     peerProtocolCapabilities.insert(peer, protocols);
-    if (peerProtocolDiscoveryWaitingPool.contains(peer))
+    if (peerProtocolDiscoveryWaitingPool.contains(peer) && peerProtocolDiscoveryWaitingPool.value(peer))
     {
         peerProtocolDiscoveryWaitingPool.value(peer)->setPeerProtocolCapability(peer, protocols);
         peerProtocolDiscoveryWaitingPool.remove(peer);

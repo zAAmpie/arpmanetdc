@@ -24,6 +24,18 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
 
     // Temp test
     download = newConnectedTransferSegment(FailsafeTransferProtocol);
+    TransferSegmentTableStruct t;
+    SegmentOffsetLengthStruct s = getSegmentForDownloading(1);
+    quint64 segmentStart = s.segmentBucketOffset * HASH_BUCKET_SIZE;
+    t.segmentEnd = (s.segmentBucketOffset + s.segmentBucketCount) * HASH_BUCKET_SIZE;
+    download->setSegmentStart(segmentStart);
+    download->setSegmentEnd(t.segmentEnd);
+    download->setDownloadBucketTablePointer(downloadBucketTable);
+    download->setRemoteHost(listOfPeers.first());
+    download->setTTH(TTH);
+    download->setFileSize(fileSize);
+    t.transferSegment = download;
+    transferSegmentTable.insert(segmentStart, t);
 }
 
 DownloadTransfer::~DownloadTransfer()
@@ -50,11 +62,20 @@ DownloadTransfer::~DownloadTransfer()
     download->deleteLater();
 }
 
-void DownloadTransfer::incomingDataPacket(quint8 transferPacketType, quint64 offset, QByteArray data)
+void DownloadTransfer::incomingDataPacket(quint8, quint64 offset, QByteArray data)
 {
-    // TODO: select segment object from range and dispatch
-    download->incomingDataPacket(offset, data);
+    QMapIterator<quint64, TransferSegmentTableStruct> i(transferSegmentTable);
+    i.toBack();
+    while (i.hasPrevious())
+    {
+        i.previous();
+        if (i.key() <= offset && i.value().segmentEnd >= offset)
+        {
+            i.value().transferSegment->incomingDataPacket(offset, data);
+            break;
+        }
 
+    }
     bytesWrittenSinceUpdate += data.size();
 }
 
@@ -190,16 +211,12 @@ void DownloadTransfer::transferTimerEvent()
         else
         {
             status = TRANSFER_STATE_RUNNING;
-            SegmentOffsetLengthStruct s = getSegmentForDownloading(1);
-            download->setSegmentStart(s.segmentBucketOffset * HASH_BUCKET_SIZE);
-            download->setSegmentEnd(s.segmentBucketCount * HASH_BUCKET_SIZE);
-            download->setDownloadBucketTablePointer(downloadBucketTable);
-            download->setRemoteHost(listOfPeers.first());
-            download->setTTH(TTH);
-            //download->setLastBucketNumber(lastBucketNumber); // for *segment* (deprecated, calculated internally)
-            //download->setLastBucketSize(lastBucketSize);     // for *segment* (deprecated, calculated internally)
-            download->setFileSize(fileSize);
-            download->startDownloading();
+            QMapIterator<quint64, TransferSegmentTableStruct> i(transferSegmentTable);
+            while (i.hasNext())
+            {
+                TransferSegmentTableStruct t = i.next().value();
+                t.transferSegment->startDownloading();
+            }
         }
     }
 }
@@ -224,11 +241,13 @@ void DownloadTransfer::segmentCompleted(TransferSegment *segment)
     SegmentOffsetLengthStruct s = getSegmentForDownloading(nextSegmentLengthHint);
     if (s.segmentBucketCount > 0)  // otherwise, download is complete. we just wait for other segments to finish.
     {
-        segment->setSegmentStart(s.segmentBucketOffset * HASH_BUCKET_SIZE);
+        quint64 m_segmentStart = s.segmentBucketOffset * HASH_BUCKET_SIZE;
+        segment->setSegmentStart(m_segmentStart);
         quint64 m_segmentEnd = (s.segmentBucketOffset + s.segmentBucketCount) * HASH_BUCKET_SIZE;
         if (m_segmentEnd > fileSize)
             m_segmentEnd = fileSize;
         segment->setSegmentEnd(m_segmentEnd);
+        updateTransferSegmentTableRange(segment, m_segmentStart, m_segmentEnd);
         segment->startDownloading();
     }
 }
@@ -324,4 +343,22 @@ TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol 
     connect(download, SIGNAL(transferRequestFailed(TransferSegment*)), this, SLOT(segmentFailed(TransferSegment*)));
     connect(download, SIGNAL(requestPeerProtocolCapability(QHostAddress)), this, SIGNAL(requestProtocolCapability(QHostAddress)));
     return download;
+}
+
+void DownloadTransfer::updateTransferSegmentTableRange(TransferSegment *segment, quint64 newStart, quint64 newEnd)
+{
+    if (transferSegmentTable.contains(segment->getSegmentStart()))
+    {
+        TransferSegmentTableStruct tsts;
+        tsts.segmentEnd = newEnd;
+        tsts.transferSegment = segment;
+        transferSegmentTable.remove(segment->getSegmentStart());
+        transferSegmentTable.insert(newStart, tsts);
+    }
+    else
+    {
+        qDebug() << "Eek! Tried to update misaligned download segment range! "
+                 << "oldStart " << segment->getSegmentStart()
+                 << "TTH " << TTH.toBase64();
+    }
 }

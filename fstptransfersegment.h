@@ -19,8 +19,6 @@ public slots:
     void transferTimerEvent();
     void setFileName(QString filename);
     void setFileSize(quint64 size);
-    void setLastBucketSize(int size);
-    void setLastBucketNumber(int n);
     void startUploading();
     void startDownloading();
 

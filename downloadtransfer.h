@@ -17,6 +17,12 @@ typedef struct
     int segmentBucketCount;
 } SegmentOffsetLengthStruct;
 
+typedef struct
+{
+    quint64 segmentEnd;
+    TransferSegment *transferSegment;
+} TransferSegmentTableStruct;
+
 class DownloadTransfer : public Transfer
 {
     Q_OBJECT
@@ -47,6 +53,7 @@ private:
     inline int calculateBucketNumber(quint64 fileOffset);
     SegmentOffsetLengthStruct getSegmentForDownloading(int segmentNumberOfBucketsHint);
     TransferSegment* newConnectedTransferSegment(TransferProtocol p);
+    void updateTransferSegmentTableRange(TransferSegment *segment, quint64 newStart, quint64 newEnd);
 
     QHash<int, QByteArray*> *downloadBucketTable;
     QHash<int, QByteArray*> downloadBucketHashLookupTable;
@@ -59,7 +66,7 @@ private:
     int totalBucketsFlushed;
     //QByteArray protocolPreference;
 
-    QMap<quint64, TransferSegment*> transferSegmentTable;
+    QMap<quint64, TransferSegmentTableStruct> transferSegmentTable;
     QByteArray transferSegmentStateBitmap;
 
     TransferSegment *download;
