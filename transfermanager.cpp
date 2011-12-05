@@ -41,7 +41,7 @@ void TransferManager::incomingDataPacket(quint8 transferPacket, QByteArray datag
 }
 
 // incoming requests for files we share
-void TransferManager::incomingUploadRequest(QByteArray transferProtocolHint, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length)
+void TransferManager::incomingUploadRequest(char protocol, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length)
 {
     qDebug() << "TransferManager::incomingUploadRequest(): Data request offset " << offset << " length " << length;
     Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_UPLOAD, fromHost);
@@ -54,7 +54,7 @@ void TransferManager::incomingUploadRequest(QByteArray transferProtocolHint, QHo
     else
     {
         UploadTransferQueueItem *i = new UploadTransferQueueItem;
-        i->transferProtocolHint = transferProtocolHint;
+        i->protocol = protocol;
         i->requestingHost = fromHost;
         i->fileOffset = offset;
         i->requestLength = length;
@@ -74,6 +74,7 @@ void TransferManager::filePathNameReply(QByteArray tth, QString filename)
         return; // TODO: stuur error terug na requesting host
     }
     Transfer *t = new UploadTransfer();
+    t->createUploadObject(uploadTransferQueue.value(tth)->protocol);
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
     connect(t, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
     t->setFileName(filename);
@@ -81,7 +82,6 @@ void TransferManager::filePathNameReply(QByteArray tth, QString filename)
     t->setFileOffset(uploadTransferQueue.value(tth)->fileOffset);
     t->setSegmentLength(uploadTransferQueue.value(tth)->requestLength);
     t->setRemoteHost(uploadTransferQueue.value(tth)->requestingHost);
-    t->setTransferProtocolHint(uploadTransferQueue.value(tth)->transferProtocolHint);
     uploadTransferQueue.remove(tth);
     transferObjectTable.insertMulti(tth, t);
     t->startTransfer();
@@ -148,7 +148,6 @@ void TransferManager::startNextDownload()
     t->setTTH(i.tth);
     t->setFileSize(i.fileSize);
     t->addPeer(i.fileHost);
-    //t->setTransferProtocol(protocolVersion);
     transferObjectTable.insertMulti(i.tth, t);
     emit loadTTHSourcesFromDatabase(i.tth);
     emit searchTTHAlternateSources(i.tth);
@@ -292,6 +291,27 @@ void TransferManager::hashBucketReply(QByteArray rootTTH, int bucketNumber, QByt
     if (t)
         t->hashBucketReply(bucketNumber, bucketTTH);
     // should be no else, if the download object mysteriously disappeared somewhere, we can just silently drop the message here.
+}
+
+void TransferManager::incomingProtocolCapabilityResponse(QHostAddress peer, char protocols)
+{
+    peerProtocolCapabilities.insert(peer, protocols);
+    if (peerProtocolDiscoveryWaitingPool.contains(peer))
+    {
+        peerProtocolDiscoveryWaitingPool.value(peer)->setPeerProtocolCapability(peer, protocols);
+        peerProtocolDiscoveryWaitingPool.remove(peer);
+    }
+}
+
+void TransferManager::requestPeerProtocolCapability(QHostAddress peer, Transfer *transferObject)
+{
+    if (peerProtocolCapabilities.contains(peer))
+        transferObject->setPeerProtocolCapability(peer, peerProtocolCapabilities.value(peer));
+    else
+    {
+        peerProtocolDiscoveryWaitingPool.insert(peer, transferObject);
+        emit requestProtocolCapability(peer);
+    }
 }
 
 void TransferManager::setMaximumSimultaneousDownloads(int n)

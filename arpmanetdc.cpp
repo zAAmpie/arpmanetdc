@@ -87,6 +87,10 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     //QByteArray cid = "012345678901234567890123";
     pDispatcher->setCID(cid);
 
+    // Tell Dispatcher what protocols we support from a nice and central place
+    pDispatcher->setProtocolCapabilityBitmask(FailsafeTransferProtocol);
+    //pDispatcher->setProtocolCapabilityBitmask(FailsafeTransferProtocol | uTPProtocol);
+
     //Connect Dispatcher to GUI - handle search replies from other clients
 	connect(pDispatcher, SIGNAL(bootstrapStatusChanged(int)), this, SLOT(bootstrapStatusChanged(int)));
     connect(pDispatcher, SIGNAL(searchResultsReceived(QHostAddress, QByteArray, quint64, QByteArray)),
@@ -114,6 +118,10 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
             pDispatcher, SLOT(initiateTTHSearch(QByteArray)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)),
             pDispatcher, SLOT(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)), Qt::QueuedConnection);
+    connect(pDispatcher, SIGNAL(incomingProtocolCapabilityResponse(QHostAddress,char)),
+            pTransferManager, SLOT(incomingProtocolCapabilityResponse(QHostAddress,char)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(requestProtocolCapability(QHostAddress)),
+            pDispatcher, SLOT(sendProtocolCapabilityQuery(QHostAddress)), Qt::QueuedConnection);
 
     //Connect TransferManager to GUI - notify of started/completed transfers
     connect(pTransferManager, SIGNAL(downloadStarted(QByteArray)), 

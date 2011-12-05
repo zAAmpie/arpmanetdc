@@ -22,6 +22,7 @@
 #include "resourceextractor.h"
 #include "util.h"
 #include <sqlite/sqlite3.h>
+#include "protocoldef.h"
 
 #define DEFAULT_EXTERNAL_PORT "4012"
 

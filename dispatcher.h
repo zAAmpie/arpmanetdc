@@ -26,6 +26,7 @@ public:
     explicit Dispatcher(QHostAddress dispatchIP, quint16 dispatchPort, QObject *parent = 0);
     void setCID(QByteArray &cid);
     void setDispatchIP(QHostAddress &dispatchIP);
+    void setProtocolCapabilityBitmask(char protocols);
     void reconfigureDispatchHostPort(QHostAddress dispatchIP, quint16 dispatchPort);
     ~Dispatcher();
 
@@ -70,7 +71,8 @@ signals:
     void incomingTTHTreeRequest(QHostAddress fromHost, QByteArray tth);
 
     // Transfers
-    void incomingUploadRequest(QByteArray protocolHint, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length);
+    void incomingProtocolCapabilityResponse(QHostAddress fromHost, char capability);
+    void incomingUploadRequest(quint8 protocol, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length);
     void incomingDataPacket(quint8 protocolInstruction, QByteArray datagram);
 
 public slots:
@@ -91,7 +93,8 @@ public slots:
     void sendTTHSearchResult(QHostAddress toHost, QByteArray tth);
 
     // Transfers
-    void sendDownloadRequest(quint8 protocolPreference, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length);
+    void sendProtocolCapabilityQuery(QHostAddress dstHost);
+    void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length);
     void sendTransferError(QHostAddress dstHost, quint8 error);
 
     // Buckets
@@ -171,6 +174,8 @@ private:
     void handleReceivedTTHTreeRequest(QHostAddress &host, QByteArray &datagram);
 
     // Transfers
+    void handleReceivedProtocolCapabilityQuery(QHostAddress fromHost);
+    void handleReceivedProtocolCapabilityResponse(QHostAddress fromHost, QByteArray &datagram);
     void handleIncomingUploadRequest(QHostAddress &fromHost, QByteArray &datagram);
 
     // Bootstrap object
@@ -178,6 +183,9 @@ private:
 
     // Network topology objects for handling buckets
     NetworkTopology *networkTopology;
+
+    // Protocol capability bitmask
+    char protocolCapabilityBitmask;
 
     // Misc functions
     QByteArray fixedCIDLength(QByteArray);

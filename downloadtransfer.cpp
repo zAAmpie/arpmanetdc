@@ -204,10 +204,10 @@ void DownloadTransfer::transferTimerEvent()
     }
 }
 
-void DownloadTransfer::setProtocolPreference(QByteArray &preference)
+/*void DownloadTransfer::setProtocolPreference(QByteArray &preference)
 {
     protocolPreference = preference;
-}
+}*/
 
 inline int DownloadTransfer::calculateBucketNumber(quint64 fileOffset)
 {
@@ -235,15 +235,18 @@ void DownloadTransfer::segmentCompleted(TransferSegment *segment)
 
 void DownloadTransfer::segmentFailed(TransferSegment *segment)
 {
-    //int startBucket = calculateBucketNumber(segment->getSegmentStart());
-    //int endBucket = calculateBucketNumber(segment->getSegmentEnd());
-    //for (int i = startBucket; i <= endBucket; i++)
-    //    if (transferSegmentStateBitmap.at(i) == SegmentCurrentlyDownloading)
-    //        transferSegmentStateBitmap[i] = SegmentNotDownloaded;
+    // remote end dead, segment given up hope. mark everything not downloaded as not downloaded, so that
+    // the block allocator can give them to other segments that do work.
+    // do not worry if this is the last working segment, if it breaks, it can resume on successful TTH search reply.
+    int startBucket = calculateBucketNumber(segment->getSegmentStart());
+    int endBucket = calculateBucketNumber(segment->getSegmentEnd());
+    for (int i = startBucket; i <= endBucket; i++)
+        if (transferSegmentStateBitmap.at(i) == SegmentCurrentlyDownloading)
+            transferSegmentStateBitmap[i] = SegmentNotDownloaded;
 
     //Restart the segment download process with the same variables
     //transferSegmentStateBitmap can be left as is as this segment is still marked as currently downloading
-    segment->startDownloading();
+    //segment->startDownloading();
 }
 
 SegmentOffsetLengthStruct DownloadTransfer::getSegmentForDownloading(int segmentNumberOfBucketsHint)
@@ -293,6 +296,12 @@ SegmentOffsetLengthStruct DownloadTransfer::getSegmentForDownloading(int segment
     return segment;
 }
 
+void DownloadTransfer::setPeerProtocolCapability(QHostAddress peer, char protocols)
+{
+    // scan for segment downloading from peer, when found:
+    download->receivedPeerProtocolCapability(protocols);
+}
+
 TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol p)
 {
     TransferSegment* download = 0;
@@ -313,5 +322,6 @@ TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol 
     connect(transferTimer, SIGNAL(timeout()), download, SLOT(transferTimerEvent()));
     connect(download, SIGNAL(requestNextSegment(TransferSegment*)), this, SLOT(segmentCompleted(TransferSegment*)));
     connect(download, SIGNAL(transferRequestFailed(TransferSegment*)), this, SLOT(segmentFailed(TransferSegment*)));
+    connect(download, SIGNAL(requestPeerProtocolCapability(QHostAddress)), this, SIGNAL(requestProtocolCapability(QHostAddress)));
     return download;
 }

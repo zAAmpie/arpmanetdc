@@ -27,6 +27,7 @@ signals:
     void transferFinished(QByteArray tth);
     void flushBucket(QString filename, QByteArray *bucket);
     void assembleOutputFile(QString tmpfilebase, QString outfile, int startbucket, int lastbucket);
+    void requestProtocolCapability(QHostAddress peer);
 
 public slots:
     virtual void setFileName(QString filename);
@@ -34,8 +35,8 @@ public slots:
     void setFileOffset(quint64 offset);
     void setSegmentLength(quint64 length);
     void setRemoteHost(QHostAddress remote);
-    void setTransferProtocol(quint8 protocol);
-    void setTransferProtocolHint(QByteArray &protocolHint);
+    virtual void createUploadObject(quint8 protocol);
+    //void setTransferProtocolHint(QByteArray &protocolHint);
     void setFileSize(quint64 size);
     QByteArray* getTTH();
     QString* getFileName();
@@ -47,6 +48,7 @@ public slots:
     void addPeer(QHostAddress peer);
     virtual void hashBucketReply(int bucketNumber, QByteArray bucketTTH);
     virtual void TTHTreeReply(QByteArray tree);
+    virtual void setPeerProtocolCapability(QHostAddress peer, char protocols);
 
     virtual void incomingDataPacket(quint8 transferProtocolVersion, quint64 offset, QByteArray data);
     virtual int getTransferType() = 0;
@@ -63,7 +65,7 @@ protected:
     QByteArray TTHBase32;
     QString filePathName;
     quint8 transferProtocol;
-    QByteArray transferProtocolHint;
+    //QByteArray transferProtocolHint;
     QHostAddress remoteHost;
     quint64 fileOffset;
     quint64 segmentLength;

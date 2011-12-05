@@ -11,7 +11,7 @@
 
 typedef struct
 {
-    QByteArray transferProtocolHint;
+    char protocol;
     QHostAddress requestingHost;
     quint64 fileOffset;
     quint64 requestLength;
@@ -62,13 +62,16 @@ signals:
     void downloadStarted(QByteArray tth);
     void downloadCompleted(QByteArray tth);
 
+    // Request peer protocol capabilities
+    void requestProtocolCapability(QHostAddress peer);
+
 public slots:
     void incomingDataPacket(quint8 transferProtocolVersion, QByteArray datagram);
 
     // Request file name for given TTH from sharing engine, reply with empty string if not found.
     void filePathNameReply(QByteArray tth, QString filename);
 
-    void incomingUploadRequest(QByteArray transferProtocolHint, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length);
+    void incomingUploadRequest(char protocol, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length);
     void queueDownload(int priority, QByteArray tth, QString filePathName, quint64 fileSize, QHostAddress fileHost);
     void changeQueuedDownloadPriority(int oldPriority, int newPriority, QByteArray tth);
     void removeQueuedDownload(int priority, QByteArray tth);
@@ -81,6 +84,10 @@ public slots:
 
     void incomingTTHSource(QByteArray tth, QHostAddress sourcePeer);
     void incomingTTHTree(QByteArray tth, QByteArray tree);
+
+    // Protocol capability
+    void incomingProtocolCapabilityResponse(QHostAddress fromHost, char protocols);
+    void requestPeerProtocolCapability(QHostAddress peer, Transfer* transferObject);
 
     QList<TransferItemStatus> getGlobalTransferStatus();
 
@@ -96,6 +103,8 @@ private:
     QMap<int, QList<DownloadTransferQueueItem>* > downloadTransferQueue;
     QMultiHash<QByteArray, Transfer*> transferObjectTable;
     QMultiHash<QByteArray, UploadTransferQueueItem*> uploadTransferQueue;
+    QHash<QHostAddress, char> peerProtocolCapabilities;
+    QHash<QHostAddress, Transfer*> peerProtocolDiscoveryWaitingPool;
     int maximumSimultaneousDownloads;
     int currentDownloadCount;
 

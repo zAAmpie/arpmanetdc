@@ -14,6 +14,7 @@ public:
     ~UploadTransfer();
     void setFileName(QString filename);
     void setTTH(QByteArray tth);
+    void createUploadObject(quint8 protocol);
 
 private slots:
     void dataTransmitted(QHostAddress host, QByteArray *data);
