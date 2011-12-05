@@ -79,7 +79,7 @@ void FSTPTransferSegment::startDownloading()
 {
     segmentStartTime = QDateTime::currentMSecsSinceEpoch();
     requestingOffset = segmentStart;
-    requestingLength = 131072;
+    //requestingLength = 131072;
     requestingTargetOffset = requestingOffset + requestingLength;
     retransmitTimeoutCounter = 0;
     retransmitRetryCounter = 0;

@@ -62,6 +62,9 @@ signals:
     void downloadStarted(QByteArray tth);
     void downloadCompleted(QByteArray tth);
 
+    // Request peer protocol capabilities
+    void requestProtocolCapability(QHostAddress peer);
+
 public slots:
     void incomingDataPacket(quint8 transferProtocolVersion, QByteArray datagram);
 
@@ -82,6 +85,10 @@ public slots:
     void incomingTTHSource(QByteArray tth, QHostAddress sourcePeer);
     void incomingTTHTree(QByteArray tth, QByteArray tree);
 
+    // Protocol capability
+    void incomingProtocolCapabilityResponse(QHostAddress fromHost, char protocols);
+    void requestPeerProtocolCapability(QHostAddress peer, Transfer* transferObject);
+
     QList<TransferItemStatus> getGlobalTransferStatus();
 
     void destroyTransferObject(Transfer*);
@@ -96,6 +103,8 @@ private:
     QMap<int, QList<DownloadTransferQueueItem>* > downloadTransferQueue;
     QMultiHash<QByteArray, Transfer*> transferObjectTable;
     QMultiHash<QByteArray, UploadTransferQueueItem*> uploadTransferQueue;
+    QHash<QHostAddress, char> peerProtocolCapabilities;
+    QHash<QHostAddress, Transfer*> peerProtocolDiscoveryWaitingPool;
     int maximumSimultaneousDownloads;
     int currentDownloadCount;
 

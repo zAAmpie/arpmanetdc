@@ -27,10 +27,8 @@ enum MinorPacketType
     TTHSearchResultPacket=0x16,
     TransferErrorPacket=0x20,
     DownloadRequestPacket=0x21,
-    DataPacketA=0x31,
-    DataPacketB=0x32,
-    DataPacketC=0x33,
-    DataPacketD=0x34,
+    ProtocolCapabilityQueryPacket=0x31,
+    ProtocolCapabilityResponsePacket=0x32,
     TTHTreeRequestPacket=0x41,
     TTHTreeReplyPacket=0x42,
     AnnouncePacket=0x71,
@@ -47,19 +45,6 @@ enum MinorPacketType
     RevConnectPacket=0xa1,
     RevConnectReplyPacket=0xa2
 };
-
-/*enum DownloadProtocolInstructions
-{
-    ProtocolADataPacket=0x21,
-    ProtocolBDataPacket=0x22,
-    ProtocolCDataPacket=0x23,
-    ProtocolDDataPacket=0x24,
-    ProtocolAControlPacket=0x41,
-    ProtocolBControlPacket=0x42,
-    ProtocolCControlPacket=0x43,
-    ProtocolDControlPacket=0x44
-};*/
-
 
 #define HASH_BUCKET_SIZE (1<<20)
 

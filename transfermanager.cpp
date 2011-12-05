@@ -294,6 +294,27 @@ void TransferManager::hashBucketReply(QByteArray rootTTH, int bucketNumber, QByt
     // should be no else, if the download object mysteriously disappeared somewhere, we can just silently drop the message here.
 }
 
+void TransferManager::incomingProtocolCapabilityResponse(QHostAddress peer, char protocols)
+{
+    peerProtocolCapabilities.insert(peer, protocols);
+    if (peerProtocolDiscoveryWaitingPool.contains(peer))
+    {
+        peerProtocolDiscoveryWaitingPool.value(peer)->setPeerProtocolCapability(peer, protocols);
+        peerProtocolDiscoveryWaitingPool.remove(peer);
+    }
+}
+
+void TransferManager::requestPeerProtocolCapability(QHostAddress peer, Transfer *transferObject)
+{
+    if (peerProtocolCapabilities.contains(peer))
+        transferObject->setPeerProtocolCapability(peer, peerProtocolCapabilities.value(peer));
+    else
+    {
+        peerProtocolDiscoveryWaitingPool.insert(peer, transferObject);
+        emit requestProtocolCapability(peer);
+    }
+}
+
 void TransferManager::setMaximumSimultaneousDownloads(int n)
 {
     maximumSimultaneousDownloads = n;

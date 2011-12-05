@@ -15,6 +15,7 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     dispatchPort = port;
     mcastAddress = QHostAddress("239.255.40.12");
     bcastAddress = QHostAddress("255.255.255.255");
+    protocolCapabilityBitmask = 0;
 
     // Init P2P dispatch socket
     receiverUdpSocket = new QUdpSocket(this);
@@ -214,6 +215,14 @@ void Dispatcher::handleProtocolInstruction(quint8 &quint8DatagramType, quint8 &q
 
     case TransferErrorPacket:
         // TODO: pass aan
+        break;
+
+    case ProtocolCapabilityQueryPacket:
+        handleReceivedProtocolCapabilityQuery(senderHost);
+        break;
+
+    case ProtocolCapabilityResponsePacket:
+        handleReceivedProtocolCapabilityResponse(senderHost, datagram);
         break;
 
     case CIDPingPacket:
@@ -629,26 +638,28 @@ void Dispatcher::handleReceivedTTHSearchQuestion(QHostAddress &fromAddr, QByteAr
 
 void Dispatcher::handleIncomingUploadRequest(QHostAddress &fromHost, QByteArray &datagram)
 {
-    QByteArray tth = datagram.mid(2, 24);
+    quint8 protocol = datagram.at(2);
+    QByteArray tth = datagram.mid(3, 24);
     QByteArray tmp;
-    tmp = datagram.mid(26, 8);
+    tmp = datagram.mid(27, 8);
     quint64 offset = getQuint64FromByteArray(&tmp);
-    tmp = datagram.mid(34, 8);
+    tmp = datagram.mid(35, 8);
     quint64 length = getQuint64FromByteArray(&tmp);
-    QByteArray protocolHint = datagram.mid(42);
-    emit incomingUploadRequest(protocolHint, fromHost, tth, offset, length);
+    //QByteArray protocolHint = datagram.mid(43);
+    emit incomingUploadRequest(protocol, fromHost, tth, offset, length);
 }
 
 
-void Dispatcher::sendDownloadRequest(quint8 protocolPreference, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length)
+void Dispatcher::sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length)
 {
     QByteArray *datagram = new QByteArray;
     datagram->append(UnicastPacket);
     datagram->append(DownloadRequestPacket);
+    datagram->append(protocol);
     datagram->append(tth);
     datagram->append(toQByteArray(offset));
     datagram->append(toQByteArray(length));
-    datagram->append(protocolPreference);
+    //datagram->append(protocolPreference);
     sendUnicastRawDatagram(dstHost, datagram);
 }
 
@@ -690,6 +701,28 @@ void Dispatcher::handleReceivedTTHTree(QByteArray &datagram)
     QByteArray tth = datagram.mid(2, 24);
     QByteArray tree = datagram.mid(26);
     emit receivedTTHTree(tth, tree);
+}
+
+void Dispatcher::handleReceivedProtocolCapabilityQuery(QHostAddress fromHost)
+{
+    QByteArray *datagram = new QByteArray;
+    datagram->append(UnicastPacket);
+    datagram->append(ProtocolCapabilityResponsePacket);
+
+}
+
+void Dispatcher::handleReceivedProtocolCapabilityResponse(QHostAddress fromHost, QByteArray &datagram)
+{
+    char capability = datagram.at(2);
+    emit incomingProtocolCapabilityResponse(fromHost, capability);
+}
+
+void Dispatcher::sendProtocolCapabilityQuery(QHostAddress dstHost)
+{
+    QByteArray *datagram = new QByteArray;
+    datagram->append(UnicastPacket);
+    datagram->append(ProtocolCapabilityQueryPacket);
+    sendUnicastRawDatagram(dstHost, datagram);
 }
 
 // ------------------=====================   CID functions   =====================----------------------
@@ -914,15 +947,12 @@ void Dispatcher::changeBootstrapStatus(int status)
 
 QByteArray Dispatcher::fixedCIDLength(QByteArray CID)
 {
-    /*if (CID.length() < 24)
-    {
-        for (int i = 0; i < 24 - CID.length(); i++)
-            CID.append((char)0x00);
-    }
-    else if (CID.length() > 24)
-        CID.truncate(24);
-*/
     return CID.leftJustified(24, (char)0x00, true);
+}
+
+void Dispatcher::setProtocolCapabilityBitmask(char protocols)
+{
+    protocolCapabilityBitmask = protocols;
 }
 
 // ------------------=====================   GET FUNCTIONS   =====================----------------------

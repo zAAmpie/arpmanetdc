@@ -27,6 +27,7 @@ signals:
     void transferFinished(QByteArray tth);
     void flushBucket(QString filename, QByteArray *bucket);
     void assembleOutputFile(QString tmpfilebase, QString outfile, int startbucket, int lastbucket);
+    void requestProtocolCapability(QHostAddress peer);
 
 public slots:
     virtual void setFileName(QString filename);
@@ -47,6 +48,7 @@ public slots:
     void addPeer(QHostAddress peer);
     virtual void hashBucketReply(int bucketNumber, QByteArray bucketTTH);
     virtual void TTHTreeReply(QByteArray tree);
+    virtual void setPeerProtocolCapability(QHostAddress peer, char protocols);
 
     virtual void incomingDataPacket(quint8 transferProtocolVersion, quint64 offset, QByteArray data);
     virtual int getTransferType() = 0;
