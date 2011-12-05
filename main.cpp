@@ -1,5 +1,6 @@
 #include "arpmanetdc.h"
 #include <QtGui/QApplication>
+#include <QLabel>
 
 int main(int argc, char *argv[])
 {

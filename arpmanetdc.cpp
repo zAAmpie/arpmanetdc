@@ -19,6 +19,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     pSettings = new QHash<QString, QString>();
 
     //Load settings from database or initialize settings from defaults
+    QString ipString = getIPGuess().toString();
    	loadSettings();
     if (!pSettings->contains("nick"))
         pSettings->insert("nick", DEFAULT_NICK);
@@ -29,7 +30,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     if (!pSettings->contains("hubPort"))
         pSettings->insert("hubPort", DEFAULT_HUB_PORT);
     if (!pSettings->contains("externalIP"))
-        pSettings->insert("externalIP", getIPGuess().toString());
+        pSettings->insert("externalIP", ipString);
     if (!pSettings->contains("externalPort"))
         pSettings->insert("externalPort", DEFAULT_EXTERNAL_PORT);
     if (!pSettings->contains("downloadPath"))
@@ -38,6 +39,21 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
         pSettings->insert("protocolHint", SUPPORTED_TRANSFER_PROTOCOLS);
     if (!pSettings->contains("showAdvanced"))
         pSettings->insert("showAdvanced", DEFAULT_HIDE_ADVANCED);
+    if (!pSettings->contains("lastSeenIP"))
+        pSettings->insert("lastSeenIP", ipString);
+
+    //Check current IP setting with previous setting
+    if (pSettings->value("lastSeenIP") != ipString)
+    {
+        if (QMessageBox::information(this, tr("arpmanetdc"), tr("IP has changed from last value seen. Do you want to use the new IP?\nCurrent IP: %1\nPrevious IP: %2").arg(ipString).arg(pSettings->value("lastSeenIP")), 
+            QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes)
+        {
+            pSettings->insert("externalIP", ipString);
+        }
+    }
+
+    //Save new IP
+    pSettings->insert("lastSeenIP", ipString);
     
 	mainChatBlocks = 0;
 
@@ -612,7 +628,7 @@ void ArpmanetDC::createWidgets()
     //========== System tray ==========
     systemTrayIcon = new QSystemTrayIcon(this);
     systemTrayIcon->setIcon(QIcon(":/ArpmanetDC/Resources/Logo128x128.png"));
-    systemTrayIcon->setToolTip("arpmanetDC v0.1");
+    systemTrayIcon->setToolTip(tr("arpmanetDC v%1").arg(VERSION_STRING));
     systemTrayIcon->show();
 
     systemTrayMenu = new QMenu(this);
