@@ -1,8 +1,9 @@
 #include "transfermanager.h"
 
-TransferManager::TransferManager(QObject *parent) :
+TransferManager::TransferManager(QHash<QString, QString> *settings, QObject *parent) :
     QObject(parent)
 {
+    pSettings = settings;
     currentDownloadCount = 0;
 }
 

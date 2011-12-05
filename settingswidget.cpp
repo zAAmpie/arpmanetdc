@@ -54,15 +54,16 @@ void SettingsWidget::createWidgets()
     protocolDownButton = new QPushButton(tr("Down"), (QWidget *)pParent);
 
     //Enqueue supported protocols
-    QStringList availableProtocols = pSettings->value("protocolHint").split(";");
-    QStringList supportedProtocols = QString(SUPPORTED_TRANSFER_PROTOCOLS).split(";");
-    foreach (QString prot, availableProtocols)
+    QString protocolHint = pSettings->value("protocolHint");
+    QStringList unsupportedProtocols = QString(UNSUPPORTED_TRANSFER_PROTOCOLS).split(";");
+    foreach (QChar prot, protocolHint)
     {
-        QListWidgetItem *item = new QListWidgetItem(prot, protocolList); 
-        if (!supportedProtocols.contains(prot))
+        QListWidgetItem *item = new QListWidgetItem(PROTOCOL_MAP.key(prot.toAscii()), protocolList); 
+        if (unsupportedProtocols.contains(PROTOCOL_MAP.key(prot.toAscii())))
         {
             //Items not supported are shown in gray
             item->setForeground(QBrush(Qt::gray));
+            item->setFlags(Qt::NoItemFlags);
         }
     }
 
@@ -180,13 +181,13 @@ void SettingsWidget::savePressed()
         (*pSettings)["externalPort"] = externalPortLineEdit->text();
         (*pSettings)["downloadPath"] = downloadPathLineEdit->text().replace("\\","/");
 
-        //Build protocolHint string
+        //Build protocols string
         QString protocolHint;
+        
         for (int i = 0; i < protocolList->count(); i++)
         {
-            if (i != 0)
-                protocolHint.append(";");
-            protocolHint.append(protocolList->item(i)->text());
+            QString itemText = protocolList->item(i)->text();
+            protocolHint.append(PROTOCOL_MAP.value(itemText));
         }
         (*pSettings)["protocolHint"] = protocolHint;
 

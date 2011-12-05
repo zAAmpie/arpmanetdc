@@ -36,8 +36,18 @@
 
 #define SHARE_DATABASE_PATH "arpmanetdc.sqlite"
 
-#define AVAILABLE_TRANSFER_PROTOCOLS "FSTP;BTP;uTP;FECTP" //Semi-colon separated
-#define SUPPORTED_TRANSFER_PROTOCOLS "FSTP" //Semi-colon separated
+#define UNSUPPORTED_TRANSFER_PROTOCOLS "BTP;uTP;FECTP" //Semi-colon separated - only used to gray out protocol in settings
+
+//Initialize the protocol map
+static QMap<QString, char> initMapValues() {
+    QMap<QString, char> map;
+    map.insert("FSTP", FailsafeTransferProtocol);
+    map.insert("BTP", BasicTransferProtocol);
+    map.insert("uTP", uTPProtocol);
+    map.insert("FECTP", ArpmanetFECProtocol);
+    return map;
+}
+static const QMap<QString, char> PROTOCOL_MAP = initMapValues();
 
 #define MAX_SEARCH_RESULTS 100 //Max to give a query, not max to display
 #define MAX_SIMULTANEOUS_DOWNLOADS 3 //Max to download from queue at a time

@@ -35,12 +35,17 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
         pSettings->insert("externalPort", DEFAULT_EXTERNAL_PORT);
     if (!pSettings->contains("downloadPath"))
         pSettings->insert("downloadPath", getDefaultDownloadPath());
-    if (!pSettings->contains("protocolHint"))
-        pSettings->insert("protocolHint", AVAILABLE_TRANSFER_PROTOCOLS);
     if (!pSettings->contains("showAdvanced"))
         pSettings->insert("showAdvanced", DEFAULT_HIDE_ADVANCED);
     if (!pSettings->contains("lastSeenIP"))
         pSettings->insert("lastSeenIP", ipString);
+    if (!pSettings->contains("protocolHint"))
+    {
+        QByteArray protocolHint;
+        foreach (char val, PROTOCOL_MAP)
+            protocolHint.append(val);
+        pSettings->insert("protocolHint", protocolHint.data());
+    }
 
     //Check current IP setting with previous setting
     if (pSettings->value("lastSeenIP") != ipString)
@@ -98,7 +103,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 
     // Create Transfer manager
     transferThread = new ExecThread();
-    pTransferManager = new TransferManager();
+    pTransferManager = new TransferManager(pSettings);
     pTransferManager->setMaximumSimultaneousDownloads(MAX_SIMULTANEOUS_DOWNLOADS);
 
     //Connect Dispatcher to TransferManager - handles upload/download requests and transfers
