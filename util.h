@@ -1,5 +1,13 @@
 #ifndef UTIL_H
 #define UTIL_H
+
+#if QT_VERSION < 0x040800
+#define Q_LIKELY(expr) ( expr )
+#endif
+#if QT_VERSION < 0x040800
+#define Q_UNLIKELY(expr) ( expr )
+#endif
+
 #include <QObject>
 #include <QByteArray>
 #include <QChar>

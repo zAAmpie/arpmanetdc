@@ -54,30 +54,14 @@ void DownloadTransfer::incomingDataPacket(quint8, quint64 offset, QByteArray dat
     // map sorted from big to small
     // QMap::lowerBound will most likely find the segment just before the one we are interested in
     QMap<quint64, TransferSegmentTableStruct>::const_iterator i = transferSegmentTable.lowerBound(offset);
-#if QT_VERSION >= 0x040800
     if (Q_UNLIKELY(i == transferSegmentTable.constEnd()))
-#else
-    if (i == transferSegmentTable.constEnd())
-#endif
         return;
 
-#if QT_VERSION >= 0x040800
     if (Q_UNLIKELY(i.key() <= offset && i.value().segmentEnd >= offset))
-#else
-    if (i.key() <= offset && i.value().segmentEnd >= offset)
-#endif
         i.value().transferSegment->incomingDataPacket(offset, data);
-#if QT_VERSION >= 0x040800
     else if (Q_LIKELY(++i != transferSegmentTable.constEnd()))
-#else
-    else if (++i != transferSegmentTable.constEnd())
-#endif
     {
-#if QT_VERSION >= 0x040800
         if (Q_LIKELY(i.key() <= offset && i.value().segmentEnd >= offset))
-#else
-        if (i.key() <= offset && i.value().segmentEnd >= offset)
-#endif
             i.value().transferSegment->incomingDataPacket(offset, data);
     }
     // if the offset was not found like this, it probably is not in the map.
