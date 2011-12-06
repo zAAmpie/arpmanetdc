@@ -59,6 +59,8 @@ void DownloadTransfer::incomingDataPacket(quint8, quint64 offset, QByteArray dat
     // map sorted from big to small
     // QMap::lowerBound will most likely find the segment just before the one we are interested in
     QMap<quint64, TransferSegmentTableStruct>::const_iterator i = transferSegmentTable.lowerBound(offset);
+    if (Q_UNLIKELY(i == transferSegmentTable.constEnd()))
+        return;
 
     if (Q_UNLIKELY(i.key() <= offset && i.value().segmentEnd >= offset))
         i.value().transferSegment->incomingDataPacket(offset, data);
