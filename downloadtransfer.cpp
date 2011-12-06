@@ -310,7 +310,7 @@ void DownloadTransfer::newPeer(QHostAddress peer, quint8 protocols)
         rpis.bytesTransferred = new quint64;
         *rpis.bytesTransferred = 0;
         rpis.protocolCapability = protocols;
-        rpis.transferSegment = 0;
+        *rpis.transferSegment = 0;
         rpis.triedProtocols = new QByteArray;
         remotePeerInfoTable.insert(peer, rpis);
     }
