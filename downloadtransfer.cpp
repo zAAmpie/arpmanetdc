@@ -298,7 +298,8 @@ void DownloadTransfer::receivedPeerProtocolCapability(QHostAddress peer, quint8 
     {
         currentActiveSegments++;
         TransferSegment *download = createTransferSegment(peer);
-        downloadNextAvailableChunk(download);
+        if (download)
+            downloadNextAvailableChunk(download);
     }
 }
 
