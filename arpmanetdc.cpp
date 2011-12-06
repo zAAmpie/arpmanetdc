@@ -36,7 +36,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     if (!pSettings->contains("downloadPath"))
         pSettings->insert("downloadPath", getDefaultDownloadPath());
     if (!pSettings->contains("showAdvanced"))
-        pSettings->insert("showAdvanced", DEFAULT_HIDE_ADVANCED);
+        pSettings->insert("showAdvanced", DEFAULT_SHOW_ADVANCED);
     if (!pSettings->contains("lastSeenIP"))
         pSettings->insert("lastSeenIP", ipString);
     if (!pSettings->contains("protocolHint"))
@@ -900,6 +900,8 @@ void ArpmanetDC::reconnectActionPressed()
 	//TODO: Reconnect was pressed
 	pHub->setHubAddress(pSettings->value("hubAddress"));
 	pHub->setHubPort(pSettings->value("hubPort").toShort());
+    pHub->setNick(pSettings->value("nick"));
+    pHub->setPassword(pSettings->value("password"));
 	pHub->connectHub();
 }
 
@@ -1109,6 +1111,13 @@ void ArpmanetDC::settingsSaved()
     
     if (externalIP != pDispatcher->getDispatchIP().toString() || externalPort != pDispatcher->getDispatchPort())
         pDispatcher->reconfigureDispatchHostPort(QHostAddress(externalIP), externalPort);
+
+    //Reset CID from nick/password
+    QCryptographicHash hash(QCryptographicHash::Sha1);
+    hash.addData(QByteArray().append(pSettings->value("nick")));
+    hash.addData(QByteArray().append(pSettings->value("password")));
+    QByteArray cid = hash.result();
+    pDispatcher->setCID(cid);
 
 	//Delete settings tab
 	if (settingsWidget)

@@ -31,7 +31,7 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
     download->setSegmentStart(segmentStart);
     download->setSegmentEnd(t.segmentEnd);
     download->setDownloadBucketTablePointer(downloadBucketTable);
-    download->setRemoteHost(listOfPeers.first());
+    //download->setRemoteHost(listOfPeers.first());
     download->setTTH(TTH);
     download->setFileSize(fileSize);
     t.transferSegment = download;

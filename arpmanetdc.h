@@ -32,7 +32,7 @@
 #define DEFAULT_NICK "Testnick"
 #define DEFAULT_PASSWORD "test123"
 
-#define DEFAULT_HIDE_ADVANCED "0" //By default don't show advanced settings
+#define DEFAULT_SHOW_ADVANCED "0" //By default don't show advanced settings
 
 #define SHARE_DATABASE_PATH "arpmanetdc.sqlite"
 
