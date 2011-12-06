@@ -46,12 +46,7 @@ DownloadTransfer::~DownloadTransfer()
 
     QHashIterator<QHostAddress, RemotePeerInfoStruct> r(remotePeerInfoTable);
     while (r.hasNext())
-    {
-        delete r.value().bytesTransferred;
-        delete r.value().triedProtocols;
-        delete *r.value().transferSegment;
         delete r.value().transferSegment;
-    }
 }
 
 void DownloadTransfer::incomingDataPacket(quint8, quint64 offset, QByteArray data)
@@ -322,11 +317,9 @@ void DownloadTransfer::newPeer(QHostAddress peer, quint8 protocols)
     if (!remotePeerInfoTable.contains(peer))
     {
         RemotePeerInfoStruct rpis;
-        rpis.bytesTransferred = new quint64;
-        *rpis.bytesTransferred = 0;
+        rpis.bytesTransferred = 0;
         rpis.protocolCapability = protocols;
-        *rpis.transferSegment = 0;
-        rpis.triedProtocols = new QByteArray;
+        rpis.transferSegment = 0;
         remotePeerInfoTable.insert(peer, rpis);
     }
 }
@@ -336,14 +329,14 @@ TransferSegment* DownloadTransfer::createTransferSegment(QHostAddress peer)
     TransferSegment *download = 0;
     for (int i = 0; i < protocolOrderPreference.length(); i++)
     {
-        if (remotePeerInfoTable.value(peer).triedProtocols->contains(protocolOrderPreference.at(i)))
+        if (remotePeerInfoTable.value(peer).triedProtocols.contains(protocolOrderPreference.at(i)))
             continue;
         if (protocolOrderPreference.at(i) & remotePeerInfoTable.value(peer).protocolCapability)
         {
             TransferProtocol p = (TransferProtocol)protocolOrderPreference.at(i);
-            remotePeerInfoTable.value(peer).triedProtocols->append(p);
+            remotePeerInfoTable[peer].triedProtocols.append(p);
             download  = newConnectedTransferSegment(p);
-            *remotePeerInfoTable.value(peer).transferSegment = download;
+            remotePeerInfoTable[peer].transferSegment = download;
             download->setDownloadBucketTablePointer(downloadBucketTable);
             download->setRemoteHost(peer);
             download->setTTH(TTH);

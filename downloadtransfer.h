@@ -28,10 +28,10 @@ typedef struct
 // somehow this thing becomes read-only, hence the pointers and double pointer
 typedef struct
 {
-    quint64 *bytesTransferred;
+    quint64 bytesTransferred;
     quint8 protocolCapability;
-    TransferSegment **transferSegment;
-    QByteArray *triedProtocols;
+    TransferSegment *transferSegment;
+    QByteArray triedProtocols;
 } RemotePeerInfoStruct;
 
 class DownloadTransfer : public Transfer
