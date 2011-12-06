@@ -166,6 +166,7 @@ void TransferManager::startNextDownload()
     t->setTTH(i.tth);
     t->setFileSize(i.fileSize);
     t->addPeer(i.fileHost);
+    t->setProtocolOrderPreference(pSettings->value("protocolHint").toAscii());
     transferObjectTable.insertMulti(i.tth, t);
     emit loadTTHSourcesFromDatabase(i.tth);
     emit searchTTHAlternateSources(i.tth);
@@ -323,7 +324,7 @@ void TransferManager::incomingProtocolCapabilityResponse(QHostAddress peer, char
     peerProtocolCapabilities.insert(peer, protocols);
     if (peerProtocolDiscoveryWaitingPool.contains(peer) && peerProtocolDiscoveryWaitingPool.value(peer))
     {
-        peerProtocolDiscoveryWaitingPool.value(peer)->setPeerProtocolCapability(peer, protocols);
+        peerProtocolDiscoveryWaitingPool.value(peer)->receivedPeerProtocolCapability(peer, protocols);
         peerProtocolDiscoveryWaitingPool.remove(peer);
     }
 }
@@ -331,7 +332,7 @@ void TransferManager::incomingProtocolCapabilityResponse(QHostAddress peer, char
 void TransferManager::requestPeerProtocolCapability(QHostAddress peer, Transfer *transferObject)
 {
     if (peerProtocolCapabilities.contains(peer))
-        transferObject->setPeerProtocolCapability(peer, peerProtocolCapabilities.value(peer));
+        transferObject->receivedPeerProtocolCapability(peer, peerProtocolCapabilities.value(peer));
     else
     {
         peerProtocolDiscoveryWaitingPool.insert(peer, transferObject);

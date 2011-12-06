@@ -9,7 +9,7 @@ TransferSegment::TransferSegment(QObject *parent) :
 TransferSegment::~TransferSegment(){}
 void TransferSegment::transferTimerEvent(){}
 void TransferSegment::setFileSize(quint64){}
-void TransferSegment::receivedPeerProtocolCapability(char){}
+//void TransferSegment::receivedPeerProtocolCapability(char){}
 
 void TransferSegment::setSegmentStart(quint64 start)
 {
@@ -53,6 +53,11 @@ quint64 TransferSegment::getSegmentEnd()
 qint64 TransferSegment::getSegmentStartTime()
 {
     return segmentStartTime;
+}
+
+QHostAddress TransferSegment::getSegmentRemotePeer()
+{
+    return remoteHost;
 }
 
 void TransferSegment::setTTH(QByteArray tth)

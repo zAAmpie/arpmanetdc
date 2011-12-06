@@ -21,21 +21,6 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
     transferTimer = new QTimer();
     connect(transferTimer, SIGNAL(timeout()), this, SLOT(transferTimerEvent()));
     transferTimer->setSingleShot(false);
-
-    // Temp test
-    download = newConnectedTransferSegment(FailsafeTransferProtocol);
-    TransferSegmentTableStruct t;
-    SegmentOffsetLengthStruct s = getSegmentForDownloading(1);
-    quint64 segmentStart = s.segmentBucketOffset * HASH_BUCKET_SIZE;
-    t.segmentEnd = (s.segmentBucketOffset + s.segmentBucketCount) * HASH_BUCKET_SIZE;
-    download->setSegmentStart(segmentStart);
-    download->setSegmentEnd(t.segmentEnd);
-    download->setDownloadBucketTablePointer(downloadBucketTable);
-    //download->setRemoteHost(listOfPeers.first());
-    download->setTTH(TTH);
-    download->setFileSize(fileSize);
-    t.transferSegment = download;
-    transferSegmentTable.insert(segmentStart, t);
 }
 
 DownloadTransfer::~DownloadTransfer()
@@ -58,8 +43,14 @@ DownloadTransfer::~DownloadTransfer()
     while (ithb.hasNext())
         delete ithb.next().value();
 
-    // tmp
-    download->deleteLater();
+    QHashIterator<QHostAddress, RemotePeerInfoStruct> r(remotePeerInfoTable);
+    while (r.hasNext())
+    {
+        delete r.value().bytesTransferred;
+        delete r.value().triedProtocols;
+        delete *r.value().transferSegment;
+        delete r.value().transferSegment;
+    }
 }
 
 void DownloadTransfer::incomingDataPacket(quint8, quint64 offset, QByteArray data)
@@ -97,17 +88,6 @@ void DownloadTransfer::TTHTreeReply(QByteArray tree)
 {
     while (tree.length() >= 30)
     {
-        //This is what the getVarFromByteArray functions were made for... 
-        //You don't need to use temporary bytearrays if you're going to remove it anyway - the functions already do that
-
-        //QByteArray tmp = tree.mid(0, 4);
-        //int bucketNumber = getQuint32FromByteArray(&tmp);
-        //tmp = tree.mid(4, 2);
-        //int tthLength = getQuint16FromByteArray(&tmp);
-        //QByteArray *bucketHash = new QByteArray(tree.mid(6, tthLength));
-        //tree.remove(0, 6 + tthLength);
-        //downloadBucketHashLookupTable.insert(bucketNumber, bucketHash);
-
         int bucketNumber = getQuint32FromByteArray(&tree);
         int tthLength = getQuint16FromByteArray(&tree);
         QByteArray *bucketHash = new QByteArray(tree.left(tthLength));
@@ -143,6 +123,15 @@ void DownloadTransfer::abortTransfer()
 {
     status = TRANSFER_STATE_ABORTING;
     emit abort(this);
+}
+
+void DownloadTransfer::addPeer(QHostAddress peer)
+{
+    if (peer.toIPv4Address() > 0 && !listOfPeers.contains(peer))
+    {
+        listOfPeers.append(peer);  // TODO: is this list then strictly necessary?
+        emit requestProtocolCapability(peer);
+    }
 }
 
 // currently copied from uploadtransfer.
@@ -211,12 +200,7 @@ void DownloadTransfer::transferTimerEvent()
         else
         {
             status = TRANSFER_STATE_RUNNING;
-            QMapIterator<quint64, TransferSegmentTableStruct> i(transferSegmentTable);
-            while (i.hasNext())
-            {
-                TransferSegmentTableStruct t = i.next().value();
-                t.transferSegment->startDownloading();
-            }
+
         }
     }
 }
@@ -238,18 +222,9 @@ void DownloadTransfer::segmentCompleted(TransferSegment *segment)
     int nextSegmentLengthHint = (10000 / lastTransferTime) * lastSegmentLength;
     if (nextSegmentLengthHint == 0)
         nextSegmentLengthHint = 1;
-    SegmentOffsetLengthStruct s = getSegmentForDownloading(nextSegmentLengthHint);
-    if (s.segmentBucketCount > 0)  // otherwise, download is complete. we just wait for other segments to finish.
-    {
-        quint64 m_segmentStart = s.segmentBucketOffset * HASH_BUCKET_SIZE;
-        segment->setSegmentStart(m_segmentStart);
-        quint64 m_segmentEnd = (s.segmentBucketOffset + s.segmentBucketCount) * HASH_BUCKET_SIZE;
-        if (m_segmentEnd > fileSize)
-            m_segmentEnd = fileSize;
-        segment->setSegmentEnd(m_segmentEnd);
-        updateTransferSegmentTableRange(segment, m_segmentStart, m_segmentEnd);
-        segment->startDownloading();
-    }
+
+    transferSegmentTable.remove(segment->getSegmentStart());
+    downloadNextAvailableChunk(segment, nextSegmentLengthHint);
 }
 
 void DownloadTransfer::segmentFailed(TransferSegment *segment)
@@ -263,9 +238,10 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
         if (transferSegmentStateBitmap.at(i) == SegmentCurrentlyDownloading)
             transferSegmentStateBitmap[i] = SegmentNotDownloaded;
 
-    //Restart the segment download process with the same variables
-    //transferSegmentStateBitmap can be left as is as this segment is still marked as currently downloading
-    //segment->startDownloading();
+    transferSegmentTable.remove(segment->getSegmentStart());
+    currentActiveSegments--;
+    // currently the object keeps sitting in remotePeerInfoTable and gets destroyed once the download completes.
+    // this can be improved (TODO)
 }
 
 SegmentOffsetLengthStruct DownloadTransfer::getSegmentForDownloading(int segmentNumberOfBucketsHint)
@@ -315,10 +291,52 @@ SegmentOffsetLengthStruct DownloadTransfer::getSegmentForDownloading(int segment
     return segment;
 }
 
-void DownloadTransfer::setPeerProtocolCapability(QHostAddress peer, char protocols)
+void DownloadTransfer::receivedPeerProtocolCapability(QHostAddress peer, quint8 protocols)
 {
-    // scan for segment downloading from peer, when found:
-    download->receivedPeerProtocolCapability(protocols);
+    newPeer(peer, protocols);
+    if (currentActiveSegments < MAXIMUM_SIMULTANEOUS_SEGMENTS)
+    {
+        currentActiveSegments++;
+        TransferSegment *download = createTransferSegment(peer);
+        downloadNextAvailableChunk(download);
+    }
+}
+
+void DownloadTransfer::newPeer(QHostAddress peer, quint8 protocols)
+{
+    if (!remotePeerInfoTable.contains(peer))
+    {
+        RemotePeerInfoStruct rpis;
+        rpis.bytesTransferred = new quint64;
+        *rpis.bytesTransferred = 0;
+        rpis.protocolCapability = protocols;
+        rpis.transferSegment = 0;
+        rpis.triedProtocols = new QByteArray;
+        remotePeerInfoTable.insert(peer, rpis);
+    }
+}
+
+TransferSegment* DownloadTransfer::createTransferSegment(QHostAddress peer)
+{
+    TransferSegment *download = 0;
+    for (int i = 0; i < protocolOrderPreference.length(); i++)
+    {
+        if (remotePeerInfoTable.value(peer).triedProtocols->contains(protocolOrderPreference.at(i)))
+            continue;
+        if (protocolOrderPreference.at(i) & remotePeerInfoTable.value(peer).protocolCapability)
+        {
+            TransferProtocol p = (TransferProtocol)protocolOrderPreference.at(i);
+            remotePeerInfoTable.value(peer).triedProtocols->append(p);
+            download  = newConnectedTransferSegment(p);
+            *remotePeerInfoTable.value(peer).transferSegment = download;
+            download->setDownloadBucketTablePointer(downloadBucketTable);
+            download->setRemoteHost(peer);
+            download->setTTH(TTH);
+            download->setFileSize(fileSize);
+            break;
+        }
+    }
+    return download;
 }
 
 TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol p)
@@ -345,7 +363,23 @@ TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol 
     return download;
 }
 
-void DownloadTransfer::updateTransferSegmentTableRange(TransferSegment *segment, quint64 newStart, quint64 newEnd)
+void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int length)
+{
+    TransferSegmentTableStruct t;
+    SegmentOffsetLengthStruct s = getSegmentForDownloading(length);
+    quint64 segmentStart = s.segmentBucketOffset * HASH_BUCKET_SIZE;
+    t.segmentEnd = (s.segmentBucketOffset + s.segmentBucketCount) * HASH_BUCKET_SIZE;
+    download->setSegmentStart(segmentStart);
+    download->setSegmentEnd(t.segmentEnd);
+    if (segmentStart != t.segmentEnd) // otherwise done
+    {
+        t.transferSegment = download;
+        transferSegmentTable.insert(segmentStart, t);
+        download->startDownloading();
+    }
+}
+
+/*void DownloadTransfer::updateTransferSegmentTableRange(TransferSegment *segment, quint64 newStart, quint64 newEnd)
 {
     if (transferSegmentTable.contains(segment->getSegmentStart()))
     {
@@ -361,4 +395,4 @@ void DownloadTransfer::updateTransferSegmentTableRange(TransferSegment *segment,
                  << "oldStart " << segment->getSegmentStart()
                  << "TTH " << TTH.toBase64();
     }
-}
+}*/

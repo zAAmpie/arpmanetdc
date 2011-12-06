@@ -39,10 +39,14 @@ void BucketFlushThread::assembleOutputFile(QString tmpfilebase, QString outfile,
         }
         else
         {
-            QByteArray buf = inf.readAll();
-            outf.write(buf);
+            const char *f = (char*)outf.map(bucket * HASH_BUCKET_SIZE, HASH_BUCKET_SIZE);
+            //QByteArray buf = inf.readAll();
+            //outf.write(buf);
+            QByteArray outputmap(QByteArray::fromRawData(f, HASH_BUCKET_SIZE));
+            outputmap = inf.readAll();
             inf.close();
             inf.remove();
+            outf.unmap((unsigned char *)f);
         }
         if (bucket == lastbucket)
             outf.rename(outfile);

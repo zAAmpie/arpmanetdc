@@ -14,7 +14,7 @@ void Transfer::incomingDataPacket(quint8, quint64, QByteArray){}
 void Transfer::hashBucketReply(int, QByteArray){}
 void Transfer::TTHTreeReply(QByteArray){}
 void Transfer::transferTimerEvent(){}
-void Transfer::setPeerProtocolCapability(QHostAddress, char){}
+void Transfer::receivedPeerProtocolCapability(QHostAddress, quint8){}
 void Transfer::createUploadObject(quint8){}
 
 // ------------------------------------------------------------------------
@@ -57,6 +57,11 @@ void Transfer::setRemoteHost(QHostAddress remote)
 void Transfer::setFileSize(quint64 size)
 {
     fileSize = size;
+}
+
+void Transfer::setProtocolOrderPreference(QByteArray p)
+{
+    protocolOrderPreference = p;
 }
 
 QByteArray* Transfer::getTTH()

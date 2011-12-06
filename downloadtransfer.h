@@ -4,6 +4,8 @@
 #include "protocoldef.h"
 #include "fstptransfersegment.h"
 
+#define MAXIMUM_SIMULTANEOUS_SEGMENTS 10
+
 enum transferSegmentState
 {
     SegmentNotDownloaded = 0x00,
@@ -23,6 +25,15 @@ typedef struct
     TransferSegment *transferSegment;
 } TransferSegmentTableStruct;
 
+// somehow this thing becomes read-only, hence the pointers and double pointer
+typedef struct
+{
+    quint64 *bytesTransferred;
+    quint8 protocolCapability;
+    TransferSegment **transferSegment;
+    QByteArray *triedProtocols;
+} RemotePeerInfoStruct;
+
 class DownloadTransfer : public Transfer
 {
     Q_OBJECT
@@ -34,7 +45,13 @@ public slots:
     void hashBucketReply(int bucketNumber, QByteArray bucketTTH);
     void TTHTreeReply(QByteArray tree);
     //void setProtocolPreference(QByteArray &preference);
-    void setPeerProtocolCapability(QHostAddress peer, char protocols);
+    void receivedPeerProtocolCapability(QHostAddress peer, quint8 protocols);
+    void incomingDataPacket(quint8 transferProtocolVersion, quint64 offset, QByteArray data);
+    int getTransferType();
+    void startTransfer();
+    void pauseTransfer();
+    void abortTransfer();
+    void addPeer(QHostAddress peer);
 
 private slots:
     void transferTimerEvent();
@@ -42,18 +59,15 @@ private slots:
     void segmentFailed(TransferSegment *segment);
 
 private:
-    void incomingDataPacket(quint8 transferProtocolVersion, quint64 offset, QByteArray data);
-    int getTransferType();
-    void startTransfer();
-    void pauseTransfer();
-    void abortTransfer();
     void transferRateCalculation();
-
     void flushBucketToDisk(int &bucketNumber);
     inline int calculateBucketNumber(quint64 fileOffset);
     SegmentOffsetLengthStruct getSegmentForDownloading(int segmentNumberOfBucketsHint);
     TransferSegment* newConnectedTransferSegment(TransferProtocol p);
-    void updateTransferSegmentTableRange(TransferSegment *segment, quint64 newStart, quint64 newEnd);
+    //void updateTransferSegmentTableRange(TransferSegment *segment, quint64 newStart, quint64 newEnd);
+    void newPeer(QHostAddress peer, quint8 protocols);
+    TransferSegment* createTransferSegment(QHostAddress peer);
+    void downloadNextAvailableChunk(TransferSegment *download, int length = 1);
 
     QHash<int, QByteArray*> *downloadBucketTable;
     QHash<int, QByteArray*> downloadBucketHashLookupTable;
@@ -64,12 +78,12 @@ private:
 
     int bytesWrittenSinceUpdate;
     int totalBucketsFlushed;
+    int currentActiveSegments;
     //QByteArray protocolPreference;
 
     QMap<quint64, TransferSegmentTableStruct> transferSegmentTable;
     QByteArray transferSegmentStateBitmap;
-
-    TransferSegment *download;
+    QHash<QHostAddress, RemotePeerInfoStruct> remotePeerInfoTable;
 };
 
 #endif // DOWNLOADTRANSFER_H

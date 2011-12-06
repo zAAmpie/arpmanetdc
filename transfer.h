@@ -45,10 +45,11 @@ public slots:
     quint64 getFileSize();
     int getTransferStatus();
     int getTransferProgress();
-    void addPeer(QHostAddress peer);
+    virtual void addPeer(QHostAddress peer);
+    void setProtocolOrderPreference(QByteArray p);
     virtual void hashBucketReply(int bucketNumber, QByteArray bucketTTH);
     virtual void TTHTreeReply(QByteArray tree);
-    virtual void setPeerProtocolCapability(QHostAddress peer, char protocols);
+    virtual void receivedPeerProtocolCapability(QHostAddress peer, quint8 protocols);
 
     virtual void incomingDataPacket(quint8 transferProtocolVersion, quint64 offset, QByteArray data);
     virtual int getTransferType() = 0;
@@ -76,6 +77,7 @@ protected:
     quint64 transferRate;
     int transferProgress;
     quint64 fileSize;
+    QByteArray protocolOrderPreference;
 };
 
 #endif // TRANSFER_H

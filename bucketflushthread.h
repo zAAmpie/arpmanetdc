@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QFile>
+#include "protocoldef.h"
 
 class BucketFlushThread : public QObject
 {
