@@ -988,6 +988,9 @@ void ShareSearch::saveTTHSource(QByteArray tthRoot, QHostAddress peerAddress)
 	QString error = sqlite3_errmsg(db);
 	if (error != "not an error")
 		QString error = "error";
+
+    //Commit to ensure access to database hasn't blocked hashing process
+    commitTransaction();
 }
 
 //Load a source from a TTH
@@ -1097,6 +1100,9 @@ void ShareSearch::deleteTTHSources(QByteArray tthRoot)
 	QString error = sqlite3_errmsg(db);
 	if (error != "not an error")
 		QString error = "error";
+
+    //Commit to ensure access to database hasn't blocked hashing process
+    commitTransaction();
 }
 
 //------------------------------============================== TTH REQUESTS FOR ALTERNATE SEARCHING ==============================------------------------------
@@ -1246,6 +1252,7 @@ void ShareSearch::requestAutoCompleteWordList(QStandardItemModel *wordList)
 	if (error != "not an error")
 		QString error = "error";
 
+    wordList->sort(0);
 	emit searchWordListReceived(wordList);
 }
 
@@ -1254,6 +1261,7 @@ void ShareSearch::saveAutoCompleteWordList(QString searchWord)
 {
     QStringList queries;
     int count = 1;
+    int totalCount = -1;
 
     //Get the count value for duplicates
     QString queryStr = tr("SELECT [count] FROM AutoCompleteWords WHERE [word] = ?;");
@@ -1264,6 +1272,12 @@ void ShareSearch::saveAutoCompleteWordList(QString searchWord)
 
     //Update a word count
     QString updateStr = tr("UPDATE AutoCompleteWords SET [count] = ? WHERE [word] = ?;");
+
+    //Count number of entries
+    QString entryStr = tr("SELECT COUNT(*) FROM AutoCompleteWords;");
+
+    //Delete the last entry
+    QString deleteStr = tr("DELETE FROM AutoCompleteWords WHERE [rowID] = (SELECT MIN(rowID) FROM AutoCompleteWords);");
 
 	sqlite3 *db = pParent->database();	
 	sqlite3_stmt *statement;
@@ -1299,19 +1313,31 @@ void ShareSearch::saveAutoCompleteWordList(QString searchWord)
 		    while (sqlite3_step(statement) == SQLITE_ROW)
             {
                 //If already in database, increase count value
-                if (cols = 1)
+                if (cols == 1 && query.contains("SELECT [count]"))
                     count = sqlite3_column_int(statement, 0) + 1;
+                if (cols == 1 && query.contains("SELECT COUNT"))
+                    totalCount = sqlite3_column_int(statement, 0);
+                    
             }
 
-            //If not in database, insert it
+            //If not in database, check the amount of entries
             if (count == 1 && query.contains("SELECT [count]"))
-                queries.append(insertStr);
+                queries.append(entryStr);
             //If already in database, update it
             else if (query.contains("SELECT [count]"))
                 queries.append(updateStr);
-
+            //If max entries have not been reached, add entry
+            if (totalCount != -1 && query.contains("SELECT COUNT"))
+            {
+                queries.append(insertStr);
+                if (totalCount > MAX_AUTOCOMPLETE_ENTRIES)
+                    queries.append(deleteStr);
+            }             
 		    sqlite3_finalize(statement);	
 	    }
+
+        //Commit to ensure access to database hasn't blocked hashing process
+        commitTransaction();
 
         //Catch all error messages
 	    QString error = sqlite3_errmsg(db);
@@ -1360,6 +1386,9 @@ void ShareSearch::saveQueuedDownload(QueueStruct file)
 	if (error != "not an error")
 		QString error = "error";
 
+    //Commit to ensure access to database hasn't blocked hashing process
+    commitTransaction();
+
 	emit queuedDownloadAdded(file);
 }
 
@@ -1393,6 +1422,9 @@ void ShareSearch::removeQueuedDownload(QByteArray tthRoot)
 	QString error = sqlite3_errmsg(db);
 	if (error != "not an error")
 		QString error = "error";
+
+    //Commit to ensure access to database hasn't blocked hashing process
+    commitTransaction();
 }
 
 //Sets the priority of a queued download
@@ -1429,7 +1461,8 @@ void ShareSearch::setQueuedDownloadPriority(QByteArray tthRoot, QueuePriority pr
 	if (error != "not an error")
 		QString error = "error";
 
-
+    //Commit to ensure access to database hasn't blocked hashing process
+    commitTransaction();
 }
 
 //Request queued download list
@@ -1512,6 +1545,9 @@ void ShareSearch::saveFinishedDownload(FinishedDownloadStruct file)
 		QString error = "error";
 
 	emit finishedDownloadAdded(file);
+
+    //Commit to ensure access to database hasn't blocked hashing process
+    commitTransaction();
 }
 
 //Clear all entries
@@ -1538,6 +1574,9 @@ void ShareSearch::clearFinishedDownloads()
 	QString error = sqlite3_errmsg(db);
 	if (error != "not an error")
 		QString error = "error";
+
+    //Commit to ensure access to database hasn't blocked hashing process
+    commitTransaction();
 }
 
 //Request list

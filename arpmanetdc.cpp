@@ -271,6 +271,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     emit requestFinishedList();
 
     //Get word list
+    setStatus(tr("Loading autocomplete list from database..."));
     emit requestAutoCompleteWordList(searchWordList);
 
     //Update shares
@@ -531,6 +532,8 @@ void ArpmanetDC::createWidgets()
     //========== Auto completer ==========
     searchWordList = new QStandardItemModel();
     searchCompleter = new QCompleter(searchWordList, this);
+    searchCompleter->setCaseSensitivity(Qt::CaseInsensitive);
+    searchCompleter->setModelSorting(QCompleter::CaseInsensitivelySortedModel);
 
 	//Labels
 	userHubCountLabel = new QLabel(tr("Hub Users"));
@@ -1080,8 +1083,11 @@ void ArpmanetDC::searchButtonPressed(quint64 id, QString searchStr, QByteArray s
 
     //Add word to database and to searchWordList
     if (searchWordList->findItems(searchStr).isEmpty())
-        searchWordList->appendRow(new QStandardItem(searchStr));
-    emit saveAutoCompleteWordList(searchStr);
+    {
+        searchWordList->appendRow(new QStandardItem(searchStr.toLower()));
+        searchWordList->sort(0);
+    }
+    emit saveAutoCompleteWordList(searchStr.toLower());
 }
 
 /*
@@ -1685,8 +1691,10 @@ void ArpmanetDC::systemTrayActivated(QSystemTrayIcon::ActivationReason reason)
 //Auto complete word list loaded from databases
 void ArpmanetDC::searchWordListReceived(QStandardItemModel *wordList)
 {
-    searchWordList = wordList;
-    searchCompleter->setModel(wordList);
+    setStatus(tr("Autocomplete list loaded"));
+    //searchWordList = wordList;
+    //searchCompleter->setModel(wordList);
+    searchCompleter->completionPrefix();
 }
 
 void ArpmanetDC::convertHTMLLinks(QString &msg)

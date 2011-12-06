@@ -19,6 +19,8 @@ class ArpmanetDC;
 
 #define MAX_TTHTREE_PACKET_SIZE 1000 //This should be at least sizeOf(TTH + quint16 + quint32) less than the MTU (For TTH this is 24+2+4=30 bytes less than MTU)
 
+#define MAX_AUTOCOMPLETE_ENTRIES 100 //The maximum number of search queries in the auto complete database
+
 struct SearchStruct //Used to return search results
 {
 	QByteArray tthRoot;
