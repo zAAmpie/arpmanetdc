@@ -12,6 +12,7 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
     initializationStateTimerBrakes = 0;
     status = TRANSFER_STATE_INITIALIZING;
     remoteHost = QHostAddress("0.0.0.0");
+    currentActiveSegments = 0;
 
     transferRateCalculationTimer = new QTimer();
     connect(transferRateCalculationTimer, SIGNAL(timeout()), this, SLOT(transferRateCalculation()));
@@ -55,18 +56,29 @@ DownloadTransfer::~DownloadTransfer()
 
 void DownloadTransfer::incomingDataPacket(quint8, quint64 offset, QByteArray data)
 {
-    QMapIterator<quint64, TransferSegmentTableStruct> i(transferSegmentTable);
-    i.toBack();
-    while (i.hasPrevious())
+    // map sorted from big to small
+    // QMap::lowerBound will most likely find the segment just before the one we are interested in
+    QMap<quint64, TransferSegmentTableStruct>::const_iterator i = transferSegmentTable.lowerBound(offset);
+
+    if (Q_UNLIKELY(i.key() <= offset && i.value().segmentEnd >= offset))
+        i.value().transferSegment->incomingDataPacket(offset, data);
+    else if (Q_LIKELY(++i != transferSegmentTable.constEnd()))
+    {
+        if (Q_LIKELY(i.key() <= offset && i.value().segmentEnd >= offset))
+            i.value().transferSegment->incomingDataPacket(offset, data);
+    }
+    // if the offset was not found like this, it probably is not in the map.
+
+    /*while (i.hasPrevious())
     {
         i.previous();
         if (i.key() <= offset && i.value().segmentEnd >= offset)
         {
-            i.value().transferSegment->incomingDataPacket(offset, data);
+
             break;
         }
 
-    }
+    }*/
     bytesWrittenSinceUpdate += data.size();
 }
 
