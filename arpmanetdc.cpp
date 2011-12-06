@@ -184,6 +184,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	connect(pShare, SIGNAL(parsingDone()), this, SLOT(parsingDone()), Qt::QueuedConnection);
 	connect(pShare, SIGNAL(returnQueueList(QHash<QByteArray, QueueStruct> *)), this, SLOT(returnQueueList(QHash<QByteArray, QueueStruct> *)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(returnFinishedList(QHash<QByteArray, FinishedDownloadStruct> *)), this, SLOT(returnFinishedList(QHash<QByteArray, FinishedDownloadStruct> *)), Qt::QueuedConnection);
+    connect(pShare, SIGNAL(searchWordListReceived(QStandardItemModel *)), this, SLOT(searchWordListReceived(QStandardItemModel *)), Qt::QueuedConnection);
     connect(this, SIGNAL(updateShares()), pShare, SLOT(updateShares()), Qt::QueuedConnection);
     connect(this, SIGNAL(requestQueueList()), pShare, SLOT(requestQueueList()), Qt::QueuedConnection);
     connect(this, SIGNAL(setQueuedDownloadPriority(QByteArray, QueuePriority)), pShare, SLOT(setQueuedDownloadPriority(QByteArray, QueuePriority)), Qt::QueuedConnection);
@@ -192,6 +193,8 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     connect(this, SIGNAL(requestFinishedList()), pShare, SLOT(requestFinishedList()), Qt::QueuedConnection);
     connect(this, SIGNAL(saveFinishedDownload(FinishedDownloadStruct)), pShare, SLOT(saveFinishedDownload(FinishedDownloadStruct)), Qt::QueuedConnection);
     connect(this, SIGNAL(clearFinishedDownloads()), pShare, SLOT(clearFinishedDownloads()), Qt::QueuedConnection);
+    connect(this, SIGNAL(requestAutoCompleteWordList(QStandardItemModel *)), pShare, SLOT(requestAutoCompleteWordList(QStandardItemModel *)), Qt::QueuedConnection);
+    connect(this, SIGNAL(saveAutoCompleteWordList(QString)), pShare, SLOT(saveAutoCompleteWordList(QString)), Qt::QueuedConnection);
    
     //Connect ShareSearch to Dispatcher - reply to search request from other clients
     connect(pShare, SIGNAL(returnSearchResult(QHostAddress, QByteArray, quint64, QByteArray)), 
@@ -266,6 +269,9 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     //Get finished list
     setStatus(tr("Loading finished downloads from database..."));
     emit requestFinishedList();
+
+    //Get word list
+    emit requestAutoCompleteWordList(searchWordList);
 
     //Update shares
 	setStatus(tr("Share update procedure started. Parsing directories/paths..."));
@@ -397,6 +403,9 @@ bool ArpmanetDC::setupDatabase()
     //Create Settings table - saves settings (doh)
     queries.append("CREATE TABLE Settings (rowID INTEGER PRIMARY KEY, parameter TEXT, value TEXT);");
 
+    //Create AutoCompleteWords table - saves searches
+    queries.append("CREATE TABLE AutoCompleteWords (rowID INTEGER PRIMARY KEY, word TEXT, count INTEGER);");
+
 	QList<QString> queryErrors(queries);
 
 	//Loop through all queries
@@ -519,6 +528,10 @@ bool ArpmanetDC::saveSettings()
 
 void ArpmanetDC::createWidgets()
 {
+    //========== Auto completer ==========
+    searchWordList = new QStandardItemModel();
+    searchCompleter = new QCompleter(searchWordList, this);
+
 	//Labels
 	userHubCountLabel = new QLabel(tr("Hub Users"));
 	additionalInfoLabel = new QLabel(tr("Additional Info"));
@@ -557,6 +570,7 @@ void ArpmanetDC::createWidgets()
 
     quickSearchLineEdit = new QLineEdit(this);
     quickSearchLineEdit->setPlaceholderText("Type here to search");
+    quickSearchLineEdit->setCompleter(searchCompleter);
 	
 	//===== User list =====
 	//Model
@@ -797,7 +811,7 @@ void ArpmanetDC::sendChatMessage()
 void ArpmanetDC::quickSearchPressed()
 {
     //Search for text
-    SearchWidget *sWidget = new SearchWidget(pTypeIconList, pTransferManager, quickSearchLineEdit->text(), this);
+    SearchWidget *sWidget = new SearchWidget(searchCompleter, pTypeIconList, pTransferManager, quickSearchLineEdit->text(), this);
     quickSearchLineEdit->clear();  
 
     connect(sWidget, SIGNAL(search(quint64, QString, QByteArray, SearchWidget *)), this, SLOT(searchButtonPressed(quint64, QString, QByteArray, SearchWidget *)));
@@ -818,7 +832,7 @@ void ArpmanetDC::quickSearchPressed()
 
 void ArpmanetDC::searchActionPressed()
 {
-	SearchWidget *sWidget = new SearchWidget(pTypeIconList, pTransferManager, this);
+	SearchWidget *sWidget = new SearchWidget(searchCompleter, pTypeIconList, pTransferManager, this);
 	
     connect(sWidget, SIGNAL(search(quint64, QString, QByteArray, SearchWidget *)), this, SLOT(searchButtonPressed(quint64, QString, QByteArray, SearchWidget *)));
     connect(sWidget, SIGNAL(queueDownload(int, QByteArray, QString, quint64, QHostAddress)), pTransferManager, SLOT(queueDownload(int, QByteArray, QString, quint64, QHostAddress)));
@@ -1063,6 +1077,11 @@ void ArpmanetDC::searchButtonPressed(quint64 id, QString searchStr, QByteArray s
     pShare->querySearchString(QHostAddress("127.0.0.1"), QByteArray("ME!"), id, searchPacket);
 
 	tabs->setTabText(tabs->indexOf(sWidget->widget()), tr("Search - %1").arg(searchStr.left(20)));
+
+    //Add word to database and to searchWordList
+    if (searchWordList->findItems(searchStr).isEmpty())
+        searchWordList->appendRow(new QStandardItem(searchStr));
+    emit saveAutoCompleteWordList(searchStr);
 }
 
 /*
@@ -1661,6 +1680,13 @@ void ArpmanetDC::systemTrayActivated(QSystemTrayIcon::ActivationReason reason)
 {
     if (reason == QSystemTrayIcon::DoubleClick && restoreAction->isEnabled())
         restoreAction->trigger();
+}
+
+//Auto complete word list loaded from databases
+void ArpmanetDC::searchWordListReceived(QStandardItemModel *wordList)
+{
+    searchWordList = wordList;
+    searchCompleter->setModel(wordList);
 }
 
 void ArpmanetDC::convertHTMLLinks(QString &msg)

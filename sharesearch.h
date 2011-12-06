@@ -107,6 +107,14 @@ public slots:
     //Convenience function to update existing shares
 	void updateShares();
 
+    //----------========== UPDATE AUTO COMPLETION WORD LIST (GUI) ==========----------
+
+    //Request the complete word list
+    void requestAutoCompleteWordList(QStandardItemModel *wordList);
+
+    //Save a word to the database
+    void saveAutoCompleteWordList(QString word);
+
 	//----------========== DOWNLOAD QUEUE (DOWNLOAD QUEUE WIDGET) ==========----------
 	
     //Save a new entry
@@ -190,6 +198,11 @@ signals:
 
     //Reply with the TTH Tree packet for the file
     void sendTTHTreeReply(QHostAddress host, QByteArray tthTreePacket);
+
+    //----------========== AUTO COMPLETION WORD LIST ==========----------
+
+    //Reply with the word list model completed
+    void searchWordListReceived(QStandardItemModel *wordList);
 
 	//----------========== QUEUED DOWNLOADS (DOWNLOAD QUEUE WIDGET) ==========----------
 	

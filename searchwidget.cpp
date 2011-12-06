@@ -5,12 +5,13 @@
 
 quint64 SearchWidget::staticID = 0;
 
-SearchWidget::SearchWidget(ResourceExtractor *mappedIconList, TransferManager *transferManager, ArpmanetDC *parent)
+SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconList, TransferManager *transferManager, ArpmanetDC *parent)
 {
 	//Constructor
 	pParent = parent;
     pIconList = mappedIconList;
     pTransferManager = transferManager;
+    pCompleter = completer;
 
 	createWidgets();
 	placeWidgets();
@@ -24,12 +25,13 @@ SearchWidget::SearchWidget(ResourceExtractor *mappedIconList, TransferManager *t
     sortTimer->start(500); //Sort every 500msec if necessary
 }
 
-SearchWidget::SearchWidget(ResourceExtractor *mappedIconList, TransferManager *transferManager, QString startupSearchString, ArpmanetDC *parent)
+SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconList, TransferManager *transferManager, QString startupSearchString, ArpmanetDC *parent)
 {
 	//Constructor
 	pParent = parent;
     pIconList = mappedIconList;
     pTransferManager = transferManager;
+    pCompleter = completer;
 
 	createWidgets();
 	placeWidgets();
@@ -54,6 +56,7 @@ SearchWidget::~SearchWidget()
 void SearchWidget::createWidgets()
 {
 	searchLineEdit = new QLineEdit();
+    searchLineEdit->setCompleter(pCompleter);
     searchLineEdit->setMinimumWidth(200);
 
     majorVersionLineEdit = new QLineEdit("0");

@@ -1209,6 +1209,117 @@ void ShareSearch::incomingTTHTreeRequest(QHostAddress host, QByteArray tth)
     }
 }
 
+//------------------------------============================== AUTO COMPLETION WORD ENTRY ==============================------------------------------
+
+//Request the complete word list
+void ShareSearch::requestAutoCompleteWordList(QStandardItemModel *wordList)
+{
+    //Return the list of words from database
+	QString queryStr = tr("SELECT [word] FROM AutoCompleteWords;");
+
+    //Clear model first
+	wordList->removeRows(0, wordList->rowCount());
+
+	sqlite3 *db = pParent->database();	
+	sqlite3_stmt *statement;
+
+	//Prepare a query
+	QByteArray query;
+	query.append(queryStr);
+	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+	{
+		int cols = sqlite3_column_count(statement);
+		int result = 0;
+		while (sqlite3_step(statement) == SQLITE_ROW)
+		{
+			QString word = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0));
+			
+            //Add result to model
+            QStandardItem *item = new QStandardItem(word);
+            wordList->appendRow(item);
+		}
+		sqlite3_finalize(statement);	
+	}
+
+	//Catch all error messages
+	QString error = sqlite3_errmsg(db);
+	if (error != "not an error")
+		QString error = "error";
+
+	emit searchWordListReceived(wordList);
+}
+
+//Save a word to the database
+void ShareSearch::saveAutoCompleteWordList(QString searchWord)
+{
+    QStringList queries;
+    int count = 1;
+
+    //Get the count value for duplicates
+    QString queryStr = tr("SELECT [count] FROM AutoCompleteWords WHERE [word] = ?;");
+    queries.append(queryStr);
+
+    //Save a word
+	QString insertStr = tr("INSERT INTO AutoCompleteWords ([word], [count]) VALUES (?, ?);");
+
+    //Update a word count
+    QString updateStr = tr("UPDATE AutoCompleteWords SET [count] = ? WHERE [word] = ?;");
+
+	sqlite3 *db = pParent->database();	
+	sqlite3_stmt *statement;
+
+    while (!queries.isEmpty())
+    {
+	    //Prepare a query
+	    QByteArray query;
+	    query.append(queries.takeFirst());
+	    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+	    {
+		    //Bind parameters to select query
+            if (query.contains("SELECT [count]"))
+            {
+                int res = sqlite3_bind_text16(statement, 1, searchWord.utf16(), searchWord.size()*2, SQLITE_STATIC);
+            }
+
+            //Bind parameters to insert query
+            if (query.contains("INSERT INTO"))
+            {
+                int res = sqlite3_bind_text16(statement, 1, searchWord.utf16(), searchWord.size()*2, SQLITE_STATIC);
+                res = res | sqlite3_bind_int(statement, 2, count);
+            }
+
+            //Bind parameters to update query
+            if (query.contains("UPDATE AutoCompleteWords"))
+            {
+                int res = sqlite3_bind_int(statement, 1, count);
+                res = res | sqlite3_bind_text16(statement, 2, searchWord.utf16(), searchWord.size()*2, SQLITE_STATIC);
+            }
+            
+		    int cols = sqlite3_column_count(statement);
+		    while (sqlite3_step(statement) == SQLITE_ROW)
+            {
+                //If already in database, increase count value
+                if (cols = 1)
+                    count = sqlite3_column_int(statement, 0) + 1;
+            }
+
+            //If not in database, insert it
+            if (count == 1 && query.contains("SELECT [count]"))
+                queries.append(insertStr);
+            //If already in database, update it
+            else if (query.contains("SELECT [count]"))
+                queries.append(updateStr);
+
+		    sqlite3_finalize(statement);	
+	    }
+
+        //Catch all error messages
+	    QString error = sqlite3_errmsg(db);
+	    if (error != "not an error")
+		    QString error = "error";
+    }
+}
+
 //------------------------------============================== DOWNLOAD QUEUE (DOWNLOAD QUEUE WIDGET) ==============================------------------------------
 
 //Save a new entry

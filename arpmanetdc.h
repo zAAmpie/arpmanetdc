@@ -143,6 +143,7 @@ private slots:
 	void directoryParsed(QString path);
 	void hashingDone(int msecs, int numFiles);
 	void parsingDone();
+    void searchWordListReceived(QStandardItemModel *wordList);
 
     //-----===== CUSTOM WIDGET SLOTS =====-----
 
@@ -206,6 +207,10 @@ signals:
     void saveFinishedDownload(FinishedDownloadStruct item);
     void requestFinishedList();
 
+    //Auto complete searches from database
+    void requestAutoCompleteWordList(QStandardItemModel *wordList);
+    void saveAutoCompleteWordList(QString word);
+
     //----------========== TRANSFERMANAGER SIGNALS ==========----------
 
     //Signals for queue
@@ -258,6 +263,7 @@ private:
 	QHash<QByteArray, QueueStruct> *pQueueList;
     QHash<QByteArray, FinishedDownloadStruct> *pFinishedList;
     QList<QString> *pStatusHistoryList;
+    QStandardItemModel *searchWordList;
 
 	//-----===== Main GUI parameters =====-----
 
@@ -286,6 +292,7 @@ private:
 
     //Quicksearch
     QLineEdit *quickSearchLineEdit;
+    QCompleter *searchCompleter;
 
 	//Labels
 	QLabel *userHubCountLabel;
