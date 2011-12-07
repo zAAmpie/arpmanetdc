@@ -13,7 +13,6 @@ Transfer::~Transfer()
 void Transfer::incomingDataPacket(quint8, quint64, QByteArray){}
 void Transfer::hashBucketReply(int, QByteArray){}
 void Transfer::TTHTreeReply(QByteArray){}
-void Transfer::transferTimerEvent(){}
 void Transfer::receivedPeerProtocolCapability(QHostAddress, quint8){}
 void Transfer::createUploadObject(quint8){}
 

@@ -19,7 +19,7 @@ public:
 signals:
     void abort(Transfer*);
     void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
-    void TTHTreeRequest(QHostAddress hostAddr, QByteArray rootTTH);
+    void TTHTreeRequest(QHostAddress hostAddr, QByteArray rootTTH, quint32 startBucket, quint32 bucketCount);
     void searchTTHAlternateSources(QByteArray tth);
     void loadTTHSourcesFromDatabase(QByteArray tth);
     void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length);
@@ -36,7 +36,6 @@ public slots:
     void setSegmentLength(quint64 length);
     void setRemoteHost(QHostAddress remote);
     virtual void createUploadObject(quint8 protocol);
-    //void setTransferProtocolHint(QByteArray &protocolHint);
     void setFileSize(quint64 size);
     QByteArray* getTTH();
     QString* getFileName();
@@ -58,9 +57,6 @@ public slots:
     virtual void abortTransfer() = 0;
     virtual void transferRateCalculation() = 0;
 
- //   virtual void receiveData(QByteArray &data) = 0;
-    virtual void transferTimerEvent();
-
 protected:
     QByteArray TTH;
     QByteArray TTHBase32;
@@ -73,7 +69,6 @@ protected:
     int status;
     QList<QHostAddress> listOfPeers;
     QTimer *transferRateCalculationTimer;
-    QTimer *transferTimer;
     quint64 transferRate;
     int transferProgress;
     quint64 fileSize;
