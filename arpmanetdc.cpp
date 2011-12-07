@@ -50,7 +50,13 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     //Check current IP setting with previous setting
     if (pSettings->value("lastSeenIP") != ipString)
     {
-        if (QMessageBox::information(this, tr("arpmanetdc"), tr("IP has changed from last value seen. Do you want to use the new IP?\nCurrent IP: %1\nPrevious IP: %2").arg(ipString).arg(pSettings->value("lastSeenIP")), 
+        if (QMessageBox::question(this, tr("arpmanetDC v%1").arg(VERSION_STRING), tr("<p>IP has changed from last value seen.</p>"
+            "<p><table border=1 cellpadding=3 cellspacing=0>"
+            "<tr><td><b>Name</b></td><td><b>IP</b></td></tr>"
+            "<tr><td width=\"200\">Current</td><td>%1</td></tr>"
+            "<tr><td width=\"200\">Previously seen</td><td>%2</td></tr>"
+            "<tr><td width=\"200\">External as set in Settings</td><td>%3</td></tr></table></p>"
+            "<p>Do you want to use the current IP?</p>").arg(ipString).arg(pSettings->value("lastSeenIP")).arg(pSettings->value("externalIP")),
             QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes)
         {
             pSettings->insert("externalIP", ipString);
