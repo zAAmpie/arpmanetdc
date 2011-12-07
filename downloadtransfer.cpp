@@ -40,7 +40,7 @@ DownloadTransfer::~DownloadTransfer()
     //Sover ek verstaan gaan downloadBucketHashLookupTable al uit scope uit voor jy by hierdie destructor kom?
     //So jy moet of hom 'n pointer maak of net hierdie stap heeltemal uithaal
     //A: DownloadTransfer class variable, hy behoort nog hier te wees. ons wil die qbytearray pointers binne-in die ding delete.
-    QHashIterator<int, QByteArray*> ithb(downloadBucketHashLookupTable);
+    QMapIterator<int, QByteArray*> ithb(downloadBucketHashLookupTable);
     while (ithb.hasNext())
         delete ithb.next().value();
 
@@ -51,16 +51,16 @@ DownloadTransfer::~DownloadTransfer()
 
 void DownloadTransfer::incomingDataPacket(quint8, quint64 offset, QByteArray data)
 {
-    // map sorted from big to small
+    // map are sorted in key ascending order
     // QMap::lowerBound will most likely find the segment just before the one we are interested in
-    QMap<quint64, TransferSegmentTableStruct>::const_iterator i = transferSegmentTable.lowerBound(offset);
+    QMap<quint64, TransferSegmentTableStruct>::const_iterator i = transferSegmentTable.upperBound(offset);
     if (Q_UNLIKELY(i == transferSegmentTable.constEnd()))
-        return;
-
+        --i;
     if (Q_UNLIKELY(i.key() <= offset && i.value().segmentEnd >= offset))
         i.value().transferSegment->incomingDataPacket(offset, data);
-    else if (Q_LIKELY(++i != transferSegmentTable.constEnd()))
+    else if (Q_LIKELY(i != transferSegmentTable.constBegin()))
     {
+        --i;
         if (Q_LIKELY(i.key() <= offset && i.value().segmentEnd >= offset))
             i.value().transferSegment->incomingDataPacket(offset, data);
     }
@@ -185,32 +185,18 @@ void DownloadTransfer::transferTimerEvent()
 {
     if (status == TRANSFER_STATE_INITIALIZING)
     {
-        // this is really primitive
-        initializationStateTimerBrakes++;
-        if (initializationStateTimerBrakes > 1)
+        int lastHashBucketReceived = 0;
+        if (!downloadBucketHashLookupTable.isEmpty())
         {
-            if (initializationStateTimerBrakes == 100) // 10s with 100ms timer period
-                initializationStateTimerBrakes = 0;
-            return;
+            QMap<int, QByteArray*>::const_iterator i = downloadBucketHashLookupTable.constEnd();
+            --i;
+            lastHashBucketReceived = i.key();
         }
-
-        // Get peers and TTH tree
-        if (listOfPeers.isEmpty())
-        {
-            //At this stage this will never be called since addPeer() is called as this object is created
-            emit searchTTHAlternateSources(TTH);
-        }
-        else if (!(downloadBucketHashLookupTable.size() - 1 == lastBucketNumber))
-        {
-            // simple and stupid for now...
-            qDebug() << "DownloadTransfer::transferTimerEvent(): " << listOfPeers;
-            emit TTHTreeRequest(listOfPeers.first(), TTH);
-        }
-        else
-        {
-            status = TRANSFER_STATE_RUNNING;
-
-        }
+        emit TTHTreeRequest(listOfPeers.first(), TTH);  // TODO: request from last bucket received
+    }
+    else
+    {
+        status = TRANSFER_STATE_RUNNING;
     }
 }
 
@@ -255,7 +241,7 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
 
 SegmentOffsetLengthStruct DownloadTransfer::getSegmentForDownloading(int segmentNumberOfBucketsHint)
 {
-     // Ideas for quick and dirty block allocator:
+    // Ideas for quick and dirty block allocator:
     // Scan once over bitmap, taking note of starting point and length of longest open segment
     // Allocate block immediately if long enough gap found, otherwise allocate longest possible gap
     SegmentOffsetLengthStruct segment;

@@ -70,7 +70,7 @@ private:
     void downloadNextAvailableChunk(TransferSegment *download, int length = 1);
 
     QHash<int, QByteArray*> *downloadBucketTable;
-    QHash<int, QByteArray*> downloadBucketHashLookupTable;
+    QMap<int, QByteArray*> downloadBucketHashLookupTable;
 
     int lastBucketNumber;
     int lastBucketSize;
