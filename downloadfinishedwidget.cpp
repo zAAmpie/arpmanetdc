@@ -94,8 +94,10 @@ void DownloadFinishedWidget::loadList()
 void DownloadFinishedWidget::showFinishedTableContextMenu(const QPoint &point)
 {	
 	//Show menu on right-click
-	if (finishedTable->selectionModel()->selectedRows().isEmpty())
-		return;
+	openAction->setVisible(!finishedTable->selectionModel()->selectedRows().isEmpty());
+
+    //Disable clear action when no items are in the model
+    clearAction->setEnabled(finishedModel->rowCount() != 0);
 
 	QPoint globalPos = finishedTable->viewport()->mapToGlobal(point);
 

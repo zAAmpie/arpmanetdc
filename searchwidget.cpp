@@ -57,6 +57,7 @@ void SearchWidget::createWidgets()
 {
 	searchLineEdit = new QLineEdit();
     searchLineEdit->setCompleter(pCompleter);
+    searchLineEdit->setPlaceholderText("Type here to search");
     searchLineEdit->setMinimumWidth(200);
 
     majorVersionLineEdit = new QLineEdit("0");

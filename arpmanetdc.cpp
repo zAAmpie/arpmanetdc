@@ -50,12 +50,9 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     //Check current IP setting with previous setting
     if (pSettings->value("lastSeenIP") != ipString)
     {
-        if (QMessageBox::question(this, tr("arpmanetDC v%1").arg(VERSION_STRING), tr("<p>IP has changed from last value seen.</p>"
-            "<p><table border=1 cellpadding=3 cellspacing=0>"
-            "<tr><td><b>Name</b></td><td><b>IP</b></td></tr>"
-            "<tr><td width=\"200\">Current</td><td>%1</td></tr>"
-            "<tr><td width=\"200\">Previously seen</td><td>%2</td></tr>"
-            "<tr><td width=\"200\">External as set in Settings</td><td>%3</td></tr></table></p>"
+        if (QMessageBox::question(this, tr("ArpmanetDC v%1").arg(VERSION_STRING), tr("<p>IP has changed from last value seen.</p>"
+            "<p><table border=1 cellpadding=3 cellspacing=0><tr><td><b>Name</b></td><td><b>IP</b></td></tr><tr><td width=\"200\">Current</td><td>%1</td></tr>"
+            "<tr><td width=\"200\">Previously seen</td><td>%2</td></tr><tr><td width=\"200\">External as set in Settings</td><td>%3</td></tr></table></p>"
             "<p>Do you want to use the current IP?</p>").arg(ipString).arg(pSettings->value("lastSeenIP")).arg(pSettings->value("externalIP")),
             QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes)
         {
@@ -69,7 +66,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	mainChatBlocks = 0;
 
 	//Set window title
-	setWindowTitle(tr("ArpmanetDC %1").arg(VERSION_STRING));
+	setWindowTitle(tr("ArpmanetDC v%1").arg(VERSION_STRING));
 
 	//Create Hub Connection
 	pHub = new HubConnection(pSettings->value("hubAddress"), pSettings->value("hubPort").toShort(), pSettings->value("nick"), pSettings->value("password"), VERSION_STRING, this);
@@ -542,8 +539,8 @@ void ArpmanetDC::createWidgets()
     searchCompleter->setModelSorting(QCompleter::CaseInsensitivelySortedModel);
 
 	//Labels
-	userHubCountLabel = new QLabel(tr("Hub Users"));
-	additionalInfoLabel = new QLabel(tr("Additional Info"));
+    userHubCountLabel = new QLabel(tr("Hub Users: 0"));
+	additionalInfoLabel = new QLabel(tr(""));
 
 	statusLabel = new QLabel(tr("Status"));
 	shareSizeLabel = new QLabel(tr("Share: 0 bytes"));
@@ -664,7 +661,7 @@ void ArpmanetDC::createWidgets()
     //========== System tray ==========
     systemTrayIcon = new QSystemTrayIcon(this);
     systemTrayIcon->setIcon(QIcon(":/ArpmanetDC/Resources/Logo128x128.png"));
-    systemTrayIcon->setToolTip(tr("arpmanetDC v%1").arg(VERSION_STRING));
+    systemTrayIcon->setToolTip(tr("ArpmanetDC v%1").arg(VERSION_STRING));
     systemTrayIcon->show();
 
     systemTrayMenu = new QMenu(this);

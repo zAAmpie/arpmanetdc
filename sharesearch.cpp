@@ -87,13 +87,7 @@ void ShareSearch::startParseDirectoryThread(QDir directory)
 void ShareSearch::updateShares(QList<QDir> *dirList) //500 msecs to update SharePaths!
 {
 	updateTime->start();
-
 	pDirList = dirList;
-	if (dirList->isEmpty())
-    {
-        emit hashingDone(0,0);
-		return;
-    }
 
 	//Construct a directory list insert query
 	QList<QByteArray> queries;
@@ -105,24 +99,34 @@ void ShareSearch::updateShares(QList<QDir> *dirList) //500 msecs to update Share
 	//Set all files as inactive
 	setAllFilesInactive();
 
-	//Delete everything from the sharePath table
-	QByteArray removeQuery;
-	removeQuery.append(tr("DELETE FROM SharePaths WHERE [path] NOT IN ("));	
+    if (!dirList->isEmpty())
+    {
+	    //Delete everything from the sharePath table
+	    QByteArray removeQuery;
+	    removeQuery.append(tr("DELETE FROM SharePaths WHERE [path] NOT IN ("));	
 
-	//Insert the directory and file listing
-	for (int k = 0; k < dirList->size(); k++)
-	{
-		if (k != 0)
-			removeQuery.append(",");
-        removeQuery.append(tr("?"));
+	    //Insert the directory and file listing
+	    for (int k = 0; k < dirList->size(); k++)
+	    {
+		    if (k != 0)
+			    removeQuery.append(",");
+            removeQuery.append(tr("?"));
 
-		QByteArray query;
-        query.append(tr("INSERT INTO SharePaths ([path]) SELECT ?;"));
-		queries.append(query);
+		    QByteArray query;
+            query.append(tr("INSERT INTO SharePaths ([path]) SELECT ?;"));
+		    queries.append(query);
 
-	}
-	removeQuery.append(");");
-	queries.append(removeQuery);
+	    }
+	    removeQuery.append(");");
+	    queries.append(removeQuery);
+    }
+    else
+    {
+        //Delete everything from the sharePath table
+	    QByteArray removeQuery;
+	    removeQuery.append(tr("DELETE FROM SharePaths;"));	
+        queries.append(removeQuery);
+    }
 
 	//Write list to database
 	sqlite3 *db = pParent->database();	
@@ -133,7 +137,7 @@ void ShareSearch::updateShares(QList<QDir> *dirList) //500 msecs to update Share
 	{
 		if (sqlite3_prepare_v2(db, queries.at(i).data(), -1, &statement, 0) == SQLITE_OK)
 		{
-			if (queries.at(i).contains("DELETE FROM SharePaths"))
+			if (queries.at(i).contains("DELETE FROM SharePaths WHERE"))
 			{
 				int res = 0;
 				for (int k = 0; k < dirList->size(); k++)
@@ -166,8 +170,15 @@ void ShareSearch::updateShares(QList<QDir> *dirList) //500 msecs to update Share
 			QString errorStr = "Error";
 	}
 
-	//Start parsing
-	startDirectoryParsing();
+    if (!dirList->isEmpty())
+        //Start parsing
+	    startDirectoryParsing();
+    else
+    {
+        //Flag all files as inactive when everything is unshared
+        setAllFilesInactive();
+        emit hashingDone(0,0);
+    }
 }
 
 QList<QDir> *ShareSearch::getShares()
