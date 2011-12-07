@@ -399,10 +399,9 @@ void ShareSearch::hashFileThreadDone(QString filePath, QString fileName, qint64 
 		query.append(queries.at(i));
 		if (sqlite3_prepare_v2(db, query.data(), query.size(), &statement, 0) == SQLITE_OK)
 		{
+            int res = 0;
 			if (query.contains("INSERT INTO FileShares")) 
 			{
-				int num = sqlite3_bind_parameter_count(statement);
-				int res = 0;
 				/*TTH*/         res = res | sqlite3_bind_text16(statement, 1, tthRoot.utf16(), tthRoot.size()*2, SQLITE_STATIC);
 				/*FileName*/    res = res | sqlite3_bind_text16(statement, 2, fileName.utf16(), fileName.size()*2, SQLITE_STATIC);
 				/*FileSize*/    res = res | sqlite3_bind_int64(statement, 3, fileSize);
@@ -412,16 +411,14 @@ void ShareSearch::hashFileThreadDone(QString filePath, QString fileName, qint64 
                 /*MajorVersion*/res = res | sqlite3_bind_int64(statement, 7, v.majorVersion);
                 /*MinorVersion*/res = res | sqlite3_bind_int64(statement, 8, v.minorVersion);
                 /*RelativePath*/res = res | sqlite3_bind_text16(statement, 9, relativePath.utf16(), relativePath.size()*2, SQLITE_STATIC);
-				if (res != SQLITE_OK)
-					QString error = "Meh";
 			}
-			if (query.contains("INSERT INTO OneMBTTH")) 
+			else if (query.contains("INSERT INTO OneMBTTH")) 
 			{
-				int num = sqlite3_bind_parameter_count(statement);
-				int res = sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
-				if (res != SQLITE_OK)
-					QString error = "Meh";
+				res = sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
 			}
+
+            if (res != SQLITE_OK)
+				QString error = "Meh";
 
 			int cols = sqlite3_column_count(statement);
 			while (sqlite3_step(statement) == SQLITE_ROW)
@@ -567,109 +564,110 @@ bool ShareSearch::fileNotModified(QString filePath, QString rootDir)
 {
 	//Get current modified date of file
 	QFileInfo fileInfo(filePath);
-	QString modifiedDate;
+	QString lastModifiedFile;
 	bool fileExists = fileInfo.exists();
 
-	QList<QByteArray> queries;
+	QList<QString> queries;
+
+    //Query whether a file has been modified - returns results if it has
+	QString queryStr = tr("SELECT [lastModified] FROM FileShares WHERE filePath = ?;");
+
+    //Update the file share entry - change the sharepath owner of the entry if needed
+	QString updateStr = tr("UPDATE fileShares SET [shareDirID] = (SELECT rowID FROM SharePaths WHERE path = ?) WHERE filePath = ?;");
+
+    //Set the file share active (if readding an existing share)
+	QString setActiveStr = tr("UPDATE fileShares SET [active] = 1 WHERE filePath = ?;");
+
+    //Delete all 1MB TTHs for a particular file share - should be called before deleteStr!
+    QString deleteOneMBStr = tr("DELETE FROM OneMBTTH WHERE [fileShareID] = (SELECT [rowID] FROM FileShares WHERE filePath = ?);");
+
+    //Delete the hash entry from the database if it exists
+	QString deleteStr = tr("DELETE FROM FileShares WHERE filePath = ?;");  
+
+    bool result = true; //By default, DO NOT hash file
 
 	//Check if file exists
 	if (fileExists)
 	{
-		modifiedDate = fileInfo.lastModified().toString("dd-MM-yyyy HH:mm:ss:zzz");
-	
-		//Query whether a file has been modified - returns results if it has
-		QString queryStr = tr("SELECT [filePath] FROM FileShares WHERE lastModified = ?001 AND filePath = ?002;");
-		queries.append(QByteArray().append(queryStr));
-
-		//Update the file share entry - change the sharepath owner of the entry if needed
-		QString updateStr = tr("UPDATE fileShares SET [shareDirID] = (SELECT rowID FROM SharePaths WHERE path = ?001) WHERE filePath = (SELECT [filePath] FROM FileShares WHERE lastModified = ?002 AND filePath = ?003);");
-		queries.append(QByteArray().append(updateStr));
-
-		//Set the file share active (if readding an existing share
-		QString setActiveStr = tr("UPDATE fileShares SET [active] = 1 WHERE filePath = ?001;");
-		queries.append(QByteArray().append(setActiveStr));
-
+		lastModifiedFile = fileInfo.lastModified().toString("dd-MM-yyyy HH:mm:ss:zzz");
+		queries.append(queryStr);
 	}
 	else
 	{
-		//Delete the hash entry from the database if it exists
-		QString queryStr = tr("DELETE FROM FileShares WHERE filePath = ?001;");
-		queries.append(QByteArray().append(queryStr));
+        queries.append(deleteOneMBStr);
+		queries.append(deleteStr);
 	}
 
-    QList<QList<QString> > results;
+    QString lastModifiedDB;
 	sqlite3 *db = pParent->database();	
 	sqlite3_stmt *statement;
 
 	//Prepare a query
-	for (int i = 0; i < queries.size(); i++)
+	while (!queries.isEmpty())
 	{
-		int res = sqlite3_prepare_v2(db, queries.at(i).data(), -1, &statement, 0);
-		if (res == SQLITE_OK)
+        QByteArray query;
+        query.append(queries.takeFirst());
+		if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
 		{
-			if (queries.at(i).contains("SELECT [filePath]"))
+            //Bind parameters for each query
+            int res = 0;
+			if (query.contains("SELECT [lastModified]"))
 			{
-				int res = 0;
-				res = res | sqlite3_bind_text16(statement, 1, modifiedDate.utf16(), modifiedDate.size()*2, SQLITE_STATIC);
-				res = res | sqlite3_bind_text16(statement, 2, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
-				
-				if (res != SQLITE_OK)
-					QString error = "error";
+				res = res | sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
 			}
-
-			if (queries.at(i).contains("UPDATE fileShares SET [shareDirID]"))
+            else if (query.contains("UPDATE fileShares SET [shareDirID]"))
 			{
-				int res = 0;
 				res = res | sqlite3_bind_text16(statement, 1, rootDir.utf16(), rootDir.size()*2, SQLITE_STATIC);
-				res = res | sqlite3_bind_text16(statement, 2, modifiedDate.utf16(), modifiedDate.size()*2, SQLITE_STATIC);
-				res = res | sqlite3_bind_text16(statement, 3, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
-				
-				if (res != SQLITE_OK)
-					QString error = "error";
+				//res = res | sqlite3_bind_text16(statement, 2, lastModifiedFile.utf16(), lastModifiedFile.size()*2, SQLITE_STATIC);
+				res = res | sqlite3_bind_text16(statement, 2, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
 			}
-
-			if (queries.at(i).contains("UPDATE fileShares SET [active]"))
+			else if (query.contains("UPDATE fileShares SET [active]"))
 			{
-				int res = 0;
 				res = res | sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
-				
-				if (res != SQLITE_OK)
-					QString error = "error";
 			}
-
-			if (queries.at(i).contains("DELETE FROM FileShares"))
+			else if (query.contains("DELETE FROM FileShares"))
 			{
-				int res = 0;
 				res = res | sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
-				
-				if (res != SQLITE_OK)
-					QString error = "error";
+			}
+            else if (query.contains("DELETE FROM OneMBTTH"))
+			{
+				res = res | sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
 			}
 
+            if (res != SQLITE_OK)
+			    QString error = "error";
+
+            //Get results
 			int cols = sqlite3_column_count(statement);
-			int result = 0;
-			while (true)
+			while (sqlite3_step(statement) == SQLITE_ROW)
 			{
-				//Step through query results
-				result = sqlite3_step(statement);
-
-				//If result is a row, add to results
-				if (result == SQLITE_ROW)
-				{
-					QList<QString> oneResult;
-					for (int col = 0; col < cols; col++)
-					{
-						oneResult.append(QString::fromUtf16((const unsigned short *)sqlite3_column_text16(statement, col)));
-					}		
-					results.append(oneResult);
-				}
-				//Otherwise, break - usually means SQLITE_DONE
-				else
-				{
-					break;
-				}
+                if (cols == 1 && query.contains("SELECT [lastModified]"))
+					lastModifiedDB = QString::fromUtf16((const unsigned short *)sqlite3_column_text16(statement, 0));
 			}	
 			sqlite3_finalize(statement);
+
+            //This should give a result if the filepath exists in the db
+            if (query.contains("SELECT [lastModified]"))
+            {
+                if (lastModifiedDB.isEmpty())
+                {
+                    //File doesn't exist in db - hash
+                    result = false;
+                }
+                else if (lastModifiedDB != lastModifiedFile)
+                {
+                    //File was modified - delete entries and hash
+                    queries.append(deleteOneMBStr);
+                    queries.append(deleteStr);
+                    result = false;
+                }
+                else
+                {
+                    //File is still fine in the db - update entries but don't hash
+                    queries.append(updateStr);
+                    queries.append(setActiveStr);
+                }
+            }
 		}
 
 		//Catch all error messages
@@ -678,23 +676,7 @@ bool ShareSearch::fileNotModified(QString filePath, QString rootDir)
 			QString error = "error";
 	}
 
-	//Test results
-	if (results.size() > 0 && fileExists)
-	{
-		QString filePathResult = results.first().first();
-		if (filePathResult == filePath)
-			//File hasn't been modified
-			return true; //Skip hashing
-		else
-		//Somehow the paths do not match? Maybe due to some weird character in the filename? Base64 encoded they are the same though... weird
-		{
-			return true; //Skip hashing
-		}
-	}
-	
-	if (fileExists) //File has been modified or doesn't exist in the database
-		return false; //Hash file
-	return true; //Skip hashing - obviously if the file doesn't exist
+	return result;
 }
 
 //------------------------------============================== SHARE QUERIES (DISPATCHER) ==============================------------------------------

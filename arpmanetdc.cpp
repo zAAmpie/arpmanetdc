@@ -1128,6 +1128,7 @@ void ArpmanetDC::shareSaveButtonPressed()
 		//Show hashing progress
         hashingProgressBar->setTopText("Parsing");
 		hashingProgressBar->setRange(0,0);
+        hashRateTimer->start();
 	}
 }
 
@@ -1193,6 +1194,7 @@ void ArpmanetDC::hashingDone(int msecs, int numFiles)
 	QString timeStr = tr("%1 seconds").arg((double)msecs / 1000.0, 0, 'f', 2);
 
 	//Show on GUI when hashing is completed
+    hashRateTimer->stop();
 	setStatus(tr("Shares updated in %1").arg(timeStr));
 	shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr(true)));
     shareSizeLabel->setToolTip(tr("Share size: %1\nFiles shared: %2").arg(pShare->totalShareStr(false)).arg(numFiles));
