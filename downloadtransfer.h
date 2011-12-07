@@ -55,6 +55,7 @@ public slots:
 
 private slots:
     void transferTimerEvent();
+    void TTHSearchTimerEvent();
     void segmentCompleted(TransferSegment *segment);
     void segmentFailed(TransferSegment *segment);
 
@@ -72,14 +73,15 @@ private:
     QHash<int, QByteArray*> *downloadBucketTable;
     QMap<int, QByteArray*> downloadBucketHashLookupTable;
 
+    QTimer *transferTimer;
+    QTimer *TTHSearchTimer;
+
     int lastBucketNumber;
     int lastBucketSize;
     int initializationStateTimerBrakes;
-
     int bytesWrittenSinceUpdate;
     int totalBucketsFlushed;
     int currentActiveSegments;
-    //QByteArray protocolPreference;
 
     QMap<quint64, TransferSegmentTableStruct> transferSegmentTable;
     QByteArray transferSegmentStateBitmap;

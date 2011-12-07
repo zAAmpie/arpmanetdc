@@ -57,9 +57,6 @@ public slots:
     virtual void abortTransfer() = 0;
     virtual void transferRateCalculation() = 0;
 
- //   virtual void receiveData(QByteArray &data) = 0;
-    virtual void transferTimerEvent();
-
 protected:
     QByteArray TTH;
     QByteArray TTHBase32;
@@ -72,7 +69,6 @@ protected:
     int status;
     QList<QHostAddress> listOfPeers;
     QTimer *transferRateCalculationTimer;
-    QTimer *transferTimer;
     quint64 transferRate;
     int transferProgress;
     quint64 fileSize;

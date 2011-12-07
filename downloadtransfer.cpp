@@ -22,6 +22,11 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
     transferTimer = new QTimer();
     connect(transferTimer, SIGNAL(timeout()), this, SLOT(transferTimerEvent()));
     transferTimer->setSingleShot(false);
+
+    TTHSearchTimer = new QTimer();
+    connect(TTHSearchTimer, SIGNAL(timeout()), this, SLOT(TTHSearchTimerEvent()));
+    transferTimer->setSingleShot(false);
+    transferTimer->start(300000);  // every 5 minutes
 }
 
 DownloadTransfer::~DownloadTransfer()
@@ -381,20 +386,8 @@ void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int
     }
 }
 
-/*void DownloadTransfer::updateTransferSegmentTableRange(TransferSegment *segment, quint64 newStart, quint64 newEnd)
+void DownloadTransfer::TTHSearchTimerEvent()
 {
-    if (transferSegmentTable.contains(segment->getSegmentStart()))
-    {
-        TransferSegmentTableStruct tsts;
-        tsts.segmentEnd = newEnd;
-        tsts.transferSegment = segment;
-        transferSegmentTable.remove(segment->getSegmentStart());
-        transferSegmentTable.insert(newStart, tsts);
-    }
-    else
-    {
-        qDebug() << "Eek! Tried to update misaligned download segment range! "
-                 << "oldStart " << segment->getSegmentStart()
-                 << "TTH " << TTH.toBase64();
-    }
-}*/
+    if (currentActiveSegments < MAXIMUM_SIMULTANEOUS_SEGMENTS)
+        emit searchTTHAlternateSources(TTH);
+}
