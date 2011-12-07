@@ -145,7 +145,7 @@ void DownloadTransfer::addPeer(QHostAddress peer)
     if (peer.toIPv4Address() > 0 && !listOfPeers.contains(peer))
     {
         listOfPeers.append(peer);  // TODO: is this list then strictly necessary?
-        emit requestProtocolCapability(peer);
+        emit requestProtocolCapability(peer, this);
     }
 }
 
@@ -198,17 +198,20 @@ void DownloadTransfer::transferTimerEvent()
             --i;
             lastHashBucketReceived = i.key();
         }
-        emit TTHTreeRequest(listOfPeers.first(), TTH, lastHashBucketReceived, 100);
-    }
-    else
-    {
-        status = TRANSFER_STATE_RUNNING;
-        QHashIterator<QHostAddress, RemotePeerInfoStruct> i(remotePeerInfoTable);
-        while (i.hasNext())
+        if (lastHashBucketReceived == calculateBucketNumber(fileSize))
         {
-            i.next();
-            if (i.value().transferSegment)
-                i.value().transferSegment->startDownloading();
+            status = TRANSFER_STATE_RUNNING;
+            QHashIterator<QHostAddress, RemotePeerInfoStruct> i(remotePeerInfoTable);
+            while (i.hasNext())
+            {
+                i.next();
+                if (i.value().transferSegment)
+                    i.value().transferSegment->startDownloading();
+            }
+        }
+        else
+        {
+            emit TTHTreeRequest(listOfPeers.first(), TTH, lastHashBucketReceived, 100);
         }
     }
 }
@@ -366,7 +369,7 @@ TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol 
     connect(transferTimer, SIGNAL(timeout()), download, SLOT(transferTimerEvent()));
     connect(download, SIGNAL(requestNextSegment(TransferSegment*)), this, SLOT(segmentCompleted(TransferSegment*)));
     connect(download, SIGNAL(transferRequestFailed(TransferSegment*)), this, SLOT(segmentFailed(TransferSegment*)));
-    connect(download, SIGNAL(requestPeerProtocolCapability(QHostAddress)), this, SIGNAL(requestProtocolCapability(QHostAddress)));
+    //connect(download, SIGNAL(requestPeerProtocolCapability(QHostAddress,Transfer*)), this, SIGNAL(requestProtocolCapability(QHostAddress,Transfer*)));
     return download;
 }
 

@@ -159,6 +159,7 @@ void TransferManager::startNextDownload()
             this, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray,quint32,quint32)));
     connect(t, SIGNAL(searchTTHAlternateSources(QByteArray)), this, SIGNAL(searchTTHAlternateSources(QByteArray)));
     connect(t, SIGNAL(loadTTHSourcesFromDatabase(QByteArray)), this, SIGNAL(loadTTHSourcesFromDatabase(QByteArray)));
+    connect(t, SIGNAL(requestProtocolCapability(QHostAddress,Transfer*)), this, SLOT(requestPeerProtocolCapability(QHostAddress,Transfer*)));
     connect(t, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)),
             this, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)));
     connect(t, SIGNAL(flushBucket(QString,QByteArray*)), this, SIGNAL(flushBucket(QString,QByteArray*)));

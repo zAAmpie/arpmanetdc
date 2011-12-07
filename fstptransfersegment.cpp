@@ -67,8 +67,8 @@ void FSTPTransferSegment::startUploading()
 
 void FSTPTransferSegment::startDownloading()
 {
-    if (!(pParent->getTransferStatus() & (TRANSFER_STATE_STALLED | TRANSFER_STATE_RUNNING)))
-        return;
+    //if (!(pParent->getTransferStatus() & (TRANSFER_STATE_STALLED | TRANSFER_STATE_RUNNING)))
+    //    return;
     segmentStartTime = QDateTime::currentMSecsSinceEpoch();
     requestingOffset = segmentStart;
     requestingTargetOffset = requestingOffset + requestingLength;
@@ -162,8 +162,8 @@ void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
 
 void FSTPTransferSegment::transferTimerEvent()
 {
-    if (!(pParent->getTransferStatus() & (TRANSFER_STATE_STALLED | TRANSFER_STATE_RUNNING)))
-        return;
+    //if (!(pParent->getTransferStatus() & (TRANSFER_STATE_STALLED | TRANSFER_STATE_RUNNING)))
+    //    return;
     if (status == TRANSFER_STATE_STALLED)
     {
         // Transfer some data

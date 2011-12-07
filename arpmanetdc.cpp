@@ -212,7 +212,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     connect(pShare, SIGNAL(sendTTHSearchResult(QHostAddress, QByteArray)),
             pDispatcher, SLOT(sendTTHSearchResult(QHostAddress,QByteArray)), Qt::QueuedConnection);
     connect(pDispatcher, SIGNAL(incomingTTHTreeRequest(QHostAddress,QByteArray,quint32,quint32)),
-            pShare, SLOT(incomingTTHTreeRequest(QHostAddress, QByteArray,quint32,quint32)), Qt::QueuedConnection);
+            pShare, SLOT(incomingTTHTreeRequest(QHostAddress, QByteArray)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(sendTTHTreeReply(QHostAddress, QByteArray)),
             pDispatcher, SLOT(sendTTHTreeReply(QHostAddress,QByteArray)), Qt::QueuedConnection);
 

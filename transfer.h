@@ -27,7 +27,7 @@ signals:
     void transferFinished(QByteArray tth);
     void flushBucket(QString filename, QByteArray *bucket);
     void assembleOutputFile(QString tmpfilebase, QString outfile, int startbucket, int lastbucket);
-    void requestProtocolCapability(QHostAddress peer);
+    void requestProtocolCapability(QHostAddress peer, Transfer *obj);
 
 public slots:
     virtual void setFileName(QString filename);
