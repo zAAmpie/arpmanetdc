@@ -68,7 +68,7 @@ signals:
 
     // TTH Tree
     void receivedTTHTree(QByteArray tthRoot, QByteArray tthTree);
-    void incomingTTHTreeRequest(QHostAddress fromHost, QByteArray tth);
+    void incomingTTHTreeRequest(QHostAddress fromHost, QByteArray tth, quint32 startOffset, quint32 numberOfBuckets);
 
     // Transfers
     void incomingProtocolCapabilityResponse(QHostAddress fromHost, char capability);
@@ -102,7 +102,7 @@ public slots:
     void requestAllBuckets(QHostAddress host);
 
     // TTH
-    void sendTTHTreeRequest(QHostAddress host, QByteArray tthRoot);
+    void sendTTHTreeRequest(QHostAddress host, QByteArray tthRoot, quint32 startOffset, quint32 numberOfBuckets);
     void sendTTHTreeReply(QHostAddress host, QByteArray tthTreePacket);
 
     // CID

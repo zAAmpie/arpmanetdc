@@ -118,8 +118,8 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
             pDispatcher, SLOT(sendUnicastRawDatagram(QHostAddress,QByteArray*)), Qt::QueuedConnection);
     connect(pDispatcher, SIGNAL(receivedTTHTree(QByteArray,QByteArray)),
             pTransferManager, SLOT(incomingTTHTree(QByteArray,QByteArray)), Qt::QueuedConnection);
-    connect(pTransferManager, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray)),
-            pDispatcher, SLOT(sendTTHTreeRequest(QHostAddress,QByteArray)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray,quint32,quint32)),
+            pDispatcher, SLOT(sendTTHTreeRequest(QHostAddress,QByteArray,quint32,quint32)), Qt::QueuedConnection);
     connect(pDispatcher, SIGNAL(TTHSearchResultsReceived(QByteArray,QHostAddress)),
             pTransferManager, SLOT(incomingTTHSource(QByteArray,QHostAddress)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(searchTTHAlternateSources(QByteArray)),
@@ -209,8 +209,8 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
             pShare, SLOT(TTHSearchQuestionReceived(QByteArray, QHostAddress)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(sendTTHSearchResult(QHostAddress, QByteArray)),
             pDispatcher, SLOT(sendTTHSearchResult(QHostAddress,QByteArray)), Qt::QueuedConnection);
-    connect(pDispatcher, SIGNAL(incomingTTHTreeRequest(QHostAddress,QByteArray)),
-            pShare, SLOT(incomingTTHTreeRequest(QHostAddress, QByteArray)), Qt::QueuedConnection);
+    connect(pDispatcher, SIGNAL(incomingTTHTreeRequest(QHostAddress,QByteArray,quint32,quint32)),
+            pShare, SLOT(incomingTTHTreeRequest(QHostAddress, QByteArray,quint32,quint32)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(sendTTHTreeReply(QHostAddress, QByteArray)),
             pDispatcher, SLOT(sendTTHTreeReply(QHostAddress,QByteArray)), Qt::QueuedConnection);
 

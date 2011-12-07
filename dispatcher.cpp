@@ -672,12 +672,14 @@ void Dispatcher::sendTransferError(QHostAddress dstHost, quint8 error)
     sendUnicastRawDatagram(dstHost, datagram);
 }
 
-void Dispatcher::sendTTHTreeRequest(QHostAddress host, QByteArray tthRoot)
+void Dispatcher::sendTTHTreeRequest(QHostAddress host, QByteArray tthRoot, quint32 startOffset, quint32 numberOfBuckets)
 {
     QByteArray *datagram = new QByteArray;
     datagram->append(UnicastPacket);
     datagram->append(TTHTreeRequestPacket);
     datagram->append(tthRoot);
+    datagram->append(toQByteArray(startOffset));
+    datagram->append(toQByteArray(numberOfBuckets));
     sendUnicastRawDatagram(host, datagram);
 }
 
@@ -692,8 +694,11 @@ void Dispatcher::sendTTHTreeReply(QHostAddress host, QByteArray tthTreePacket)
 
 void Dispatcher::handleReceivedTTHTreeRequest(QHostAddress &senderHost, QByteArray &datagram)
 {
-    QByteArray tth = datagram.mid(2);
-    emit incomingTTHTreeRequest(senderHost, tth);
+    QByteArray tth = datagram.mid(2, 24);
+    datagram.remove(0, 26);
+    quint32 startOffset = getQuint32FromByteArray(&datagram);
+    quint32 numberOfBuckets = getQuint32FromByteArray(&datagram);
+    emit incomingTTHTreeRequest(senderHost, tth, startOffset, numberOfBuckets);
 }
 
 void Dispatcher::handleReceivedTTHTree(QByteArray &datagram)

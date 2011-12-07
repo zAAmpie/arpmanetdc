@@ -101,7 +101,8 @@ void DownloadTransfer::TTHTreeReply(QByteArray tree)
         int tthLength = getQuint16FromByteArray(&tree);
         QByteArray *bucketHash = new QByteArray(tree.left(tthLength));
         tree.remove(0, tthLength);
-        downloadBucketHashLookupTable.insert(bucketNumber, bucketHash);
+        if (!downloadBucketHashLookupTable.contains(bucketNumber))
+            downloadBucketHashLookupTable.insert(bucketNumber, bucketHash);
     }
 }
 
@@ -192,7 +193,7 @@ void DownloadTransfer::transferTimerEvent()
             --i;
             lastHashBucketReceived = i.key();
         }
-        emit TTHTreeRequest(listOfPeers.first(), TTH);  // TODO: request from last bucket received
+        emit TTHTreeRequest(listOfPeers.first(), TTH, lastHashBucketReceived, 100);
     }
     else
     {

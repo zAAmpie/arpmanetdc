@@ -19,7 +19,7 @@ public:
 signals:
     void abort(Transfer*);
     void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
-    void TTHTreeRequest(QHostAddress hostAddr, QByteArray rootTTH);
+    void TTHTreeRequest(QHostAddress hostAddr, QByteArray rootTTH, quint32 startBucket, quint32 bucketCount);
     void searchTTHAlternateSources(QByteArray tth);
     void loadTTHSourcesFromDatabase(QByteArray tth);
     void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length);
