@@ -14,15 +14,40 @@ void ParseDirectoryThread::parseDirectory(QString dirPath)
     //Comment this out to enable a single use stop for all parsing
     pStopParsing = false;
 
-	pFileList = new QList<QString>();
-	parse(QDir(dirPath));	
+    pRootDir = dirPath;
+
+	pFileList = new QList<FileListStruct>();
+    //Old method to parse directories
+	//parse(QDir(dirPath));	
+
+    //Experimental new method to parse directory - much faster
+    FileListStruct f;
+    f.rootDir = pRootDir;
+
+    QFileInfo fi(dirPath);
+    if (fi.isFile())
+    {
+        f.fileName = dirPath;
+        pFileList->append(f);
+    }
+    else
+    {
+        QDirIterator it(dirPath, QDir::Files | QDir::NoSymLinks | QDir::Readable, QDirIterator::Subdirectories);  
+        while (it.hasNext())
+        {
+            it.next();
+            
+            f.fileName = it.filePath(); 
+            pFileList->append(f);
+        }
+    }
 
 	//Check if recursion limit has been reached somewhere in the structure
 	//if (recursionLimit < RECURSION_LIMIT)
     if (!pStopParsing)
-	    emit done(dirPath, pFileList, this);
+	    emit done(pRootDir, pFileList, this);
 	else
-		emit failed(dirPath, this);		
+		emit failed(pRootDir, this);		
 }
 
 void ParseDirectoryThread::parse(QDir dir)
@@ -38,11 +63,14 @@ void ParseDirectoryThread::parse(QDir dir)
 	//Get only files for now
 	dir.setFilter(QDir::Files | QDir::NoSymLinks);
 
-	QFileInfo fi(dir.absolutePath());
+	QFileInfo fi(dir.path());
 	if (fi.isFile())
 	{
 		//If user shared a single file, add directly to list
-		pFileList->append(dir.absolutePath());
+        FileListStruct f;
+        f.rootDir = pRootDir;
+		f.fileName = dir.path();
+        pFileList->append(f);
 		return;
 	}
 
@@ -50,7 +78,11 @@ void ParseDirectoryThread::parse(QDir dir)
 	for (int i = 0; i < list.size(); i++)
 	{
 		//Add every file in the current directory
-		pFileList->append(list.at(i).absoluteFilePath());
+        FileListStruct f;
+        f.rootDir = pRootDir;
+        f.fileName = list.at(i).filePath();
+        pFileList->append(f);
+		//pFileList->append(list.at(i).absoluteFilePath());
 	}
 
 	//Get only directories
@@ -60,7 +92,7 @@ void ParseDirectoryThread::parse(QDir dir)
 	for (int k = 0; k < list.size(); k++)
 	{
 		//Iterate through all subdirectories and recursively call this function
-		QDir nextDir(list.at(k).absoluteFilePath());
+		QDir nextDir(list.at(k).filePath());
 		if (nextDir.isReadable())
 		{
             recursionLimit++;

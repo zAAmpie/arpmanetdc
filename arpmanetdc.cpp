@@ -64,6 +64,8 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     pSettings->insert("lastSeenIP", ipString);
     
 	mainChatBlocks = 0;
+    pFilesHashedSinceUpdate = 0;
+    pFileSizeHashedSinceUpdate = 0;
 
 	//Set window title
 	setWindowTitle(tr("ArpmanetDC v%1").arg(VERSION_STRING));
@@ -181,10 +183,10 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	pShare = new ShareSearch(MAX_SEARCH_RESULTS, this);
 
     //Connect ShareSearch to GUI - share files on this computer and hash them
-	connect(pShare, SIGNAL(fileHashed(QString)), this, SLOT(fileHashed(QString)), Qt::QueuedConnection);
+	connect(pShare, SIGNAL(fileHashed(QString, quint64)), this, SLOT(fileHashed(QString, quint64)), Qt::QueuedConnection);
 	connect(pShare, SIGNAL(directoryParsed(QString)), this, SLOT(directoryParsed(QString)), Qt::QueuedConnection);
 	connect(pShare, SIGNAL(hashingDone(int, int)), this, SLOT(hashingDone(int, int)), Qt::QueuedConnection);
-	connect(pShare, SIGNAL(parsingDone()), this, SLOT(parsingDone()), Qt::QueuedConnection);
+	connect(pShare, SIGNAL(parsingDone(int)), this, SLOT(parsingDone(int)), Qt::QueuedConnection);
 	connect(pShare, SIGNAL(returnQueueList(QHash<QByteArray, QueueStruct> *)), this, SLOT(returnQueueList(QHash<QByteArray, QueueStruct> *)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(returnFinishedList(QHash<QByteArray, FinishedDownloadStruct> *)), this, SLOT(returnFinishedList(QHash<QByteArray, FinishedDownloadStruct> *)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(searchWordListReceived(QStandardItemModel *)), this, SLOT(searchWordListReceived(QStandardItemModel *)), Qt::QueuedConnection);
@@ -313,6 +315,11 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	QTimer *sortTimer = new QTimer();
 	connect(sortTimer, SIGNAL(timeout()), this, SLOT(sortUserList()));
 	sortTimer->start(1000); //Meh, every second ought to do it
+
+    //Set up rate timer
+    hashRateTimer = new QTimer();
+    connect(hashRateTimer, SIGNAL(timeout()), this, SLOT(calculateHashRate()));
+    hashRateTimer->start(1000);
 }
 
 ArpmanetDC::~ArpmanetDC()
@@ -372,7 +379,7 @@ bool ArpmanetDC::setupDatabase()
 	QList<QString> queries;
 
 	//Set full synchronicity
-	queries.append("PRAGMA synchronous = FULL;");
+	queries.append("PRAGMA synchronous = NORMAL;");
 
     //Commit any outstanding queries
     queries.append("COMMIT;");
@@ -1163,11 +1170,14 @@ void ArpmanetDC::pmSent(QString otherNick, QString msg, PMWidget *pmWidget)
 	pHub->sendPrivateMessage(otherNick, msg);
 }
 
-void ArpmanetDC::fileHashed(QString fileName)
+void ArpmanetDC::fileHashed(QString fileName, quint64 fileSize)
 {
 	//Show on GUI when file has finished hashing
 	setStatus(tr("Finished hashing file: %1").arg(fileName));
 	shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr()));
+    
+    pFilesHashedSinceUpdate++;
+    pFileSizeHashedSinceUpdate += fileSize;
 	//QApplication::processEvents();
 }
 
@@ -1189,10 +1199,12 @@ void ArpmanetDC::hashingDone(int msecs, int numFiles)
 	hashingProgressBar->setRange(0,1);
 }
 
-void ArpmanetDC::parsingDone()
+void ArpmanetDC::parsingDone(int msecs)
 {
+    QString timeStr = tr("%1 seconds").arg((double)msecs / 1000.0, 0, 'f', 2);
+
 	//Show on GUI when directory parsing is completed
-	setStatus(tr("Finished directory/path parsing. Checking for new/modified files..."));
+	setStatus(tr("Finished directory/path parsing in %1. Checking for new/modified files...").arg(timeStr));
     hashingProgressBar->setTopText("Hashing");
 }
 
@@ -1361,6 +1373,18 @@ void ArpmanetDC::sortUserList()
 		resizeRowsToContents(userListTable);
 		sortDue = false;
 	}
+}
+
+//Calculate rates
+void ArpmanetDC::calculateHashRate()
+{
+    QString rateMB = bytesToRate(pFileSizeHashedSinceUpdate);
+    QString rateFiles = tr("%1 files/s").arg(pFilesHashedSinceUpdate);
+
+    pFilesHashedSinceUpdate = 0;
+    pFileSizeHashedSinceUpdate = 0;
+
+    shareSizeLabel->setToolTip(tr("Hashing speed:\n%1\n%2").arg(rateMB).arg(rateFiles));
 }
 
 void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode)

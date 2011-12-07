@@ -21,8 +21,8 @@ void HashFileThread::processFile(QString filePath, QString rootDir)
     //Comment this out to enable a single use stop for all hashing
     pStopHashing = false;
 
-    if (pStopHashing)
-        return;
+    //if (pStopHashing)
+    //    return;
 
 	//Get file info
 	QFileInfo fi(filePath);
@@ -43,14 +43,14 @@ void HashFileThread::processFile(QString filePath, QString rootDir)
 		while (!file.atEnd())
 		{
             //Stop hashing if variable is set
-            if (pStopHashing)
-            {
-                file.close();
-                return;
-            }
-            else
+            //if (pStopHashing)
+            //{
+            //    file.close();
+            //    return;
+            // }
+            //else
                 //Process events to allow variable to be set
-                QApplication::processEvents();
+            //    QApplication::processEvents();
                 
 
 			//Read file in 1MB chunks

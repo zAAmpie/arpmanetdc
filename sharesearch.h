@@ -9,13 +9,13 @@
 #include <QRegExp>
 #include <QHostAddress>
 #include "hashfilethread.h"
-#include "parsedirectorythread.h"
 #include "execthread.h"
 #include "downloadqueuewidget.h"
 #include "downloadfinishedwidget.h"
 #include "util.h"
 
 class ArpmanetDC;
+class ParseDirectoryThread;
 
 #define MAX_TTHTREE_PACKET_SIZE 1000 //This should be at least sizeOf(TTH + quint16 + quint32) less than the MTU (For TTH this is 24+2+4=30 bytes less than MTU)
 
@@ -156,7 +156,7 @@ private slots:
 	void hashFileFailed(QString filePath, HashFileThread *hashObj);
 
 	//Parse directory thread completed
-	void parseDirectoryThreadDone(QString rootDir, QList<QString> *fileList, ParseDirectoryThread *parseObj);
+	void parseDirectoryThreadDone(QString rootDir, QList<FileListStruct> *fileList, ParseDirectoryThread *parseObj);
 	//Parse directory thread failed
 	void parseDirectoryThreadFailed(QString rootDir, ParseDirectoryThread *parseObj);
 
@@ -225,7 +225,7 @@ signals:
 	//----------========== PUBLIC HASHING / PARSING (GUI) ==========----------
 	
     //Signal to show a file has completed hashing
-	void fileHashed(QString fileName);
+	void fileHashed(QString fileName, quint64 fileSize);
 	
     //Signal to show a directory has been parsed
 	void directoryParsed(QString path);
@@ -233,7 +233,7 @@ signals:
 	//Signal to show all hashing is done
 	void hashingDone(int msecs, int numFiles);
 	//Signal to show all parsing is done
-	void parsingDone();
+	void parsingDone(int msecs);
 
     //----------========== PRIVATE SIGNALS ==========----------
 

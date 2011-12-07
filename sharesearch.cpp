@@ -1,5 +1,6 @@
 #include "sharesearch.h"
 #include "arpmanetdc.h"
+#include "parsedirectorythread.h"
 
 ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
 {
@@ -37,8 +38,8 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
 	pHashFileThread->moveToThread(hashThread);
 
 	pParseDirectoryThread = new ParseDirectoryThread();
-	connect(pParseDirectoryThread, SIGNAL(done(QString, QList<QString> *, ParseDirectoryThread *)), 
-		this, SLOT(parseDirectoryThreadDone(QString, QList<QString> *, ParseDirectoryThread *)), Qt::QueuedConnection);
+	connect(pParseDirectoryThread, SIGNAL(done(QString, QList<FileListStruct> *, ParseDirectoryThread *)), 
+		this, SLOT(parseDirectoryThreadDone(QString, QList<FileListStruct> *, ParseDirectoryThread *)), Qt::QueuedConnection);
 	connect(pParseDirectoryThread, SIGNAL(failed(QString, ParseDirectoryThread *)), this, SLOT(parseDirectoryThreadFailed(QString, ParseDirectoryThread *)), Qt::QueuedConnection);
 	connect(this, SIGNAL(runParseThread(QString)), pParseDirectoryThread, SLOT(parseDirectory(QString)), Qt::QueuedConnection);
     connect(this, SIGNAL(stopParsingThread()), pParseDirectoryThread, SLOT(stopParsing()));
@@ -379,7 +380,7 @@ void ShareSearch::hashFileThreadDone(QString filePath, QString fileName, qint64 
 
 	//Generate totalFileShares query
 	QString totalFileShares = tr("SELECT SUM(fileSize) FROM FileShares WHERE [active] = 1;");
-	queries.append(totalFileShares);
+	//queries.append(totalFileShares);
 
 	sqlite3 *db = pParent->database();	
 	sqlite3_stmt *statement;
@@ -440,10 +441,10 @@ void ShareSearch::hashFileThreadDone(QString filePath, QString fileName, qint64 
 	delete oneMBList;
 
 	//Update share size
-	pTotalShare = totalShare;
+	pTotalShare += fileSize;
 
 	//Emit signal for status
-	emit fileHashed(filePath);
+	emit fileHashed(filePath, fileSize);
 	
 	//Continue with next file in the list
 	startFileHashing();
@@ -468,7 +469,7 @@ void ShareSearch::startFileHashing()
 	{
 		if (!pFileList->isEmpty())
 		{
-            QApplication::processEvents();
+            //QApplication::processEvents();
 
 			f = pFileList->takeFirst();
 			//Check if modified
@@ -505,17 +506,18 @@ void ShareSearch::stopHashing()
 
 //------------------------------============================== DIRECTORY PARSING (FILE LIST EXTRACTION) ==============================------------------------------
 
-void ShareSearch::parseDirectoryThreadDone(QString rootDir, QList<QString> *fileList, ParseDirectoryThread *parseObj)
+void ShareSearch::parseDirectoryThreadDone(QString rootDir, QList<FileListStruct> *fileList, ParseDirectoryThread *parseObj)
 {
 	QString done = "done";
 	//Add filelist to local variable for hashing
-	foreach (QString file, *fileList)
+	/*foreach (QString file, *fileList)
 	{
 		FileListStruct fStruct;
 		fStruct.fileName = file;
 		fStruct.rootDir = rootDir;
 		pFileList->append(fStruct);
-	}
+	}*/
+    pFileList->append(*fileList);
 	
 	//Clean up
 	delete fileList;
@@ -544,7 +546,7 @@ void ShareSearch::startDirectoryParsing()
     }
 	else
 	{		
-		emit parsingDone();
+		emit parsingDone(updateTime->elapsed());
 
         numberOfFilesShared = pFileList->size();
 
@@ -563,9 +565,6 @@ void ShareSearch::stopParsing()
 
 bool ShareSearch::fileNotModified(QString filePath, QString rootDir)
 {
-	QTime *time = new QTime();
-	time->start();
-
 	//Get current modified date of file
 	QFileInfo fileInfo(filePath);
 	QString modifiedDate;
@@ -678,9 +677,6 @@ bool ShareSearch::fileNotModified(QString filePath, QString rootDir)
 		if (error != "not an error")
 			QString error = "error";
 	}
-
-	int elapsed = time->elapsed();
-	QString finished;	
 
 	//Test results
 	if (results.size() > 0 && fileExists)

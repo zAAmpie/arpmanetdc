@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QDir>
 #include <QList>
+#include "sharesearch.h"
 
 #define RECURSION_LIMIT 100 //Ensure the parsing only reaches 100 levels deep
 
@@ -23,7 +24,7 @@ public slots:
 
 signals:
 	//Done parsing directory
-	void done(QString rootDir, QList<QString> *fileList, ParseDirectoryThread *parseObj);
+	void done(QString rootDir, QList<FileListStruct> *fileList, ParseDirectoryThread *parseObj);
 	//Failed parsing directory
 	void failed(QString rootDir, ParseDirectoryThread *parseObj);
 
@@ -31,10 +32,12 @@ private:
 	//Recursive private function
     void parse(QDir directory);
 
-	QList<QString> *pFileList;
+	QList<FileListStruct> *pFileList;
 	QDir pDir;
 
     bool pStopParsing;
+
+    QString pRootDir;
 
 	quint8 recursionLimit;
 };

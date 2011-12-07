@@ -139,10 +139,10 @@ private slots:
     void searchResultReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult);
 
     //ShareSearch slot
-	void fileHashed(QString fileName);
+	void fileHashed(QString fileName, quint64 fileSize);
 	void directoryParsed(QString path);
 	void hashingDone(int msecs, int numFiles);
-	void parsingDone();
+	void parsingDone(int msecs);
     void searchWordListReceived(QStandardItemModel *wordList);
 
     //-----===== CUSTOM WIDGET SLOTS =====-----
@@ -164,6 +164,9 @@ private slots:
 
 	//Sort user list
 	void sortUserList();
+
+    //Calculate rates
+    void calculateHashRate();
 
 	//GUI interaction
     void chatLineEditReturnPressed();
@@ -258,6 +261,9 @@ private:
 	//Parameters
 	//SettingsStruct pSettings;
     QHash<QString, QString> *pSettings;
+
+    quint64 pFilesHashedSinceUpdate, pFileSizeHashedSinceUpdate;
+    QTimer *hashRateTimer;
 
 	//Global lists
 	QHash<QByteArray, QueueStruct> *pQueueList;

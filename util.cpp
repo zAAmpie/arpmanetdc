@@ -82,19 +82,19 @@ QString bytesToSize(quint64 bytes)
 {
     QString unit = "bytes";
     double d = bytes;
-    if (d > 1024.0)
+    if (d >= 1024.0)
 	{
 		d /= 1024.0;
 		unit = "KiB";
-		if (d > 1024.0)
+		if (d >= 1024.0)
 		{
 			d /= 1024.0;
 			unit = "MiB";
-			if (d > 1024.0)
+			if (d >= 1024.0)
 			{
 				d /= 1024.0;
 				unit = "GiB";
-				if (d > 1024.0)
+				if (d >= 1024.0)
 				{
 					d /= 1024.0;
 					unit = "TiB";
