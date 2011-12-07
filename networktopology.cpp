@@ -102,11 +102,10 @@ void NetworkTopology::bucketContentsArrived(QByteArray bucket)
     QByteArray bucketContents = bucket.mid(24);
     while (bucketContents.length() >= 6)
     {
-        QHostAddress addr = QHostAddress(bucketContents.mid(0,4).toUInt());
-        qint64 age = (qint64)(bucketContents.mid(6,2).toUInt() * 1000);
+        QHostAddress addr = QHostAddress(getQuint32FromByteArray(&bucketContents));
+        qint64 age = (qint64)(getQuint16FromByteArray(&bucketContents) * 1000);
         if (getHostAge(bucketID, addr) > age)
             updateHostTimestamp(bucketID, addr, age);
-        bucketContents.remove(0, 6);
     }
 }
 
@@ -145,7 +144,13 @@ QList<QHostAddress> NetworkTopology::getForwardingPeers(int peersPerBucket)
 QByteArray NetworkTopology::getOwnBucket()
 {
     QByteArray ownBucket = getOwnBucketId();
-    return getBucket(ownBucket);
+    QByteArray bucket = getBucket(ownBucket);
+    if (bucket.length() == 24)
+    {
+        bucket.append(toQByteArray(dispatchIP.toIPv4Address()));
+        bucket.append(toQByteArray((quint16)0));
+    }
+    return bucket;
 }
 
 QList<QByteArray> NetworkTopology::getAllBuckets()
@@ -273,6 +278,11 @@ void NetworkTopology::bootstrapTimeoutEvent()
 void NetworkTopology::setCID(QByteArray &cid)
 {
     CID = cid;
+}
+
+void NetworkTopology::setDispatchIP(QHostAddress ip)
+{
+    dispatchIP = ip;
 }
 
 void NetworkTopology::setBootstrapStatus(int status)

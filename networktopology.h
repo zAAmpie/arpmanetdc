@@ -35,6 +35,7 @@ public:
 
     QHostAddress getCIDHostAddress(QByteArray &cid);
     void setCID(QByteArray &CID);
+    void setDispatchIP(QHostAddress ip);
 
 signals:
     void changeBootstrapStatus(int status);
@@ -79,6 +80,7 @@ private:
     quint64 startupTime;
     int incomingAnnouncementCount;
     QByteArray CID;
+    QHostAddress dispatchIP;
     int bootstrapStatus;
 };
 
