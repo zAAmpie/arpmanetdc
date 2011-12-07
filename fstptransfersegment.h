@@ -1,7 +1,6 @@
 #ifndef FSTPTRANSFERSEGMENT_H
 #define FSTPTRANSFERSEGMENT_H
 #include "transfersegment.h"
-#include "transfer.h"
 
 #define FSTP_TRANSFER_MINIMUM_SEGMENT 65536
 #define FSTP_TRANSFER_MAXIMUM_SEGMENT 524288
@@ -34,8 +33,6 @@ private:
     int packetsSinceUpdate;
     int retransmitTimeoutCounter;
     int retransmitRetryCounter;
-
-    Transfer *pParent;
 };
 
 #endif // FSTPTRANSFERSEGMENT_H

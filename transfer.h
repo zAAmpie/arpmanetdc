@@ -36,7 +36,6 @@ public slots:
     void setSegmentLength(quint64 length);
     void setRemoteHost(QHostAddress remote);
     virtual void createUploadObject(quint8 protocol);
-    //void setTransferProtocolHint(QByteArray &protocolHint);
     void setFileSize(quint64 size);
     QByteArray* getTTH();
     QString* getFileName();

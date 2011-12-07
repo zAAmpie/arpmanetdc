@@ -8,6 +8,7 @@
 #include <QDateTime>
 #include "protocoldef.h"
 #include "util.h"
+#include "transfer.h"
 
 class TransferSegment : public QObject
 {
@@ -58,6 +59,8 @@ protected:
 
     QFile inputFile;
     QHash<int, QByteArray*> *pDownloadBucketTable;
+
+    Transfer *pParent;
 };
 
 #endif // TRANSFERSEGMENT_H

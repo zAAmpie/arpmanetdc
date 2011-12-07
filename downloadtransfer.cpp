@@ -198,6 +198,13 @@ void DownloadTransfer::transferTimerEvent()
     else
     {
         status = TRANSFER_STATE_RUNNING;
+        QHashIterator<QHostAddress, RemotePeerInfoStruct> i(remotePeerInfoTable);
+        while (i.hasNext())
+        {
+            i.next();
+            if (i.value().transferSegment)
+                i.value().transferSegment->startDownloading();
+        }
     }
 }
 
