@@ -13,11 +13,12 @@
 #include "downloadqueuewidget.h"
 #include "downloadfinishedwidget.h"
 #include "util.h"
+#include "protocoldef.h"
 
 class ArpmanetDC;
 class ParseDirectoryThread;
 
-#define MAX_TTHTREE_PACKET_SIZE 1000 //This should be at least sizeOf(TTH + quint16 + quint32) less than the MTU (For TTH this is 24+2+4=30 bytes less than MTU)
+#define TTH_TREE_HASH_SIZE 29
 
 #define MAX_AUTOCOMPLETE_ENTRIES 100 //The maximum number of search queries in the auto complete database
 
