@@ -30,6 +30,7 @@ void BucketFlushThread::assembleOutputFile(QString tmpfilebase, QString outfile,
         //TODO: report error
         return;
     }
+
     bool ok = true;
     while (ok)
     {
@@ -42,19 +43,39 @@ void BucketFlushThread::assembleOutputFile(QString tmpfilebase, QString outfile,
         }
         else
         {
+            //Read all data from the temp file (why is there a temp file if assembleOutputFile is called after every bucket flush?)
             QByteArray buf = inf.readAll();
+            
+            //Ensure enough space is available for the map
             if (outf.size() < bucket * HASH_BUCKET_SIZE + buf.size())
                 outf.resize(bucket * HASH_BUCKET_SIZE + buf.size());
+            
+            //Map file to memory
             char *f = (char*)outf.map(bucket * HASH_BUCKET_SIZE, buf.size());
             
-            //outf.write(buf);
-            //QByteArray outputmap(QByteArray::fromRawData(f, HASH_BUCKET_SIZE));
-            //outputmap = inf.readAll();
-
+            //Write to memory if map succeeded
             if (f != 0)
                 memcpy(f, buf.constData(), buf.size());
             else
-                qDebug() < "Big booboo for map" << bucket << buf.size();
+                qDebug() << "BucketFlushThread::assembleOutputFile: Big booboo for map! bucket : size" << bucket << buf.size();
+
+            /*quint64 fileEnd = (bucket + 1) * HASH_BUCKET_SIZE;
+            if (outf.size() < fileEnd)
+            {
+                outf.seek(fileEnd);
+                outf.write("", 0);
+            }
+
+            const char *f = (char*)outf.map(bucket * HASH_BUCKET_SIZE, HASH_BUCKET_SIZE);
+
+            // tmp check until mapping is sorted out
+            if (outf.size() == bucket * HASH_BUCKET_SIZE)
+            {
+                QByteArray buf = inf.readAll();
+                outf.write(buf);
+            }
+            QByteArray outputmap(QByteArray::fromRawData(f, HASH_BUCKET_SIZE));
+            outputmap = inf.readAll();*/
 
             inf.close();
             inf.remove();

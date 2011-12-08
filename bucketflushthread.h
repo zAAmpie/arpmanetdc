@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QFile>
 #include "protocoldef.h"
+#include <QDebug>
 
 class BucketFlushThread : public QObject
 {
