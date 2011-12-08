@@ -115,6 +115,7 @@ void DownloadTransfer::hashBucketReply(int bucketNumber, QByteArray bucketTTH)
 
 void DownloadTransfer::TTHTreeReply(QByteArray tree)
 {
+    int iter = 0;
     while (tree.length() >= 29)
     {
         int bucketNumber = getQuint32FromByteArray(&tree);
@@ -123,7 +124,11 @@ void DownloadTransfer::TTHTreeReply(QByteArray tree)
         tree.remove(0, tthLength);
         if (!downloadBucketHashLookupTable.contains(bucketNumber))
             downloadBucketHashLookupTable.insert(bucketNumber, bucketHash);
+        iter++;
     }
+    if (iter == 0)  // don't burn it if the buckets start showing up empty
+        return;
+
     int prev = -1;
     QMapIterator<int, QByteArray*> i(downloadBucketHashLookupTable);
     while (i.hasNext())
