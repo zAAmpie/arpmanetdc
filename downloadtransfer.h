@@ -13,6 +13,12 @@ enum transferSegmentState
     SegmentCurrentlyDownloading=0x02
 };
 
+enum bucketFlushState
+{
+    BucketNotFlushed = 0x00,
+    BucketFlushed = 0x01
+};
+
 typedef struct
 {
     int segmentBucketOffset;
@@ -52,12 +58,14 @@ public slots:
     void pauseTransfer();
     void abortTransfer();
     void addPeer(QHostAddress peer);
+    int getTransferProgress();
 
 private slots:
     void transferTimerEvent();
     void TTHSearchTimerEvent();
     void segmentCompleted(TransferSegment *segment);
     void segmentFailed(TransferSegment *segment);
+    void requestHashBucket(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
 
 private:
     void transferRateCalculation();
@@ -80,11 +88,11 @@ private:
     int lastBucketSize;
     int initializationStateTimerBrakes;
     int bytesWrittenSinceUpdate;
-    int totalBucketsFlushed;
     int currentActiveSegments;
 
     QMap<quint64, TransferSegmentTableStruct> transferSegmentTable;
     QByteArray transferSegmentStateBitmap;
+    QByteArray bucketFlushStateBitmap;
     QHash<QHostAddress, RemotePeerInfoStruct> remotePeerInfoTable;
 };
 

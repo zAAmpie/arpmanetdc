@@ -74,7 +74,7 @@ void TransferManager::filePathNameReply(QByteArray tth, QString filename)
         uploadTransferQueue.remove(tth);
         return; // TODO: stuur error terug na requesting host
     }
-    Transfer *t = new UploadTransfer();
+    Transfer *t = new UploadTransfer(this);
     t->createUploadObject(uploadTransferQueue.value(tth)->protocol);
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
     connect(t, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
@@ -94,7 +94,7 @@ void TransferManager::queueDownload(int priority, QByteArray tth, QString filePa
 {
     if (!downloadTransferQueue.contains(priority))
     {
-        QList<DownloadTransferQueueItem> *list = new QList<DownloadTransferQueueItem>;
+        QList<DownloadTransferQueueItem> *list = new QList<DownloadTransferQueueItem>();
         downloadTransferQueue.insert(priority, list);
     }
 
@@ -152,7 +152,7 @@ void TransferManager::startNextDownload()
         return;
 
     currentDownloadCount++;
-    Transfer *t = new DownloadTransfer();
+    Transfer *t = new DownloadTransfer(this);
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
     connect(t, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)), this, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)));
     connect(t, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray,quint32,quint32)),
@@ -197,7 +197,7 @@ void TransferManager::changeQueuedDownloadPriority(int oldPriority, int newPrior
     {
         if (!downloadTransferQueue.contains(newPriority))
         {
-            QList<DownloadTransferQueueItem> *list = new QList<DownloadTransferQueueItem>;
+            QList<DownloadTransferQueueItem> *list = new QList<DownloadTransferQueueItem>();
             downloadTransferQueue.insert(newPriority, list);
         }
         if (oldPriority > newPriority)

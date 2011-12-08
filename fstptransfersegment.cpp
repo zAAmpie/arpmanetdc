@@ -1,7 +1,8 @@
 #include "fstptransfersegment.h"
 
-FSTPTransferSegment::FSTPTransferSegment(Transfer *parent) : TransferSegment(parent)
+FSTPTransferSegment::FSTPTransferSegment(Transfer *parent)
 {
+    status = TRANSFER_STATE_INITIALIZING;
     requestingOffset = 0;
     //requestingLength = 65536;
     requestingLength = 131072;
@@ -67,20 +68,23 @@ void FSTPTransferSegment::startUploading()
 
 void FSTPTransferSegment::startDownloading()
 {
-    //if (!(pParent->getTransferStatus() & (TRANSFER_STATE_STALLED | TRANSFER_STATE_RUNNING)))
-    //    return;
-    segmentStartTime = QDateTime::currentMSecsSinceEpoch();
-    requestingOffset = segmentStart;
-    requestingTargetOffset = requestingOffset + requestingLength;
-    retransmitTimeoutCounter = 0;
-    retransmitRetryCounter = 0;
-    qDebug() << "FSTPTransferSegment::startDownloading() call checkSendDownloadRequest()";
-    checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
-    status = TRANSFER_STATE_RUNNING;
+    if (!(pParent->getTransferStatus() & (TRANSFER_STATE_STALLED | TRANSFER_STATE_RUNNING)))
+        return;
+    if (status & (TRANSFER_STATE_INITIALIZING | TRANSFER_STATE_FINISHED))
+    {
+        segmentStartTime = QDateTime::currentMSecsSinceEpoch();
+        requestingOffset = segmentStart;
+        requestingTargetOffset = requestingOffset + requestingLength;
+        retransmitTimeoutCounter = 0;
+        retransmitRetryCounter = 0;
+        qDebug() << "FSTPTransferSegment::startDownloading() call checkSendDownloadRequest()";
+        checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
+        status = TRANSFER_STATE_RUNNING;
+    }
 }
 
 inline void FSTPTransferSegment::checkSendDownloadRequest(quint8 protocol, QHostAddress peer, QByteArray TTH,
-                                                       quint64 requestingOffset, qint64 requestingLength)
+                                                       qint64 requestingOffset, qint64 requestingLength)
 {
     if (segmentEnd < requestingOffset + requestingLength)
         requestingLength = segmentEnd - requestingOffset;
@@ -128,24 +132,28 @@ void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
         // since we segment on bucket boundaries. tth checksumming will catch the problems.
     }
     else
+    {
         pDownloadBucketTable->value(bucketNumber)->append(data);
+        qDebug() << "Append data " << requestingOffset << offset << pDownloadBucketTable->value(bucketNumber)->length();
+    }
 
     if (pDownloadBucketTable->value(bucketNumber)->length() == HASH_BUCKET_SIZE)
     {
         emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber));
+        qDebug() << "FSTPTransferSegment emit hashBucketRequest() " << bucketNumber << pDownloadBucketTable->value(bucketNumber)->length();
     }
 
     // these last bucket numbers are for the *segment*, not the file.
     // the length check is for in case it is also the last segment of the file.
-    if ((bucketNumber == lastBucketNumber) && (lastBucketSize == pDownloadBucketTable->value(bucketNumber)->length())) // EoF
+    if ((bucketNumber == lastBucketNumber) && (lastBucketSize == pDownloadBucketTable->value(bucketNumber)->length())) // End of Segment
     {
         status = TRANSFER_STATE_FINISHED;  // local segment
+        qDebug() << "FSTPTransferSegment emit hashBucketRequest() on finish " << bucketNumber << pDownloadBucketTable->value(bucketNumber)->length();
         emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber));
-        return;
     }
 
     requestingOffset += data.length();
-    if (requestingOffset == requestingTargetOffset)
+    if ((requestingOffset == requestingTargetOffset) && (requestingOffset < segmentEnd))
     {
         if (requestingLength <= FSTP_TRANSFER_MAXIMUM_SEGMENT / 2)
             requestingLength *= 2;
@@ -154,6 +162,7 @@ void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
         qDebug() << "FSTPTransferSegment::incomingDataPacket() call checkSendDownloadRequest()";
         checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
     }
+
     if (requestingOffset >= segmentEnd)
     {
         emit requestNextSegment(this);
@@ -162,8 +171,8 @@ void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
 
 void FSTPTransferSegment::transferTimerEvent()
 {
-    //if (!(pParent->getTransferStatus() & (TRANSFER_STATE_STALLED | TRANSFER_STATE_RUNNING)))
-    //    return;
+    if (!(pParent->getTransferStatus() & (TRANSFER_STATE_STALLED | TRANSFER_STATE_RUNNING)))
+        return;
     if (status == TRANSFER_STATE_STALLED)
     {
         // Transfer some data

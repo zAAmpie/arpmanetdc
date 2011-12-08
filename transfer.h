@@ -43,7 +43,7 @@ public slots:
     quint64 getTransferRate();
     quint64 getFileSize();
     int getTransferStatus();
-    int getTransferProgress();
+    virtual int getTransferProgress();
     virtual void addPeer(QHostAddress peer);
     void setProtocolOrderPreference(QByteArray p);
     virtual void hashBucketReply(int bucketNumber, QByteArray bucketTTH);

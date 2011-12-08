@@ -4,11 +4,10 @@
 DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
 {
     //TODO: load transferSegmentStateBitmap from db
-    downloadBucketTable = new QHash<int, QByteArray*>;
+    downloadBucketTable = new QHash<int, QByteArray*>();
     transferRate = 0;
     transferProgress = 0;
     bytesWrittenSinceUpdate = 0;
-    totalBucketsFlushed = 0;
     initializationStateTimerBrakes = 0;
     status = TRANSFER_STATE_INITIALIZING;
     remoteHost = QHostAddress("0.0.0.0");
@@ -84,14 +83,30 @@ void DownloadTransfer::incomingDataPacket(quint8, quint64 offset, QByteArray dat
     bytesWrittenSinceUpdate += data.size();
 }
 
+void DownloadTransfer::requestHashBucket(QByteArray rootTTH, int bucketNumber, QByteArray *bucket)
+{
+    if (bucketFlushStateBitmap.at(bucketNumber) == BucketNotFlushed)
+    {
+        emit hashBucketRequest(rootTTH, bucketNumber, bucket);
+        bucketFlushStateBitmap[bucketNumber] = BucketFlushed;
+    }
+}
+
 void DownloadTransfer::hashBucketReply(int bucketNumber, QByteArray bucketTTH)
 {
+    // buckets can be flushed twice when aligned with a segment boundary.
+    // a race condition between two threads can cause segmentation faults
+    // here we make sure we attempt to flush the buffer only once.
     if (downloadBucketHashLookupTable.contains(bucketNumber))
     {
         if (*downloadBucketHashLookupTable.value(bucketNumber) == bucketTTH)
+        {
             flushBucketToDisk(bucketNumber);
+        }
         else
         {
+            transferSegmentStateBitmap[bucketNumber] = SegmentNotDownloaded;
+            bucketFlushStateBitmap[bucketNumber] = BucketNotFlushed;
             // TODO: emit MISTAKE!
         }
     }
@@ -125,6 +140,9 @@ void DownloadTransfer::startTransfer()
     if (transferSegmentStateBitmap.length() == 0)
         for (int i = 0; i <= lastBucketNumber; i++)
             transferSegmentStateBitmap.append(SegmentNotDownloaded);
+    if (bucketFlushStateBitmap.length() == 0)
+        for (int i = 0; i <= lastBucketNumber; i++)
+            bucketFlushStateBitmap.append(BucketNotFlushed);
 
     transferTimer->start(100);
 }
@@ -161,8 +179,6 @@ void DownloadTransfer::transferRateCalculation()
     // snapshot the transfer rate as the amount of bytes written in the last second
     transferRate = bytesWrittenSinceUpdate;
     bytesWrittenSinceUpdate = 0;
-
-    transferProgress = (int)(((double)totalBucketsFlushed / (calculateBucketNumber(fileSize) + 1)) * 100);
 }
 
 void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
@@ -179,8 +195,14 @@ void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
     // just remove entry, bucket pointer gets deleted in BucketFlushThread
     downloadBucketTable->remove(bucketNumber);
     transferSegmentStateBitmap[bucketNumber] = SegmentDownloaded;
-    totalBucketsFlushed++;
-    if (totalBucketsFlushed == calculateBucketNumber(fileSize) + 1)
+
+    int segmentsDone = 0;
+    for (int i = 0; i < transferSegmentStateBitmap.length(); i++)
+    {
+        if (transferSegmentStateBitmap.at(i) == SegmentDownloaded)
+            segmentsDone++;
+    }
+    if (segmentsDone == calculateBucketNumber(fileSize) + 1)
     {
         status = TRANSFER_STATE_FINISHED;
         emit transferFinished(TTH);
@@ -355,14 +377,14 @@ TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol 
     switch(p)
     {
     case FailsafeTransferProtocol:
-        download = new FSTPTransferSegment;
+        download = new FSTPTransferSegment(this);
         break;
     case BasicTransferProtocol:
     case uTPProtocol:
     case ArpmanetFECProtocol:
         break;
     }
-    connect(download, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)), this, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)));
+    connect(download, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)), this, SLOT(requestHashBucket(QByteArray,int,QByteArray*)));
     connect(download, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)),
             this, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)));
     connect(download, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
@@ -379,6 +401,7 @@ void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int
     SegmentOffsetLengthStruct s = getSegmentForDownloading(length);
     quint64 segmentStart = s.segmentBucketOffset * HASH_BUCKET_SIZE;
     t.segmentEnd = (s.segmentBucketOffset + s.segmentBucketCount) * HASH_BUCKET_SIZE;
+    t.segmentEnd = t.segmentEnd > fileSize ? fileSize : t.segmentEnd;
     download->setSegmentStart(segmentStart);
     download->setSegmentEnd(t.segmentEnd);
     if (segmentStart != t.segmentEnd) // otherwise done
@@ -393,4 +416,15 @@ void DownloadTransfer::TTHSearchTimerEvent()
 {
     if (currentActiveSegments < MAXIMUM_SIMULTANEOUS_SEGMENTS)
         emit searchTTHAlternateSources(TTH);
+}
+
+int DownloadTransfer::getTransferProgress()
+{
+    int segmentsDone = 0;
+    for (int i = 0; i < transferSegmentStateBitmap.length(); i++)
+    {
+        if (transferSegmentStateBitmap.at(i) == SegmentDownloaded)
+            segmentsDone++;
+    }
+    return (int)(((double)segmentsDone / (calculateBucketNumber(fileSize) + 1)) * 100);
 }

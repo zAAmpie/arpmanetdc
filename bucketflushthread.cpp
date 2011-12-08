@@ -8,12 +8,15 @@ BucketFlushThread::BucketFlushThread(QObject *parent) :
 void BucketFlushThread::flushBucket(QString filename, QByteArray *bucket)
 {
     QFile file(filename);
+    if (!bucket)
+        return;
     if ((!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) || (file.write(*bucket) == -1))
     {
         // TODO: emit MISTAKE!, pause download
     }
     file.close();
     delete bucket;
+    bucket = 0;
 }
 
 void BucketFlushThread::assembleOutputFile(QString tmpfilebase, QString outfile, int startbucket, int lastbucket)

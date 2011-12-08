@@ -23,13 +23,13 @@ public slots:
 
 private:
     inline void checkSendDownloadRequest(quint8 protocol, QHostAddress peer, QByteArray TTH,
-                                         quint64 requestingOffset, qint64 requestingLength);
+                                         qint64 requestingOffset, qint64 requestingLength);
     inline int calculateBucketNumber(quint64 fileOffset);
 
     int status;
-    quint64 requestingOffset;
-    quint64 requestingLength;
-    quint64 requestingTargetOffset;
+    qint64 requestingOffset;
+    qint64 requestingLength;
+    qint64 requestingTargetOffset;
     int packetsSinceUpdate;
     int retransmitTimeoutCounter;
     int retransmitRetryCounter;

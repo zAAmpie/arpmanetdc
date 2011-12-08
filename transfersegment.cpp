@@ -11,15 +11,14 @@ void TransferSegment::transferTimerEvent(){}
 void TransferSegment::setFileSize(quint64){}
 //void TransferSegment::receivedPeerProtocolCapability(char){}
 
-void TransferSegment::setSegmentStart(quint64 start)
+void TransferSegment::setSegmentStart(qint64 start)
 {
     segmentStart = start;
-    if (segmentEnd - segmentStart > 0)
-        segmentLength = segmentEnd - segmentStart;
+    segmentLength = segmentEnd - segmentStart > 0 ? segmentEnd - segmentStart : 0;
     calculateLastBucketParams();
 }
 
-void TransferSegment::setSegmentEnd(quint64 end)
+void TransferSegment::setSegmentEnd(qint64 end)
 {
     segmentEnd = end;
     if (segmentEnd - segmentStart > 0)
@@ -36,16 +35,17 @@ void TransferSegment::setSegmentEnd(quint64 end)
 
 void TransferSegment::calculateLastBucketParams()
 {
-    lastBucketNumber = segmentEnd >> 20;
-    lastBucketSize = segmentEnd % HASH_BUCKET_SIZE;
+    lastBucketNumber = segmentEnd % HASH_BUCKET_SIZE == 0 ? (segmentEnd >> 20) - 1: segmentEnd >> 20;
+    lastBucketNumber = lastBucketNumber < 0 ? 0 : lastBucketNumber;
+    lastBucketSize = segmentLength % HASH_BUCKET_SIZE == 0 ? HASH_BUCKET_SIZE : segmentLength % HASH_BUCKET_SIZE;
 }
 
-quint64 TransferSegment::getSegmentStart()
+qint64 TransferSegment::getSegmentStart()
 {
     return segmentStart;
 }
 
-quint64 TransferSegment::getSegmentEnd()
+qint64 TransferSegment::getSegmentEnd()
 {
     return segmentEnd;
 }

@@ -31,10 +31,10 @@ public slots:
     virtual void setFileName(QString filename) = 0;
     virtual void setFileSize(quint64 size);
     void setTTH(QByteArray tth);
-    void setSegmentStart(quint64 start);
-    void setSegmentEnd(quint64 end);
-    quint64 getSegmentStart();
-    quint64 getSegmentEnd();
+    void setSegmentStart(qint64 start);
+    void setSegmentEnd(qint64 end);
+    qint64 getSegmentStart();
+    qint64 getSegmentEnd();
     qint64 getSegmentStartTime();
     QHostAddress getSegmentRemotePeer();
     void setRemoteHost(QHostAddress host);
@@ -49,9 +49,9 @@ protected:
     QString filePathName;
     quint64 fileSize;
     QHostAddress remoteHost;
-    quint64 segmentStart;
-    quint64 segmentLength;
-    quint64 segmentEnd;
+    qint64 segmentStart;
+    qint64 segmentLength;
+    qint64 segmentEnd;
     qint64 segmentStartTime;
 
     int lastBucketNumber;
