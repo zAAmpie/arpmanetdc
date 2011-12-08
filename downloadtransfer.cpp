@@ -124,6 +124,18 @@ void DownloadTransfer::TTHTreeReply(QByteArray tree)
         if (!downloadBucketHashLookupTable.contains(bucketNumber))
             downloadBucketHashLookupTable.insert(bucketNumber, bucketHash);
     }
+    int prev = -1;
+    QMapIterator<int, QByteArray*> i(downloadBucketHashLookupTable);
+    while (i.hasNext())
+    {
+        i.next();
+        if (i.key() == prev + 1)
+            prev++;
+        else
+            break;
+    }
+    emit TTHTreeRequest(listOfPeers.first(), TTH, prev + 1, 46);
+    qDebug() << "Request TTH tree " << prev + 1 << calculateBucketNumber(fileSize);
 }
 
 int DownloadTransfer::getTransferType()
@@ -145,6 +157,7 @@ void DownloadTransfer::startTransfer()
             bucketFlushStateBitmap.append(BucketNotFlushed);
 
     transferTimer->start(100);
+    timerBrakes = 0;
 }
 
 void DownloadTransfer::pauseTransfer()
@@ -215,7 +228,14 @@ void DownloadTransfer::transferTimerEvent()
 {
     if (status == TRANSFER_STATE_INITIALIZING)
     {
-        int lastHashBucketReceived = 0;
+        timerBrakes++;
+        if (timerBrakes > 1)
+        {
+            if (timerBrakes == 50)
+                timerBrakes = 0;
+            return;
+        }
+        int lastHashBucketReceived = -1;
         if (!downloadBucketHashLookupTable.isEmpty())
         {
             QMap<int, QByteArray*>::const_iterator i = downloadBucketHashLookupTable.constEnd();
@@ -235,7 +255,8 @@ void DownloadTransfer::transferTimerEvent()
         }
         else
         {
-            emit TTHTreeRequest(listOfPeers.first(), TTH, lastHashBucketReceived, 100);
+            qDebug() << "Timer request TTH tree " << lastHashBucketReceived + 1;
+            emit TTHTreeRequest(listOfPeers.first(), TTH, lastHashBucketReceived + 1, 46);
         }
     }
 }
@@ -247,7 +268,7 @@ void DownloadTransfer::transferTimerEvent()
 
 inline int DownloadTransfer::calculateBucketNumber(quint64 fileOffset)
 {
-    return (int)fileOffset >> 20;
+    return (int)(fileOffset >> 20);
 }
 
 void DownloadTransfer::segmentCompleted(TransferSegment *segment)

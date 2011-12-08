@@ -89,6 +89,7 @@ private:
     int initializationStateTimerBrakes;
     int bytesWrittenSinceUpdate;
     int currentActiveSegments;
+    int timerBrakes;
 
     QMap<quint64, TransferSegmentTableStruct> transferSegmentTable;
     QByteArray transferSegmentStateBitmap;

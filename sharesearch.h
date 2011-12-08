@@ -100,7 +100,7 @@ public slots:
     //----------========== TTH TREE REQUEST FOR TRANSFERS ==========----------
 
     //Request a tth tree for a file
-    void incomingTTHTreeRequest(QHostAddress host, QByteArray tth);  
+    void incomingTTHTreeRequest(QHostAddress host, QByteArray tth, quint32 startBucket, quint32 bucketCount);
 
 	//----------========== UPDATE SHARES (GUI) ==========----------
 	
