@@ -30,6 +30,7 @@ void BucketFlushThread::assembleOutputFile(QString tmpfilebase, QString outfile,
         //TODO: report error
         return;
     }
+
     bool ok = true;
     while (ok)
     {
@@ -42,14 +43,26 @@ void BucketFlushThread::assembleOutputFile(QString tmpfilebase, QString outfile,
         }
         else
         {
-            const char *f = (char*)outf.map(bucket * HASH_BUCKET_SIZE, HASH_BUCKET_SIZE);
-            //QByteArray buf = inf.readAll();
-            //outf.write(buf);
-            QByteArray outputmap(QByteArray::fromRawData(f, HASH_BUCKET_SIZE));
-            outputmap = inf.readAll();
+            /*quint64 fileEnd = (bucket + 1) * HASH_BUCKET_SIZE;
+            if (outf.size() < fileEnd)
+            {
+                outf.seek(fileEnd);
+                outf.write("", 0);
+            }
+
+            const char *f = (char*)outf.map(bucket * HASH_BUCKET_SIZE, HASH_BUCKET_SIZE);*/
+
+            // tmp check until mapping is sorted out
+            if (outf.size() == bucket * HASH_BUCKET_SIZE)
+            {
+                QByteArray buf = inf.readAll();
+                outf.write(buf);
+            }
+            /*QByteArray outputmap(QByteArray::fromRawData(f, HASH_BUCKET_SIZE));
+            outputmap = inf.readAll();*/
             inf.close();
             inf.remove();
-            outf.unmap((unsigned char *)f);
+            /*outf.unmap((unsigned char *)f);*/
         }
         if (bucket == lastbucket)
             outf.rename(outfile);

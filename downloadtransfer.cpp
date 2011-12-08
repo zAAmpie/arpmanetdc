@@ -202,7 +202,9 @@ void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
         if (transferSegmentStateBitmap.at(i) == SegmentDownloaded)
             segmentsDone++;
     }
-    if (segmentsDone == calculateBucketNumber(fileSize) + 1)
+    int fileBuckets = calculateBucketNumber(fileSize);
+    fileBuckets = fileSize % HASH_BUCKET_SIZE == 0 ? fileBuckets : fileBuckets + 1;
+    if (segmentsDone ==  fileBuckets)
     {
         status = TRANSFER_STATE_FINISHED;
         emit transferFinished(TTH);
