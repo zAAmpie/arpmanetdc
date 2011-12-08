@@ -1140,13 +1140,13 @@ void ShareSearch::TTHSearchQuestionReceived(QByteArray tth, QHostAddress host)
 //------------------------------============================== TTH TREE REQUEST FOR TRANSFERS ==============================------------------------------
 
 //Request a tth tree for a file
-void ShareSearch::incomingTTHTreeRequest(QHostAddress host, QByteArray tth)
+void ShareSearch::incomingTTHTreeRequest(QHostAddress host, QByteArray tth, quint32 startBucket, quint32 bucketCount)
 {
     QByteArray tthTreePacket;
     tthTreePacket.append(tth);
 
     //Return all 1MB TTHs for a root TTH
-	QString queryStr = tr("SELECT [oneMBtth], [offset] FROM OneMBTTH WHERE [tth] = ? ORDER BY [offset] ASC;");
+    QString queryStr = tr("SELECT [oneMBtth], [offset] FROM OneMBTTH WHERE [tth] = ? AND [offset] >= ? ORDER BY [offset] ASC LIMIT ?;");
 
 	QByteArray results;
 	sqlite3 *db = pParent->database();	
@@ -1159,6 +1159,8 @@ void ShareSearch::incomingTTHTreeRequest(QHostAddress host, QByteArray tth)
 	{
         QString tthStr = tth.toBase64();
         int res = sqlite3_bind_text16(statement, 1, tthStr.utf16(), tthStr.size()*2, SQLITE_STATIC);
+        res = res | sqlite3_bind_int64(statement, 2, (quint64)startBucket * (1<<20));
+        res = res | sqlite3_bind_int(statement, 3, bucketCount);
 
 		int cols = sqlite3_column_count(statement);
 		int result = 0;
