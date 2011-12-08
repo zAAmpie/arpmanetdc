@@ -213,6 +213,16 @@ QByteArray quint16ToByteArray(quint16 num)
 	return numBA;
 }
 
+QByteArray quint8ToByteArray(quint8 num)
+{
+	//Convert quint8 to QByteArray
+	QByteArray numBA;
+	QDataStream ds(&numBA,QIODevice::WriteOnly);
+	ds.setVersion(QDataStream::Qt_4_6);
+	ds << (quint8)num;
+	return numBA;
+}
+
 QByteArray qint16ToByteArray(qint16 num)
 {
 	//Convert qint16 to QByteArray
@@ -287,6 +297,17 @@ quint16 getQuint16FromByteArray(QByteArray *data)
 	ds.setVersion(QDataStream::Qt_4_6);
 	ds >> num;
 	data->remove(0,2);
+	return num;
+}
+
+quint8 getQuint8FromByteArray(QByteArray *data)
+{
+	//Remove a quint8 from a QByteArray
+	quint8 num;
+	QDataStream ds(data,QIODevice::ReadOnly);
+	ds.setVersion(QDataStream::Qt_4_6);
+	ds >> num;
+	data->remove(0,1);
 	return num;
 }
 

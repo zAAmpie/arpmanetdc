@@ -48,6 +48,7 @@ QByteArray toQByteArray(quint64 n);
 
 //Functions to convert basic types to QByteArray
 QByteArray quint16ToByteArray(quint16 num);
+QByteArray quint8ToByteArray(quint8 num);
 QByteArray qint16ToByteArray(qint16 num);
 QByteArray quint64ToByteArray(quint64 num);
 QByteArray quint32ToByteArray(quint32 num);
@@ -57,6 +58,7 @@ QByteArray sizeOfByteArray(QByteArray *data);
 //Functions to extract a basic type from a QByteArray
 QString getStringFromByteArray(QByteArray *data);
 quint16 getQuint16FromByteArray(QByteArray *data);
+quint8 getQuint8FromByteArray(QByteArray *data);
 qint16 getQint16FromByteArray(QByteArray *data);
 quint32 getQuint32FromByteArray(QByteArray *data);
 quint64 getQuint64FromByteArray(QByteArray *data);

@@ -100,10 +100,10 @@ void DownloadTransfer::hashBucketReply(int bucketNumber, QByteArray bucketTTH)
 
 void DownloadTransfer::TTHTreeReply(QByteArray tree)
 {
-    while (tree.length() >= 30)
+    while (tree.length() >= 29)
     {
         int bucketNumber = getQuint32FromByteArray(&tree);
-        int tthLength = getQuint16FromByteArray(&tree);
+        quint8 tthLength = getQuint8FromByteArray(&tree);
         QByteArray *bucketHash = new QByteArray(tree.left(tthLength));
         tree.remove(0, tthLength);
         if (!downloadBucketHashLookupTable.contains(bucketNumber))

@@ -1173,15 +1173,15 @@ void ShareSearch::incomingTTHTreeRequest(QHostAddress host, QByteArray tth)
             //Build tthTree packet structure
             //===============================================================
             //BucketNumber              quint32
-            //TTH size                  quint16
+            //TTH size                  quint8
             //TTH                       QByteArray (variable size = TTH size)
 
             tthTreePacket.append(quint32ToByteArray(bucketNumber));
-            tthTreePacket.append(quint16ToByteArray((quint16)oneMBTTH.size()));
+            tthTreePacket.append(quint8ToByteArray((quint8)oneMBTTH.size()));
             tthTreePacket.append(oneMBTTH);
 
             //Send the packet if it's full
-            if (tthTreePacket.size() >= MAX_TTHTREE_PACKET_SIZE)
+            if (tthTreePacket.size() + TTH_TREE_HASH_SIZE >= PACKET_DATA_MTU)
             {
                 emit sendTTHTreeReply(host, tthTreePacket);
                 //Clear packet for next data
