@@ -140,7 +140,7 @@ void DownloadTransfer::TTHTreeReply(QByteArray tree)
             break;
     }
     emit TTHTreeRequest(listOfPeers.first(), TTH, prev + 1, 46);
-    qDebug() << "Request TTH tree " << prev + 1 << calculateBucketNumber(fileSize);
+    //qDebug() << "Request TTH tree " << prev + 1 << calculateBucketNumber(fileSize);
 }
 
 int DownloadTransfer::getTransferType()
@@ -247,7 +247,8 @@ void DownloadTransfer::transferTimerEvent()
             --i;
             lastHashBucketReceived = i.key();
         }
-        if (lastHashBucketReceived == calculateBucketNumber(fileSize))
+
+        if (lastHashBucketReceived == calculateBucketNumber(fileSize) - 1)
         {
             status = TRANSFER_STATE_RUNNING;
             QHashIterator<QHostAddress, RemotePeerInfoStruct> i(remotePeerInfoTable);
@@ -260,7 +261,7 @@ void DownloadTransfer::transferTimerEvent()
         }
         else
         {
-            qDebug() << "Timer request TTH tree " << lastHashBucketReceived + 1;
+            //qDebug() << "Timer request TTH tree " << lastHashBucketReceived + 1;
             emit TTHTreeRequest(listOfPeers.first(), TTH, lastHashBucketReceived + 1, 46);
         }
     }

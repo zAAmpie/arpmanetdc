@@ -134,7 +134,7 @@ void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
     else
     {
         pDownloadBucketTable->value(bucketNumber)->append(data);
-        qDebug() << "Append data " << requestingOffset << offset << pDownloadBucketTable->value(bucketNumber)->length();
+        //qDebug() << "Append data " << requestingOffset << offset << pDownloadBucketTable->value(bucketNumber)->length();
     }
 
     if (pDownloadBucketTable->value(bucketNumber)->length() == HASH_BUCKET_SIZE)

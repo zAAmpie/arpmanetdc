@@ -47,11 +47,11 @@ void BucketFlushThread::assembleOutputFile(QString tmpfilebase, QString outfile,
             QByteArray buf = inf.readAll();
             
             //Ensure enough space is available for the map
-            if (outf.size() < bucket * HASH_BUCKET_SIZE + buf.size())
-                outf.resize(bucket * HASH_BUCKET_SIZE + buf.size());
+            if (outf.size() < (quint64)bucket * HASH_BUCKET_SIZE + buf.size())
+                outf.resize((quint64)bucket * HASH_BUCKET_SIZE + buf.size());
             
             //Map file to memory
-            char *f = (char*)outf.map(bucket * HASH_BUCKET_SIZE, buf.size());
+            char *f = (char*)outf.map((quint64)bucket * HASH_BUCKET_SIZE, buf.size());
             
             //Write to memory if map succeeded
             if (f != 0)
