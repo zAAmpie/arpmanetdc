@@ -353,21 +353,25 @@ void ShareSearch::hashFileThreadDone(QString filePath, QString fileName, qint64 
 
 	//Generate 1MB tth query - max blocks of 50 selects
 	int count = 0;
-	qint64 offset = 0;
+	qint64 offset = -1048576;
 	while (!oneMBList->isEmpty())
 	{
-		QByteArray query;
+		offset += 1048576;
+
+        QByteArray query;
 		query.append(tr("INSERT INTO OneMBTTH ([oneMBtth], [tth], [offset], [fileShareID]) SELECT '%1', '%2', %3, (SELECT rowID FROM FileShares WHERE filePath = ?001) ")
 			.arg(oneMBList->takeFirst())
 			.arg(tthRoot)
-			.arg(offset));
+			.arg(offset));     
 
 		while ((count < 50) && (!oneMBList->isEmpty()))
 		{
+            offset += 1048576;
+
 			query.append(tr("UNION SELECT '%1', '%2', %3, (SELECT rowID FROM FileShares WHERE filePath = ?001) ")
 				.arg(oneMBList->takeFirst())
 				.arg(tthRoot)
-				.arg(offset+=1048576));
+				.arg(offset));
 			
 			count++;
 		}
