@@ -41,18 +41,17 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     connect(networkBootstrap, SIGNAL(bootstrapStatusChanged(int)), this, SLOT(changeBootstrapStatus(int)));
     connect(networkBootstrap, SIGNAL(sendBroadcastAnnounce()), this, SLOT(sendBroadcastAnnounce()));
     connect(networkBootstrap, SIGNAL(sendMulticastAnnounce()), this, SLOT(sendMulticastAnnounce()));
-    connect(networkBootstrap, SIGNAL(sendUnicastAnnounceForwardRequest(QHostAddress&)),
-            this, SLOT(sendUnicastAnnounceForwardRequest(QHostAddress&)));
     connect(networkBootstrap, SIGNAL(sendRequestAllBuckets(QHostAddress)),
             this, SLOT(requestAllBuckets(QHostAddress)));
         
     // Network topology manager
     networkTopology = new NetworkTopology(this);
+    connect(networkTopology, SIGNAL(sendForwardAnnouncement(QHostAddress)), this, SLOT(sendUnicastAnnounceForwardRequest(QHostAddress)));
     connect(this, SIGNAL(announceReplyArrived(bool,QHostAddress&,QByteArray&,QByteArray&)),
             networkTopology, SLOT(announceReplyArrived(bool,QHostAddress&,QByteArray&,QByteArray&)));
     connect(this, SIGNAL(announceForwardArrived(QHostAddress&,QByteArray&,QByteArray&)),
             networkTopology, SLOT(announceForwardReplyArrived(QHostAddress&,QByteArray&,QByteArray&)));
-    connect(this, SIGNAL(bucketContentsArrived(QByteArray)), networkTopology, SLOT(bucketContentsArrived(QByteArray)));
+    connect(this, SIGNAL(bucketContentsArrived(QByteArray, QHostAddress)), networkTopology, SLOT(bucketContentsArrived(QByteArray, QHostAddress)));
     connect(networkBootstrap, SIGNAL(initiateBucketExchanges()), networkTopology, SLOT(initiateBucketRequests()));
     connect(networkTopology, SIGNAL(requestBucketContents(QHostAddress)), this, SLOT(requestBucketContents(QHostAddress)));
     connect(networkTopology, SIGNAL(requestAllBuckets(QHostAddress)), this, SLOT(requestAllBuckets(QHostAddress)));
@@ -159,11 +158,11 @@ void Dispatcher::handleProtocolInstruction(quint8 &quint8DatagramType, quint8 &q
         break;
 
     case SearchResultPacket:
-        parseArrivedSearchResult(datagram);
+        parseArrivedSearchResult(datagram, senderHost);
         break;
 
     case BucketExchangePacket:
-        emit bucketContentsArrived(datagram.mid(2));
+        emit bucketContentsArrived(datagram.mid(2), senderHost);
         break;
 
     case RequestBucketPacket:
@@ -315,7 +314,7 @@ void Dispatcher::sendUnicastAnnounceReply(QHostAddress &dstHost)
     sendUnicastRawDatagram(dstHost, datagram);
 }
 
-void Dispatcher::sendUnicastAnnounceForwardRequest(QHostAddress &toAddr)
+void Dispatcher::sendUnicastAnnounceForwardRequest(QHostAddress toAddr)
 {
     QByteArray *datagram = new QByteArray;
     datagram->append(UnicastPacket);
@@ -350,7 +349,15 @@ void Dispatcher::handleReceivedAnnounceForwardRequest(QHostAddress &fromHost, QB
     }
 }
 
-void Dispatcher::handleReceivedAnnounce(quint8 &datagramType, QHostAddress &senderHost, QByteArray &datagram)
+void Dispatcher::handleReceivedForwardedAnnounce(QByteArray &datagram)
+{
+    QByteArray tmp = datagram.mid(2, 4);
+    QHostAddress announcingHost(getQuint32FromByteArray(&tmp));
+    datagram.remove(2, 4);
+    handleReceivedAnnounce(UnicastPacket, announcingHost, datagram);
+}
+
+void Dispatcher::handleReceivedAnnounce(quint8 datagramType, QHostAddress &senderHost, QByteArray &datagram)
 {
     if (datagram.length() == 50)
     {
@@ -427,28 +434,30 @@ QByteArray Dispatcher::assembleSearchPacket(QHostAddress &searchingHost, quint64
     return datagram;
 }
 
-void Dispatcher::parseArrivedSearchResult(QByteArray &datagram)
+void Dispatcher::parseArrivedSearchResult(QByteArray &datagram, QHostAddress senderHost)
 {
     if (datagram.length() <= 40)
     {
         emit invalidPacketReceived();
         return;
     }
-    QByteArray tmp = datagram.mid(2,4);
-    QHostAddress senderHost = QHostAddress(getQuint32FromByteArray(&tmp));
-    tmp = datagram.mid(6, 8);
-    quint64 searchID = getQuint64FromByteArray(&tmp);
-    QByteArray senderCID = datagram.mid(14, 24);
-    tmp = datagram.mid(38, 2);
-    int searchResultLength = getQuint16FromByteArray(&tmp);
-    QByteArray searchResult = datagram.mid(40, searchResultLength);
-    QByteArray bucket = datagram.mid(40 + searchResultLength);
+    datagram.remove(0, 2);
+    QHostAddress allegedSenderHost(getQuint32FromByteArray(&datagram));
+    if (senderHost != allegedSenderHost)
+        return;
+
+    quint64 searchID = getQuint64FromByteArray(&datagram);
+    QByteArray senderCID = datagram.mid(0, 24);
+    datagram.remove(0, 24);
+    int searchResultLength = getQuint16FromByteArray(&datagram);
+    QByteArray searchResult = datagram.mid(0, searchResultLength);
+    QByteArray bucket = datagram.mid(searchResultLength);
 
     if (searchResult.length() > 0)
         emit searchResultsReceived(senderHost, senderCID, searchID, searchResult);
 
     if (bucket.length() > 0)
-        emit bucketContentsArrived(bucket);
+        emit bucketContentsArrived(bucket, senderHost);
 }
 
 void Dispatcher::sendSearchBroadcast(QByteArray &searchPacket)
@@ -517,7 +526,7 @@ void Dispatcher::handleReceivedSearchQuestion(QHostAddress &fromHost, QByteArray
         emit searchQuestionReceived(fromHost, clientCID, searchID, searchData);
 
     if (bucket.length() > 0)
-        emit bucketContentsArrived(bucket);
+        emit bucketContentsArrived(bucket, fromHost);
 
 }
 

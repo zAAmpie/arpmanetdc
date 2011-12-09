@@ -7,6 +7,7 @@
 #include <QFile>
 #include <QHash>
 #include <QList>
+#include <QDateTime>
 
 // bootstrap status definitions
 #define NETWORK_BOOTATTEMPT_NONE -2
@@ -34,7 +35,6 @@ signals:
     // Keepalive signals
     void sendMulticastAnnounceNoReply();
     void sendBroadcastAnnounceNoReply();
-    void sendUnicastAnnounceForwardRequest(QHostAddress &toAddr);
     void announceReplyArrived(QHostAddress &hostAddr, QByteArray &cid, QByteArray &bucket);
 
     // Bucket exchange
@@ -69,6 +69,7 @@ private:
     // Network scanning ranges
     QMap<quint32, quint32> networkScanRanges;
     quint32 totalScanHosts;
+    int networkScanTimeouts;
 };
 
 #endif // NETWORKBOOTSTRAP_H

@@ -51,14 +51,19 @@ private slots:
 	//Reconnect timer expired
 	void reconnectTimeout();
 
+    //Keepalive timer expired
+    void keepaliveTimeout();
+
 private:
 	//Escaping functions
     QString escapeDCProtocol(QString);
     QString unescapeDCProtocol(QString);
+    QString generateMyINFOString();
 
 	//Objects
 	QTcpSocket *hubSocket;
 	QTimer *reconnectTimer;
+    QTimer *keepaliveTimer;
 
 	//Parameters
     QString hubAddress;

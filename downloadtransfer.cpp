@@ -48,9 +48,10 @@ DownloadTransfer::~DownloadTransfer()
     while (ithb.hasNext())
         delete ithb.next().value();
 
-    QHashIterator<QHostAddress, RemotePeerInfoStruct> r(remotePeerInfoTable);
-    while (r.hasNext())
-        delete r.value().transferSegment;
+//    QHashIterator<QHostAddress, RemotePeerInfoStruct> r(remotePeerInfoTable);
+//    while (r.hasNext())
+//        if (r.value().transferSegment)
+//            delete r.value().transferSegment;
 }
 
 void DownloadTransfer::incomingDataPacket(quint8, quint64 offset, QByteArray data)
@@ -140,7 +141,7 @@ void DownloadTransfer::TTHTreeReply(QByteArray tree)
             break;
     }
     emit TTHTreeRequest(listOfPeers.first(), TTH, prev + 1, 46);
-    //qDebug() << "Request TTH tree " << prev + 1 << calculateBucketNumber(fileSize);
+    qDebug() << "Request TTH tree " << prev + 1 << calculateBucketNumber(fileSize);
 }
 
 int DownloadTransfer::getTransferType()
@@ -248,7 +249,9 @@ void DownloadTransfer::transferTimerEvent()
             lastHashBucketReceived = i.key();
         }
 
-        if (lastHashBucketReceived == calculateBucketNumber(fileSize) - 1)
+        int lastBucket = calculateBucketNumber(fileSize);
+        lastBucket = fileSize % HASH_BUCKET_SIZE == 0 ? lastBucket - 1 : lastBucket;
+        if (lastHashBucketReceived == lastBucket)
         {
             status = TRANSFER_STATE_RUNNING;
             QHashIterator<QHostAddress, RemotePeerInfoStruct> i(remotePeerInfoTable);
@@ -261,7 +264,7 @@ void DownloadTransfer::transferTimerEvent()
         }
         else
         {
-            //qDebug() << "Timer request TTH tree " << lastHashBucketReceived + 1;
+            qDebug() << "Timer request TTH tree " << lastHashBucketReceived + 1;
             emit TTHTreeRequest(listOfPeers.first(), TTH, lastHashBucketReceived + 1, 46);
         }
     }

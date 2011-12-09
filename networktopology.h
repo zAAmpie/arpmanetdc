@@ -40,6 +40,7 @@ public:
 signals:
     void changeBootstrapStatus(int status);
     void requestBucketContents(QHostAddress host);
+    void sendForwardAnnouncement(QHostAddress host);
     void requestAllBuckets(QHostAddress host);
 
 public slots:
@@ -47,7 +48,7 @@ public slots:
     void announceReplyArrived(bool isMulticast, QHostAddress &hostAddr, QByteArray &cid, QByteArray &bucket);
     void announceForwardReplyArrived(QHostAddress &hostAddr, QByteArray &cid, QByteArray &bucket);
 
-    void bucketContentsArrived(QByteArray);
+    void bucketContentsArrived(QByteArray bucket, QHostAddress senderHost);
     void initiateBucketRequests();
 
     void setBootstrapStatus(int status);

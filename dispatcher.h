@@ -61,7 +61,7 @@ signals:
     void writeUdpMulticastFailed();
 
     // Bucket exchanges
-    void bucketContentsArrived(QByteArray bucket);
+    void bucketContentsArrived(QByteArray bucket, QHostAddress senderHost);
 
     // CID
     void CIDReplyArrived(QHostAddress &fromAddr, QByteArray &cid);
@@ -82,7 +82,7 @@ public slots:
     void sendMulticastAnnounceReply();
     void sendBroadcastAnnounceReply();
     void sendUnicastAnnounceReply(QHostAddress &dstHost);
-    void sendUnicastAnnounceForwardRequest(QHostAddress &dstAddr);
+    void sendUnicastAnnounceForwardRequest(QHostAddress dstAddr);
     void addNetworkScanRange(quint32 rangeBase, quint32 rangeEnd);
     void removeNetworkScanRange(quint32 rangeBase);
 
@@ -139,7 +139,7 @@ private:
     void sendSearchMulticast(QByteArray &searchPacket);
     void sendSearchForwardRequest(QHostAddress &forwardingNode, QByteArray &searchPacket);
     void handleReceivedSearchForwardRequest(QHostAddress &fromAddr, QByteArray &datagram);
-    void parseArrivedSearchResult(QByteArray &datagram);
+    void parseArrivedSearchResult(QByteArray &datagram, QHostAddress senderHost);
     void handleReceivedSearchQuestion(QHostAddress &fromHost, QByteArray &datagram);
     void sendTTHSearchBroadcast(QByteArray &tth);
     void sendTTHSearchMulticast(QByteArray &tth);
@@ -160,7 +160,8 @@ private:
 
     // P2P announcements
     void handleReceivedAnnounceForwardRequest(QHostAddress &fromHost, QByteArray &datagram);
-    void handleReceivedAnnounce(quint8 &datagramType, QHostAddress &senderHost, QByteArray &datagram);
+    void handleReceivedAnnounce(quint8 datagramType, QHostAddress &senderHost, QByteArray &datagram);
+    void handleReceivedForwardedAnnounce(QByteArray &datagram);
 
     // P2P protocol helper
     void handleProtocolInstruction(quint8 &quint8DatagramType, quint8 &quint8ProtocolInstruction, QByteArray &datagram,

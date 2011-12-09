@@ -92,30 +92,34 @@ void NetworkTopology::announceForwardReplyArrived(QHostAddress &hostAddr, QByteA
     updateHostTimestamp(bucket, hostAddr);
 }
 
-void NetworkTopology::bucketContentsArrived(QByteArray bucket)
+void NetworkTopology::bucketContentsArrived(QByteArray bucket, QHostAddress senderHost)
 {
     // TODO: vir nou doen ons nog die gullible ding, hier is potensiaal vir serious statistieke
-    if (bucket.length() < 28)
+    if (bucket.length() < 24)
         return;
 
     QByteArray bucketID = bucket.mid(0, 24);
-    QByteArray bucketContents = bucket.mid(24);
-    while (bucketContents.length() >= 6)
+    bucket.remove(0, 24);
+    while (bucket.length() >= 6)
     {
-        QHostAddress addr = QHostAddress(getQuint32FromByteArray(&bucketContents));
-        qint64 age = (qint64)(getQuint16FromByteArray(&bucketContents) * 1000);
+        QHostAddress addr = QHostAddress(getQuint32FromByteArray(&bucket));
+        qint64 age = (qint64)(getQuint16FromByteArray(&bucket) * 1000);
         if (getHostAge(bucketID, addr) > age)
             updateHostTimestamp(bucketID, addr, age);
     }
+    // the replyee is not in his own bucket, since buckets only contain dispatch ip's as seen from the network.
+    // we take the address the message came from as his dispatch ip and update the buckets accordingly.
+    updateHostTimestamp(bucketID, senderHost, 0);
 }
 
 void NetworkTopology::initiateBucketRequests()
 {
-    QList<QHostAddress> selectedPeers = getForwardingPeers(1);
+    QList<QHostAddress> selectedPeers = getForwardingPeers(2);
     QListIterator<QHostAddress> it(selectedPeers);
     while (it.hasNext())
     {
-        emit requestBucketContents(it.next());
+        emit requestBucketContents(it.peekNext());
+        emit sendForwardAnnouncement(it.next());
     }
 }
 

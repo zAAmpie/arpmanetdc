@@ -1372,7 +1372,7 @@ void ArpmanetDC::sortUserList()
 	if (sortDue)
 	{
 		userSortProxy->sort(2, Qt::AscendingOrder);
-		resizeRowsToContents(userListTable);
+        //resizeRowsToContents(userListTable);
 		sortDue = false;
 	}
 }

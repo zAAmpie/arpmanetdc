@@ -18,6 +18,11 @@ HubConnection::HubConnection(QObject *parent) :
 	reconnectTimer = new QTimer(this);
 	reconnectTimer->setInterval(30000); //Try to reconnect every 30 seconds
 	connect(reconnectTimer, SIGNAL(timeout()), this, SLOT(reconnectTimeout()));
+
+    keepaliveTimer = new QTimer(this);
+    keepaliveTimer->setInterval(600000);  // every 10 minutes
+    keepaliveTimer->setSingleShot(false);
+    connect(keepaliveTimer, SIGNAL(timeout()), this, SLOT(keepaliveTimeout()));
 }
 
 HubConnection::HubConnection(QString address, quint16 port, QString nick, QString password, QString version, QObject *parent) : QObject(parent)
@@ -114,6 +119,21 @@ QString HubConnection::unescapeDCProtocol(QString msg)
     return msg;
 }
 
+QString HubConnection::generateMyINFOString()
+{
+    QString s = "$MyINFO $ALL ";
+    s.append(nick);
+    s.append(" <ArpmanetDC V:");
+    s.append(version);
+    s.append(",M:A,H:");
+    if (registeredUser)
+        s.append("0/1/0");
+    else
+        s.append("1/0/0");
+    s.append(",S:5>$ $100.00 KiB/s$$0$|");
+    return s;
+}
+
 void HubConnection::processHubMessage()
 {
 	//Hub is considered online if it receives messages - for now
@@ -189,16 +209,8 @@ void HubConnection::processHubMessage()
                 {
                     if (msg.mid(7).compare(nick) == 0)
                     {
-                        sendData.append("$Version 1,0091|$GetNickList|$MyINFO $ALL ");
-                        sendData.append(nick);
-                        sendData.append(" [L:2.00 MiB/s]<ArpmanetDC V:");
-						sendData.append(version);
-						sendData.append(",M:A,H:");
-                        if (registeredUser)
-                            sendData.append("0/1/0");
-                        else
-                            sendData.append("1/0/0");
-                        sendData.append(",S:5>$ $100.00 KiB/s$$0$|");
+                        sendData.append("$Version 1,0091|$GetNickList|");
+                        sendData.append(generateMyINFOString());
                         hubSocket->write(sendData);
                     }
                     else
@@ -311,22 +323,29 @@ void HubConnection::socketError(QAbstractSocket::SocketError error)
 		//Try again if it was a connection error
 		if (!reconnectTimer->isActive())
 			reconnectTimer->start();
-
-		//If hub was online, change status to offline
-		if (hubIsOnline)
-		{
-			hubIsOnline = false;
-			emit hubOffline();
-		}
 	}	
 
+    //If hub was online, change status to offline
+    if (hubIsOnline)
+    {
+        hubIsOnline = false;
+        emit hubOffline();
+    }
+
 	emit hubError(errorString);
+    emit receivedChatMessage("<font color=\"red\">" + errorString + "</font>");
 }
 
 void HubConnection::reconnectTimeout()
 {
 	//Retry connection
 	connectHub();
+}
+
+void HubConnection::keepaliveTimeout()
+{
+    if (hubIsOnline)
+        hubSocket->write(generateMyINFOString().toAscii());
 }
 
 // Get functions, so that we do not need to reconnect on every settings change

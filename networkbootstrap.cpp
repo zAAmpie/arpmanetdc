@@ -38,9 +38,16 @@ NetworkBootstrap::NetworkBootstrap(QObject *parent) :
 
     // Begin bootstrap proses
     bootstrapTimer->start(1000);
-    networkScanTimer->start(2500);
+    networkScanTimer->start(1500);
 
     totalScanHosts = 0;
+    networkScanTimeouts = 0;
+
+    QListIterator<QHostAddress> i(lastGoodNodes);
+    while (i.hasNext())
+    {
+        emit sendRequestAllBuckets(i.peekNext());
+    }
 }
 
 NetworkBootstrap::~NetworkBootstrap()
@@ -81,7 +88,7 @@ void NetworkBootstrap::performBootstrap()
     case NETWORK_BCAST_ALONE:
         emit sendMulticastAnnounce();
         emit sendBroadcastAnnounce();
-        bootstrapTimer->start(5000);
+        bootstrapTimer->start(15000);
     }
 }
 
@@ -96,22 +103,30 @@ void NetworkBootstrap::setBootstrapStatus(int status)
 
 void NetworkBootstrap::networkScanTimerEvent()
 {
+    networkScanTimeouts++;
+    if (networkScanTimeouts == 3)
+        networkScanTimeouts = 0;
+
     if (bootstrapStatus <= 0)
-        networkScanTimer->start(2500);
+        networkScanTimer->start(1500);
+    else if (bootstrapStatus == 1)
+        networkScanTimer->start(10000);
     else
     {
-        networkScanTimer->start(60000);
-        emit initiateBucketExchanges();
+        networkScanTimer->start(30000);
+        if (networkScanTimeouts == 0)
+            emit initiateBucketExchanges();
     }
 
     if (totalScanHosts == 0)
         return;
 
+    qsrand((quint32)(QDateTime::currentMSecsSinceEpoch()&0xFFFFFFFF));
     for (int i = 0; i < 3; i++)
     {
         quint32 scanHostOffset = qrand() % totalScanHosts;
         QMapIterator<quint32, quint32> it(networkScanRanges);
-        int currentOffset = 0;
+        quint32 currentOffset = 0;
         QHostAddress scanHost;
         while (it.hasNext())
         {
@@ -119,12 +134,12 @@ void NetworkBootstrap::networkScanTimerEvent()
             if (scanHostOffset <= currentOffset)
             {
                 scanHost = QHostAddress(it.peekNext().key() + scanHostOffset % it.peekNext().value());
-                qDebug() << "NetworkBootstrap::networkScanTimerEvent(): Scanning host:" << scanHost.toString();
                 break;
             }
             else
                 it.next();
         }
+        qDebug() << "NetworkBootstrap::networkScanTimerEvent(): Scanning host:" << scanHost.toString();
         emit sendRequestAllBuckets(scanHost);
     }
 }
