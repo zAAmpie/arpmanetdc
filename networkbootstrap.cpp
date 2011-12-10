@@ -46,7 +46,7 @@ NetworkBootstrap::NetworkBootstrap(QObject *parent) :
     QListIterator<QHostAddress> i(lastGoodNodes);
     while (i.hasNext())
     {
-        emit sendRequestAllBuckets(i.peekNext());
+        emit sendRequestAllBuckets(i.next());
     }
 }
 
