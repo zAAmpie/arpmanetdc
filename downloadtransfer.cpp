@@ -41,17 +41,14 @@ DownloadTransfer::~DownloadTransfer()
     }
     delete downloadBucketTable;
 
-    //Sover ek verstaan gaan downloadBucketHashLookupTable al uit scope uit voor jy by hierdie destructor kom?
-    //So jy moet of hom 'n pointer maak of net hierdie stap heeltemal uithaal
-    //A: DownloadTransfer class variable, hy behoort nog hier te wees. ons wil die qbytearray pointers binne-in die ding delete.
     QMapIterator<int, QByteArray*> ithb(downloadBucketHashLookupTable);
     while (ithb.hasNext())
         delete ithb.next().value();
 
-//    QHashIterator<QHostAddress, RemotePeerInfoStruct> r(remotePeerInfoTable);
-//    while (r.hasNext())
-//        if (r.value().transferSegment)
-//            delete r.value().transferSegment;
+    QHashIterator<QHostAddress, RemotePeerInfoStruct> r(remotePeerInfoTable);
+    while (r.hasNext())
+        if (r.peekNext().value().transferSegment)
+            r.next().value().transferSegment->deleteLater();
 }
 
 void DownloadTransfer::incomingDataPacket(quint8, quint64 offset, QByteArray data)
@@ -452,6 +449,7 @@ void DownloadTransfer::TTHSearchTimerEvent()
 
 int DownloadTransfer::getTransferProgress()
 {
+    //===== 1 MB precision progress =====
     int segmentsDone = 0;
     for (int i = 0; i < transferSegmentStateBitmap.length(); i++)
     {
@@ -459,6 +457,11 @@ int DownloadTransfer::getTransferProgress()
             segmentsDone++;
     }
 
+    //Clause to only use byte precision for files smaller than 100 MB
+    if (fileSize >= 100*(1<<20))
+        return (int)(((double)segmentsDone / (calculateBucketNumber(fileSize) + 1)) * 100);
+
+    //===== 1 byte precision progress =====
     qint64 dataReceivedNotFlushed = 0;
     int segmentsActive = 0;
 
@@ -475,6 +478,5 @@ int DownloadTransfer::getTransferProgress()
     qint64 bytesDone = segmentsDone * HASH_BUCKET_SIZE + dataReceivedNotFlushed;
     int returnVal = bytesDone * 100 / fileSize;
     
-    //return (int)(((double)segmentsDone / (calculateBucketNumber(fileSize) + 1)) * 100);
     return returnVal > 100 ? 100 : returnVal;
 }

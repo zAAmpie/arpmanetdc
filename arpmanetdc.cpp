@@ -325,9 +325,9 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 ArpmanetDC::~ArpmanetDC()
 {
 	//Destructor
-	delete pHub;
-    delete pTransferManager;
-    delete pDispatcher;
+	pHub->deleteLater();
+    pTransferManager->deleteLater();
+    pDispatcher->deleteLater();
 
     //saveSettings();
     delete pSettings;
