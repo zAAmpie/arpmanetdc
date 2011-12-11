@@ -15,6 +15,7 @@ public slots:
     void setFileSize(quint64 size);
     void startUploading();
     void startDownloading();
+    qint64 getBytesReceivedNotFlushed();
 };
 
 #endif // UTPTRANSFERSEGMENT_H

@@ -20,6 +20,7 @@ public slots:
     void setFileSize(quint64 size);
     void startUploading();
     void startDownloading();
+    qint64 getBytesReceivedNotFlushed();
 
 private:
     inline void checkSendDownloadRequest(quint8 protocol, QHostAddress peer, QByteArray TTH,

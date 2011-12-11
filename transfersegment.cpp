@@ -10,6 +10,7 @@ TransferSegment::~TransferSegment(){}
 void TransferSegment::transferTimerEvent(){}
 void TransferSegment::setFileSize(quint64){}
 //void TransferSegment::receivedPeerProtocolCapability(char){}
+qint64 TransferSegment::getBytesReceivedNotFlushed(){return 0;}
 
 void TransferSegment::setSegmentStart(qint64 start)
 {

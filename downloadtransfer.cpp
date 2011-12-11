@@ -264,7 +264,7 @@ void DownloadTransfer::transferTimerEvent()
         }
         else
         {
-            qDebug() << "Timer request TTH tree " << lastHashBucketReceived + 1;
+            qDebug() << "Timer request TTH tree " << listOfPeers.first().toString() << lastHashBucketReceived + 1;
             emit TTHTreeRequest(listOfPeers.first(), TTH, lastHashBucketReceived + 1, 46);
         }
     }
@@ -458,5 +458,23 @@ int DownloadTransfer::getTransferProgress()
         if (transferSegmentStateBitmap.at(i) == SegmentDownloaded)
             segmentsDone++;
     }
-    return (int)(((double)segmentsDone / (calculateBucketNumber(fileSize) + 1)) * 100);
+
+    qint64 dataReceivedNotFlushed = 0;
+    int segmentsActive = 0;
+
+    //Go through all active segments and check the amount of data received
+    foreach (TransferSegmentTableStruct t, transferSegmentTable)
+    {
+        if (t.transferSegment)
+        {
+            dataReceivedNotFlushed += t.transferSegment->getBytesReceivedNotFlushed();
+            segmentsActive++;
+        }
+    }
+            
+    qint64 bytesDone = segmentsDone * HASH_BUCKET_SIZE + dataReceivedNotFlushed;
+    int returnVal = bytesDone * 100 / fileSize;
+    
+    //return (int)(((double)segmentsDone / (calculateBucketNumber(fileSize) + 1)) * 100);
+    return returnVal > 100 ? 100 : returnVal;
 }

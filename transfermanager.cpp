@@ -15,9 +15,10 @@ TransferManager::~TransferManager()
         Transfer *p = it.next().value();
         destroyTransferObject(p);
     }
-    QMapIterator<int, QList<DownloadTransferQueueItem>*> i(downloadTransferQueue);
-    while (i.hasNext())
-        delete i.next().value();
+    //Children are already being deleted after this destructor
+    //QMapIterator<int, QList<DownloadTransferQueueItem>*> i(downloadTransferQueue);
+    //while (i.hasNext())
+    //    delete i.next().value();
 }
 
 // remove the pointer to the transfer object from the transfer object table before deleting the object.

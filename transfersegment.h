@@ -43,6 +43,8 @@ public slots:
     void setDownloadBucketTablePointer(QHash<int, QByteArray*> *dbt);
     //virtual void receivedPeerProtocolCapability(char protocols);
 
+    virtual qint64 getBytesReceivedNotFlushed();
+
 protected:
     void calculateLastBucketParams();
     QByteArray TTH;

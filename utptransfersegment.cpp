@@ -41,3 +41,8 @@ void uTPTransferSegment::startDownloading()
 {
 
 }
+
+qint64 uTPTransferSegment::getBytesReceivedNotFlushed()
+{
+    return 0;
+}

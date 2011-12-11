@@ -216,3 +216,15 @@ inline int FSTPTransferSegment::calculateBucketNumber(quint64 fileOffset)
     return (int)(fileOffset >> 20);
 }
 
+qint64 FSTPTransferSegment::getBytesReceivedNotFlushed()
+{
+    qint64 total = 0;
+    if (pDownloadBucketTable)
+    {
+        //Get amount of data received for all buckets not flushed
+        foreach (QByteArray *data, *pDownloadBucketTable)
+            total += data->size();
+    }
+    
+    return total;
+}
