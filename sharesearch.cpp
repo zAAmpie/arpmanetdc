@@ -1539,8 +1539,6 @@ void ShareSearch::saveFinishedDownload(FinishedDownloadStruct file)
 	if (error != "not an error")
 		QString error = "error";
 
-	emit finishedDownloadAdded(file);
-
     //Commit to ensure access to database hasn't blocked hashing process
     commitTransaction();
 }
@@ -1578,7 +1576,7 @@ void ShareSearch::clearFinishedDownloads()
 void ShareSearch::requestFinishedList()
 {
 	//Return the list of finished downloads
-	QString queryStr = tr("SELECT [fileName], [filePath], [fileSize], [tthRoot], [downloadDate] FROM FinishedDownloads;");
+	QString queryStr = tr("SELECT [fileName], [filePath], [fileSize], [tthRoot], [downloadedDate] FROM FinishedDownloads;");
 
 	QHash<QByteArray, FinishedDownloadStruct> *results = new QHash<QByteArray, FinishedDownloadStruct>();
 	sqlite3 *db = pParent->database();	

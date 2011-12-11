@@ -165,12 +165,12 @@ void TransferManager::startNextDownload()
             this, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)));
     connect(t, SIGNAL(flushBucket(QString,QByteArray*)), this, SIGNAL(flushBucket(QString,QByteArray*)));
     connect(t, SIGNAL(assembleOutputFile(QString,QString,int,int)), this, SIGNAL(assembleOutputFile(QString,QString,int,int)));
-    //connect(t, SIGNAL(transferFinished(QByteArray)), this, SIGNAL(downloadCompleted(QByteArray)));
+    connect(t, SIGNAL(transferFinished(QByteArray)), this, SIGNAL(downloadCompleted(QByteArray)));
     t->setFileName(i.filePathName);
     t->setTTH(i.tth);
     t->setFileSize(i.fileSize);
-    t->addPeer(i.fileHost);
     t->setProtocolOrderPreference(pSettings->value("protocolHint").toAscii());
+    t->addPeer(i.fileHost);
     transferObjectTable.insertMulti(i.tth, t);
     emit loadTTHSourcesFromDatabase(i.tth);
     emit searchTTHAlternateSources(i.tth);
@@ -249,9 +249,8 @@ void TransferManager::stopTransfer(QByteArray tth, int transferType, QHostAddres
     {
         //Abort transfer before deletion
         t->abortTransfer();
-        t->blockSignals(true);
-        t->deleteLater();
-        transferObjectTable.remove(tth, t);
+        //t->deleteLater();
+        //transferObjectTable.remove(tth, t);
 
         //Decrease download count
         currentDownloadCount--;
@@ -335,9 +334,22 @@ void TransferManager::incomingProtocolCapabilityResponse(QHostAddress peer, char
 
 void TransferManager::requestPeerProtocolCapability(QHostAddress peer, Transfer *transferObject)
 {
-    if (peerProtocolCapabilities.contains(peer))
-        transferObject->receivedPeerProtocolCapability(peer, peerProtocolCapabilities.value(peer));
-    else
+    //================================================================================================================
+    //After a few hours of debugging = This shouldn't be a direct call - it messes up the calling order!
+    //It will call getSegmentForDownloading BEFORE startTransfer which will ensure the download is never started since:
+    
+    //transferSegmentStateBitmap has length 0 before startTransfer
+    //which ensures a segment is returned with segmentEnd = 0
+    //which makes downloadNextAvailableChunk think the segment is done
+
+    //The first download will work since the call to getSegmentForDownloading is queued. The second, third etc from the same source will fail.
+    //Either this function should always use the deferred protocol capability request (through the emit below) or the whole calling order should be reexamined... 
+    //(Which by the way is pretty obtuse - probably since this protocol capability functionality was added later. A comment or two on the logical process would've been nice ;) )
+    //================================================================================================================
+
+    //if (peerProtocolCapabilities.contains(peer))
+    //    transferObject->receivedPeerProtocolCapability(peer, peerProtocolCapabilities.value(peer));
+    //else
     {
         peerProtocolDiscoveryWaitingPool.insert(peer, transferObject);
         emit requestProtocolCapability(peer);

@@ -202,6 +202,20 @@ void TransferWidget::updateStatus()
         }                    
     }
 
+    //Check if the model has residual entries
+    for (int i = 0; i < transferListModel->rowCount(); i++)
+    {
+        QByteArray tth;
+        tth.append(transferListModel->item(i, 6)->text());
+        base32Decode(tth);
+
+        if (!pTransferList->contains(tth))
+        {
+            transferListModel->removeRow(i);
+            i--;
+        }
+    }
+
     //Adjust row height
     resizeRowsToContents(transferListTable);
 

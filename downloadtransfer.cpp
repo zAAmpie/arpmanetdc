@@ -47,8 +47,8 @@ DownloadTransfer::~DownloadTransfer()
 
     QHashIterator<QHostAddress, RemotePeerInfoStruct> r(remotePeerInfoTable);
     while (r.hasNext())
-        if (r.peekNext().value().transferSegment)
-            r.next().value().transferSegment->deleteLater();
+        if (r.next().value().transferSegment)
+            r.value().transferSegment->deleteLater();
 }
 
 void DownloadTransfer::incomingDataPacket(quint8, quint64 offset, QByteArray data)
@@ -224,6 +224,7 @@ void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
     {
         status = TRANSFER_STATE_FINISHED;
         emit transferFinished(TTH);
+        abortTransfer();
     }
 }
 

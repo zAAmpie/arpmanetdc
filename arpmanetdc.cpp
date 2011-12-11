@@ -1583,8 +1583,27 @@ void ArpmanetDC::returnQueueList(QHash<QByteArray, QueueStruct> *queue)
     QString finalPath;
     foreach (QueueStruct item, *pQueueList)
     {
-        finalPath = item.filePath + item.fileName;
-        emit queueDownload((int)item.priority, *item.tthRoot, finalPath, item.fileSize, item.fileHost);
+        if (item.priority == HighQueuePriority)
+        {
+            finalPath = item.filePath + item.fileName;
+            emit queueDownload((int)item.priority, *item.tthRoot, finalPath, item.fileSize, item.fileHost);
+        }
+    }
+    foreach (QueueStruct item, *pQueueList)
+    {
+        if (item.priority == NormalQueuePriority)
+        {
+            finalPath = item.filePath + item.fileName;
+            emit queueDownload((int)item.priority, *item.tthRoot, finalPath, item.fileSize, item.fileHost);
+        }
+    }
+    foreach (QueueStruct item, *pQueueList)
+    {
+        if (item.priority == LowQueuePriority)
+        {
+            finalPath = item.filePath + item.fileName;
+            emit queueDownload((int)item.priority, *item.tthRoot, finalPath, item.fileSize, item.fileHost);
+        }
     }
 
     setStatus(tr("Download queue loaded"));

@@ -11,6 +11,8 @@ DownloadFinishedWidget::DownloadFinishedWidget(QHash<QByteArray, FinishedDownloa
 	createWidgets();
 	placeWidgets();
 	connectWidgets();
+
+    loadList();
 }
 
 DownloadFinishedWidget::~DownloadFinishedWidget()
@@ -26,7 +28,7 @@ void DownloadFinishedWidget::createWidgets()
 	finishedTable->setGridStyle(Qt::DotLine);
 	finishedTable->verticalHeader()->hide();
 	finishedTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    finishedTable->setItemDelegate(new HTMLDelegate(finishedTable));
+    //finishedTable->setItemDelegate(new HTMLDelegate(finishedTable));
 	finishedTable->setContextMenuPolicy(Qt::CustomContextMenu);
     finishedTable->horizontalHeader()->setHighlightSections(false);
 
@@ -76,7 +78,7 @@ void DownloadFinishedWidget::loadList()
 	//Populate model
 	foreach (FinishedDownloadStruct file, *pFinishedList)
 	{
-        QList<CStandardItem *> row;
+        QList<QStandardItem *> row;
         row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.fileName));
         row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.filePath));
         row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(file.fileSize)));
@@ -86,6 +88,7 @@ void DownloadFinishedWidget::loadList()
 
         row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, tth.data()));
         row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.downloadedDate));
+        finishedModel->appendRow(row);
 	}
 
     resizeRowsToContents(finishedTable);
@@ -119,9 +122,11 @@ void DownloadFinishedWidget::openActionPressed()
 	QModelIndex selectedIndex = finishedTable->selectionModel()->selectedRows().first();
 	//Get path of first file in the list (there should really only be one)
 	QString filePath = finishedModel->data(finishedModel->index(selectedIndex.row(), 1)).toString();
+    //Get filename
+    QString fileName = finishedModel->itemFromIndex(finishedModel->index(selectedIndex.row(), 0))->text();
 
 	//"Start" the file
-	QProcess::startDetached(filePath);
+	QProcess::startDetached(filePath + fileName);
 }
 
 
