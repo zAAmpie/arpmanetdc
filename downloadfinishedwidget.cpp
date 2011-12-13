@@ -144,6 +144,9 @@ void DownloadFinishedWidget::openActionPressed()
         {
 	        //"Start" the file
 	        QProcess::startDetached(filePath + fileName);
+
+            //Deselect to avoid infinite loop
+            finishedTable->selectionModel()->select(QItemSelection(selectedIndex, finishedModel->index(selectedIndex.row(), 4)), QItemSelectionModel::Deselect);
         }
         else
         {
