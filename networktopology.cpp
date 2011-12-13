@@ -312,12 +312,17 @@ void NetworkTopology::collectBucketGarbage()
         if (il.hasNext())
         {
             il.toBack();
-            while (il.previous()  < cutoffTime)
+            while (il.hasPrevious())
             {
-                QHostAddress h = QHostAddress(buckets.value(bucket)->first->back());
-                emit requestBucketContents(h); // back returns reference, which might be gone by the time the queued connection is dispatched.
-                buckets.value(bucket)->first->removeLast();
-                buckets.value(bucket)->second->removeLast();
+                if (il.previous()  < cutoffTime)
+                {
+                    QHostAddress h = QHostAddress(buckets.value(bucket)->first->back());
+                    emit requestBucketContents(h); // back returns reference, which might be gone by the time the queued connection is dispatched.
+                    buckets.value(bucket)->first->removeLast();
+                    buckets.value(bucket)->second->removeLast();
+                }
+                else
+                    break; //I'm guessing the thought is to go back and stop when cutoffTime is reached?
             }
             if (buckets.value(bucket)->first->isEmpty())
             {
