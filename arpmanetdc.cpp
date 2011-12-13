@@ -326,6 +326,8 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 ArpmanetDC::~ArpmanetDC()
 {
 	//Destructor
+    systemTrayIcon->hide(); //Icon isn't automatically hidden after program exit
+
 	pHub->deleteLater();
     pTransferManager->deleteLater();
     pDispatcher->deleteLater();

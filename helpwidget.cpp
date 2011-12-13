@@ -25,14 +25,23 @@ void HelpWidget::placeWidgets()
 {
     QLabel *iconLabel = new QLabel();
     iconLabel->setPixmap(QPixmap(":/ArpmanetDC/Resources/Logo.png").scaled(100,100, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+
+    QLabel *gplLabel = new QLabel();
+    gplLabel->setPixmap(QPixmap(":/ArpmanetDC/Resources/GPLv3 Logo 128px.png").scaled(48,20, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
    
     QHBoxLayout *aboutLayout = new QHBoxLayout();
     aboutLayout->addWidget(iconLabel);
     
-    QLabel *aboutLabel = new QLabel("<b><a href=\"http://code.google.com/p/arpmanetdc/\">ArpmanetDC</a></b><br/>Version 0.1 Alpha<br/>Copyright (C) 2012, Arpmanet Community<br/>");
+    QLabel *aboutLabel = new QLabel(tr("<b><a href=\"http://code.google.com/p/arpmanetdc/\">ArpmanetDC</a></b><br/>Version %1 Alpha<br/>Copyright (C) 2012, Arpmanet Community<p>Free software licenced under <a href=\"http://www.gnu.org/licenses/\">GPLv3</a></p>").arg(VERSION_STRING));
     aboutLabel->setOpenExternalLinks(true);
 
-    aboutLayout->addWidget(aboutLabel);
+    QVBoxLayout *aboutVLayout = new QVBoxLayout();
+    aboutVLayout->addStretch(1);
+    aboutVLayout->addWidget(aboutLabel);
+    aboutVLayout->addWidget(gplLabel);
+    aboutVLayout->addStretch(1);
+
+    aboutLayout->addLayout(aboutVLayout);
     aboutLayout->addStretch(1);
 
     QVBoxLayout *vlayout = new QVBoxLayout();
