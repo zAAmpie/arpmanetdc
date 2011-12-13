@@ -398,8 +398,6 @@ bool Dispatcher::initiateSearch(quint64 &searchId, QByteArray &searchData)
         datagram.append(MulticastPacket);
     else if (networkBootstrap->getBootstrapStatus() == NETWORK_BCAST)
         datagram.append(BroadcastPacket);
-    else
-        return false;
     datagram.append(SearchRequestPacket);
 
     QByteArray searchPacket = assembleSearchPacket(dispatchIP, searchId, searchData);
