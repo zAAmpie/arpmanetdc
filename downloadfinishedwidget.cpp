@@ -71,6 +71,7 @@ void DownloadFinishedWidget::placeWidgets()
 void DownloadFinishedWidget::connectWidgets()
 {
 	connect(finishedTable, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showFinishedTableContextMenu(const QPoint&)));
+    connect(finishedTable, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(downloadDoubleClicked(QModelIndex)));
 
 	connect(openAction, SIGNAL(triggered()), this, SLOT(openActionPressed()));
 	connect(clearAction, SIGNAL(triggered()), this, SLOT(clearActionPressed()));
@@ -237,6 +238,12 @@ void DownloadFinishedWidget::addFinishedDownload(FinishedDownloadStruct file)
 
     //Adjust row height
     resizeRowsToContents(finishedTable);
+}
+
+void DownloadFinishedWidget::downloadDoubleClicked(QModelIndex index)
+{
+    //Double clicked on an entry in the list
+    openActionPressed();
 }
 
 QWidget *DownloadFinishedWidget::widget()

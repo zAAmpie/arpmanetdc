@@ -50,6 +50,7 @@ public slots:
 private slots:
 	//Slots
 	void showFinishedTableContextMenu(const QPoint &);
+    void downloadDoubleClicked(QModelIndex index);
 
 	//Actions
 	void clearActionPressed();
