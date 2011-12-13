@@ -120,6 +120,7 @@ public slots:
 private slots:
     void receiveP2PData();
     void changeBootstrapStatus(int);
+    void rejoinMulticastTimeout();
 
 private:
     // CID
@@ -191,6 +192,8 @@ private:
     // Misc functions
     QByteArray fixedCIDLength(QByteArray);
 
+    // Multicast rejoin timer
+    QTimer *rejoinMulticastTimer;
 };
 
 #endif // DISPATCHER_H

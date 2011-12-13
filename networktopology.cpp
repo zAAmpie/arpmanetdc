@@ -10,11 +10,18 @@ NetworkTopology::NetworkTopology(QObject *parent) :
     bootstrapTimeoutTimer->setSingleShot(true);
     connect(bootstrapTimeoutTimer, SIGNAL(timeout()), this, SLOT(bootstrapTimeoutEvent()));
     bootstrapTimeoutTimer->start(32000);
+
+    garbageCollectTimer = new QTimer();
+    garbageCollectTimer->setInterval(600000); // 10 min
+    garbageCollectTimer->setSingleShot(false);
+    connect(garbageCollectTimer, SIGNAL(timeout()), this, SLOT(collectBucketGarbage()));
+    garbageCollectTimer->start();
 }
 
 NetworkTopology::~NetworkTopology()
 {
     delete bootstrapTimeoutTimer;
+    delete garbageCollectTimer;
     if (QDateTime::currentMSecsSinceEpoch() - startupTime > 120000)
     {
         QList<QHostAddress> activeNodes = getForwardingPeers(20);
@@ -292,6 +299,35 @@ void NetworkTopology::setDispatchIP(QHostAddress ip)
 void NetworkTopology::setBootstrapStatus(int status)
 {
     bootstrapStatus = status;
+}
+
+void NetworkTopology::collectBucketGarbage()
+{
+    qint64 cutoffTime = QDateTime::currentMSecsSinceEpoch() - 1800000;  // 30 minutes ago
+    QHashIterator<QByteArray, HostIntPair*> ib(buckets);
+    while (ib.hasNext())
+    {
+        QListIterator<qint64> il(*ib.peekNext().value()->second);
+        QByteArray bucket = ib.next().key();
+        if (il.hasNext())
+        {
+            il.toBack();
+            while (il.previous()  < cutoffTime)
+            {
+                QHostAddress h = QHostAddress(buckets.value(bucket)->first->back());
+                emit requestBucketContents(h); // back returns reference, which might be gone by the time the queued connection is dispatched.
+                buckets.value(bucket)->first->removeLast();
+                buckets.value(bucket)->second->removeLast();
+            }
+            if (buckets.value(bucket)->first->isEmpty())
+            {
+                delete buckets.value(bucket)->first;
+                delete buckets.value(bucket)->second;
+                delete buckets.value(bucket);
+                buckets.remove(bucket);
+            }
+        }
+    }
 }
 
 // DEBUGGING

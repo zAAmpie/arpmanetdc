@@ -57,6 +57,13 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     connect(networkTopology, SIGNAL(requestAllBuckets(QHostAddress)), this, SLOT(requestAllBuckets(QHostAddress)));
     connect(networkTopology, SIGNAL(changeBootstrapStatus(int)), networkBootstrap, SLOT(setBootstrapStatus(int)));
     connect(networkBootstrap, SIGNAL(bootstrapStatusChanged(int)), networkTopology, SLOT(setBootstrapStatus(int)));
+
+    // Rejoin multicast timer
+    rejoinMulticastTimer = new QTimer();
+    rejoinMulticastTimer->setInterval(300000);
+    rejoinMulticastTimer->setSingleShot(false);
+    connect(rejoinMulticastTimer, SIGNAL(timeout()), this, SLOT(rejoinMulticastTimeout()));
+    rejoinMulticastTimer->start();
 }
 
 Dispatcher::~Dispatcher()
@@ -65,6 +72,7 @@ Dispatcher::~Dispatcher()
 #if QT_VERSION >= 0x040800
     receiverUdpSocket->leaveMulticastGroup(mcastAddress);
 #endif
+    delete rejoinMulticastTimer;
     delete networkTopology;
     delete senderUdpSocket;
     delete receiverUdpSocket;
@@ -968,6 +976,13 @@ QByteArray Dispatcher::fixedCIDLength(QByteArray CID)
 void Dispatcher::setProtocolCapabilityBitmask(char protocols)
 {
     protocolCapabilityBitmask = protocols;
+}
+
+void Dispatcher::rejoinMulticastTimeout()
+{
+#if QT_VERSION >= 0x040800
+    receiverUdpSocket->joinMulticastGroup(mcastAddress);
+#endif
 }
 
 // ------------------=====================   GET FUNCTIONS   =====================----------------------
