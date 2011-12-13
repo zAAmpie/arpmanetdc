@@ -3,6 +3,7 @@
 Transfer::Transfer(QObject *parent) :
     QObject(parent)
 {
+    upTime = QDateTime::currentDateTime();
 }
 
 Transfer::~Transfer()
@@ -96,6 +97,11 @@ int Transfer::getTransferStatus()
 int Transfer::getTransferProgress()
 {
     return transferProgress;
+}
+
+qint64 Transfer::getUptime()
+{
+    return QDateTime::currentMSecsSinceEpoch() - upTime.toMSecsSinceEpoch();
 }
 
 void Transfer::addPeer(QHostAddress peer)

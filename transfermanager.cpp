@@ -68,7 +68,7 @@ void TransferManager::incomingUploadRequest(quint8 protocol, QHostAddress fromHo
 // sharing engine replies with file name for tth being requested for download
 // this structure assumes only one user requests a specific file during the time it takes to dispatch the request to a transfer object.
 // should more than one user try simultaneously, their requests will be deleted off the queue in .remove(tth) and they should try again. oops.
-void TransferManager::filePathNameReply(QByteArray tth, QString filename)
+void TransferManager::filePathNameReply(QByteArray tth, QString filename, quint64 fileSize)
 {
     if (filename == "" || !uploadTransferQueue.contains(tth))
     {
@@ -80,6 +80,7 @@ void TransferManager::filePathNameReply(QByteArray tth, QString filename)
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
     connect(t, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
     t->setFileName(filename);
+    t->setFileSize(fileSize);
     t->setTTH(tth);
     t->setFileOffset(uploadTransferQueue.value(tth)->fileOffset);
     t->setSegmentLength(uploadTransferQueue.value(tth)->requestLength);
@@ -291,6 +292,7 @@ QList<TransferItemStatus> TransferManager::getGlobalTransferStatus()
         tis.transferStatus = it.peekNext().value()->getTransferStatus();
         tis.transferProgress = it.peekNext().value()->getTransferProgress();
         tis.transferRate = it.peekNext().value()->getTransferRate();
+        tis.uptime = it.peekNext().value()->getUptime();
         tis.host = *it.next().value()->getRemoteHost();
         status.append(tis);
     }

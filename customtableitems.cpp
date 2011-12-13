@@ -163,10 +163,14 @@ void ProgressDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
 
     //Draw the percentage text
     painter->setPen(textColor);
+    QString drawString;
     if (value != 100)
-        painter->drawText(rect, Qt::AlignCenter, tr("%1%").arg(value));
+        drawString = tr("%1%").arg(value);
     else
-        painter->drawText(rect, Qt::AlignCenter, tr("Finished"));
+        drawString = tr("Finished");
+    if (type == 'U') //TRANSFER_TYPE_UPLOAD
+        drawString.prepend("~"); //Upload progress are drawn as estimates
+    painter->drawText(rect, Qt::AlignCenter, drawString);
 
     painter->restore();
 }
@@ -212,6 +216,27 @@ bool CStandardItem::operator<(const QStandardItem &other) const
             return QDateTime::fromString(text(), "dd/MM/yyyy HH:mm:ss:zzz") < QDateTime::fromString(other.text(), "dd/MM/yyyy HH:mm:ss:zzzz");
         else
             return QDateTime::fromString(text(), pFormat) < QDateTime::fromString(other.text(), pFormat);
+    }
+    else if (pType == TimeDurationType)
+    {
+        //Format: HH:mm:ss i.e. 00:02:35
+        QStringList timesThis = text().split(":");
+        QStringList timesThat = other.text().split(":");
+
+        //If list contains hours/minutes/seconds
+        if (timesThis.size() == 3 && timesThat.size() == 3)
+        {
+            //Compare seconds
+            if (timesThis.at(0).toInt() == timesThat.at(0).toInt() && timesThis.at(1).toInt() == timesThat.at(1).toInt())
+                return timesThis.at(2).toInt() < timesThat.at(2).toInt();
+            
+            //Compare minutes
+            if (timesThis.at(0).toInt() == timesThat.at(0).toInt())
+                return timesThis.at(1).toInt() < timesThat.at(1).toInt();
+
+            //Compare hours
+            return timesThis.at(0).toInt() < timesThat.at(0).toInt();
+        }
     }
 
     return text() < other.text();

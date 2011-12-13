@@ -33,6 +33,9 @@ public:
     void setTTH(QByteArray tth);
     void createUploadObject(quint8 protocol);
 
+public slots:
+    int getTransferProgress();
+
 private slots:
     void dataTransmitted(QHostAddress host, QByteArray *data);
 

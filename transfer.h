@@ -24,6 +24,7 @@
 #include <QList>
 #include <QFile>
 #include <QTimer>
+#include <QDateTime>
 #include "util.h"
 
 class Transfer : public QObject
@@ -59,6 +60,7 @@ public slots:
     QHostAddress* getRemoteHost();
     quint64 getTransferRate();
     quint64 getFileSize();
+    qint64 getUptime();
     int getTransferStatus();
     virtual int getTransferProgress();
     virtual void addPeer(QHostAddress peer);
@@ -90,6 +92,7 @@ protected:
     int transferProgress;
     quint64 fileSize;
     QByteArray protocolOrderPreference;
+    QDateTime upTime;
 };
 
 #endif // TRANSFER_H

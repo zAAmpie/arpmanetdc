@@ -1028,9 +1028,10 @@ void ShareSearch::loadTTHSource(QByteArray tthRoot)
 void ShareSearch::requestFilePath(QByteArray tthRoot)
 {
 	//Return the source IP for a specified TTH
-	QString queryStr = tr("SELECT [filePath] FROM FileShares WHERE [tth] = ?;");
+	QString queryStr = tr("SELECT [filePath], [fileSize] FROM FileShares WHERE [tth] = ?;");
 
-	QString results;
+	QString filePath;
+    quint64 fileSize;
 	sqlite3 *db = pParent->database();	
 	sqlite3_stmt *statement;
 
@@ -1048,7 +1049,8 @@ void ShareSearch::requestFilePath(QByteArray tthRoot)
 		int result = 0;
 		while (sqlite3_step(statement) == SQLITE_ROW)
 		{
-			results = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0));
+			filePath = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0));
+            fileSize = sqlite3_column_int64(statement, 1);
 		}
 		sqlite3_finalize(statement);	
 	}
@@ -1060,7 +1062,7 @@ void ShareSearch::requestFilePath(QByteArray tthRoot)
 
     // temporary short-circuit to continue debugging transfers
     //results = "/mnt/data/iso/tinycore_2.5.iso";
-	emit filePathReply(tthRoot, results);
+	emit filePathReply(tthRoot, filePath, fileSize);
 }
 
 //Release all sources for a particular TTH
@@ -1523,7 +1525,7 @@ void ShareSearch::saveFinishedDownload(FinishedDownloadStruct file)
 		int res = 0;
 		res = res | sqlite3_bind_text16(statement, 1, file.fileName.utf16(), file.fileName.size()*2, SQLITE_STATIC);
 		res = res | sqlite3_bind_text16(statement, 2, file.filePath.utf16(), file.filePath.size()*2, SQLITE_STATIC);
-		res = res | sqlite3_bind_int64(statement, 3, file.fileSize);
+ 		res = res | sqlite3_bind_int64(statement, 3, file.fileSize);
 		QString tthRoot = QString(file.tthRoot->toBase64().data());
 		res = res | sqlite3_bind_text16(statement, 4, tthRoot.utf16(), tthRoot.size()*2, SQLITE_STATIC);
 		res = res | sqlite3_bind_text16(statement, 5, file.downloadedDate.utf16(), file.downloadedDate.size()*2, SQLITE_STATIC);

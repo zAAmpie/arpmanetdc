@@ -86,7 +86,9 @@ void DownloadFinishedWidget::loadList()
 	foreach (FinishedDownloadStruct file, *pFinishedList)
 	{
         QList<QStandardItem *> row;
-        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.fileName));
+        QFileInfo fi(file.fileName);
+        QString suffix = fi.suffix();
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.fileName, pParent->resourceExtractorObject()->getIconFromName(suffix)));
         row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.filePath));
         row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(file.fileSize)));
 
@@ -217,7 +219,9 @@ void DownloadFinishedWidget::deleteActionPressed()
 void DownloadFinishedWidget::addFinishedDownload(FinishedDownloadStruct file)
 {
 	QList<QStandardItem *> row;
-    row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.fileName));
+    QFileInfo fi(file.fileName);
+    QString suffix = fi.suffix();
+    row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.fileName, pParent->resourceExtractorObject()->getIconFromName(suffix)));
     row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.filePath));
     row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(file.fileSize)));
 

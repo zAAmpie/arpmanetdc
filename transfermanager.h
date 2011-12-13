@@ -51,6 +51,7 @@ typedef struct
     int transferProgress;
     quint64 transferRate;
     QHostAddress host;
+    qint64 uptime;
 } TransferItemStatus;
 
 class TransferManager : public QObject
@@ -87,7 +88,7 @@ public slots:
     void incomingDataPacket(quint8 transferProtocolVersion, QByteArray datagram);
 
     // Request file name for given TTH from sharing engine, reply with empty string if not found.
-    void filePathNameReply(QByteArray tth, QString filename);
+    void filePathNameReply(QByteArray tth, QString filename, quint64 fileSize);
 
     void incomingUploadRequest(quint8 protocol, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length);
     void queueDownload(int priority, QByteArray tth, QString filePathName, quint64 fileSize, QHostAddress fileHost);

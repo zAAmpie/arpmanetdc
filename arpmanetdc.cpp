@@ -226,8 +226,8 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
             pShare, SLOT(loadTTHSource(QByteArray)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(deleteTTHSourcesFromDatabase(QByteArray)),
             pShare, SLOT(deleteTTHSources(QByteArray)), Qt::QueuedConnection);
-    connect(pShare, SIGNAL(filePathReply(QByteArray, QString)),
-            pTransferManager, SLOT(filePathNameReply(QByteArray, QString)), Qt::QueuedConnection);
+    connect(pShare, SIGNAL(filePathReply(QByteArray, QString, quint64)),
+            pTransferManager, SLOT(filePathNameReply(QByteArray, QString, quint64)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(tthSourceLoaded(QByteArray, QHostAddress)),
             pTransferManager, SLOT(incomingTTHSource(QByteArray, QHostAddress)), Qt::QueuedConnection);
 

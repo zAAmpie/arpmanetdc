@@ -61,6 +61,7 @@ public slots:
     //virtual void receivedPeerProtocolCapability(char protocols);
 
     virtual qint64 getBytesReceivedNotFlushed();
+    virtual qint64 getMaxUploadRequestOffset();
 
 protected:
     void calculateLastBucketParams();
@@ -72,6 +73,7 @@ protected:
     qint64 segmentLength;
     qint64 segmentEnd;
     qint64 segmentStartTime;
+    qint64 maxUploadRequestOffset;
 
     int lastBucketNumber;
     int lastBucketSize;

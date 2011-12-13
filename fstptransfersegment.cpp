@@ -34,10 +34,18 @@ void FSTPTransferSegment::setFileSize(quint64 size)
 
 void FSTPTransferSegment::startUploading()
 {
+    maxUploadRequestOffset = 0;
+
     if (segmentStart > fileSize)
         return;
     else if (segmentStart + segmentLength > fileSize)
         segmentLength = fileSize - segmentStart;
+
+    //Save offset for upload progress - this might need to be set to an average or median value for multiple segmented 
+    //downloading but if segments aren't spaced TOO widely the maximum will give a good estimate of total progress
+    maxUploadRequestOffset = maxUploadRequestOffset < segmentStart ? segmentStart : maxUploadRequestOffset;
+    if (segmentStart + segmentLength == fileSize)
+        maxUploadRequestOffset = fileSize;
 
     const char * f = (char*)inputFile.map(segmentStart, segmentLength);
     quint64 wptr = 0;

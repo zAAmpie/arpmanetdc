@@ -146,6 +146,28 @@ quint64 rateToBytes(QString rate)
     return sizeToBytes(rate.replace("/s", ""));
 }
 
+//Function to convert time duration in msecs to string
+QString timeFromInt(qint64 timeMsecs)
+{
+    int hours = timeMsecs / 3600000;
+    int minutes = (timeMsecs - hours * 3600000) / 60000;
+    int seconds = (timeMsecs - hours * 3600000 - minutes * 60000) / 1000;
+
+    QString hoursStr = QObject::tr("%1").arg(hours);
+    if (hours <= 9)
+        hoursStr.prepend("0");
+
+    QString minutesStr = QObject::tr("%1").arg(minutes);
+    if (minutes <= 9)
+        minutesStr.prepend("0");
+
+    QString secondsStr = QObject::tr("%1").arg(seconds);
+    if (seconds <= 9)
+        secondsStr.prepend("0");
+
+    return QObject::tr("%1:%2:%3").arg(hoursStr).arg(minutesStr).arg(secondsStr);
+}
+
 void resizeRowsToContents(QTableView *tableView)
 {
     if (!tableView)

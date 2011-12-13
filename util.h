@@ -56,6 +56,8 @@ QString bytesToRate(quint64 rate);
 quint64 sizeToBytes(QString size);
 //Function to convert human readable rate into bytes
 quint64 rateToBytes(QString rate);
+//Function to convert time duration in msecs to string
+QString timeFromInt(qint64 timeMsecs);
 //Function to adjust a tableviews rows to fit contents (much faster fixed size version)
 void resizeRowsToContents(QTableView *tableView);
 

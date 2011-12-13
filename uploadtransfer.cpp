@@ -112,3 +112,11 @@ void UploadTransfer::dataTransmitted(QHostAddress host, QByteArray *data)
     //Measure the true amount of data sent from the segment to Dispatcher by intercepting the data and getting its size
     bytesWrittenSinceUpdate += data->size();
 }
+
+int UploadTransfer::getTransferProgress()
+{
+    //Only a decent guess for upload progress - cannot determine exactly what the downstream client received or in what order/segment
+    qint64 maxUploadRequestOffset = upload->getMaxUploadRequestOffset();
+    int progress = (maxUploadRequestOffset * 100) / fileSize;
+    return progress > 100 ? 100 : progress;
+}

@@ -207,7 +207,7 @@ signals:
 	//----------========== TRANSFERS (TRANSFER MANAGER) ==========----------
 	
     //Filename request reply
-	void filePathReply(QByteArray tthRoot, QString filePath);
+	void filePathReply(QByteArray tthRoot, QString filePath, quint64 fileSize);
 	
     //TTH source load reply
 	void tthSourceLoaded(QByteArray tthRoot, QHostAddress peerAddress);

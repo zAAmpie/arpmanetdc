@@ -28,15 +28,16 @@ void TransferWidget::createWidgets()
 {
 	//===== Transfer list =====
 	//Model
-	transferListModel = new QStandardItemModel(0,8);
+	transferListModel = new QStandardItemModel(0,9);
 	transferListModel->setHeaderData(0, Qt::Horizontal, tr("Type"));
     transferListModel->setHeaderData(1, Qt::Horizontal, tr("Progress"));
     transferListModel->setHeaderData(2, Qt::Horizontal, tr("Speed"));
     transferListModel->setHeaderData(3, Qt::Horizontal, tr("Filename"));
     transferListModel->setHeaderData(4, Qt::Horizontal, tr("Size"));
     transferListModel->setHeaderData(5, Qt::Horizontal, tr("Status"));
-    transferListModel->setHeaderData(6, Qt::Horizontal, tr("TTH Root"));
-    transferListModel->setHeaderData(7, Qt::Horizontal, tr("Host"));
+    transferListModel->setHeaderData(6, Qt::Horizontal, tr("Time"));
+    transferListModel->setHeaderData(7, Qt::Horizontal, tr("TTH Root"));
+    transferListModel->setHeaderData(8, Qt::Horizontal, tr("Host"));
 
 	//Table
 	transferListTable = new QTableView((QWidget *)pParent);
@@ -107,7 +108,7 @@ void TransferWidget::deleteActionPressed()
         //Get selected files
 	    QModelIndex selectedIndex = transferListTable->selectionModel()->selectedRows().at(i);//userListTable->selectionModel()->selection().indexes().first();
 	    //Get TTH of file
-	    QString base32TTH = transferListModel->data(transferListModel->index(selectedIndex.row(), 6)).toString();
+	    QString base32TTH = transferListModel->data(transferListModel->index(selectedIndex.row(), 7)).toString();
         
         QByteArray tthRoot;
         tthRoot.append(base32TTH);
@@ -117,7 +118,7 @@ void TransferWidget::deleteActionPressed()
         QString typeStr = transferListModel->data(transferListModel->index(selectedIndex.row(), 0)).toString();
 
         //Get host address
-        QHostAddress hostAddr = QHostAddress(transferListModel->data(transferListModel->index(selectedIndex.row(), 7)).toString());
+        QHostAddress hostAddr = QHostAddress(transferListModel->data(transferListModel->index(selectedIndex.row(), 8)).toString());
 
 	    pParent->removeTransfer(tthRoot, typeFromString(typeStr), hostAddr);
     }
@@ -158,7 +159,7 @@ void TransferWidget::updateStatus()
             s.host = q.fileHost;
 
         //Check if entry exists
-        QList<QStandardItem *> findResults = transferListModel->findItems(base32TTH.data(), Qt::MatchExactly, 6);
+        QList<QStandardItem *> findResults = transferListModel->findItems(base32TTH.data(), Qt::MatchExactly, 7);
 
         int row = -1;
 
@@ -167,7 +168,7 @@ void TransferWidget::updateStatus()
         {
             //If type and host matches, get first entry.
             if ((transferListModel->itemFromIndex(transferListModel->index(findResults.at(k)->row(), 0))->text() == typeString(s.transferType))
-                && (transferListModel->itemFromIndex(transferListModel->index(findResults.at(k)->row(), 7))->text() == s.host.toString()))
+                && (transferListModel->itemFromIndex(transferListModel->index(findResults.at(k)->row(), 8))->text() == s.host.toString()))
             {
                 row = findResults.at(k)->row();
                 break;
@@ -184,6 +185,7 @@ void TransferWidget::updateStatus()
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, s.filePathName.remove(pParent->downloadPath(), Qt::CaseInsensitive)));
             row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(q.fileSize)));
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, stateString(s.transferStatus)));
+            row.append(new CStandardItem(CStandardItem::TimeDurationType, timeFromInt(s.uptime)));
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, base32TTH.data()));
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, s.host.toString()));
             transferListModel->appendRow(row);
@@ -197,8 +199,9 @@ void TransferWidget::updateStatus()
             transferListModel->itemFromIndex(transferListModel->index(row, 3))->setText(s.filePathName.remove(pParent->downloadPath(), Qt::CaseInsensitive));
             transferListModel->itemFromIndex(transferListModel->index(row, 4))->setText(bytesToSize(q.fileSize));
             transferListModel->itemFromIndex(transferListModel->index(row, 5))->setText(stateString(s.transferStatus));
-            transferListModel->itemFromIndex(transferListModel->index(row, 6))->setText(base32TTH.data());
-            transferListModel->itemFromIndex(transferListModel->index(row, 7))->setText(s.host.toString());
+            transferListModel->itemFromIndex(transferListModel->index(row, 6))->setText(timeFromInt(s.uptime));
+            transferListModel->itemFromIndex(transferListModel->index(row, 7))->setText(base32TTH.data());
+            transferListModel->itemFromIndex(transferListModel->index(row, 8))->setText(s.host.toString());
         }                    
     }
 
@@ -206,7 +209,7 @@ void TransferWidget::updateStatus()
     for (int i = 0; i < transferListModel->rowCount(); i++)
     {
         QByteArray tth;
-        tth.append(transferListModel->item(i, 6)->text());
+        tth.append(transferListModel->item(i, 7)->text());
         base32Decode(tth);
 
         if (!pTransferList->contains(tth))
@@ -232,7 +235,7 @@ void TransferWidget::removeTransferEntry(QByteArray tth, int type)
     QByteArray base32TTH(tth);
     base32Encode(base32TTH);
 
-    QList<QStandardItem *> findResults = transferListModel->findItems(base32TTH.data(), Qt::MatchExactly, 6);
+    QList<QStandardItem *> findResults = transferListModel->findItems(base32TTH.data(), Qt::MatchExactly, 7);
 
     while (!findResults.isEmpty())
     {
@@ -243,7 +246,7 @@ void TransferWidget::removeTransferEntry(QByteArray tth, int type)
             transferListModel->removeRow(findResults.first()->row());
         }
 
-        findResults = transferListModel->findItems(base32TTH.data(), Qt::MatchExactly, 6);
+        findResults = transferListModel->findItems(base32TTH.data(), Qt::MatchExactly, 7);
     }
 }
 
