@@ -136,6 +136,9 @@ public slots:
 	
     //Save an entry
 	void saveFinishedDownload(FinishedDownloadStruct file);
+
+    //Removes an entry
+    void removeFinishedDownload(QByteArray tth);
 	
     //Clear all entries
 	void clearFinishedDownloads();

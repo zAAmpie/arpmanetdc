@@ -1543,6 +1543,39 @@ void ShareSearch::saveFinishedDownload(FinishedDownloadStruct file)
     commitTransaction();
 }
 
+//Removes an entry
+void ShareSearch::removeFinishedDownload(QByteArray tth)
+{
+    //Delete an entry from finished downloads
+	QString queryStr = tr("DELETE FROM FinishedDownloads WHERE [tthRoot] = ?;");
+
+	sqlite3 *db = pParent->database();	
+	sqlite3_stmt *statement;
+
+	//Prepare a query
+	QByteArray query;
+	query.append(queryStr);
+	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+	{
+        //Bind parameter
+        QString tthStr(tth.toBase64().data());
+        int res = sqlite3_bind_text16(statement, 1, tthStr.utf16(), tthStr.size()*2, SQLITE_STATIC);
+
+		int cols = sqlite3_column_count(statement);
+		int result = 0;
+		while (sqlite3_step(statement) == SQLITE_ROW);
+		sqlite3_finalize(statement);	
+	}
+
+	//Catch all error messages
+	QString error = sqlite3_errmsg(db);
+	if (error != "not an error")
+		QString error = "error";
+
+    //Commit to ensure access to database hasn't blocked hashing process
+    commitTransaction();
+}
+
 //Clear all entries
 void ShareSearch::clearFinishedDownloads()
 {

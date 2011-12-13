@@ -206,8 +206,25 @@ bool CStandardItem::operator<(const QStandardItem &other) const
         QString otherText = other.text().mid(1);
         return thisText.toLongLong() < otherText.toLongLong();
     }
+    else if (pType == DateType)
+    {
+        if (pFormat.isEmpty())
+            return QDateTime::fromString(text(), "dd/MM/yyyy HH:mm:ss:zzz") < QDateTime::fromString(other.text(), "dd/MM/yyyy HH:mm:ss:zzzz");
+        else
+            return QDateTime::fromString(text(), pFormat) < QDateTime::fromString(other.text(), pFormat);
+    }
 
     return text() < other.text();
+}
+
+void CStandardItem::setFormat(const QString &format)
+{
+    pFormat = format;
+}
+
+QString CStandardItem::format()
+{
+    return pFormat;
 }
 
 CTabWidget::CTabWidget(QWidget *parent) : QTabWidget(parent)

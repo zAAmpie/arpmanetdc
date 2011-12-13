@@ -37,6 +37,7 @@ private slots:
 	//Actions
 	void clearActionPressed();
 	void openActionPressed();
+    void deleteActionPressed();
 
 signals:
 	//Signals to clear the database list
@@ -62,7 +63,7 @@ private:
 	QStandardItemModel *finishedModel;
 
     QMenu *finishedMenu;
-	QAction *openAction, *clearAction;
+	QAction *openAction, *clearAction, *deleteAction;
 };
 
 #endif

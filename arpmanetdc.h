@@ -109,6 +109,8 @@ public slots:
 
     //Add a finished download to the finished list
     void addFinishedDownloadToList(FinishedDownloadStruct item);
+    //Remove a finished download
+    void deleteFinishedDownload(QByteArray tth);
     //Remove all downloads from the list
     void clearFinishedDownloadList();
     //Returns the finished download list
@@ -208,6 +210,7 @@ signals:
     //Signals for finished downloads
     void clearFinishedDownloads();
     void saveFinishedDownload(FinishedDownloadStruct item);
+    void removeFinishedDownload(QByteArray tth);
     void requestFinishedList();
 
     //Auto complete searches from database

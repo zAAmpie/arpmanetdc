@@ -9,6 +9,7 @@
 #include <QString>
 #include <QSet>
 #include <QProgressBar>
+#include <QDateTime>
 
 //Custom delegate to display HTML code in QTableView
 class HTMLDelegate : public QStyledItemDelegate
@@ -37,13 +38,17 @@ protected:
 class CStandardItem : public QStandardItem
 {
 public:
-    enum CStandardItemType {IntegerType, DoubleType, SizeType, RateType, CaseInsensitiveTextType, PriorityType, ProgressType};
+    enum CStandardItemType {IntegerType, DoubleType, SizeType, RateType, CaseInsensitiveTextType, PriorityType, ProgressType, DateType};
     CStandardItem(CStandardItemType type, const QString &value) : QStandardItem(value) {pType = type; setEditable(false);}
     CStandardItem(CStandardItemType type, const QString &value, const QIcon &icon) : QStandardItem(icon, value) {pType = type; setEditable(false);}
+
+    void setFormat(const QString &format);
+    QString format();
 
     bool operator<(const QStandardItem &other) const;
 private:
     CStandardItemType pType;
+    QString pFormat;
 };
 
 //Custom tab widget with public access to the tabBar

@@ -197,6 +197,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     connect(this, SIGNAL(saveQueuedDownload(QueueStruct)), pShare, SLOT(saveQueuedDownload(QueueStruct)), Qt::QueuedConnection);
     connect(this, SIGNAL(requestFinishedList()), pShare, SLOT(requestFinishedList()), Qt::QueuedConnection);
     connect(this, SIGNAL(saveFinishedDownload(FinishedDownloadStruct)), pShare, SLOT(saveFinishedDownload(FinishedDownloadStruct)), Qt::QueuedConnection);
+    connect(this, SIGNAL(removeFinishedDownload(QByteArray)), pShare, SLOT(removeFinishedDownload(QByteArray)), Qt::QueuedConnection);
     connect(this, SIGNAL(clearFinishedDownloads()), pShare, SLOT(clearFinishedDownloads()), Qt::QueuedConnection);
     connect(this, SIGNAL(requestAutoCompleteWordList(QStandardItemModel *)), pShare, SLOT(requestAutoCompleteWordList(QStandardItemModel *)), Qt::QueuedConnection);
     connect(this, SIGNAL(saveAutoCompleteWordList(QString)), pShare, SLOT(saveAutoCompleteWordList(QString)), Qt::QueuedConnection);
@@ -1689,6 +1690,19 @@ void ArpmanetDC::addFinishedDownloadToList(FinishedDownloadStruct item)
             if (tabs->indexOf(finishedWidget->widget()) != -1)
                 finishedWidget->addFinishedDownload(item);
         }
+    }
+}
+
+//Remove a finished download
+void ArpmanetDC::deleteFinishedDownload(QByteArray tth)
+{
+    if (pFinishedList->contains(tth))
+    {
+        //Delete from list
+        pFinishedList->remove(tth);
+
+        //Delete from database
+        emit removeFinishedDownload(tth);
     }
 }
 
