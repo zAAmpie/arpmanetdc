@@ -107,8 +107,10 @@ void NetworkTopology::bucketContentsArrived(QByteArray bucket, QHostAddress send
 
     QByteArray bucketID = bucket.mid(0, 24);
     bucket.remove(0, 24);
+    int iter = 0;
     while (bucket.length() >= 6)
     {
+        iter++;
         QHostAddress addr = QHostAddress(getQuint32FromByteArray(&bucket));
         qint64 age = (qint64)(getQuint16FromByteArray(&bucket) * 1000);
         if (getHostAge(bucketID, addr) > age)
@@ -116,7 +118,10 @@ void NetworkTopology::bucketContentsArrived(QByteArray bucket, QHostAddress send
     }
     // the replyee is not in his own bucket, since buckets only contain dispatch ip's as seen from the network.
     // we take the address the message came from as his dispatch ip and update the buckets accordingly.
-    updateHostTimestamp(bucketID, senderHost, 0);
+    // update: only do this for empty buckets, i.e. hosts that are alone on a segment, otherwise other buckets are
+    // cross-contaminated by interpreting the gossiper as part of it.
+    if (iter == 0)
+        updateHostTimestamp(bucketID, senderHost, 0);
 }
 
 void NetworkTopology::initiateBucketRequests()
@@ -312,17 +317,12 @@ void NetworkTopology::collectBucketGarbage()
         if (il.hasNext())
         {
             il.toBack();
-            while (il.hasPrevious())
+            while ((il.hasPrevious()) && (il.previous() < cutoffTime))
             {
-                if (il.previous()  < cutoffTime)
-                {
-                    QHostAddress h = QHostAddress(buckets.value(bucket)->first->back());
-                    emit requestBucketContents(h); // back returns reference, which might be gone by the time the queued connection is dispatched.
-                    buckets.value(bucket)->first->removeLast();
-                    buckets.value(bucket)->second->removeLast();
-                }
-                else
-                    break; //I'm guessing the thought is to go back and stop when cutoffTime is reached?
+                QHostAddress h = QHostAddress(buckets.value(bucket)->first->back());
+                emit requestBucketContents(h); // back returns reference, which might be gone by the time the queued connection is dispatched.
+                buckets.value(bucket)->first->removeLast();
+                buckets.value(bucket)->second->removeLast();
             }
             if (buckets.value(bucket)->first->isEmpty())
             {
