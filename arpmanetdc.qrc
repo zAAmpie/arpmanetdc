@@ -21,5 +21,6 @@
         <file>Resources/BlueArrow.png</file>
         <file>Resources/GreenArrow.png</file>
         <file>Resources/RedArrow.png</file>
+        <file>Resources/GPLv3 Logo 128px.png</file>
     </qresource>
 </RCC>
