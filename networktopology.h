@@ -59,6 +59,7 @@ public slots:
 
 private slots:
     void bootstrapTimeoutEvent();
+    void collectBucketGarbage();
 
 private:
     QHash<QByteArray, QHostAddress> CIDHosts;
@@ -83,6 +84,7 @@ private:
     QByteArray CID;
     QHostAddress dispatchIP;
     int bootstrapStatus;
+    QTimer *garbageCollectTimer;
 };
 
 #endif // NETWORKTOPOLOGY_H
