@@ -4,9 +4,9 @@
 #
 #-------------------------------------------------
 
-QT       += core gui network #sqlite
+QT       += core gui network
 
-LIBS += /usr/lib64/libsqlite3.so /usr/lib64/libcryptopp.so
+LIBS += /usr/lib64/libsqlite3.so /usr/lib64/libcryptopp.so /usr/local/lib/libutp.a /lib64/librt.so.1
 
 TARGET = ArpmanetDC
 TEMPLATE = app
