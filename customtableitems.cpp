@@ -169,7 +169,7 @@ void ProgressDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
     else
         drawString = tr("Finished");
     if (type == 'U') //TRANSFER_TYPE_UPLOAD
-        drawString.prepend("~"); //Upload progress are drawn as estimates
+        drawString.prepend("±"); //Upload progress are drawn as estimates
     painter->drawText(rect, Qt::AlignCenter, drawString);
 
     painter->restore();

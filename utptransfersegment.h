@@ -52,7 +52,7 @@
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include "win32_inet_ntop.h"
+#include "libutp/win32_inet_ntop.h"
 #else
 //#include <unistd.h>
 #include <sys/types.h>
@@ -119,19 +119,27 @@ private:
     SOCKET sock;
     socket_state s;
 
+    // uTP callback functions
+    void uTPRead(const byte *bytes, size_t count);
+    void uTPWrite(byte *bytes, size_t count);
+    size_t uTPGetRBSize();
+    void uTPState(int state);
+    void uTPError(int errcode);
+    void uTPOverhead(bool send, size_t count, int type);
+
 #ifdef Q_WS_WIN
     WSADATA wsa;
 #endif
 
     SOCKET make_socket(const struct sockaddr *addr, socklen_t addrlen);
 
-    // uTP callbacks
-    void utp_read(void* socket, const byte* bytes, size_t count);
-    void utp_write(void* socket, byte* bytes, size_t count);
-    size_t utp_get_rb_size(void* socket);
-    void utp_state(void* socket, int state);
-    void utp_error(void* socket, int errcode);
-    void utp_overhead(void *socket, bool send, size_t count, int type);
+    // static uTP callback wrappers
+    static void utp_read(void* data, const byte* bytes, size_t count);
+    static void utp_write(void* data, byte* bytes, size_t count);
+    static size_t utp_get_rb_size(void* data);
+    static void utp_state(void* data, int state);
+    static void utp_error(void* data, int errcode);
+    static void utp_overhead(void *data, bool send, size_t count, int type);
 };
 
 #endif // UTPTRANSFERSEGMENT_H

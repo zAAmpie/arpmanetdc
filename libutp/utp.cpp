@@ -1,4 +1,4 @@
-#include <StdAfx.h>
+#include "StdAfx.h"
 
 #include "utp.h"
 #include "templates.h"
@@ -74,8 +74,8 @@ typedef sockaddr_storage SOCKADDR_STORAGE;
 
 #define DIV_ROUND_UP(num, denom) ((num + denom - 1) / denom)
 
-#include "utp_utils.h"
-#include "utp_config.h"
+#include "libutp/utp_utils.h"
+#include "libutp/utp_config_lib/utp_config.h"
 
 #define LOG_UTP if (g_log_utp) utp_log
 #define LOG_UTPV if (g_log_utp_verbose) utp_log

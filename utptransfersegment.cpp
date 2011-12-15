@@ -22,15 +22,16 @@ uTPTransferSegment::uTPTransferSegment(Transfer *parent)
     UTP_SetSockopt(s.s, SO_SNDBUF, 100*300);
     s.state = 0;
 
-    /*UTPFunctionTable utp_callbacks = {
-        (void (*))&uTPTransferSegment::utp_read,
+    UTPFunctionTable utp_callbacks = {
+        &uTPTransferSegment::utp_read,
         &uTPTransferSegment::utp_write,
         &uTPTransferSegment::utp_get_rb_size,
         &uTPTransferSegment::utp_state,
         &uTPTransferSegment::utp_error,
         &uTPTransferSegment::utp_overhead
     };
-    UTP_SetCallbacks(s.s, &utp_callbacks, &s);*/
+
+    UTP_SetCallbacks(s.s, &utp_callbacks, &s);
 }
 
 uTPTransferSegment::~uTPTransferSegment()
@@ -111,37 +112,32 @@ SOCKET uTPTransferSegment::make_socket(const struct sockaddr *addr, socklen_t ad
     return s;
 }
 
-// --------------============= uTP callbacks =============--------------
-// count bytes arrived over uTP connection
-void uTPTransferSegment::utp_read(void* socket, const byte* bytes, size_t count)
+// uTP callback functions
+void uTPTransferSegment::uTPRead(const byte *bytes, size_t count)
 {
     //TODO: read count bytes from bytes and tip them into the buckets
     // while manually keeping track of the offset
 }
 
-// phone in to get next count bytes to write
-void uTPTransferSegment::utp_write(void* socket, byte* bytes, size_t count)
+void uTPTransferSegment::uTPWrite(byte *bytes, size_t count)
 {
     // TODO: put count bytes into bytes, keep track of offset
     socket_state* s = (socket_state*)socket;
     s->total_sent += count;
 }
 
-// get receive buffer length?
-size_t uTPTransferSegment::utp_get_rb_size(void* socket)
+size_t uTPTransferSegment::uTPGetRBSize()
 {
     return 0;
 }
 
-// phone state changes in
-void uTPTransferSegment::utp_state(void* socket, int state)
+void uTPTransferSegment::uTPState(int state)
 {
     socket_state* s = (socket_state*)socket;
     s->state = state;
 }
 
-// phone errors in
-void uTPTransferSegment::utp_error(void* socket, int)
+void uTPTransferSegment::uTPError(int errcode)
 {
     socket_state* s = (socket_state*)socket;
     if (s->s)
@@ -151,6 +147,44 @@ void uTPTransferSegment::utp_error(void* socket, int)
     }
 }
 
-void uTPTransferSegment::utp_overhead(void *socket, bool send, size_t count, int type)
+void uTPTransferSegment::uTPOverhead(bool send, size_t count, int type)
 {
+
+}
+
+
+// --------------============= uTP callbacks =============--------------
+// count bytes arrived over uTP connection
+void uTPTransferSegment::utp_read(void* data, const byte* bytes, size_t count)
+{
+    ((uTPTransferSegment *)data)->uTPRead(bytes, count);
+}
+
+// phone in to get next count bytes to write
+void uTPTransferSegment::utp_write(void* data, byte* bytes, size_t count)
+{
+    ((uTPTransferSegment *)data)->uTPWrite(bytes, count);
+}
+
+// get receive buffer length?
+size_t uTPTransferSegment::utp_get_rb_size(void* data)
+{
+    return ((uTPTransferSegment *)data)->uTPGetRBSize();
+}   
+
+// phone state changes in
+void uTPTransferSegment::utp_state(void* data, int state)
+{
+    ((uTPTransferSegment *)data)->uTPState(state);
+}
+
+// phone errors in
+void uTPTransferSegment::utp_error(void* data, int errcode)
+{
+    ((uTPTransferSegment *)data)->uTPError(errcode);
+}
+
+void uTPTransferSegment::utp_overhead(void *data, bool send, size_t count, int type)
+{
+    ((uTPTransferSegment *)data)->uTPOverhead(send, count, type);
 }
