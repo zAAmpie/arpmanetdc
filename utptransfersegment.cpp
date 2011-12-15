@@ -17,7 +17,7 @@ uTPTransferSegment::uTPTransferSegment(Transfer *parent)
     sin.sin_addr.s_addr = INADDR_ANY;
     sin.sin_port = htons(0);
     sock = make_socket((const struct sockaddr*)&sin, sizeof(sin));
-    //s.s = UTP_Create(a,c,(const struct sockaddr*)&sin, sizeof(sin));
+    s.s = UTP_Create(&uTPTransferSegment::utp_sendto, this, (const struct sockaddr*)&sin, sizeof(sin));
 
     UTP_SetSockopt(s.s, SO_SNDBUF, 100*300);
     s.state = 0;
@@ -31,7 +31,7 @@ uTPTransferSegment::uTPTransferSegment(Transfer *parent)
         &uTPTransferSegment::utp_overhead
     };
 
-    UTP_SetCallbacks(s.s, &utp_callbacks, &s);
+    UTP_SetCallbacks(s.s, &utp_callbacks, this);
 }
 
 uTPTransferSegment::~uTPTransferSegment()
@@ -152,6 +152,16 @@ void uTPTransferSegment::uTPOverhead(bool send, size_t count, int type)
 
 }
 
+void uTPTransferSegment::uTPSendTo(const byte *p, size_t len, const struct sockaddr *to, socklen_t tolen)
+{
+
+}
+
+void uTPTransferSegment::uTPIncomingConnection(UTPSocket *s)
+{
+
+}
+
 
 // --------------============= uTP callbacks =============--------------
 // count bytes arrived over uTP connection
@@ -187,4 +197,14 @@ void uTPTransferSegment::utp_error(void* data, int errcode)
 void uTPTransferSegment::utp_overhead(void *data, bool send, size_t count, int type)
 {
     ((uTPTransferSegment *)data)->uTPOverhead(send, count, type);
+}
+
+void uTPTransferSegment::utp_sendto(void *data, const byte *p, size_t len, const struct sockaddr *to, socklen_t tolen)
+{
+    ((uTPTransferSegment *)data)->uTPSendTo(p, len, to, tolen);
+}
+
+void uTPTransferSegment::utp_incoming(void *data, UTPSocket *s)
+{
+    ((uTPTransferSegment *)data)->uTPIncomingConnection(s);
 }

@@ -127,6 +127,9 @@ private:
     void uTPError(int errcode);
     void uTPOverhead(bool send, size_t count, int type);
 
+    void uTPSendTo(const byte *p, size_t len, const struct sockaddr *to, socklen_t tolen);
+    void uTPIncomingConnection(UTPSocket *s);
+
 #ifdef Q_WS_WIN
     WSADATA wsa;
 #endif
@@ -140,6 +143,9 @@ private:
     static void utp_state(void* data, int state);
     static void utp_error(void* data, int errcode);
     static void utp_overhead(void *data, bool send, size_t count, int type);
+
+    static void utp_sendto(void *data, const byte *p, size_t len, const struct sockaddr *to, socklen_t tolen);
+    static void utp_incoming(void *data, UTPSocket *s);
 };
 
 #endif // UTPTRANSFERSEGMENT_H
