@@ -58,6 +58,9 @@ signals:
     void initiateBucketExchanges();
     void sendRequestAllBuckets(QHostAddress toAddr);
 
+    // Initialize scanlist
+    void requestLastKnownPeers();
+
 public slots:
     // Bootstrapping
     void performBootstrap();
@@ -66,6 +69,9 @@ public slots:
     // Network scanning ranges
     void addNetworkScanRange(quint32 rangeBase, quint32 rangeLength);
     void removeNetworkScanRange(quint32 rangeBase);
+
+    // Initialize scanlist
+    void receiveLastKnownPeers(QList<QHostAddress> peers);
 
 
 private slots:

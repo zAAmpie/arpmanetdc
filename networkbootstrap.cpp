@@ -3,7 +3,8 @@
 NetworkBootstrap::NetworkBootstrap(QObject *parent) :
     QObject(parent)
 {
-    // Init scanlist: Laai lys last known good ip's
+    // Init scanlist
+    // Load hardcoded hints
     QFile file("nodes.dat");
     if (file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -18,6 +19,8 @@ NetworkBootstrap::NetworkBootstrap(QObject *parent) :
             lastGoodNodes.append(ip);
         }
     }
+    // Read dynamically saved hosts from datastore
+    emit requestLastKnownPeers();
 
     // Init bootstrap
     setBootstrapStatus(-2);
@@ -55,6 +58,11 @@ NetworkBootstrap::~NetworkBootstrap()
     delete bootstrapTimer;
     delete networkScanTimer;
     delete keepaliveTimer;
+}
+
+void NetworkBootstrap::receiveLastKnownPeers(QList<QHostAddress> peers)
+{
+   lastGoodNodes.append(peers);
 }
 
 void NetworkBootstrap::performBootstrap()

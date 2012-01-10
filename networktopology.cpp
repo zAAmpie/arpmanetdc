@@ -24,20 +24,8 @@ NetworkTopology::~NetworkTopology()
     delete garbageCollectTimer;
     if (QDateTime::currentMSecsSinceEpoch() - startupTime > 120000)
     {
-        QList<QHostAddress> activeNodes = getForwardingPeers(20);
-        QListIterator<QHostAddress> it(activeNodes);
-        QFile file("nodes.dat");
-        if (file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
-        {
-            while (it.hasNext())
-            {
-                QByteArray saveData;
-                saveData.append(it.next().toString());
-                saveData.append("\n");
-                file.write(saveData);
-            }
-        }
-        file.close();
+        QList<QHostAddress> activeNodes = getForwardingPeers(100);
+        emit saveLastKnownPeers(activeNodes);
     }
 }
 

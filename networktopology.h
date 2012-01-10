@@ -59,6 +59,7 @@ signals:
     void requestBucketContents(QHostAddress host);
     void sendForwardAnnouncement(QHostAddress host);
     void requestAllBuckets(QHostAddress host);
+    void saveLastKnownPeers(QList<QHostAddress> peers);
 
 public slots:
     // ons onderskei tussen hierdie twee sodat foreign buckets nie ons begrip van ons eie bucket id affekteer nie
