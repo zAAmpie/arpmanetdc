@@ -41,6 +41,8 @@ public:
     void sendChatMessage(QString message);
     QString getHubAddress();
     quint16 getHubPort();
+    QString getNick();
+    QString getPassword();
 
 signals:
     void receivedChatMessage(QString message);
@@ -83,6 +85,7 @@ private:
     QTimer *keepaliveTimer;
 
 	//Parameters
+    QString lastChatMessage;
     QString hubAddress;
     quint16 hubPort;
     QString nick;

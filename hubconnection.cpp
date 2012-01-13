@@ -188,7 +188,7 @@ void HubConnection::processHubMessage()
 					pos1 = msg.indexOf("V:", pos2 + 1);
 					QString client = msg.mid(pos2 + 1, pos1 - pos2 - 2);
                     
-                    QString version = msg.mid(pos1 + 2, msg.indexOf("M:", pos2 + 1) - pos1 - 2);
+                    QString version = msg.mid(pos1 + 2, msg.indexOf("M:", pos2 + 1) - pos1 - 3);
 
                     pos1 = msg.indexOf("M:", pos2 + 1);
                     QString mode = msg.mid(pos1 + 2, 1);
@@ -263,9 +263,11 @@ void HubConnection::processHubMessage()
                 }
             }
             else
+            {
 				//===== MAIN CHAT MESSAGE =====
-                emit receivedChatMessage(unescapeDCProtocol(msg));
-
+                lastChatMessage = unescapeDCProtocol(msg);
+                emit receivedChatMessage(lastChatMessage);
+            }
         }
     }
 }
@@ -279,6 +281,7 @@ void HubConnection::connectHub()
 		if (hubSocket->state() != QAbstractSocket::ConnectingState)
 		{
 			registeredUser = false;
+            hubSocket->close();
 			hubSocket->connectToHost(hubAddress, hubPort);
 
 			emit receivedChatMessage(tr("<::info>Connecting to %1:%2...").arg(hubAddress).arg(hubPort));
@@ -305,19 +308,19 @@ void HubConnection::socketError(QAbstractSocket::SocketError error)
 	switch(error)
 	{
 		case QAbstractSocket::ConnectionRefusedError:
-			errorString = "Connection refused by server. Retrying...";
+			errorString = "Connection refused by server.";
 			break;
 
 		case QAbstractSocket::RemoteHostClosedError:
-			errorString = "Remote host forcibly closed the connection. Retrying...";
+			errorString = "Remote host forcibly closed the connection.";
 			break;
 
 		case QAbstractSocket::NetworkError:
-			errorString = "Network error - Retrying...";
+			errorString = "Network error.";
 			break;
 
 		case QAbstractSocket::HostNotFoundError:
-			errorString = "Remote host could not be found. Retrying...";
+			errorString = "Remote host could not be found.";
 			break;
 
 		default:
@@ -326,11 +329,24 @@ void HubConnection::socketError(QAbstractSocket::SocketError error)
 	}
 		
 	//Only try reconnecting if there was a connection error - otherwise just show there was an error
-	if (hubSocket->state() == QAbstractSocket::UnconnectedState || hubSocket->state() == QAbstractSocket::ClosingState)
+	if (hubSocket->state() == QAbstractSocket::UnconnectedState || hubSocket->state() == QAbstractSocket::ClosingState || hubSocket->state() == QAbstractSocket::ConnectedState)
 	{
 		//Try again if it was a connection error
 		if (!reconnectTimer->isActive())
-			reconnectTimer->start();
+        {
+            //Check if the error was due to bad nickname
+            int interval = 30000; //30 seconds
+            if (lastChatMessage.contains("<-VerliHub-> Bad nickname: Wait"))
+            {
+                int pos1 = lastChatMessage.indexOf("Wait") + 4;
+                int pos2 = lastChatMessage.indexOf("sec");
+
+                interval = lastChatMessage.mid(pos1, pos2 - pos1).toInt() * 1000;
+            }
+
+            errorString += tr(" Retrying in %1 second%2...").arg(interval / 1000).arg((interval / 1000) != 1 ? "s" : "");
+			reconnectTimer->start(interval);
+        }
 	}	
 
     //If hub was online, change status to offline
@@ -365,4 +381,14 @@ QString HubConnection::getHubAddress()
 quint16 HubConnection::getHubPort()
 {
     return hubPort;
+}
+
+QString HubConnection::getNick()
+{
+    return nick;
+}
+
+QString HubConnection::getPassword()
+{
+    return password;
 }

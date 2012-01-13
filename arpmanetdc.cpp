@@ -332,6 +332,15 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	int interval = pSettings->value("autoUpdateShareInterval").toInt();
 	if (interval > 0)
 		updateSharesTimer->start(interval);
+
+    //Show settings window if nick is still default
+    if (pSettings->value("nick") == DEFAULT_NICK && pSettings->value("password") == DEFAULT_PASSWORD)
+    {
+        if (QMessageBox::information(this, tr("ArpmanetDC"), tr("Please change your nickname and password and click ""Save changes"" to start using ArpmanetDC")) == QMessageBox::Ok)
+            settingsAction->trigger();
+    }
+    else
+        pHub->connectHub();
 }
 
 ArpmanetDC::~ArpmanetDC()
@@ -601,7 +610,7 @@ void ArpmanetDC::createWidgets()
 	
 	//===== User list =====
 	//Model
-	userListModel = new QStandardItemModel(0,6);
+	userListModel = new QStandardItemModel(0,7);
 	userListModel->setHeaderData(0, Qt::Horizontal, tr("Nickname"));
 	userListModel->setHeaderData(1, Qt::Horizontal, tr("Description"));
 	userListModel->setHeaderData(2, Qt::Horizontal, tr("Nickname"));
@@ -637,6 +646,8 @@ void ArpmanetDC::createWidgets()
 	userListTable->hideColumn(2);
 	userListTable->hideColumn(3);
 	userListTable->hideColumn(4);
+    userListTable->hideColumn(5);
+    userListTable->hideColumn(6);
 
     //TransferWidget
     transferWidget = new TransferWidget(pTransferManager, this);
@@ -1154,7 +1165,7 @@ void ArpmanetDC::settingsSaved()
     saveSettings();
 
     //Reconnect hub if necessary
-    if (pSettings->value("hubAddress") != pHub->getHubAddress() || pSettings->value("hubPort").toShort() != pHub->getHubPort())
+    if (pSettings->value("hubAddress") != pHub->getHubAddress() || pSettings->value("hubPort").toShort() != pHub->getHubPort() || pSettings->value("nick") != pHub->getNick() || pSettings->value("password") != pHub->getPassword())
         reconnectActionPressed();
 
     //Reconnect dispatcher if necessary
