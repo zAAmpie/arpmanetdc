@@ -49,7 +49,7 @@ signals:
     void userLoggedOut(QString nick);
     void receivedNickList(QStringList nickList);
     void receivedOpList(QStringList opList);
-    void receivedMyINFO(QString nick, QString description, QString mode);
+    void receivedMyINFO(QString nick, QString description, QString mode, QString client, QString version);
 
 	//Emitted once when hub goes offline
 	void hubOffline();

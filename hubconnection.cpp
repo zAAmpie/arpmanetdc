@@ -184,9 +184,15 @@ void HubConnection::processHubMessage()
                     QString nickname = msg.mid(13, pos1 - 13);
                     int pos2 = msg.indexOf("<", pos1 + 1);
                     QString description = msg.mid(pos1 + 1, pos2 - pos1 - 1);
+
+					pos1 = msg.indexOf("V:", pos2 + 1);
+					QString client = msg.mid(pos2 + 1, pos1 - pos2 - 2);
+                    
+                    QString version = msg.mid(pos1 + 2, msg.indexOf("M:", pos2 + 1) - pos1 - 2);
+
                     pos1 = msg.indexOf("M:", pos2 + 1);
                     QString mode = msg.mid(pos1 + 2, 1);
-                    emit receivedMyINFO(nickname, description, mode);
+                    emit receivedMyINFO(nickname, description, mode, client, version);
                 }
 
 				//===== USER LEFT =====

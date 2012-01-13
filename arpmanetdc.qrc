@@ -23,5 +23,6 @@
         <file>Resources/RedArrow.png</file>
         <file>Resources/GPLv3 Logo 128px.png</file>
         <file>Resources/RefreshIcon.png</file>
+        <file>Resources/ArpmanetUserIcon.png</file>
     </qresource>
 </RCC>

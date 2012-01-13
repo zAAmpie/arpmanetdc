@@ -77,7 +77,7 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 
     //Connect HubConnection to GUI
 	connect(pHub, SIGNAL(receivedChatMessage(QString)), this, SLOT(appendChatLine(QString)));
-	connect(pHub, SIGNAL(receivedMyINFO(QString, QString, QString)), this, SLOT(userListInfoReceived(QString, QString, QString)));
+	connect(pHub, SIGNAL(receivedMyINFO(QString, QString, QString, QString, QString)), this, SLOT(userListInfoReceived(QString, QString, QString, QString, QString)));
 	connect(pHub, SIGNAL(receivedNickList(QStringList)), this, SLOT(userListNickListReceived(QStringList)));
 	connect(pHub, SIGNAL(userLoggedOut(QString)), this, SLOT(userListUserLoggedOut(QString)));	
 	connect(pHub, SIGNAL(receivedPrivateMessage(QString, QString)), this, SLOT(receivedPrivateMessage(QString, QString)));
@@ -301,6 +301,8 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	//Icon generation
 	userIcon = new QPixmap();
 	*userIcon = QPixmap(":/ArpmanetDC/Resources/UserIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    arpmanetUserIcon = new QPixmap();
+	*arpmanetUserIcon = QPixmap(":/ArpmanetDC/Resources/ArpmanetUserIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 	userFirewallIcon = new QPixmap();
 	*userFirewallIcon = QPixmap(":/ArpmanetDC/Resources/FirewallIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     fullyBootstrappedIcon = new QPixmap();
@@ -599,12 +601,14 @@ void ArpmanetDC::createWidgets()
 	
 	//===== User list =====
 	//Model
-	userListModel = new QStandardItemModel(0,5);
+	userListModel = new QStandardItemModel(0,6);
 	userListModel->setHeaderData(0, Qt::Horizontal, tr("Nickname"));
 	userListModel->setHeaderData(1, Qt::Horizontal, tr("Description"));
 	userListModel->setHeaderData(2, Qt::Horizontal, tr("Nickname"));
 	userListModel->setHeaderData(3, Qt::Horizontal, tr("Description"));
 	userListModel->setHeaderData(4, Qt::Horizontal, tr("Mode"));
+    userListModel->setHeaderData(5, Qt::Horizontal, tr("Client"));
+    userListModel->setHeaderData(6, Qt::Horizontal, tr("Version"));
 
 	userSortProxy = new QSortFilterProxyModel(this);
 	userSortProxy->setSortCaseSensitivity(Qt::CaseInsensitive);
@@ -1396,7 +1400,7 @@ void ArpmanetDC::sortUserList()
 	if (sortDue)
 	{
 		userSortProxy->sort(2, Qt::AscendingOrder);
-        //resizeRowsToContents(userListTable);
+        resizeRowsToContents(userListTable);
 		sortDue = false;
 	}
 }
@@ -1413,7 +1417,7 @@ void ArpmanetDC::calculateHashRate()
     shareSizeLabel->setToolTip(tr("Hashing speed:\n%1\n%2").arg(rateMB).arg(rateFiles));
 }
 
-void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode)
+void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, QString client, QString version)
 {
 	//Don't add empty nicknames
 	if (nick.isEmpty())
@@ -1438,10 +1442,16 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode)
 			item->setText(tr("<font size=\"2\">%1</font>").arg(nick));
 			item->setIcon(QIcon(*userFirewallIcon));
 		}
+		else if (client.compare("ArpmanetDC") == 0)
+		{
+			//Active user - ArpmanetDC
+			item->setText(tr("<font size=\"2\">%1</font>").arg(nick));
+			item->setIcon(QIcon(*arpmanetUserIcon));
+		}
 		else
 		{
-			//Active user
-			item->setText(tr("<font size=\"2\">%1</font>").arg(nick));
+			//Active user - other client
+            item->setText(tr("<font size=\"2\">%1</font>").arg(nick));
 			item->setIcon(QIcon(*userIcon));
 		}
 		
@@ -1457,12 +1467,14 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode)
 		userListModel->setItem(userListModel->rowCount()-1, 2, new QStandardItem(nick));
 		userListModel->setItem(userListModel->rowCount()-1, 3, new QStandardItem(desc));
 		userListModel->setItem(userListModel->rowCount()-1, 4, new QStandardItem(mode));
+        userListModel->setItem(userListModel->rowCount()-1, 5, new QStandardItem(client));
+        userListModel->setItem(userListModel->rowCount()-1, 6, new QStandardItem(version));
 		
 		//Signal for sorting
 		sortDue = true;
 
 		//Update user count
-		userHubCountLabel->setText(tr("Hub Users: %1").arg(userListModel->rowCount()));		
+		userHubCountLabel->setText(tr("Hub Users: %1/%2").arg(userListModel->findItems("ArpmanetDC", Qt::MatchExactly, 5).count()).arg(userListModel->rowCount()));		
 	}
 	//Present - edit existing
 	else
@@ -1494,6 +1506,12 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode)
 
 		if (!mode.isEmpty())
 			userListModel->item(foundIndex, 4)->setText(mode);
+
+        if (!client.isEmpty())
+            userListModel->item(foundIndex, 5)->setText(client);
+
+        if (!version.isEmpty())
+            userListModel->item(foundIndex, 6)->setText(version);
 		
 		//Signal for sorting
 		sortDue = true;
@@ -1515,14 +1533,14 @@ void ArpmanetDC::userListUserLoggedOut(QString nick)
 		additionalInfoLabel->setText(tr("User not in list: %1").arg(nick));
 
 	//Update user count
-	userHubCountLabel->setText(tr("Hub Users: %1").arg(userListModel->rowCount()));
+	userHubCountLabel->setText(tr("Hub Users: %1/%2").arg(userListModel->findItems("ArpmanetDC", Qt::MatchExactly, 5).count()).arg(userListModel->rowCount()));
 }
 
 void ArpmanetDC::userListNickListReceived(QStringList list)
 {
 	//Add/update user list for every nick in nickList
 	foreach (QString nick, list)
-		userListInfoReceived(nick, "", "");
+		userListInfoReceived(nick, "", "", "", "");
 }
 
 void ArpmanetDC::hubOffline()

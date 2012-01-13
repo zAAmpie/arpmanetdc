@@ -145,7 +145,7 @@ private slots:
 
 	//Hub Connection slots
 	void appendChatLine(QString msg);
-	void userListInfoReceived(QString nick, QString desc, QString mode);
+	void userListInfoReceived(QString nick, QString desc, QString mode, QString client, QString version);
 	void userListUserLoggedOut(QString nick);
 	void userListNickListReceived(QStringList list);
 	void hubOnline();
@@ -304,7 +304,7 @@ private:
 	quint32 mainChatBlocks;
 
 	//User list icons
-	QPixmap *userIcon, *userFirewallIcon, *bootstrappedIcon, *unbootstrappedIcon, *fullyBootstrappedIcon;
+	QPixmap *userIcon, *arpmanetUserIcon, *userFirewallIcon, *bootstrappedIcon, *unbootstrappedIcon, *fullyBootstrappedIcon;
 
     //Menus
     QMenu *userListMenu;

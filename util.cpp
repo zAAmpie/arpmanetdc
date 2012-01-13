@@ -173,6 +173,7 @@ void resizeRowsToContents(QTableView *tableView)
     if (!tableView)
         return;
 
+	tableView->setRowHeight(0, 10);
     tableView->resizeRowToContents(0);
     for (int i = 1; i < tableView->model()->rowCount(); i++)
         tableView->setRowHeight(i, tableView->rowHeight(0));
