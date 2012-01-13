@@ -43,6 +43,8 @@ private slots:
 
 	void saveSharePressed();
 
+	void refreshButtonPressed();
+
 	void changeRoot(QString path);
 
     void pathLoaded(QString path);
@@ -53,6 +55,9 @@ signals:
 
     //Private signal - update shares
     void updateShares(QList<QDir> *list);
+
+	//Update shares without saving
+	void updateShares();
 
 private:
 	//Functions
@@ -79,7 +84,7 @@ private:
 
     QLabel *busyLabel;
 
-	QPushButton *saveButton;
+	QPushButton *saveButton, *refreshButton;
 
 };
 

@@ -8,6 +8,7 @@ ShareWidget::ShareWidget(ShareSearch *share, ArpmanetDC *parent)
 	pShare = share;
 
     connect(this, SIGNAL(updateShares(QList<QDir> *)), pShare, SLOT(updateShares(QList<QDir> *)), Qt::QueuedConnection);
+	connect(this, SIGNAL(updateShares()), pShare, SLOT(updateShares()), Qt::QueuedConnection);
 
 	createWidgets();
 	placeWidgets();
@@ -40,6 +41,7 @@ ShareWidget::~ShareWidget()
 void ShareWidget::createWidgets()
 {
 	saveButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Save shares"));
+	refreshButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/RefreshIcon.png"), tr("Refresh shares"));
 
 	fileModel = new QFileSystemModel();
 	//fileModel->setFilter(QDir::Dirs | QDir::Drives | QDir::NoDotAndDotDot);
@@ -67,7 +69,8 @@ void ShareWidget::createWidgets()
 void ShareWidget::placeWidgets()
 {
 	QHBoxLayout *hlayout = new QHBoxLayout;
-    hlayout->addSpacing(10);
+	hlayout->addWidget(refreshButton);
+	hlayout->addSpacing(10);
     hlayout->addWidget(busyLabel);
 	hlayout->addStretch(1);
 	hlayout->addWidget(saveButton);
@@ -87,6 +90,7 @@ void ShareWidget::connectWidgets()
 	connect(checkProxyModel, SIGNAL(checkedNodesChanged()), this, SLOT(selectedItemsChanged()));
 	connect(saveButton, SIGNAL(clicked()), this, SLOT(saveSharePressed()));
 	connect(fileModel, SIGNAL(directoryLoaded(QString)), this, SLOT(pathLoaded(QString)));
+	connect(refreshButton, SIGNAL(clicked()), this, SLOT(refreshButtonPressed()));
 }
 
 void ShareWidget::changeRoot(QString path)
@@ -161,6 +165,12 @@ void ShareWidget::saveSharePressed()
     pShare->stopHashing();
     emit updateShares(dirList);
 
+	emit saveButtonPressed();
+}
+
+void ShareWidget::refreshButtonPressed()
+{
+	emit updateShares();
 	emit saveButtonPressed();
 }
 
