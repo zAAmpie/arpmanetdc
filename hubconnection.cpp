@@ -274,6 +274,8 @@ void HubConnection::connectHub()
 		{
 			registeredUser = false;
 			hubSocket->connectToHost(hubAddress, hubPort);
+
+			emit receivedChatMessage(tr("<::info>Connecting to %1:%2...").arg(hubAddress).arg(hubPort));
 		}
 	}
 	else
@@ -333,7 +335,7 @@ void HubConnection::socketError(QAbstractSocket::SocketError error)
     }
 
 	emit hubError(errorString);
-    emit receivedChatMessage("<font color=\"red\">" + errorString + "</font>");
+    emit receivedChatMessage("<::error>" + errorString);
 }
 
 void HubConnection::reconnectTimeout()

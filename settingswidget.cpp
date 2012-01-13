@@ -34,7 +34,17 @@ void SettingsWidget::createWidgets()
     downloadPathLineEdit = new QLineEdit(pSettings->value("downloadPath"), (QWidget *)pParent);
 
     browseDownloadPathButton = new QPushButton(tr("Browse"), (QWidget *)pParent);
-	
+
+	shareUpdateIntervalSpinBox = new QSpinBox((QWidget *)pParent);
+	shareUpdateIntervalSpinBox->setRange(0, 10080); //Maximum is every week
+	int value = pSettings->value("autoUpdateShareInterval").toInt()/60000;
+	shareUpdateIntervalSpinBox->setValue(value);
+	if (value != 1)
+		shareUpdateIntervalSpinBox->setSuffix(" minutes");
+	else
+		shareUpdateIntervalSpinBox->setSuffix(" minute");
+	shareUpdateIntervalSpinBox->setSpecialValueText("Disabled");
+
     //========== ADVANCED SETTINGS ==========
 
 	ipLineEdit = new QLineEdit(pSettings->value("externalIP"), (QWidget *)pParent);
@@ -83,6 +93,9 @@ void SettingsWidget::placeWidgets()
     downloadPathLayout->addWidget(downloadPathLineEdit);
     downloadPathLayout->addWidget(browseDownloadPathButton);
 
+	QHBoxLayout *autoUpdateLayout = new QHBoxLayout;
+	autoUpdateLayout->addWidget(shareUpdateIntervalSpinBox);
+
 	QFormLayout *flayout = new QFormLayout();
 	flayout->addRow(new QLabel("<b>User information</b>"));
     flayout->addRow(new QLabel("Nickname:"), nickLineEdit);
@@ -92,6 +105,8 @@ void SettingsWidget::placeWidgets()
     flayout->addRow(new QLabel("<b>Hub information</b>"));
     flayout->addRow(new QLabel("Hub address:"), hubAddressLineEdit);
 	flayout->addRow(new QLabel("Hub port:"), hubPortLineEdit);
+	flayout->addRow(new QLabel("<b>Shares</b>"));
+	flayout->addRow(new QLabel("Share update interval:"), autoUpdateLayout);
 
     QHBoxLayout *guessLayout = new QHBoxLayout();
     guessLayout->addWidget(ipLineEdit);
@@ -148,6 +163,8 @@ void SettingsWidget::connectWidgets()
     connect(protocolDownButton, SIGNAL(clicked()), this, SLOT(protocolDownPressed()));
 
     connect(toggleAdvancedCheckBox, SIGNAL(stateChanged(int)), this, SLOT(advancedCheckBoxToggled(int)));
+
+	connect(shareUpdateIntervalSpinBox, SIGNAL(valueChanged(int)), this, SLOT(shareUpdateIntervalSpinBoxValueChanged(int)));
 }
 
 void SettingsWidget::savePressed()
@@ -180,6 +197,7 @@ void SettingsWidget::savePressed()
         (*pSettings)["externalIP"] = ipLineEdit->text();
         (*pSettings)["externalPort"] = externalPortLineEdit->text();
         (*pSettings)["downloadPath"] = downloadPathLineEdit->text().replace("\\","/");
+		(*pSettings)["autoUpdateShareInterval"] = tr("%1").arg(shareUpdateIntervalSpinBox->value()*60000);
 
         //Build protocols string
         QString protocolHint;
@@ -255,6 +273,14 @@ void SettingsWidget::protocolDownPressed()
     //Add to list
     protocolList->insertItem(index, selectedItems.first());
     protocolList->setCurrentItem(selectedItems.first());
+}
+
+void SettingsWidget::shareUpdateIntervalSpinBoxValueChanged(int value)
+{
+	if (value == 1)
+		shareUpdateIntervalSpinBox->setSuffix(" minute");
+	else if (value > 1 && shareUpdateIntervalSpinBox->suffix() != " minutes")
+		shareUpdateIntervalSpinBox->setSuffix(" minutes");
 }
 
 void SettingsWidget::advancedCheckBoxToggled(int state)

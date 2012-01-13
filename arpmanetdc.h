@@ -49,6 +49,8 @@
 #define DEFAULT_NICK "Testnick"
 #define DEFAULT_PASSWORD "test123"
 
+#define DEFAULT_SHARE_UPDATE_INTERVAL "3600000" //Default 60min
+
 #define DEFAULT_SHOW_ADVANCED "0" //By default don't show advanced settings
 
 #define SHARE_DATABASE_PATH "arpmanetdc.sqlite"
@@ -284,6 +286,8 @@ private:
 
     quint64 pFilesHashedSinceUpdate, pFileSizeHashedSinceUpdate;
     QTimer *hashRateTimer;
+
+	QTimer *updateSharesTimer;
 
 	//Global lists
 	QHash<QByteArray, QueueStruct> *pQueueList;

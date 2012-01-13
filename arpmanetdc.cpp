@@ -39,6 +39,8 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
         pSettings->insert("showAdvanced", DEFAULT_SHOW_ADVANCED);
     if (!pSettings->contains("lastSeenIP"))
         pSettings->insert("lastSeenIP", ipString);
+	if (!pSettings->contains("autoUpdateShareInterval"))
+		pSettings->insert("autoUpdateShareInterval", DEFAULT_SHARE_UPDATE_INTERVAL);
     if (!pSettings->contains("protocolHint"))
     {
         QByteArray protocolHint;
@@ -321,6 +323,13 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     hashRateTimer = new QTimer();
     connect(hashRateTimer, SIGNAL(timeout()), this, SLOT(calculateHashRate()));
     hashRateTimer->start(1000);
+
+	//Set up timer to auto update shares
+	updateSharesTimer = new QTimer();
+	connect(updateSharesTimer, SIGNAL(timeout()), this, SIGNAL(updateShares()));
+	int interval = pSettings->value("autoUpdateShareInterval").toInt();
+	if (interval > 0)
+		updateSharesTimer->start(interval);
 }
 
 ArpmanetDC::~ArpmanetDC()
@@ -1158,6 +1167,13 @@ void ArpmanetDC::settingsSaved()
     QByteArray cid = hash.result();
     pDispatcher->setCID(cid);
 
+	//Reset the auto update timer if necessary
+	int interval = pSettings->value("autoUpdateShareInterval").toInt();
+	if (interval == 0) //Disabled
+		updateSharesTimer->stop();
+	else if (interval != updateSharesTimer->interval())
+		updateSharesTimer->start(interval);
+
 	//Delete settings tab
 	if (settingsWidget)
 	{
@@ -1328,7 +1344,12 @@ void ArpmanetDC::appendChatLine(QString msg)
 	{
 		QString nick = msg.mid(1,msg.indexOf(">")-1);
 		msg.remove(0,msg.indexOf(">")+1);
-		msg.prepend(tr("<b>%1</b>").arg(nick));
+		if (nick == "::error")
+			msg = tr("<font color=\"red\"><b>%1</b></font>").arg(msg);
+		else if (nick == "::info")
+			msg = tr("<font color=\"green\"><b>%1</b></font>").arg(msg);
+		else
+			msg.prepend(tr("<b>%1</b>").arg(nick));
 	}
 
 	//Replace new lines with <br/>

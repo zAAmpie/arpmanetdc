@@ -54,6 +54,9 @@ private slots:
     //Display advanced settings toggled
     void advancedCheckBoxToggled(int state);
 
+	//Changed the value of the spinbox
+	void shareUpdateIntervalSpinBoxValueChanged(int value);
+
 signals:
 	//Signalled when settings were saved
 	void settingsSaved();
@@ -74,6 +77,7 @@ private:
     QWidget *advancedWidget;
     QListWidget *protocolList;
 
+	QSpinBox *shareUpdateIntervalSpinBox;
     QCheckBox *toggleAdvancedCheckBox;
 	QLineEdit *hubAddressLineEdit, *hubPortLineEdit, *nickLineEdit, *passwordLineEdit, *ipLineEdit, *externalPortLineEdit, *downloadPathLineEdit;
     QPushButton *saveButton, *guessIPButton, *browseDownloadPathButton, *protocolUpButton, *protocolDownButton;
