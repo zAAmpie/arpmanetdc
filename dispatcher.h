@@ -50,6 +50,7 @@ public:
     //Get functions to avoid reconfiguration if no change was made
     QHostAddress getDispatchIP();
     quint16 getDispatchPort();
+    int getNumberOfCIDHosts();
 
 signals:
     // Bootstrap signals

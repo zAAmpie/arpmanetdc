@@ -326,6 +326,11 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     connect(hashRateTimer, SIGNAL(timeout()), this, SLOT(calculateHashRate()));
     hashRateTimer->start(1000);
 
+    //Set up timer to update the number of CID hosts currently bootstrapped to
+    updateTimer = new QTimer();
+    connect(updateTimer, SIGNAL(timeout()), this, SLOT(updateGUIEverySecond()));
+    updateTimer->start(1000);
+
 	//Set up timer to auto update shares
 	updateSharesTimer = new QTimer();
 	connect(updateSharesTimer, SIGNAL(timeout()), this, SIGNAL(updateShares()));
@@ -580,6 +585,9 @@ void ArpmanetDC::createWidgets()
 	connectionIconLabel = new QLabel();
 	//connectionIconLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
+    CIDHostsLabel = new QLabel("0");
+    CIDHostsLabel->setToolTip(tr("Number of hosts bootstrapped"));
+
 	//Progress bar
 	hashingProgressBar = new TextProgressBar(tr("Hashing"), this);
 	hashingProgressBar->setRange(0,0);
@@ -669,6 +677,7 @@ void ArpmanetDC::createWidgets()
 	statusBar->addPermanentWidget(statusLabel,1);
 	statusBar->addPermanentWidget(connectionIconLabel);
 	statusBar->addPermanentWidget(bootstrapStatusLabel);
+    statusBar->addPermanentWidget(CIDHostsLabel);
 	statusBar->addPermanentWidget(hashingProgressBar);
 	statusBar->addPermanentWidget(shareSizeLabel);
 
@@ -1416,6 +1425,12 @@ void ArpmanetDC::sortUserList()
 	}
 }
 
+void ArpmanetDC::updateGUIEverySecond()
+{
+    //Called every second to update the GUI
+    CIDHostsLabel->setText(tr("%1").arg(pDispatcher->getNumberOfCIDHosts()));
+}
+
 //Calculate rates
 void ArpmanetDC::calculateHashRate()
 {
@@ -1601,6 +1616,8 @@ void ArpmanetDC::bootstrapStatusChanged(int status)
         connectionIconLabel->setPixmap(*fullyBootstrappedIcon);
         connectionIconLabel->setToolTip(tr("Multicast bootstrapped"));
     }
+
+    bootstrapStatusLabel->setToolTip(connectionIconLabel->toolTip());
 }
 
 void ArpmanetDC::setStatus(QString msg)
@@ -1848,7 +1865,7 @@ void ArpmanetDC::convertMagnetLinks(QString &msg)
 {
 	//Replace magnet links with hrefs
 	int currentIndex = 0;
-	QString regex = "(magnet:\\?xt\\=urn:(?:tree:tiger|sha1):([a-z0-9]{32,39})([a-z0-9\\/&#95;:@=.+?,##%&~\\-_]*))";
+	QString regex = "(magnet:\\?xt\\=urn:(?:tree:tiger|sha1):([a-z0-9]{32,39})([a-z0-9\\/&#95;:@=.+?,##%&~\\-_()]*))";
 	QRegExp rx(regex, Qt::CaseInsensitive);
 
 	int pos = 0;

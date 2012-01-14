@@ -186,6 +186,9 @@ private slots:
 	//Sort user list
 	void sortUserList();
 
+    //Update GUI slot
+    void updateGUIEverySecond();
+
     //Calculate rates
     void calculateHashRate();
 
@@ -288,6 +291,7 @@ private:
     QTimer *hashRateTimer;
 
 	QTimer *updateSharesTimer;
+    QTimer *updateTimer;
 
 	//Global lists
 	QHash<QByteArray, QueueStruct> *pQueueList;
@@ -331,6 +335,7 @@ private:
 	QLabel *shareSizeLabel;
 	QLabel *connectionIconLabel;
 	QLabel *bootstrapStatusLabel;
+    QLabel *CIDHostsLabel;
 
 	//Progressbar
 	TextProgressBar *hashingProgressBar;

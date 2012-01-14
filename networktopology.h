@@ -54,6 +54,8 @@ public:
     void setCID(QByteArray &CID);
     void setDispatchIP(QHostAddress ip);
 
+    int getNumberOfCIDHosts();
+
 signals:
     void changeBootstrapStatus(int status);
     void requestBucketContents(QHostAddress host);

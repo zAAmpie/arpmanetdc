@@ -361,3 +361,8 @@ QString NetworkTopology::getDebugCIDHostContents()
     }
     return rstring;
 }
+
+int NetworkTopology::getNumberOfCIDHosts()
+{
+    return CIDHosts.size();
+}

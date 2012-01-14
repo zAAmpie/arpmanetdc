@@ -996,6 +996,11 @@ quint16 Dispatcher::getDispatchPort()
     return dispatchPort;
 }
 
+int Dispatcher::getNumberOfCIDHosts()
+{
+    return networkTopology->getNumberOfCIDHosts();
+}
+
 // ------------------=====================   DEBUGGING   =====================----------------------
 
 QString Dispatcher::getDebugBucketsContents()
