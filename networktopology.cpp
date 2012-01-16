@@ -364,5 +364,16 @@ QString NetworkTopology::getDebugCIDHostContents()
 
 int NetworkTopology::getNumberOfCIDHosts()
 {
+    // These are not garbage collected, and I doubt if they are useful at all.
+    // Perhaps we should look into removing the CID host thing later if nothing uses it.
     return CIDHosts.size();
+}
+
+int NetworkTopology::getNumberOfHosts()
+{
+    int count = 0;
+    QHashIterator<QByteArray, HostIntPair*> i(buckets);
+    while (i.hasNext())
+        count += i.next().value()->first->count();
+    return count;
 }

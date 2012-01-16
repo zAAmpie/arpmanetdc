@@ -55,6 +55,7 @@ public:
     void setDispatchIP(QHostAddress ip);
 
     int getNumberOfCIDHosts();
+    int getNumberOfHosts();
 
 signals:
     void changeBootstrapStatus(int status);

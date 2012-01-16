@@ -51,6 +51,7 @@ public:
     QHostAddress getDispatchIP();
     quint16 getDispatchPort();
     int getNumberOfCIDHosts();
+    int getNumberOfHosts();
 
 signals:
     // Bootstrap signals

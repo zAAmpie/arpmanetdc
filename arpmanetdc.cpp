@@ -1428,7 +1428,8 @@ void ArpmanetDC::sortUserList()
 void ArpmanetDC::updateGUIEverySecond()
 {
     //Called every second to update the GUI
-    CIDHostsLabel->setText(tr("%1").arg(pDispatcher->getNumberOfCIDHosts()));
+    //CIDHostsLabel->setText(tr("%1").arg(pDispatcher->getNumberOfCIDHosts()));
+    CIDHostsLabel->setText(tr("%1").arg(pDispatcher->getNumberOfHosts()));
 }
 
 //Calculate rates

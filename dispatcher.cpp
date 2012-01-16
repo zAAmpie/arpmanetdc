@@ -1001,6 +1001,11 @@ int Dispatcher::getNumberOfCIDHosts()
     return networkTopology->getNumberOfCIDHosts();
 }
 
+int Dispatcher::getNumberOfHosts()
+{
+    return networkTopology->getNumberOfHosts();
+}
+
 // ------------------=====================   DEBUGGING   =====================----------------------
 
 QString Dispatcher::getDebugBucketsContents()

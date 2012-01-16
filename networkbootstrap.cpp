@@ -20,6 +20,7 @@ NetworkBootstrap::NetworkBootstrap(QObject *parent) :
         }
     }
     // Read dynamically saved hosts from datastore
+    // Note: Must reply with empty list if no nodes are stored, otherwise the entries in nodes.dat won't be queried.
     emit requestLastKnownPeers();
 
     // Init bootstrap
@@ -45,12 +46,6 @@ NetworkBootstrap::NetworkBootstrap(QObject *parent) :
 
     totalScanHosts = 0;
     networkScanTimeouts = 0;
-
-    QListIterator<QHostAddress> i(lastGoodNodes);
-    while (i.hasNext())
-    {
-        emit sendRequestAllBuckets(i.next());
-    }
 }
 
 NetworkBootstrap::~NetworkBootstrap()
@@ -63,6 +58,11 @@ NetworkBootstrap::~NetworkBootstrap()
 void NetworkBootstrap::receiveLastKnownPeers(QList<QHostAddress> peers)
 {
    lastGoodNodes.append(peers);
+   QListIterator<QHostAddress> i(lastGoodNodes);
+   while (i.hasNext())
+   {
+       emit sendRequestAllBuckets(i.next());
+   }
 }
 
 void NetworkBootstrap::performBootstrap()
