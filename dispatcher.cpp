@@ -714,6 +714,7 @@ void Dispatcher::handleReceivedTTHTreeRequest(QHostAddress &senderHost, QByteArr
     quint32 startOffset = getQuint32FromByteArray(&datagram);
     quint32 numberOfBuckets = getQuint32FromByteArray(&datagram);
     emit incomingTTHTreeRequest(senderHost, tth, startOffset, numberOfBuckets);
+    qDebug() << "Dispatcher::handleReceivedTTHTreeRequest: Tree request TTH:offset:number" << tth.toBase64() << startOffset << numberOfBuckets;
 }
 
 void Dispatcher::handleReceivedTTHTree(QByteArray &datagram)

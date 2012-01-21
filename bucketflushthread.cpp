@@ -51,11 +51,11 @@ void BucketFlushThread::assembleOutputFile(QString tmpfilebase, QString outfile,
                 outf.resize((quint64)bucket * HASH_BUCKET_SIZE + buf.size());
             
             //Map file to memory
-            char *f = (char*)outf.map((quint64)bucket * HASH_BUCKET_SIZE, buf.size());
+            uchar *f = outf.map((quint64)bucket * HASH_BUCKET_SIZE, buf.size());
             
             //Write to memory if map succeeded
             if (f != 0)
-                memcpy(f, buf.constData(), buf.size());
+                memcpy(f, (const uchar *)buf.constData(), buf.size());
             else
                 qDebug() << "BucketFlushThread::assembleOutputFile: Big booboo for map! bucket : size" << bucket << buf.size();
 
@@ -79,7 +79,9 @@ void BucketFlushThread::assembleOutputFile(QString tmpfilebase, QString outfile,
 
             inf.close();
             inf.remove();
-            outf.unmap((unsigned char *)f);
+            outf.unmap(f);
+            if (f)
+                delete [] f;
         }
         if (bucket == lastbucket)
             outf.rename(outfile);
