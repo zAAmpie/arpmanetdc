@@ -2,6 +2,7 @@
 
 #ifdef Q_WS_WIN //If windows
 #include <winsock2.h>
+#include <ws2tcpip.h>
 #else //If Q_WS_X11
 #include <sys/socket.h>
 #include <sys/types.h>
