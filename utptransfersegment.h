@@ -22,6 +22,8 @@
 
 #include "transfersegment.h"
 
+#include "util.h"
+
 #include "libutp/utp.h"
 #include "libutp/utp_utils.h"
 #include "libutp/templates.h"
@@ -43,6 +45,11 @@ public slots:
 
 private:
     UTPSocket *utpSocket;
+    sockaddr_in addr;
+    UTPFunctionTable utp_callbacks;
+
+    const unsigned char * fileMap;
+    qint64 segmentOffset;
 
     // uTP callback functions
     void uTPRead(const byte *bytes, size_t count);

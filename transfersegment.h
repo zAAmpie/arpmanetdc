@@ -82,6 +82,10 @@ protected:
     QHash<int, QByteArray*> *pDownloadBucketTable;
 
     Transfer *pParent;
+
+    virtual void checkSendDownloadRequest(quint8 protocol, QHostAddress peer, QByteArray TTH,
+                                         qint64 requestingOffset, qint64 requestingLength);
+    virtual int calculateBucketNumber(quint64 fileOffset);
 };
 
 #endif // TRANSFERSEGMENT_H

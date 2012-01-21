@@ -972,7 +972,7 @@ void Dispatcher::sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *dat
     delete s;
 
     int res;
-    if (res = senderUdpSocket->write(*datagram) == -1)
+    if ((res = senderUdpSocket->write(*datagram)) == -1)
         emit writeUdpUnicastFailed();
     //if (res = senderUdpSocket->writeDatagram(*datagram, dstAddress, dispatchPort) == -1)
     //    emit writeUdpUnicastFailed();
@@ -1001,7 +1001,7 @@ void Dispatcher::sendBroadcastRawDatagram(QByteArray &datagram)
             size = 10*(1<<20); //10MB
             if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(size)) == -1) //couldn't write
             {
-                qDebug() << "Dispatcher::sendUnicastRawDatagram: Could not set sending buffer to 10MB";
+                qDebug() << "Dispatcher::sendBroadcastRawDatagram: Could not set sending buffer to 10MB";
             }
             else
             {
@@ -1009,7 +1009,7 @@ void Dispatcher::sendBroadcastRawDatagram(QByteArray &datagram)
                 if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
                 {
                     if (size != 10*(1<<20))
-                        qDebug() << "Dispatcher::sendUnicastRawDatagram: Value returned inconsistent with value set";
+                        qDebug() << "Dispatcher::sendBroadcastRawDatagram: Value returned inconsistent with value set";
                 }
             }
 
@@ -1018,7 +1018,7 @@ void Dispatcher::sendBroadcastRawDatagram(QByteArray &datagram)
     delete s;
 
     int res;
-    if (res = senderUdpSocket->write(datagram) == -1)
+    if ((res = senderUdpSocket->write(datagram)) == -1)
         emit writeUdpBroadcastFailed();
     //if (senderUdpSocket->writeDatagram(datagram, bcastAddress, dispatchPort) == -1)
     //    emit writeUdpBroadcastFailed();
@@ -1045,7 +1045,7 @@ void Dispatcher::sendMulticastRawDatagram(QByteArray &datagram)
             size = 10*(1<<20); //10MB
             if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(size)) == -1) //couldn't write
             {
-                qDebug() << "Dispatcher::sendUnicastRawDatagram: Could not set sending buffer to 10MB";
+                qDebug() << "Dispatcher::sendMulticastRawDatagram: Could not set sending buffer to 10MB";
             }
             else
             {
@@ -1053,7 +1053,7 @@ void Dispatcher::sendMulticastRawDatagram(QByteArray &datagram)
                 if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
                 {
                     if (size != 10*(1<<20))
-                        qDebug() << "Dispatcher::sendUnicastRawDatagram: Value returned inconsistent with value set";
+                        qDebug() << "Dispatcher::sendMulticastRawDatagram: Value returned inconsistent with value set";
                 }
             }
 
@@ -1062,7 +1062,7 @@ void Dispatcher::sendMulticastRawDatagram(QByteArray &datagram)
     delete s;
 
     int res;
-    if (res = senderUdpSocket->write(datagram) == -1)
+    if ((res = senderUdpSocket->write(datagram)) == -1)
         emit writeUdpMulticastFailed();
     //if (senderUdpSocket->writeDatagram(datagram, mcastAddress, dispatchPort) == -1)
     //    emit writeUdpMulticastFailed();
