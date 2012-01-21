@@ -946,7 +946,7 @@ void Dispatcher::sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *dat
     }
 
     int size = 0;
-    int *s = new int(sizeof(size));
+    socklen_t *s = new socklen_t(sizeof(size));
     if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
     {
         if (size != 10*(1<<20)) //set if not already set
@@ -992,7 +992,7 @@ void Dispatcher::sendBroadcastRawDatagram(QByteArray &datagram)
     }
 
     int size = 0;
-    int *s = new int(sizeof(size));
+    socklen_t *s = new socklen_t(sizeof(size));
     if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
     {
         if (size != 10*(1<<20)) //set if not already set
@@ -1036,7 +1036,7 @@ void Dispatcher::sendMulticastRawDatagram(QByteArray &datagram)
     }
 
     int size = 0;
-    int *s = new int(sizeof(size));
+    socklen_t *s = new socklen_t(sizeof(size));
     if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
     {
         if (size != 10*(1<<20)) //set if not already set

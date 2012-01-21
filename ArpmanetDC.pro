@@ -6,7 +6,11 @@
 
 QT       += core gui network
 
-LIBS += /usr/lib64/libsqlite3.so /usr/lib64/libcryptopp.so /usr/local/lib/libutp.a /lib64/librt.so.1
+LIBS += -lsqlite3 -lcryptopp -L$$PWD/libutp/ -lutp -lrt
+
+exists($$PWD/qt/Makefile) {
+    LIBS += -L$$PWD/qt/lib/ -lQtGui -lQtNetwork -lQtCore
+}
 
 TARGET = ArpmanetDC
 TEMPLATE = app
@@ -82,5 +86,4 @@ HEADERS  += arpmanetdc.h \
 
 RESOURCES += \
     arpmanetdc.qrc
-
 
