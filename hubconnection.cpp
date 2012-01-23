@@ -283,6 +283,7 @@ void HubConnection::connectHub()
 			registeredUser = false;
             hubSocket->close();
 			hubSocket->connectToHost(hubAddress, hubPort);
+            hubSocket->setReadBufferSize(10*(1<<20)); //Set TCP read buffer to 10MB
 
 			emit receivedChatMessage(tr("<::info>Connecting to %1:%2...").arg(hubAddress).arg(hubPort));
 		}

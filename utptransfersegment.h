@@ -17,87 +17,16 @@
 
 #ifndef UTPTRANSFERSEGMENT_H
 #define UTPTRANSFERSEGMENT_H
-#include "transfersegment.h"
 
 #define FORCEINLINE inline
 
-// -------========== Borrow these from utptest, can strip and change to suit needs ========-----------
+#include "transfersegment.h"
 
-#ifdef WIN32
-#define _CRT_SECURE_NO_DEPRECATE
-#define WIN32_LEAN_AND_MEAN
-#endif
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <fcntl.h>
-#include <assert.h>
-#include <errno.h>
-
-#ifdef WIN32
-// newer versions of MSVC define these in errno.h
-#ifndef ECONNRESET
-#define ECONNRESET WSAECONNRESET
-#define EMSGSIZE WSAEMSGSIZE
-#define ECONNREFUSED WSAECONNREFUSED
-#define ECONNRESET WSAECONNRESET
-#define ETIMEDOUT WSAETIMEDOUT
-#endif
-#endif
-
-// platform-specific includes
-#ifdef Q_WS_WIN
-#include <windows.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include "libutp/win32_inet_ntop.h"
-#else
-//#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-//#include <arpa/inet.h>
-#endif
-
-#ifdef POSIX
-typedef sockaddr_storage SOCKADDR_STORAGE;
-#endif // POSIX
+#include "util.h"
 
 #include "libutp/utp.h"
 #include "libutp/utp_utils.h"
 #include "libutp/templates.h"
-
-// These are for casting the options for getsockopt
-// and setsockopt which if incorrect can cause these
-// calls to fail.
-#ifdef Q_WS_WIN
-typedef char * SOCKOPTP;
-typedef const char * CSOCKOPTP;
-#else
-typedef void * SOCKOPTP;
-typedef const void * CSOCKOPTP;
-#endif
-
-struct socket_state
-{
-    socket_state(): total_sent(0), state(0), s(0) {}
-    int total_sent;
-    int state;
-    UTPSocket* s;
-
-    bool operator==(socket_state const& rhs) const { return s == rhs.s; }
-};
-
-#ifndef Q_WS_WIN
-#define closesocket close
-#define WSAGetLastError() errno
-#define SOCKET int
-#define INVALID_SOCKET -1
-#endif
-
-// --------------======================         ====================----------------
-
 
 class uTPTransferSegment : public TransferSegment
 {
@@ -115,9 +44,12 @@ public slots:
     qint64 getBytesReceivedNotFlushed();
 
 private:
-    sockaddr_in sin;
-    SOCKET sock;
-    socket_state s;
+    UTPSocket *utpSocket;
+    sockaddr_in addr;
+    UTPFunctionTable utp_callbacks;
+
+    const unsigned char * fileMap;
+    qint64 segmentOffset;
 
     // uTP callback functions
     void uTPRead(const byte *bytes, size_t count);
@@ -129,12 +61,6 @@ private:
 
     void uTPSendTo(const byte *p, size_t len, const struct sockaddr *to, socklen_t tolen);
     void uTPIncomingConnection(UTPSocket *s);
-
-#ifdef Q_WS_WIN
-    WSADATA wsa;
-#endif
-
-    SOCKET make_socket(const struct sockaddr *addr, socklen_t addrlen);
 
     // static uTP callback wrappers
     static void utp_read(void* data, const byte* bytes, size_t count);

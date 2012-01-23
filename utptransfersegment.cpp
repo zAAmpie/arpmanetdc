@@ -3,26 +3,20 @@
 uTPTransferSegment::uTPTransferSegment(Transfer *parent)
 {
     pParent = parent;
-#ifdef Q_WS_WIN
-    BYTE byMajorVersion = 2, byMinorVersion = 2;
-    int result = WSAStartup(MAKEWORD(byMajorVersion, byMinorVersion), &wsa);
-    if (result != 0 || LOBYTE(wsa.wVersion) != byMajorVersion || HIBYTE(wsa.wVersion) != byMinorVersion )
+
+    // UTP_Create allocates memory for utpSocket struct, this must be called first
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    // address and port do not really matter, packets get hijacked for dispatch anyway
+    // for all I care libutp can think it connects to "itself"
+    addr.sin_port = htons(4012);
+    inet_pton(AF_INET, "1.2.3.4", &addr.sin_addr);
+    utpSocket = UTP_Create(uTPTransferSegment::utp_sendto, this, (const struct sockaddr*)&addr, sizeof(addr));
+
+    UTP_SetSockopt(utpSocket, SO_SNDBUF, 100*300);
+
+    utp_callbacks =
     {
-        if (result == 0)
-            WSACleanup();
-    }
-#endif
-    memset(&sin, 0, sizeof(sin));
-    sin.sin_family = AF_INET;
-    sin.sin_addr.s_addr = INADDR_ANY;
-    sin.sin_port = htons(0);
-    sock = make_socket((const struct sockaddr*)&sin, sizeof(sin));
-    s.s = UTP_Create(&uTPTransferSegment::utp_sendto, this, (const struct sockaddr*)&sin, sizeof(sin));
-
-    UTP_SetSockopt(s.s, SO_SNDBUF, 100*300);
-    s.state = 0;
-
-    UTPFunctionTable utp_callbacks = {
         &uTPTransferSegment::utp_read,
         &uTPTransferSegment::utp_write,
         &uTPTransferSegment::utp_get_rb_size,
@@ -31,21 +25,28 @@ uTPTransferSegment::uTPTransferSegment(Transfer *parent)
         &uTPTransferSegment::utp_overhead
     };
 
-    UTP_SetCallbacks(s.s, &utp_callbacks, this);
+    UTP_SetCallbacks(utpSocket, &utp_callbacks, this);
 }
 
 uTPTransferSegment::~uTPTransferSegment()
 {
     if (inputFile.isOpen())
         inputFile.close();
+    if (fileMap)
+        inputFile.unmap((unsigned char *)fileMap);
 }
 
-void uTPTransferSegment::transferTimerEvent(){}
-
-void uTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
+void uTPTransferSegment::transferTimerEvent()
 {
-    // suggestion: since this thing uses its own socket, we can trigger an upload by sending the leeching side's
-    // host address and listening port as a data packet, parse it here and reverse connect.
+    UTP_CheckTimeouts();
+}
+
+// not interested in offset here, for uTP it only denotes the relevant segment start
+void uTPTransferSegment::incomingDataPacket(quint64, QByteArray data)
+{
+    UTP_IsIncomingUTP(NULL, uTPTransferSegment::utp_sendto, this,
+                      (const unsigned char *)data.constData(), data.length(),
+                      (const sockaddr *)&addr, sizeof(addr));
 }
 
 void uTPTransferSegment::setFileName(QString filename)
@@ -63,12 +64,23 @@ void uTPTransferSegment::setFileSize(quint64 size)
 
 void uTPTransferSegment::startUploading()
 {
+    if (segmentStart > fileSize)
+        return;
+    else if (segmentStart + segmentLength > fileSize)
+        segmentLength = fileSize - segmentStart;
 
+    segmentOffset = 0;
+
+    if (fileMap)
+        inputFile.unmap((unsigned char *)fileMap);
+    fileMap = inputFile.map(segmentStart, segmentLength);
 }
 
 void uTPTransferSegment::startDownloading()
 {
-
+    segmentOffset = 0;
+    UTP_Connect(utpSocket);
+    checkSendDownloadRequest(uTPProtocol, remoteHost, TTH, segmentStart, segmentLength);
 }
 
 qint64 uTPTransferSegment::getBytesReceivedNotFlushed()
@@ -76,54 +88,57 @@ qint64 uTPTransferSegment::getBytesReceivedNotFlushed()
     return 0;
 }
 
-// Convenience wrapper to create a socket for use with uTP, from utp_test
-SOCKET uTPTransferSegment::make_socket(const struct sockaddr *addr, socklen_t addrlen)
-{
-    SOCKET s = socket(addr->sa_family, SOCK_DGRAM, 0);
-    if (s == INVALID_SOCKET) return s;
-
-    if (bind(s, addr, addrlen) < 0) {
-        char str[20];
-        printf("UDP port bind failed %s: (%d) %s\n",
-               inet_ntop(addr->sa_family, (sockaddr*)addr, str, sizeof(str)), errno, strerror(errno));
-        closesocket(s);
-        return INVALID_SOCKET;
-    }
-
-    // Mark to hold a couple of megabytes
-    int size = 2 * 1024 * 1024;
-
-    if (setsockopt(s, SOL_SOCKET, SO_RCVBUF, (CSOCKOPTP)&size, sizeof(size)) < 0) {
-        printf("UDP setsockopt(SO_RCVBUF, %d) failed: %d %s\n", size, errno, strerror(errno));
-    }
-    if (setsockopt(s, SOL_SOCKET, SO_SNDBUF, (CSOCKOPTP)&size, sizeof(size)) < 0) {
-        printf("UDP setsockopt(SO_SNDBUF, %d) failed: %d %s\n", size, errno, strerror(errno));
-    }
-
-    // make socket non blocking
-#ifdef _WIN32
-    u_long b = 1;
-    ioctlsocket(s, FIONBIO, &b);
-#else
-    int flags = fcntl(s, F_GETFL, 0);
-    fcntl(s, F_SETFL, flags | O_NONBLOCK);
-#endif
-
-    return s;
-}
-
-// uTP callback functions
+// --------------============= uTP callback functions =============--------------
 void uTPTransferSegment::uTPRead(const byte *bytes, size_t count)
 {
-    //TODO: read count bytes from bytes and tip them into the buckets
-    // while manually keeping track of the offset
+    int bucketNumber = calculateBucketNumber(segmentOffset);
+    if (!pDownloadBucketTable->contains(bucketNumber))
+    {
+        QByteArray *bucket = new QByteArray();
+        pDownloadBucketTable->insert(bucketNumber, bucket);
+    }
+    QByteArray data = QByteArray((const char *)bytes, count); // TODO: optimize this to work directly with *bytes
+    if ((pDownloadBucketTable->value(bucketNumber)->length() + data.length()) > HASH_BUCKET_SIZE)
+    {
+        int bucketRemaining = HASH_BUCKET_SIZE - pDownloadBucketTable->value(bucketNumber)->length();
+        pDownloadBucketTable->value(bucketNumber)->append(data.mid(0, bucketRemaining));
+        if (!pDownloadBucketTable->contains(bucketNumber + 1))
+        {
+            QByteArray *nextBucket = new QByteArray(data.mid(bucketRemaining));
+            pDownloadBucketTable->insert(bucketNumber + 1, nextBucket);
+        }
+        // there should be no else - if the next bucket exists and data is sticking over, there is an error,
+        // since we segment on bucket boundaries. tth checksumming will catch the problems.
+    }
+    else
+    {
+        pDownloadBucketTable->value(bucketNumber)->append(data);
+        //qDebug() << "Append data " << requestingOffset << offset << pDownloadBucketTable->value(bucketNumber)->length();
+    }
+
+    if (pDownloadBucketTable->value(bucketNumber)->length() == HASH_BUCKET_SIZE)
+    {
+        emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber));
+        qDebug() << "uTPTransferSegment emit hashBucketRequest() " << bucketNumber << pDownloadBucketTable->value(bucketNumber)->length();
+    }
+
+    // these last bucket numbers are for the *segment*, not the file.
+    // the length check is for in case it is also the last segment of the file.
+    if ((bucketNumber == lastBucketNumber) && (lastBucketSize == pDownloadBucketTable->value(bucketNumber)->length())) // End of Segment
+    {
+        //status = TRANSFER_STATE_FINISHED;  // local segment
+        qDebug() << "uTPTransferSegment emit hashBucketRequest() on finish " << bucketNumber << pDownloadBucketTable->value(bucketNumber)->length();
+        emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber));
+    }
 }
 
 void uTPTransferSegment::uTPWrite(byte *bytes, size_t count)
 {
-    // TODO: put count bytes into bytes, keep track of offset
-    socket_state* s = (socket_state*)socket;
-    s->total_sent += count;
+    if (segmentOffset + count > segmentLength)
+        count = segmentLength - segmentOffset;  // TODO + check
+    bytes = (unsigned char *)fileMap + segmentOffset;
+    segmentOffset += count;
+
 }
 
 size_t uTPTransferSegment::uTPGetRBSize()
@@ -133,17 +148,15 @@ size_t uTPTransferSegment::uTPGetRBSize()
 
 void uTPTransferSegment::uTPState(int state)
 {
-    socket_state* s = (socket_state*)socket;
-    s->state = state;
+    // TODO (or ignore?)
 }
 
 void uTPTransferSegment::uTPError(int errcode)
 {
-    socket_state* s = (socket_state*)socket;
-    if (s->s)
+    if (utpSocket)
     {
-        UTP_Close(s->s);
-        s->s = NULL;
+        UTP_Close(utpSocket);
+        utpSocket = NULL;
     }
 }
 
@@ -152,9 +165,16 @@ void uTPTransferSegment::uTPOverhead(bool send, size_t count, int type)
 
 }
 
+// this thing gets called when the uTP layer wants to push a packet onto the "wire"
 void uTPTransferSegment::uTPSendTo(const byte *p, size_t len, const struct sockaddr *to, socklen_t tolen)
 {
-
+    QByteArray *packet = new QByteArray;
+    packet->append(DataPacket);
+    packet->append(uTPProtocol);
+    packet->append(toQByteArray((quint64)segmentStart));
+    packet->append(TTH);
+    packet->append((const char *)p, len);
+    emit transmitDatagram(remoteHost, packet);
 }
 
 void uTPTransferSegment::uTPIncomingConnection(UTPSocket *s)
@@ -163,7 +183,7 @@ void uTPTransferSegment::uTPIncomingConnection(UTPSocket *s)
 }
 
 
-// --------------============= uTP callbacks =============--------------
+// --------------============= static uTP callback wrappers =============--------------
 // count bytes arrived over uTP connection
 void uTPTransferSegment::utp_read(void* data, const byte* bytes, size_t count)
 {
