@@ -972,7 +972,7 @@ void Dispatcher::sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *dat
     delete s;
 
     int res;
-    if (res = senderUdpSocket->write(*datagram) == -1)
+    if ((res = senderUdpSocket->write(*datagram)) == -1)
         emit writeUdpUnicastFailed();
     //if (res = senderUdpSocket->writeDatagram(*datagram, dstAddress, dispatchPort) == -1)
     //    emit writeUdpUnicastFailed();
@@ -1018,7 +1018,7 @@ void Dispatcher::sendBroadcastRawDatagram(QByteArray &datagram)
     delete s;
 
     int res;
-    if (res = senderUdpSocket->write(datagram) == -1)
+    if ((res = senderUdpSocket->write(datagram)) == -1)
         emit writeUdpBroadcastFailed();
     //if (senderUdpSocket->writeDatagram(datagram, bcastAddress, dispatchPort) == -1)
     //    emit writeUdpBroadcastFailed();
@@ -1062,7 +1062,7 @@ void Dispatcher::sendMulticastRawDatagram(QByteArray &datagram)
     delete s;
 
     int res;
-    if (res = senderUdpSocket->write(datagram) == -1)
+    if ((res = senderUdpSocket->write(datagram)) == -1)
         emit writeUdpMulticastFailed();
     //if (senderUdpSocket->writeDatagram(datagram, mcastAddress, dispatchPort) == -1)
     //    emit writeUdpMulticastFailed();

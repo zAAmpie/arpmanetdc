@@ -91,19 +91,6 @@ void FSTPTransferSegment::startDownloading()
     }
 }
 
-inline void FSTPTransferSegment::checkSendDownloadRequest(quint8 protocol, QHostAddress peer, QByteArray TTH,
-                                                       qint64 requestingOffset, qint64 requestingLength)
-{
-    if (segmentEnd < requestingOffset + requestingLength)
-        requestingLength = segmentEnd - requestingOffset;
-    if (requestingLength > 0)
-    {
-        qDebug() << "FSTPTransferSegment::checkSendDownloadRequest() emit sendDownloadRequest() peer tth offset length "
-                 << peer << TTH.toBase64() << requestingOffset << requestingLength;
-        emit sendDownloadRequest(protocol, peer, TTH, requestingOffset, requestingLength);
-    }
-}
-
 void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
 {
     //Ignore packet if transfer has failed and has not been restarted
@@ -217,11 +204,6 @@ void FSTPTransferSegment::transferTimerEvent()
             retransmitTimeoutCounter = 0;
         }
     }
-}
-
-inline int FSTPTransferSegment::calculateBucketNumber(quint64 fileOffset)
-{
-    return (int)(fileOffset >> 20);
 }
 
 qint64 FSTPTransferSegment::getBytesReceivedNotFlushed()

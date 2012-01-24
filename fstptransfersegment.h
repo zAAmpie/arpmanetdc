@@ -40,10 +40,6 @@ public slots:
     qint64 getBytesReceivedNotFlushed();
 
 private:
-    inline void checkSendDownloadRequest(quint8 protocol, QHostAddress peer, QByteArray TTH,
-                                         qint64 requestingOffset, qint64 requestingLength);
-    inline int calculateBucketNumber(quint64 fileOffset);
-
     int status;
     qint64 requestingOffset;
     qint64 requestingLength;

@@ -77,3 +77,21 @@ void TransferSegment::setDownloadBucketTablePointer(QHash<int, QByteArray *> *db
 {
     pDownloadBucketTable = dbt;
 }
+
+void TransferSegment::checkSendDownloadRequest(quint8 protocol, QHostAddress peer, QByteArray TTH,
+                                                       qint64 requestingOffset, qint64 requestingLength)
+{
+    if (segmentEnd < requestingOffset + requestingLength)
+        requestingLength = segmentEnd - requestingOffset;
+    if (requestingLength > 0)
+    {
+        qDebug() << "TransferSegment::checkSendDownloadRequest() emit sendDownloadRequest() peer tth offset length "
+                 << peer << TTH.toBase64() << requestingOffset << requestingLength;
+        emit sendDownloadRequest(protocol, peer, TTH, requestingOffset, requestingLength);
+    }
+}
+
+int TransferSegment::calculateBucketNumber(quint64 fileOffset)
+{
+    return (int)(fileOffset >> 20);
+}
