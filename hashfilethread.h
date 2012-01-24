@@ -46,6 +46,8 @@ public slots:
 	void processFile(QString filePath, QString rootDir);
     //Hashes a bucket
     void processBucket(QByteArray rootTTH, int bucketNumber, QByteArray *bucket, ReturnEncoding encoding = BinaryEncoded);
+    //Hashes a file and return just the root TTH
+    void hashFile(QString filePath);
 
     //Stops hashing
     void stopHashing();
@@ -54,6 +56,9 @@ signals:
 	//Done hashing the file - return the data
 	void done(QString filePath, QString fileName, qint64 fileSize, QString tthRoot, QString rootDir, QString modifiedDate, QList<QString> *oneMBList, HashFileThread *hashObj);
 	void failed(QString filePath, HashFileThread *hashObj);
+
+    //Done calculating hash
+    void doneFile(QString filePath, QByteArray tthRoot, quint64 fileSize);
 
     //Done hashing the bucket
     void doneBucket(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH);

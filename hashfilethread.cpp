@@ -131,6 +131,46 @@ void HashFileThread::processBucket(QByteArray rootTTH, int bucketNumber, QByteAr
     emit doneBucket(rootTTH, bucketNumber, tth);
 }
 
+void HashFileThread::hashFile(QString filePath)
+{
+    QFileInfo fi(filePath);
+    quint64 fileSize = fi.size();
+
+    //Start hashing
+	QFile file(filePath);
+	
+	if (file.open(QIODevice::ReadOnly))
+	{
+		Tiger totalTTH;
+	
+		QByteArray tthRoot;
+		
+		while (!file.atEnd())
+		{
+            //Read file in 1MB chunks
+			QByteArray iochunk = file.read(1*1048576);
+
+			//Add to total TTH
+			totalTTH.Update((byte *)iochunk.data(), iochunk.size());
+		}
+
+		byte *digestTTH = new byte[totalTTH.DigestSize()];
+		totalTTH.Final(digestTTH);
+
+		tthRoot = QByteArray((char *)digestTTH, totalTTH.DigestSize());
+		
+		delete digestTTH;
+
+		file.close();
+
+		//Done hashing the file
+		emit doneFile(filePath, tthRoot, fileSize);
+	}
+	else
+		//Could not open file - return null
+		emit doneFile(filePath, QByteArray(), fileSize);
+}
+
 void HashFileThread::stopHashing()
 {
     pStopHashing = true;

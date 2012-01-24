@@ -208,6 +208,8 @@ signals:
 
     //Signal the reply of the hash
     void returnTTHFromPath(QString filePath, QByteArray tthRoot, quint64 fileSize);
+    //Signal hashFileThread to calculate hash
+    void calculateTTHFromPath(QString filePath);
 
     //----------========== HASH 1MB BUCKET (TRANSFER MANAGER) ==========----------
 

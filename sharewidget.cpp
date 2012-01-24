@@ -197,6 +197,8 @@ void ShareWidget::calculateMagnetActionPressed()
     QString filePath = fileModel->filePath(checkProxyModel->mapToSource(index));
     
     emit requestTTHFromPath(filePath);
+
+    QWhatsThis::showText(contextMenu->pos(), tr("Calculating hash. Please wait..."));
 }
 
 void ShareWidget::returnTTHFromPath(QString filePath, QByteArray tthRoot, quint64 fileSize)
@@ -216,10 +218,8 @@ void ShareWidget::returnTTHFromPath(QString filePath, QByteArray tthRoot, quint6
         QString magnetLink = tr("magnet:?xt=urn:tree:tiger:%1&xl=%2&dn=%3").arg(tthStr).arg(fileSize).arg(fileName.replace(" ", "+"));
         QClipboard *clipboard = QApplication::clipboard();
         clipboard->setText(magnetLink);
-    }
-    else
-    {
-        //TODO: TTH was not found in database - calculate from scratch
+
+        QWhatsThis::showText(contextMenu->pos(), tr("Magnet link copied to clipboard"));
     }
 }
 

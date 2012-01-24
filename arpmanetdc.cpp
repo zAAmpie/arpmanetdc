@@ -1459,6 +1459,8 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
 	//Not present - create new
 	if (foundItems.isEmpty())
 	{
+        additionalInfoLabel->setText(tr("User logged in: %1").arg(nick));
+
 		//Add new row into table
 		userListModel->appendRow(new QStandardItem());
 		
@@ -1935,7 +1937,7 @@ void ArpmanetDC::convertMagnetLinks(QString &msg)
             sizeStr = bytesToSize(size.toULongLong());
 
 			//Parse filename
-			QString fileNameRegEx = "&dn=([a-z0-9+\\-_.\\[\\]]*(?:[\\.]+[a-z0-9+\\-_\\[\\]]*))";
+			QString fileNameRegEx = "&dn=([a-z0-9+\\-_.\\[\\]()']*(?:[\\.]+[a-z0-9+\\-_\\[\\]]*))";
 			QRegExp fRx(fileNameRegEx, Qt::CaseInsensitive);
 
 			//Replace +'s with spaces
