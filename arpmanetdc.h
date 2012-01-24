@@ -195,6 +195,7 @@ private slots:
     void calculateHashRate();
 
 	//GUI interaction
+    void mainChatLinkClicked(const QUrl &link);
     void chatLineEditReturnPressed();
 	void sendChatMessage();
     void quickSearchPressed();

@@ -24,5 +24,6 @@
         <file>Resources/GPLv3 Logo 128px.png</file>
         <file>Resources/RefreshIcon.png</file>
         <file>Resources/ArpmanetUserIcon.png</file>
+        <file>Resources/MagnetIcon.png</file>
     </qresource>
 </RCC>

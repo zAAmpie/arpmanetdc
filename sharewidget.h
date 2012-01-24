@@ -38,15 +38,21 @@ public:
 
 
 private slots:
+    //Context menu for magnets
+    void contextMenuRequested(const QPoint &pos);
+
+    //Magnet request from ShareSearch
+    void returnTTHFromPath(QString filePath, QByteArray tthRoot, quint64 fileSize);
+
 	//Slots
 	void selectedItemsChanged();
 
 	void saveSharePressed();
-
 	void refreshButtonPressed();
 
-	void changeRoot(QString path);
+    void calculateMagnetActionPressed();
 
+	void changeRoot(QString path);
     void pathLoaded(QString path);
 
 signals:
@@ -58,6 +64,9 @@ signals:
 
 	//Update shares without saving
 	void updateShares();
+
+    //Request TTH from filePath for magnets
+    void requestTTHFromPath(QString filePath);
 
 private:
 	//Functions
@@ -85,6 +94,9 @@ private:
     QLabel *busyLabel;
 
 	QPushButton *saveButton, *refreshButton;
+
+    QMenu *contextMenu;
+    QAction *calculateMagnetAction;
 
 };
 

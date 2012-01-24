@@ -608,7 +608,8 @@ void ArpmanetDC::createWidgets()
 	
 	//Chat
 	mainChatTextEdit = new QTextBrowser(this);
-	mainChatTextEdit->setOpenExternalLinks(true);
+	mainChatTextEdit->setOpenExternalLinks(false);
+    mainChatTextEdit->setOpenLinks(false);
 	
 	chatLineEdit = new QLineEdit(this);
 
@@ -806,6 +807,8 @@ void ArpmanetDC::connectWidgets()
 
     //Quick search
     connect(quickSearchLineEdit, SIGNAL(returnPressed()), this, SLOT(quickSearchPressed()));
+
+    connect(mainChatTextEdit, SIGNAL(anchorClicked(const QUrl &)), this, SLOT(mainChatLinkClicked(const QUrl &)));
 	
 	//Connect actions
 	connect(queueAction, SIGNAL(triggered()), this, SLOT(queueActionPressed()));
@@ -1829,6 +1832,41 @@ void ArpmanetDC::searchWordListReceived(QStandardItemModel *wordList)
     searchCompleter->completionPrefix();
 }
 
+void ArpmanetDC::mainChatLinkClicked(const QUrl &link)
+{
+    //Process internal links
+    QString scheme = link.scheme();
+    if (scheme == "magnet")
+    {
+        //Magnet link
+        QString strLink = link.toString();
+
+        QString type = tr("urn:tree:tiger:");
+        int pos = strLink.indexOf(type);
+        QString tth = strLink.mid(pos + type.size(), 39);
+
+        //Search for tth
+        SearchWidget *sWidget = new SearchWidget(searchCompleter, pTypeIconList, pTransferManager, tth, this);
+ 
+        connect(sWidget, SIGNAL(search(quint64, QString, QByteArray, SearchWidget *)), this, SLOT(searchButtonPressed(quint64, QString, QByteArray, SearchWidget *)));
+
+	    searchWidgetHash.insert(sWidget->widget(), sWidget);
+        searchWidgetIDHash.insert(sWidget->id(), sWidget);
+
+	    tabs->addTab(sWidget->widget(), QIcon(":/ArpmanetDC/Resources/SearchIcon.png"), tr("Search"));
+
+	    tabs->setCurrentIndex(tabs->indexOf(sWidget->widget()));
+
+        //Wait for widget to open
+        QApplication::processEvents();
+
+        //Search
+        sWidget->searchPressed();
+    }
+    else
+        QDesktopServices::openUrl(link);
+}
+
 void ArpmanetDC::convertHTMLLinks(QString &msg)
 {
 	//Replace html links with hrefs
@@ -1866,7 +1904,7 @@ void ArpmanetDC::convertMagnetLinks(QString &msg)
 {
 	//Replace magnet links with hrefs
 	int currentIndex = 0;
-	QString regex = "(magnet:\\?xt\\=urn:(?:tree:tiger|sha1):([a-z0-9]{32,39})([a-z0-9\\/&#95;:@=.+?,##%&~\\-_()']*))";
+	QString regex = "(magnet:\\?xt\\=urn:(?:tree:tiger|sha1):([a-z0-9]{32,39})([a-z0-9\\/&#95;:@=.+?,##%&~\\-_()'\\[\\]]*))";
 	QRegExp rx(regex, Qt::CaseInsensitive);
 
 	int pos = 0;
@@ -1897,7 +1935,7 @@ void ArpmanetDC::convertMagnetLinks(QString &msg)
             sizeStr = bytesToSize(size.toULongLong());
 
 			//Parse filename
-			QString fileNameRegEx = "&dn=([a-z0-9+\\-_.]*(?:[\\.]+[a-z0-9+\\-_]*))";
+			QString fileNameRegEx = "&dn=([a-z0-9+\\-_.\\[\\]]*(?:[\\.]+[a-z0-9+\\-_\\[\\]]*))";
 			QRegExp fRx(fileNameRegEx, Qt::CaseInsensitive);
 
 			//Replace +'s with spaces
