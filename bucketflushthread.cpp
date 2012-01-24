@@ -50,14 +50,19 @@ void BucketFlushThread::assembleOutputFile(QString tmpfilebase, QString outfile,
             if (outf.size() < (quint64)bucket * HASH_BUCKET_SIZE + buf.size())
                 outf.resize((quint64)bucket * HASH_BUCKET_SIZE + buf.size());
             
+            //Disable MM files due to excessive memory consumption till we figure out how to force release modified memory to disk - to fix lockups
+            outf.seek((quint64)bucket * HASH_BUCKET_SIZE);
+            outf.write(buf);
+
             //Map file to memory
-            uchar *f = outf.map((quint64)bucket * HASH_BUCKET_SIZE, buf.size());
+            //uchar *f = outf.map((quint64)bucket * HASH_BUCKET_SIZE, buf.size());
             
             //Write to memory if map succeeded
-            if (f != 0)
-                memcpy(f, (const uchar *)buf.constData(), buf.size());
+            /*if (f != 0)
+                memmove(f, (const uchar *)buf.constData(), buf.size());
             else
                 qDebug() << "BucketFlushThread::assembleOutputFile: Big booboo for map! bucket : size" << bucket << buf.size();
+                
 
             /*quint64 fileEnd = (bucket + 1) * HASH_BUCKET_SIZE;
             if (outf.size() < fileEnd)
@@ -79,9 +84,8 @@ void BucketFlushThread::assembleOutputFile(QString tmpfilebase, QString outfile,
 
             inf.close();
             inf.remove();
-            outf.unmap(f);
-            if (f)
-                delete [] f;
+            //bool res = outf.unmap(f);
+
         }
         if (bucket == lastbucket)
             outf.rename(outfile);

@@ -41,6 +41,8 @@
 #include <sqlite/sqlite3.h>
 #include "protocoldef.h"
 
+#define QT_NO_DEBUG_OUTPUT
+
 #define DEFAULT_EXTERNAL_PORT "4012"
 
 #define DEFAULT_HUB_ADDRESS "arpmanet.ath.cx"

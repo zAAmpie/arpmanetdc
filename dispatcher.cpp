@@ -116,7 +116,7 @@ void Dispatcher::receiveP2PData()
         quint16 senderPort; // ignoreer
         datagram.resize(receiverUdpSocket->pendingDatagramSize());
         receiverUdpSocket->readDatagram(datagram.data(), datagram.size(), &senderHost, &senderPort);
-        QByteArray datagramType(datagram.mid(0,1));
+        QByteArray datagramType(datagram.left(1));
         QByteArray protocolInstruction(datagram.mid(1,1));
         quint8 quint8DatagramType = datagramType.at(0); // hy wil graag mooi gevra wees om by die rou byte uit te kom...
         quint8 quint8ProtocolInstruction = protocolInstruction.at(0);
@@ -1001,7 +1001,7 @@ void Dispatcher::sendBroadcastRawDatagram(QByteArray &datagram)
             size = 10*(1<<20); //10MB
             if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(size)) == -1) //couldn't write
             {
-                qDebug() << "Dispatcher::sendUnicastRawDatagram: Could not set sending buffer to 10MB";
+                qDebug() << "Dispatcher::sendBroadcastRawDatagram: Could not set sending buffer to 10MB";
             }
             else
             {
@@ -1009,7 +1009,7 @@ void Dispatcher::sendBroadcastRawDatagram(QByteArray &datagram)
                 if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
                 {
                     if (size != 10*(1<<20))
-                        qDebug() << "Dispatcher::sendUnicastRawDatagram: Value returned inconsistent with value set";
+                        qDebug() << "Dispatcher::sendBroadcastRawDatagram: Value returned inconsistent with value set";
                 }
             }
 
@@ -1045,7 +1045,7 @@ void Dispatcher::sendMulticastRawDatagram(QByteArray &datagram)
             size = 10*(1<<20); //10MB
             if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(size)) == -1) //couldn't write
             {
-                qDebug() << "Dispatcher::sendUnicastRawDatagram: Could not set sending buffer to 10MB";
+                qDebug() << "Dispatcher::sendMulticastRawDatagram: Could not set sending buffer to 10MB";
             }
             else
             {
@@ -1053,7 +1053,7 @@ void Dispatcher::sendMulticastRawDatagram(QByteArray &datagram)
                 if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
                 {
                     if (size != 10*(1<<20))
-                        qDebug() << "Dispatcher::sendUnicastRawDatagram: Value returned inconsistent with value set";
+                        qDebug() << "Dispatcher::sendMulticastRawDatagram: Value returned inconsistent with value set";
                 }
             }
 

@@ -1866,7 +1866,7 @@ void ArpmanetDC::convertMagnetLinks(QString &msg)
 {
 	//Replace magnet links with hrefs
 	int currentIndex = 0;
-	QString regex = "(magnet:\\?xt\\=urn:(?:tree:tiger|sha1):([a-z0-9]{32,39})([a-z0-9\\/&#95;:@=.+?,##%&~\\-_()]*))";
+	QString regex = "(magnet:\\?xt\\=urn:(?:tree:tiger|sha1):([a-z0-9]{32,39})([a-z0-9\\/&#95;:@=.+?,##%&~\\-_()']*))";
 	QRegExp rx(regex, Qt::CaseInsensitive);
 
 	int pos = 0;
