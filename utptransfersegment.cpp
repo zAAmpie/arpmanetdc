@@ -15,7 +15,7 @@ uTPTransferSegment::uTPTransferSegment(Transfer *parent)
 
     UTP_SetSockopt(utpSocket, SO_SNDBUF, 100*300);
 
-    utp_callbacks =
+    UTPFunctionTable utp_callbacks = 
     {
         &uTPTransferSegment::utp_read,
         &uTPTransferSegment::utp_write,
@@ -44,7 +44,7 @@ void uTPTransferSegment::transferTimerEvent()
 // not interested in offset here, for uTP it only denotes the relevant segment start
 void uTPTransferSegment::incomingDataPacket(quint64, QByteArray data)
 {
-    UTP_IsIncomingUTP(NULL, uTPTransferSegment::utp_sendto, this,
+    UTP_IsIncomingUTP(uTPTransferSegment::utp_incoming, uTPTransferSegment::utp_sendto, this,
                       (const unsigned char *)data.constData(), data.length(),
                       (const sockaddr *)&addr, sizeof(addr));
 }
@@ -177,9 +177,10 @@ void uTPTransferSegment::uTPSendTo(const byte *p, size_t len, const struct socka
     emit transmitDatagram(remoteHost, packet);
 }
 
+// this thing gets called when a connection has been established and it's safe to start pushing packets onto the "wire"
 void uTPTransferSegment::uTPIncomingConnection(UTPSocket *s)
 {
-
+    // TODO: Call UTP_Write to tell the socket to start filling the write buffer with x number of bytes through uTPWrite?
 }
 
 

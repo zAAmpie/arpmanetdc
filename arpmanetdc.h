@@ -323,6 +323,8 @@ private:
     QSystemTrayIcon *systemTrayIcon;
     QMenu *systemTrayMenu;
     QAction *restoreAction, *quitAction;
+    QSize windowSize;
+    bool wasMaximized;
 
 	//-----===== Widgets =====-----
 

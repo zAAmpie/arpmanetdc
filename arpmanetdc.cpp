@@ -2020,13 +2020,20 @@ void ArpmanetDC::changeEvent(QEvent *e)
         QWindowStateChangeEvent *wEvent = (QWindowStateChangeEvent*)e;
         if (wEvent->oldState() != Qt::WindowMinimized && isMinimized())
         {
+            wasMaximized = isMaximized();
+            windowSize = size();
             //Trick necessary to hide window in Windows 7 (the call to hide should not be in the event function)
             QTimer::singleShot(0, this, SLOT(hide()));
             restoreAction->setEnabled(true);
         }
-        else
+        else if (wEvent->oldState() != Qt::WindowMaximized)
         {
+            if (wasMaximized)
+                showMaximized();
+            else
+                resize(windowSize);
             restoreAction->setEnabled(false);
+            activateWindow();
         }
     }
 }
