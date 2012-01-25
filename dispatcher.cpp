@@ -950,9 +950,9 @@ void Dispatcher::sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *dat
     socklen_t *s = new socklen_t(sizeof(size));
     if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
     {
-        if (size != 10*(1<<20)) //set if not already set
+        if (size != 4*(1<<20)) //set if not already set
         {
-            size = 10*(1<<20); //10MB
+            size = 4*(1<<20); //10MB
             if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(size)) == -1) //couldn't write
             {
                 qDebug() << "Dispatcher::sendUnicastRawDatagram: Could not set sending buffer to 10MB";
@@ -962,7 +962,7 @@ void Dispatcher::sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *dat
                 //verify if set correctly
                 if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
                 {
-                    if (size != 10*(1<<20))
+                    if (size != 4*(1<<20))
                         qDebug() << "Dispatcher::sendUnicastRawDatagram: Value returned inconsistent with value set";
                 }
             }
@@ -996,9 +996,9 @@ void Dispatcher::sendBroadcastRawDatagram(QByteArray &datagram)
     socklen_t *s = new socklen_t(sizeof(size));
     if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
     {
-        if (size != 10*(1<<20)) //set if not already set
+        if (size != 4*(1<<20)) //set if not already set
         {
-            size = 10*(1<<20); //10MB
+            size = 4*(1<<20); //10MB
             if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(size)) == -1) //couldn't write
             {
                 qDebug() << "Dispatcher::sendBroadcastRawDatagram: Could not set sending buffer to 10MB";
@@ -1008,7 +1008,7 @@ void Dispatcher::sendBroadcastRawDatagram(QByteArray &datagram)
                 //verify if set correctly
                 if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
                 {
-                    if (size != 10*(1<<20))
+                    if (size != 4*(1<<20))
                         qDebug() << "Dispatcher::sendBroadcastRawDatagram: Value returned inconsistent with value set";
                 }
             }
