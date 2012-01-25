@@ -43,6 +43,8 @@
 
 #define QT_NO_DEBUG_OUTPUT
 
+#define SHARED_MEMORY_KEY "ArpmanetDCv0.1"
+
 #define DEFAULT_EXTERNAL_PORT "4012"
 
 #define DEFAULT_HUB_ADDRESS "arpmanet.ath.cx"
@@ -84,7 +86,7 @@ class ArpmanetDC : public QMainWindow
 	Q_OBJECT
 
 public:
-    ArpmanetDC(QWidget *parent = 0, Qt::WFlags flags = 0);
+    ArpmanetDC(QStringList arguments, QWidget *parent = 0, Qt::WFlags flags = 0);
 	~ArpmanetDC();
 
 	//Get functions
@@ -220,6 +222,9 @@ private slots:
     //-----===== SYSTEM TRAY ICON =====-----
     void systemTrayActivated(QSystemTrayIcon::ActivationReason reason);
 
+    //-----===== SHARED MEMORY =====-----
+    void checkSharedMemory();
+
 signals:
     //Private queued signal for cross-thread comms
 	void updateShares();
@@ -296,6 +301,9 @@ private:
 	QTimer *updateSharesTimer;
     QTimer *updateTimer;
 
+    QStringList pArguments;
+    QSharedMemory *pSharedMemory;
+
 	//Global lists
 	QHash<QByteArray, QueueStruct> *pQueueList;
     QHash<QByteArray, FinishedDownloadStruct> *pFinishedList;
@@ -306,6 +314,9 @@ private:
 
 	//Determines if sorting should be done
 	bool sortDue;
+
+    //Used to determine if objects were created yet upon application exit
+    bool createdGUI;
 
 	//Lines in mainchat
 	quint32 mainChatBlocks;

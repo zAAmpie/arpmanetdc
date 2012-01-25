@@ -1,8 +1,46 @@
 #include "arpmanetdc.h"
 
-ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
+ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 	: QMainWindow(parent, flags)
 {
+    createdGUI = false;
+    pArguments = arguments;
+    pSharedMemory = new QSharedMemory(SHARED_MEMORY_KEY);
+    QByteArray magnetArg;
+    if (pArguments.size() >= 2)
+        magnetArg.append(pArguments.at(1));
+    else
+        magnetArg.append(tr("DUPLICATE_INSTANCE"));
+
+    //Try to attach to shared memory space
+    if (pSharedMemory->attach())
+    {
+        //This means another instance is running
+        pSharedMemory->lock();
+        memcpy((char *)pSharedMemory->data(), magnetArg.constData(), qMin(magnetArg.size(), pSharedMemory->size()));
+        pSharedMemory->unlock();
+        
+        //Close this instance
+        QTimer::singleShot(0, this, SLOT(close())); //Needed since you cannot call close() within the object constructor
+        return;
+    }
+    else
+    {
+        //No other instance is running, create shared memory sector (1KiB max)
+        if (!pSharedMemory->create(1024))
+        {
+            //Couldn't create shared memory space
+            qDebug() << "ArpmanetDC::Constructor: Could not create shared memory space";
+        }
+        else
+        {
+            //Initialize shared memory
+            pSharedMemory->lock();
+            memset((char *)pSharedMemory->data(), '\0', pSharedMemory->size());
+            pSharedMemory->unlock();
+        }
+    }
+
 	//QApplication::setStyle(new QCleanlooksStyle());
 
     //Register QHostAddress for queueing over threads
@@ -315,6 +353,11 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     //Init type icon list with resource extractor class
     pTypeIconList = new ResourceExtractor();
 
+    //Set up shared memory timer
+    QTimer *sharedMemoryTimer = new QTimer(this);
+    connect(sharedMemoryTimer, SIGNAL(timeout()), this, SLOT(checkSharedMemory()));
+    sharedMemoryTimer->start(500);
+
 	//Set up timer to ensure each and every update doesn't signal a complete list sort!
 	sortDue = false;
 	QTimer *sortTimer = new QTimer();
@@ -338,6 +381,10 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	if (interval > 0)
 		updateSharesTimer->start(interval);
 
+    //Search for magnet if arguments contain one
+    if (!magnetArg.isEmpty() && QString(magnetArg).compare("DUPLICATE_INSTANCE") != 0)
+        mainChatLinkClicked(QUrl(QString(magnetArg)));
+
     //Show settings window if nick is still default
     if (pSettings->value("nick") == DEFAULT_NICK && pSettings->value("password") == DEFAULT_PASSWORD)
     {
@@ -346,49 +393,54 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     }
     else
         pHub->connectHub();
+
+    createdGUI = true;
 }
 
 ArpmanetDC::~ArpmanetDC()
 {
-	//Destructor
-    systemTrayIcon->hide(); //Icon isn't automatically hidden after program exit
-
-	pHub->deleteLater();
-    pTransferManager->deleteLater();
-    pDispatcher->deleteLater();
-
-    //saveSettings();
-    delete pSettings;
-
-    transferThread->quit();
-    if (transferThread->wait(5000))
-        delete transferThread;
-    else
+    if (createdGUI)
     {
-        transferThread->terminate();
-        delete transferThread;
-    }
+	    //Destructor
+        systemTrayIcon->hide(); //Icon isn't automatically hidden after program exit
 
-    bucketFlushThread->quit();
-    statusLabel->setText(tr("Flushing downloaded data to disk, please wait."));
-    if (bucketFlushThread->wait(ULONG_MAX))
-        delete bucketFlushThread;
-    else
-    {
-        bucketFlushThread->terminate();
-        delete bucketFlushThread;
-    }
+	    pHub->deleteLater();
+        pTransferManager->deleteLater();
+        pDispatcher->deleteLater();
 
-	dbThread->quit();
-	if (dbThread->wait(5000))
-		delete dbThread;
-    else
-    {
-        dbThread->terminate();
-        delete dbThread;
+        //saveSettings();
+        delete pSettings;
+
+        transferThread->quit();
+        if (transferThread->wait(5000))
+            delete transferThread;
+        else
+        {
+            transferThread->terminate();
+            delete transferThread;
+        }
+
+        bucketFlushThread->quit();
+        statusLabel->setText(tr("Flushing downloaded data to disk, please wait."));
+        if (bucketFlushThread->wait(ULONG_MAX))
+            delete bucketFlushThread;
+        else
+        {
+            bucketFlushThread->terminate();
+            delete bucketFlushThread;
+        }
+
+	    dbThread->quit();
+	    if (dbThread->wait(5000))
+		    delete dbThread;
+        else
+        {
+            dbThread->terminate();
+            delete dbThread;
+        }
+
+	    sqlite3_close(db);
     }
-	sqlite3_close(db);
-	
 }
 
 bool ArpmanetDC::setupDatabase()
@@ -2083,4 +2135,42 @@ void ArpmanetDC::closeEvent(QCloseEvent *e)
     //Will maybe later add an option to bypass the close operation and ask the user 
     //if the program should be minimized to tray rather than closed... For now it works normally
     QMainWindow::closeEvent(e);
+}
+
+void ArpmanetDC::checkSharedMemory()
+{
+    //Check if new magnet links have been added to the shared memory from other instances
+    if (!pSharedMemory->isAttached())
+        if (!pSharedMemory->attach())
+            qDebug() << "ArpmanetDC::checkSharedMemory: Could not attach to shared memory";
+
+    pSharedMemory->lock();
+    QByteArray data((const char *)pSharedMemory->constData(), pSharedMemory->size()); //Read data
+    
+    if (!QString(data).isEmpty())
+    {
+        //Something was loaded into shared memory
+        memset((char *)pSharedMemory->data(), '\0', pSharedMemory->size()); //Set data to zero
+    }
+
+    pSharedMemory->unlock();
+
+    QString message(data);
+    if (message.compare("DUPLICATE_INSTANCE") == 0)
+    {
+        //Restore instance if minimized
+        if (restoreAction->isEnabled())
+        {
+            restoreAction->trigger();
+        }
+
+        //Duplicate instances were started
+        activateWindow();
+        QMessageBox::information((QWidget *)this, tr("ArpmanetDC"), tr("You can only run a single instance of ArpmanetDC.\nPlease close all other instances first before trying again."));
+    }
+    else if (message.startsWith("magnet"))
+    {
+        //Other instance sent a magnet link to this process
+        mainChatLinkClicked(QUrl(message));
+    }
 }
