@@ -113,6 +113,9 @@ public:
     TransferWidget *transferWidgetObject() const;
     ResourceExtractor *resourceExtractorObject() const;
 
+    //Used to determine if objects were created yet upon application exit
+    bool createdGUI;
+
 public slots:
     //Sets the global status label in the status bar to msg
     void setStatus(QString msg);
@@ -314,9 +317,6 @@ private:
 
 	//Determines if sorting should be done
 	bool sortDue;
-
-    //Used to determine if objects were created yet upon application exit
-    bool createdGUI;
 
 	//Lines in mainchat
 	quint32 mainChatBlocks;

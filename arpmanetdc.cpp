@@ -21,7 +21,6 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
         pSharedMemory->unlock();
         
         //Close this instance
-        QTimer::singleShot(0, this, SLOT(close())); //Needed since you cannot call close() within the object constructor
         return;
     }
     else
