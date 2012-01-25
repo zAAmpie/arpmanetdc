@@ -19,13 +19,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
         pSharedMemory->lock();
         memcpy((char *)pSharedMemory->data(), magnetArg.constData(), qMin(magnetArg.size(), pSharedMemory->size()));
         pSharedMemory->unlock();
-
-        // Detach in case the other instance we test for terminated abnormally and left the shared memory in place.
-        // Remove #ifdef's if this is a problem on Windows too.
-#ifdef Q_WS_X11
-        pSharedMemory->detach();
-#endif
-
+        
         //Close this instance
         return;
     }
@@ -446,11 +440,9 @@ ArpmanetDC::~ArpmanetDC()
 
 	    sqlite3_close(db);
     }
-    // The Linux Qt QSharedMemory's destructor doesn't seem to call this, disabling opening the application
-    // after it has been closed the first time.
-#ifdef Q_WS_X11
-    pSharedMemory->detach();
-#endif
+
+    //Destroy and detach the shared memory sector
+    pSharedMemory->deleteLater();
 }
 
 bool ArpmanetDC::setupDatabase()
