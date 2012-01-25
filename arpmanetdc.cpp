@@ -46,7 +46,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
         }
     }
 
-	//QApplication::setStyle(new QCleanlooksStyle());
+    //QApplication::setStyle(new QCleanlooksStyle());
 
     //Register QHostAddress for queueing over threads
     qRegisterMetaType<QHostAddress>("QHostAddress");
