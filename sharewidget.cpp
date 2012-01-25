@@ -44,7 +44,20 @@ void ShareWidget::createWidgets()
 {
 	saveButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Save shares"));
 	refreshButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/RefreshIcon.png"), tr("Refresh shares"));
+    containerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/LowPriorityIcon.png"), tr("Show Containers"));
+    
+    addContainerButton = new QPushButton(tr("Add"));
+    addContainerButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    removeContainerButton = new QPushButton(tr("Delete"));
+    removeContainerButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    
+    containerCombo = new QComboBox();
+    containerCombo->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    containerCombo->addItem(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Test Container"));
 
+    containerListWidget = new QListWidget();
+    containerListWidget->addItem(tr("Not yet implemented. Stay tuned"));
+        
 	fileModel = new QFileSystemModel();
 	//fileModel->setFilter(QDir::Dirs | QDir::Drives | QDir::NoDotAndDotDot);
 	fileModel->setRootPath("c:/");
@@ -78,18 +91,47 @@ void ShareWidget::placeWidgets()
 {
 	QHBoxLayout *hlayout = new QHBoxLayout;
 	hlayout->addWidget(refreshButton);
+    hlayout->addWidget(containerButton);
 	hlayout->addSpacing(10);
     hlayout->addWidget(busyLabel);
 	hlayout->addStretch(1);
 	hlayout->addWidget(saveButton);
 
+    QGridLayout *topContainerLayout = new QGridLayout;
+    topContainerLayout->addWidget(containerCombo, 0, 0);
+    topContainerLayout->addWidget(addContainerButton, 0, 1);
+    topContainerLayout->addWidget(removeContainerButton, 0, 2);
+
+    QVBoxLayout *containerLayout = new QVBoxLayout;
+    containerLayout->addLayout(topContainerLayout);
+    containerLayout->addWidget(containerListWidget);
+    containerLayout->setContentsMargins(0,0,0,0);
+
+    QWidget *containerWidget = new QWidget();
+    containerWidget->setLayout(containerLayout);
+    containerWidget->setContentsMargins(0,0,0,0);
+
+    splitter = new QSplitter(Qt::Horizontal, (QWidget *)pParent);
+    splitter->addWidget(fileTree);
+    splitter->addWidget(containerWidget);
+
 	QVBoxLayout *vlayout = new QVBoxLayout;
-	vlayout->addWidget(fileTree);
+	//vlayout->addLayout(hTreeLayout);
+    vlayout->addWidget(splitter);
 	vlayout->addLayout(hlayout);
 	vlayout->setContentsMargins(0,0,0,0);
 
+    splitter->widget(1)->hide();
+    splitter->setCollapsible(0,false);
+    splitter->setCollapsible(1, false);
+       
 	pWidget = new QWidget((QWidget *)pParent);
 	pWidget->setLayout(vlayout);
+
+    QList<int> sizeList;
+    int halfWidth = ((QWidget *)pParent)->size().width()/2;
+    sizeList << halfWidth << halfWidth;
+    splitter->setSizes(sizeList);
 }
 
 void ShareWidget::connectWidgets()
@@ -104,6 +146,9 @@ void ShareWidget::connectWidgets()
     //Buttons
     connect(saveButton, SIGNAL(clicked()), this, SLOT(saveSharePressed()));
 	connect(refreshButton, SIGNAL(clicked()), this, SLOT(refreshButtonPressed()));
+    connect(containerButton, SIGNAL(clicked()), this, SLOT(containerButtonPressed()));
+    connect(addContainerButton, SIGNAL(clicked()), this, SLOT(addContainerButtonPressed()));
+    connect(removeContainerButton, SIGNAL(clicked()), this, SLOT(removeContainerButtonPressed()));
 
     //Actions
     connect(calculateMagnetAction, SIGNAL(triggered()), this, SLOT(calculateMagnetActionPressed()));
@@ -188,6 +233,30 @@ void ShareWidget::refreshButtonPressed()
 {
 	emit updateShares();
 	emit saveButtonPressed();
+}
+
+void ShareWidget::containerButtonPressed()
+{
+    if (splitter->widget(1)->isHidden())
+    {
+        splitter->widget(1)->setVisible(true);
+        containerButton->setText(tr("Hide Containers"));
+    }
+    else
+    {
+        splitter->widget(1)->hide();
+        containerButton->setText(tr("Show Containers"));
+    }
+}
+
+void ShareWidget::addContainerButtonPressed()
+{
+
+}
+
+void ShareWidget::removeContainerButtonPressed()
+{
+
 }
 
 void ShareWidget::calculateMagnetActionPressed()

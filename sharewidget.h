@@ -49,6 +49,9 @@ private slots:
 
 	void saveSharePressed();
 	void refreshButtonPressed();
+    void containerButtonPressed();
+    void addContainerButtonPressed();
+    void removeContainerButtonPressed();
 
     void calculateMagnetActionPressed();
 
@@ -91,9 +94,14 @@ private:
 	QFileSystemModel *fileModel;
 	CheckableProxyModel *checkProxyModel;
 
+    QSplitter *splitter;
+
+    QComboBox *containerCombo;
+    QListWidget *containerListWidget;
+
     QLabel *busyLabel;
 
-	QPushButton *saveButton, *refreshButton;
+	QPushButton *saveButton, *refreshButton, *containerButton, *addContainerButton, *removeContainerButton;
 
     QMenu *contextMenu;
     QAction *calculateMagnetAction;
