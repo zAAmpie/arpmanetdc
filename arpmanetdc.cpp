@@ -19,13 +19,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
         pSharedMemory->lock();
         memcpy((char *)pSharedMemory->data(), magnetArg.constData(), qMin(magnetArg.size(), pSharedMemory->size()));
         pSharedMemory->unlock();
-
-        // Detach in case the other instance we test for terminated abnormally and left the shared memory in place.
-        // Remove #ifdef's if this is a problem on Windows too.
-#ifdef Q_WS_X11
-        pSharedMemory->detach();
-#endif
-
+        
         //Close this instance
         return;
     }
@@ -446,11 +440,9 @@ ArpmanetDC::~ArpmanetDC()
 
 	    sqlite3_close(db);
     }
-    // The Linux Qt QSharedMemory's destructor doesn't seem to call this, disabling opening the application
-    // after it has been closed the first time.
-#ifdef Q_WS_X11
-    pSharedMemory->detach();
-#endif
+
+    //Destroy and detach the shared memory sector
+    pSharedMemory->deleteLater();
 }
 
 bool ArpmanetDC::setupDatabase()
@@ -855,8 +847,13 @@ void ArpmanetDC::placeWidgets()
 	addToolBar(toolBar);
 	setStatusBar(statusBar);
 	setIconSize(QSize(64,64));	
-	setCentralWidget(splitterHorizontal);	
-	setMinimumSize(800,600);
+	setCentralWidget(splitterHorizontal);
+    
+    //Set the window in the center of the screen
+    QSize appSize = sizeHint();
+    int x = (QApplication::desktop()->screenGeometry().width() - appSize.width()) / 2;
+    int y = (QApplication::desktop()->screenGeometry().height() - appSize.height()) / 2;
+    move(x, y);
 }
 
 void ArpmanetDC::connectWidgets()
@@ -2112,6 +2109,37 @@ ResourceExtractor *ArpmanetDC::resourceExtractorObject() const
     return pTypeIconList;
 }
 
+QSize ArpmanetDC::sizeHint() const
+{
+    //Check size of primary screen
+    QRect screenSize = QApplication::desktop()->screenGeometry(QApplication::desktop()->primaryScreen());
+    
+    //Return an appropriate size for the screen size
+    if (screenSize.width() >= 1280)
+    {
+        if (screenSize.height() >= 1024) //SXVGA or larger (1280x1024)
+            return QSize(1200, 800); 
+        else if (screenSize.height() >= 768) //WXGA (1280x768)
+            return QSize(1200, 750);
+    }
+    else if (screenSize.width() >= 1024)
+    {
+        if (screenSize.height() >= 768)
+            return QSize(1000, 750); //XGA (1024x768)
+        else if (screenSize.height() >= 600)
+            return QSize(1000, 550); //WSVGA (1024x600)
+    }
+    else if (screenSize.width() >= 800)
+    {
+        if (screenSize.height() >= 600)
+            return QSize(750, 550); //SVGA (800x600)
+        else if (screenSize.height() >= 480)
+            return QSize(750, 450); //WVGA (854x480 or 800x480)
+    }
+    
+    return QSize(600, 450); //VGA (seriously, any lower is just sad)
+}
+
 //Event handlers
 void ArpmanetDC::changeEvent(QEvent *e)
 {
@@ -2120,7 +2148,8 @@ void ArpmanetDC::changeEvent(QEvent *e)
     if (e->type() == QEvent::WindowStateChange)
     {
         QWindowStateChangeEvent *wEvent = (QWindowStateChangeEvent*)e;
-        if (wEvent->oldState() != Qt::WindowMinimized && isMinimized())
+        Qt::WindowStates state = wEvent->oldState();
+        if (state != Qt::WindowMinimized && isMinimized())
         {
             wasMaximized = isMaximized();
             windowSize = size();
@@ -2128,7 +2157,7 @@ void ArpmanetDC::changeEvent(QEvent *e)
             QTimer::singleShot(0, this, SLOT(hide()));
             restoreAction->setEnabled(true);
         }
-        else if (wEvent->oldState() != Qt::WindowMaximized)
+        else if (state.testFlag(Qt::WindowMinimized))
         {
             if (wasMaximized)
                 showMaximized();
