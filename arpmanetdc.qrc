@@ -25,5 +25,13 @@
         <file>Resources/RefreshIcon.png</file>
         <file>Resources/ArpmanetUserIcon.png</file>
         <file>Resources/MagnetIcon.png</file>
+        <file>Resources/AddIcon.png</file>
+        <file>Resources/DeleteIcon.png</file>
+        <file>Resources/DownloadIcon.png</file>
+        <file>Resources/ContainerIcon.png</file>
+        <file>Resources/FolderIcon.png</file>
+        <file>Resources/GreenUpIcon.png</file>
+        <file>Resources/GuessIcon.png</file>
+        <file>Resources/RedDownIcon.png</file>
     </qresource>
 </RCC>

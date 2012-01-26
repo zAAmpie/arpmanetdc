@@ -33,7 +33,7 @@ void SettingsWidget::createWidgets()
     
     downloadPathLineEdit = new QLineEdit(pSettings->value("downloadPath"), (QWidget *)pParent);
 
-    browseDownloadPathButton = new QPushButton(tr("Browse"), (QWidget *)pParent);
+    browseDownloadPathButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/FolderIcon.png"), tr("Browse"), (QWidget *)pParent);
 
 	shareUpdateIntervalSpinBox = new QSpinBox((QWidget *)pParent);
 	shareUpdateIntervalSpinBox->setRange(0, 10080); //Maximum is every week
@@ -58,10 +58,10 @@ void SettingsWidget::createWidgets()
     protocolList->setMaximumWidth(100);
     protocolList->setSelectionMode(QAbstractItemView::SingleSelection);
 
-    guessIPButton = new QPushButton(tr("Guess External IP"), (QWidget *)pParent);
+    guessIPButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/GuessIcon.png"), tr("Guess External IP"), (QWidget *)pParent);
     
-    protocolUpButton = new QPushButton(tr("Up"), (QWidget *)pParent);
-    protocolDownButton = new QPushButton(tr("Down"), (QWidget *)pParent);
+    protocolUpButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/GreenUpIcon.png"), tr("Up"), (QWidget *)pParent);
+    protocolDownButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/RedDownIcon.png"), tr("Down"), (QWidget *)pParent);
 
     //Enqueue supported protocols
     QString protocolHint = pSettings->value("protocolHint");

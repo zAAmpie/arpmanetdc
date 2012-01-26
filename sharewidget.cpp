@@ -45,11 +45,11 @@ void ShareWidget::createWidgets()
 {
 	saveButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Save shares"));
 	refreshButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/RefreshIcon.png"), tr("Refresh shares"));
-    containerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/LowPriorityIcon.png"), tr("Show Containers"));
+    containerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/ContainerIcon.png"), tr("Show Containers"));
     
-    addContainerButton = new QPushButton(tr("Add"));
+    addContainerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/AddIcon.png"), tr("Add"));
     addContainerButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    removeContainerButton = new QPushButton(tr("Delete"));
+    removeContainerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/DeleteIcon.png"), tr("Delete"));
     removeContainerButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     
     containerCombo = new QComboBox();
@@ -63,24 +63,29 @@ void ShareWidget::createWidgets()
     containerCombo->setModel(proxyModel);
     //containerCombo->view()->setModel(proxyModel);
 
-    ((QStandardItemModel *)((QSortFilterProxyModel *)containerCombo->model())->sourceModel())->appendRow(new QStandardItem(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), "Default"));
+    ((QStandardItemModel *)((QSortFilterProxyModel *)containerCombo->model())->sourceModel())->appendRow(new QStandardItem(QIcon(":/ArpmanetDC/Resources/ContainerIcon.png"), "Sample container"));
         
     ContainerContentsType contents;
     contents.first = 0;
-    pContainerHash.insert(tr("Default"), contents);
+    pContainerHash.insert(tr("Sample container"), contents);
 
-    containerModel = new QStandardItemModel(0, 3);
+    containerModel = new QStandardItemModel(0, 4);
     containerModel->setHeaderData(0, Qt::Horizontal, tr("Filename"));
     containerModel->setHeaderData(1, Qt::Horizontal, tr("Filepath"));
     containerModel->setHeaderData(2, Qt::Horizontal, tr("Filesize"));
+    containerModel->setHeaderData(3, Qt::Horizontal, tr("Bytes"));
 
     pParentItem = containerModel->invisibleRootItem();
 
-    containerTreeView = new CDropTreeView();
+    containerTreeView = new CDropTreeView(tr("Drag files/folders here to add..."));
     containerTreeView->setModel(containerModel);
-    //containerTreeView->setDragDropMode(QAbstractItemView::DropOnly);
     containerTreeView->setAcceptDrops(true);
-    //containerTreeView->setDropIndicatorShown(true);
+    containerTreeView->setContextMenuPolicy(Qt::CustomContextMenu);
+    containerTreeView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    containerTreeView->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    containerTreeView->setColumnWidth(0, 200);
+    containerTreeView->setColumnWidth(1, 100);
+    containerTreeView->hideColumn(3);
             
 	fileModel = new QFileSystemModel();
 	//fileModel->setFilter(QDir::Dirs | QDir::Drives | QDir::NoDotAndDotDot);
@@ -91,16 +96,17 @@ void ShareWidget::createWidgets()
 	checkProxyModel->setSourceModel(fileModel);
 	checkProxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
 		
-	fileTree = new CDragTreeView();
+	fileTree = new CDragTreeView(tr("Drag files/folders here to add"));
 	fileTree->setModel(checkProxyModel);
 	//fileTree->sortByColumn(0, Qt::AscendingOrder);
 	fileTree->setColumnWidth(0, 500);
 	fileTree->setUniformRowHeights(true);
 	fileTree->setSortingEnabled(false);
+    fileTree->setSelectionMode(QAbstractItemView::ExtendedSelection);
     fileTree->header()->setHighlightSections(false);
     fileTree->setContextMenuPolicy(Qt::CustomContextMenu);
     //fileTree->setDragDropMode(QAbstractItemView::DragOnly);
-    //fileTree->setDragEnabled(true);
+    fileTree->setDragEnabled(true);
 
 	checkProxyModel->setDefaultCheckState(Qt::Unchecked);	
 	//checkProxyModel->sort(0, Qt::AscendingOrder);
@@ -111,6 +117,10 @@ void ShareWidget::createWidgets()
     contextMenu = new QMenu((QWidget *)pParent);
     calculateMagnetAction = new QAction(QIcon(":/ArpmanetDC/Resources/MagnetIcon.png"), tr("Copy magnet link"), (QWidget *)pParent);
     contextMenu->addAction(calculateMagnetAction);
+
+    containerContextMenu = new QMenu((QWidget *)pParent);
+    removeContainerEntryAction = new QAction(QIcon(":/ArpmanetDC/Resources/RemoveIcon.png"), tr("Remove entry"), (QWidget *)pParent);
+    containerContextMenu->addAction(removeContainerEntryAction);
 }
 
 void ShareWidget::placeWidgets()
@@ -164,9 +174,11 @@ void ShareWidget::connectWidgets()
 {
     //Context menu
     connect(fileTree, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(contextMenuRequested(const QPoint &)));
+    connect(containerTreeView, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(containerContextMenuRequested(const QPoint &)));
 
     //View
     connect(containerTreeView, SIGNAL(droppedURLList(QList<QUrl>)), this, SLOT(droppedURLList(QList<QUrl>)));
+    connect(containerTreeView, SIGNAL(keyPressed(Qt::Key)), this, SLOT(containerTreeViewKeyPressed(Qt::Key)));
 
     //Combo box
     connect(containerCombo, SIGNAL(currentIndexChanged(const QString &)), this, SLOT(switchedContainer(const QString &)));
@@ -184,6 +196,7 @@ void ShareWidget::connectWidgets()
 
     //Actions
     connect(calculateMagnetAction, SIGNAL(triggered()), this, SLOT(calculateMagnetActionPressed()));
+    connect(removeContainerEntryAction, SIGNAL(triggered()), this, SLOT(removeContainerEntryActionPressed()));
 }
 
 void ShareWidget::changeRoot(QString path)
@@ -283,7 +296,7 @@ void ShareWidget::addContainerButtonPressed()
         pContainerHash.insert(name, c);
 
         //Add container name to combo box
-        containerCombo->addItem(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), name);
+        containerCombo->addItem(QIcon(":/ArpmanetDC/Resources/ContainerIcon.png"), name);
         containerCombo->setCurrentIndex(containerCombo->count()-1);
 
         //Sort list of containers
@@ -291,23 +304,80 @@ void ShareWidget::addContainerButtonPressed()
         
         //Clear model
         containerModel->removeRows(0, containerModel->rowCount());
+
+        //Enable tree view if it was disabled
+        containerTreeView->setEnabled(true);
+        containerTreeView->setPlaceholderText(tr("Drag files/folders here to add..."));
     }
 }
 
 void ShareWidget::removeContainerButtonPressed()
 {
+    if (containerCombo->count() == 0)
+        return;
 
+    QString containerName = containerCombo->currentText();
+    if (QMessageBox::information((QWidget *)pParent, tr("ArpmanetDC"), tr("Are you sure you want to remove the container <b>%1</b>?")
+        .arg(containerName), QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes)
+    {
+        //Remove from combobox
+        containerCombo->removeItem(containerCombo->currentIndex());
+
+        //Remove from hash
+        pContainerHash.remove(containerName);
+
+        //Clear model
+        containerModel->removeRows(0, containerModel->rowCount());
+
+        //Disable tree view if no containers exist
+        if (containerCombo->count() == 0)
+        {
+            containerTreeView->setEnabled(false);
+            containerTreeView->setPlaceholderText(tr("To start using containers, click Add..."));
+        }
+        else
+        {
+            switchedContainer(containerCombo->currentText());            
+        }
+    }
 }
 
 void ShareWidget::calculateMagnetActionPressed()
 {
-    QModelIndex index = fileTree->selectionModel()->selectedRows().first();
-    
+    QModelIndex index = fileTree->selectionModel()->selectedRows().first(); 
     QString filePath = fileModel->filePath(checkProxyModel->mapToSource(index));
     
     emit requestTTHFromPath(filePath);
 
     QWhatsThis::showText(contextMenu->pos(), tr("Calculating hash. Please wait..."));
+}
+
+void ShareWidget::removeContainerEntryActionPressed()
+{
+    QList<QModelIndex> rows = containerTreeView->selectionModel()->selectedRows();
+    QList<QString> deletePaths;
+    for (int i = 0; i < rows.size(); i++)
+    {
+        //Get selected entry values
+        QModelIndex index = containerTreeView->selectionModel()->selectedRows().at(i);
+        QString filePath = containerModel->itemFromIndex(containerModel->index(index.row(), 1))->text();
+        deletePaths.append(filePath);
+        quint64 fileSize = containerModel->itemFromIndex(containerModel->index(index.row(), 3))->text().toLongLong();
+        
+        QString containerName = containerCombo->currentText();
+
+        //Remove from hash
+        pContainerHash[containerName].first -= fileSize;
+        pContainerHash[containerName].second.remove(filePath);
+    }
+
+    //Remove from list
+    foreach (QString path, deletePaths)
+    {
+        QList<QStandardItem *> foundItems = containerModel->findItems(path, Qt::MatchExactly, 1);
+        if (!foundItems.isEmpty())
+            containerModel->removeRow(foundItems.first()->row());
+    }
 }
 
 void ShareWidget::switchedContainer(const QString &name)
@@ -338,9 +408,10 @@ void ShareWidget::switchedContainer(const QString &name)
         else if (fi.isDir())
             icon = pParent->resourceExtractorObject()->getIconFromName(tr("folder"));
 
-        row.append(new QStandardItem(icon, fileName));
-        row.append(new QStandardItem(filePath));
-        row.append(new QStandardItem(tr("%1").arg(fileSize)));
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, fileName, icon));
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, filePath));
+        row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(fileSize)));
+        row.append(new CStandardItem(CStandardItem::IntegerType, tr("%1").arg(fileSize)));
 
         pParentItem->appendRow(row);  
         
@@ -388,12 +459,33 @@ void ShareWidget::contextMenuRequested(const QPoint &pos)
     }
 }
 
+//Context menu for containers
+void ShareWidget::containerContextMenuRequested(const QPoint &pos)
+{
+    if (containerTreeView->selectionModel()->selectedRows().size() == 0)
+        return;
+
+    QPoint globalPos = containerTreeView->viewport()->mapToGlobal(pos);
+    containerContextMenu->popup(globalPos);
+}
+
+void ShareWidget::containerTreeViewKeyPressed(Qt::Key key)
+{
+    if (containerTreeView->selectionModel()->selectedRows().size() == 0)
+        return;
+
+    if (key == Qt::Key_Delete)
+        removeContainerEntryAction->trigger();
+}
+
 //Item dropped in container
 void ShareWidget::droppedURLList(QList<QUrl> list)
 {
     foreach(QUrl url, list)
     {
         QString path = url.toString();
+        if (path.startsWith("file:///"))
+            path.remove("file:///");
         QFileInfo fi(path);
 
         QString fileName = fi.fileName();
@@ -403,19 +495,25 @@ void ShareWidget::droppedURLList(QList<QUrl> list)
         quint64 fileSize = 0;
         if (fi.isFile())
             fileSize = fi.size();
+        else if (!filePath.endsWith("/"))
+            filePath += "/";
 
         //Get current contents of container
         ContainerContentsType contents = pContainerHash.value(containerCombo->currentText());
         //Add fileSize to total fileSize
         contents.first += fileSize;
 
+        bool add = true;
         QHashIterator<QString, quint64> i(contents.second);
         while (i.hasNext())
         {
             QString p = i.next().key();
             if (p == filePath)
+            {
                 //Don't add duplicates
-                return;
+                add = false;
+                break;
+            }
 
             if (filePath.contains(p))
             {
@@ -432,6 +530,9 @@ void ShareWidget::droppedURLList(QList<QUrl> list)
             }
         }
         
+        if (!add)
+            continue;
+
         //Add the filePath and fileSize to contents
         contents.second.insert(filePath, fileSize);
                 
@@ -450,9 +551,10 @@ void ShareWidget::droppedURLList(QList<QUrl> list)
         else
             icon = pParent->resourceExtractorObject()->getIconFromName(tr("folder"));
             
-        row.append(new QStandardItem(icon, fileName));
-        row.append(new QStandardItem(filePath));
-        row.append(new QStandardItem(tr("%1").arg(fileSize)));
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, fileName, icon));
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, filePath));
+        row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(fileSize)));
+        row.append(new CStandardItem(CStandardItem::IntegerType, tr("%1").arg(fileSize)));
 
         pParentItem->appendRow(row);      
     }
