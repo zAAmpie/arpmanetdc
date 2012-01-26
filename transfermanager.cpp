@@ -24,7 +24,17 @@ TransferManager::~TransferManager()
 // remove the pointer to the transfer object from the transfer object table before deleting the object.
 void TransferManager::destroyTransferObject(Transfer* transferObject)
 {
-    transferObjectTable.remove(*transferObject->getTTH(), transferObject);
+    int type = transferObject->getTransferType();
+
+    if (transferObjectTable.remove(*transferObject->getTTH(), transferObject) != 0)
+    {
+        if (type == TRANSFER_TYPE_DOWNLOAD)
+        {
+            //Decrease download count
+            currentDownloadCount--;
+        }
+    }
+
     transferObject->deleteLater();
 }
 
@@ -252,9 +262,6 @@ void TransferManager::stopTransfer(QByteArray tth, int transferType, QHostAddres
         t->abortTransfer();
         //t->deleteLater();
         //transferObjectTable.remove(tth, t);
-
-        //Decrease download count
-        currentDownloadCount--;
 
         //Start next transfer
         startNextDownload();

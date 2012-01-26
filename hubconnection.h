@@ -78,6 +78,7 @@ private:
     QString escapeDCProtocol(QString);
     QString unescapeDCProtocol(QString);
     QString generateMyINFOString();
+    QString escapeHTMLTags(QString);
 
 	//Objects
 	QTcpSocket *hubSocket;

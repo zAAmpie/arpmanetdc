@@ -1426,10 +1426,10 @@ void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)
 void ArpmanetDC::appendChatLine(QString msg)
 {
 	//Change mainchat user nick format
-	if (msg.left(1).compare("<") == 0)
+	if (msg.left(4).compare("&lt;") == 0)
 	{
-		QString nick = msg.mid(1,msg.indexOf(">")-1);
-		msg.remove(0,msg.indexOf(">")+1);
+		QString nick = msg.mid(4,msg.indexOf("&gt;")-4);
+		msg.remove(0,msg.indexOf("&gt;")+4);
 		if (nick == "::error")
 			msg = tr("<font color=\"red\"><b>%1</b></font>").arg(msg);
 		else if (nick == "::info")
