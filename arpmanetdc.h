@@ -116,7 +116,7 @@ public:
     //Used to determine if objects were created yet upon application exit
     bool createdGUI;
 
-    virtual QSize sizeHint() const; //reimplement sizeHint to determine initial screen size
+    QSize sizeHint() const; //reimplement sizeHint to determine initial screen size
 
 public slots:
     //Sets the global status label in the status bar to msg

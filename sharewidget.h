@@ -21,6 +21,9 @@
 #include <QtGui>
 #include "checkableproxymodel.h"
 #include "sharesearch.h"
+#include "customtableitems.h"
+
+typedef QPair<quint64, QHash<QString, quint64>> ContainerContentsType;
 
 class ArpmanetDC;
 
@@ -43,6 +46,11 @@ private slots:
 
     //Magnet request from ShareSearch
     void returnTTHFromPath(QString filePath, QByteArray tthRoot, quint64 fileSize);
+
+    //Item dropped in container
+    void droppedURLList(QList<QUrl> list);
+
+    void switchedContainer(const QString &name);
 
 	//Slots
 	void selectedItemsChanged();
@@ -89,6 +97,10 @@ private:
     QList<QString> pLoadingPaths;
     bool finishedLoading;
 
+    //Containers
+    QHash<QString, ContainerContentsType> pContainerHash;
+    QStandardItem *pParentItem;
+
 	//GUI elements
 	QTreeView *fileTree;
 	QFileSystemModel *fileModel;
@@ -97,7 +109,8 @@ private:
     QSplitter *splitter;
 
     QComboBox *containerCombo;
-    QListWidget *containerListWidget;
+    CDropTreeView *containerTreeView;
+    QStandardItemModel *containerModel;
 
     QLabel *busyLabel;
 

@@ -1,5 +1,6 @@
 #include "sharewidget.h"
 #include "customtableitems.h"
+#include "arpmanetdc.h"
 
 ShareWidget::ShareWidget(ShareSearch *share, ArpmanetDC *parent)
 {
@@ -53,11 +54,34 @@ void ShareWidget::createWidgets()
     
     containerCombo = new QComboBox();
     containerCombo->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-    containerCombo->addItem(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Test Container"));
 
-    containerListWidget = new QListWidget();
-    containerListWidget->addItem(tr("Not yet implemented. Stay tuned"));
+    QSortFilterProxyModel *proxyModel = new QSortFilterProxyModel;
+    proxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
+    QAbstractItemModel *m = containerCombo->model();
+    QAbstractItemView *v = containerCombo->view();
+    proxyModel->setSourceModel(new QStandardItemModel());
+    containerCombo->setModel(proxyModel);
+    //containerCombo->view()->setModel(proxyModel);
+
+    ((QStandardItemModel *)((QSortFilterProxyModel *)containerCombo->model())->sourceModel())->appendRow(new QStandardItem(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), "Default"));
         
+    ContainerContentsType contents;
+    contents.first = 0;
+    pContainerHash.insert(tr("Default"), contents);
+
+    containerModel = new QStandardItemModel(0, 3);
+    containerModel->setHeaderData(0, Qt::Horizontal, tr("Filename"));
+    containerModel->setHeaderData(1, Qt::Horizontal, tr("Filepath"));
+    containerModel->setHeaderData(2, Qt::Horizontal, tr("Filesize"));
+
+    pParentItem = containerModel->invisibleRootItem();
+
+    containerTreeView = new CDropTreeView();
+    containerTreeView->setModel(containerModel);
+    //containerTreeView->setDragDropMode(QAbstractItemView::DropOnly);
+    containerTreeView->setAcceptDrops(true);
+    //containerTreeView->setDropIndicatorShown(true);
+            
 	fileModel = new QFileSystemModel();
 	//fileModel->setFilter(QDir::Dirs | QDir::Drives | QDir::NoDotAndDotDot);
 	fileModel->setRootPath("c:/");
@@ -67,7 +91,7 @@ void ShareWidget::createWidgets()
 	checkProxyModel->setSourceModel(fileModel);
 	checkProxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
 		
-	fileTree = new QTreeView();
+	fileTree = new CDragTreeView();
 	fileTree->setModel(checkProxyModel);
 	//fileTree->sortByColumn(0, Qt::AscendingOrder);
 	fileTree->setColumnWidth(0, 500);
@@ -75,6 +99,8 @@ void ShareWidget::createWidgets()
 	fileTree->setSortingEnabled(false);
     fileTree->header()->setHighlightSections(false);
     fileTree->setContextMenuPolicy(Qt::CustomContextMenu);
+    //fileTree->setDragDropMode(QAbstractItemView::DragOnly);
+    //fileTree->setDragEnabled(true);
 
 	checkProxyModel->setDefaultCheckState(Qt::Unchecked);	
 	//checkProxyModel->sort(0, Qt::AscendingOrder);
@@ -104,7 +130,7 @@ void ShareWidget::placeWidgets()
 
     QVBoxLayout *containerLayout = new QVBoxLayout;
     containerLayout->addLayout(topContainerLayout);
-    containerLayout->addWidget(containerListWidget);
+    containerLayout->addWidget(containerTreeView);
     containerLayout->setContentsMargins(0,0,0,0);
 
     QWidget *containerWidget = new QWidget();
@@ -138,6 +164,12 @@ void ShareWidget::connectWidgets()
 {
     //Context menu
     connect(fileTree, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(contextMenuRequested(const QPoint &)));
+
+    //View
+    connect(containerTreeView, SIGNAL(droppedURLList(QList<QUrl>)), this, SLOT(droppedURLList(QList<QUrl>)));
+
+    //Combo box
+    connect(containerCombo, SIGNAL(currentIndexChanged(const QString &)), this, SLOT(switchedContainer(const QString &)));
 
 	//Models
 	connect(checkProxyModel, SIGNAL(checkedNodesChanged()), this, SLOT(selectedItemsChanged()));
@@ -204,25 +236,17 @@ void ShareWidget::saveSharePressed()
 	foreach (const QModelIndex index, selectedFiles)
 		dirList->append(QDir(index.data(QFileSystemModel::FilePathRole).toString()));
 
-	//Generate list of directories
-	
-	/*//Show info
-	QString list = QString("<b>Selected files (%1):</b><ul>").arg(selectedFiles.count());
-
-    foreach (const QModelIndex index, selectedFiles) {
-        list += "<li>" + index.data(QFileSystemModel::FilePathRole).toString() + "</li>";
+	//Ensure files in containers are all shared
+    foreach (ContainerContentsType c, pContainerHash)
+    {
+        QHashIterator<QString, quint64> i(c.second);
+        while (i.hasNext())
+        {
+            dirList->append(QDir(i.next().key()));
+        }
     }
-
-    list += QString("</ul><br/><b>Selected directories (%1):</b><ul>").arg(selectedDirectories.count());
-    foreach (const QModelIndex index, selectedDirectories) {
-        list += "<li>" + index.data(QFileSystemModel::FilePathRole).toString() + "</li>";
-    }
-    list += "</ul>";
-
-	QMessageBox::information(0, tr("ArpmanetDC"), list);*/
-	
-   	//pShare->updateShares(dirList);
-    pShare->stopParsing();
+    	
+   	pShare->stopParsing();
     pShare->stopHashing();
     emit updateShares(dirList);
 
@@ -251,7 +275,23 @@ void ShareWidget::containerButtonPressed()
 
 void ShareWidget::addContainerButtonPressed()
 {
+    QString name = QInputDialog::getText((QWidget *)pParent, tr("ArpmanetDC"), tr("Please enter a name for the container"));
+    if (!name.isEmpty() && !pContainerHash.contains(name))
+    {
+        //Add container to hash list
+        ContainerContentsType c;
+        pContainerHash.insert(name, c);
 
+        //Add container name to combo box
+        containerCombo->addItem(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), name);
+        containerCombo->setCurrentIndex(containerCombo->count()-1);
+
+        //Sort list of containers
+        containerCombo->view()->model()->sort(0);
+        
+        //Clear model
+        containerModel->removeRows(0, containerModel->rowCount());
+    }
 }
 
 void ShareWidget::removeContainerButtonPressed()
@@ -268,6 +308,46 @@ void ShareWidget::calculateMagnetActionPressed()
     emit requestTTHFromPath(filePath);
 
     QWhatsThis::showText(contextMenu->pos(), tr("Calculating hash. Please wait..."));
+}
+
+void ShareWidget::switchedContainer(const QString &name)
+{
+    //Remove model contents
+    containerModel->removeRows(0, containerModel->rowCount());
+
+    //Get previous data from hash
+    QHashIterator<QString, quint64> i(pContainerHash.value(name).second);
+    while (i.hasNext())
+    {
+        QFileInfo fi(i.peekNext().key());
+        QString fileName = fi.fileName();
+        QString filePath = fi.filePath();
+        quint64 fileSize = i.peekNext().value();
+        if (fileName.isEmpty())
+            fileName = filePath;
+
+        //Add contents to model
+        QList<QStandardItem *> row;
+        QIcon icon;
+        
+        if (fi.isFile())
+        {
+            QString suffix = fi.suffix();
+            icon = pParent->resourceExtractorObject()->getIconFromName(suffix);
+        }
+        else if (fi.isDir())
+            icon = pParent->resourceExtractorObject()->getIconFromName(tr("folder"));
+
+        row.append(new QStandardItem(icon, fileName));
+        row.append(new QStandardItem(filePath));
+        row.append(new QStandardItem(tr("%1").arg(fileSize)));
+
+        pParentItem->appendRow(row);  
+        
+        i.next();
+    }
+
+    containerModel->sort(1);
 }
 
 void ShareWidget::returnTTHFromPath(QString filePath, QByteArray tthRoot, quint64 fileSize)
@@ -306,6 +386,78 @@ void ShareWidget::contextMenuRequested(const QPoint &pos)
         QPoint globalPos = fileTree->viewport()->mapToGlobal(pos);
         contextMenu->popup(globalPos);
     }
+}
+
+//Item dropped in container
+void ShareWidget::droppedURLList(QList<QUrl> list)
+{
+    foreach(QUrl url, list)
+    {
+        QString path = url.toString();
+        QFileInfo fi(path);
+
+        QString fileName = fi.fileName();
+        QString filePath = fi.filePath();
+        if (fileName.isEmpty())
+            fileName = filePath;
+        quint64 fileSize = 0;
+        if (fi.isFile())
+            fileSize = fi.size();
+
+        //Get current contents of container
+        ContainerContentsType contents = pContainerHash.value(containerCombo->currentText());
+        //Add fileSize to total fileSize
+        contents.first += fileSize;
+
+        QHashIterator<QString, quint64> i(contents.second);
+        while (i.hasNext())
+        {
+            QString p = i.next().key();
+            if (p == filePath)
+                //Don't add duplicates
+                return;
+
+            if (filePath.contains(p))
+            {
+                //Trying to add a lower level folder
+                contents.second.remove(p);
+                containerModel->removeRow(containerModel->findItems(p, Qt::MatchExactly, 1).first()->row());
+            }
+
+            if (p.contains(filePath))
+            {
+                //Trying to add a higher level folder
+                contents.second.remove(p);
+                containerModel->removeRow(containerModel->findItems(p, Qt::MatchExactly, 1).first()->row());
+            }
+        }
+        
+        //Add the filePath and fileSize to contents
+        contents.second.insert(filePath, fileSize);
+                
+        //Add contents to list
+        pContainerHash[containerCombo->currentText()] = contents;
+        
+        //Add contents to model
+        QList<QStandardItem *> row;
+        QIcon icon;
+        
+        if (fi.isFile())
+        {
+            QString suffix = fi.suffix();
+            icon = pParent->resourceExtractorObject()->getIconFromName(suffix);
+        }
+        else
+            icon = pParent->resourceExtractorObject()->getIconFromName(tr("folder"));
+            
+        row.append(new QStandardItem(icon, fileName));
+        row.append(new QStandardItem(filePath));
+        row.append(new QStandardItem(tr("%1").arg(fileSize)));
+
+        pParentItem->appendRow(row);      
+    }
+
+    containerModel->sort(1);
 }
 
 QWidget *ShareWidget::widget()
