@@ -119,6 +119,14 @@ QString HubConnection::unescapeDCProtocol(QString msg)
     return msg;
 }
 
+QString HubConnection::escapeHTMLTags(QString msg)
+{
+    msg.replace("<", "&lt;");
+    msg.replace(">", "&gt;");
+    msg.replace('"', "&quot;");
+    return msg;
+}
+
 QString HubConnection::generateMyINFOString()
 {
     QString s = "$MyINFO $ALL ";
@@ -243,7 +251,7 @@ void HubConnection::processHubMessage()
                     int pos2 = msg.indexOf(" ", pos1 + str.size());
                     QString otherNick = msg.mid(pos1 + str.size(), pos2 - pos1 - str.size());
                     QString message = msg.mid(pos2 + 2);
-                    emit receivedPrivateMessage(otherNick, escapeDCProtocol(message));  // TODO: nie seker of indekse en offsets reg is nie, check!
+                    emit receivedPrivateMessage(otherNick, escapeHTMLTags(escapeDCProtocol(message)));
                 }
 
 				//===== NICKNAME LIST =====
@@ -265,7 +273,7 @@ void HubConnection::processHubMessage()
             else
             {
 				//===== MAIN CHAT MESSAGE =====
-                lastChatMessage = unescapeDCProtocol(msg);
+                lastChatMessage = escapeHTMLTags(unescapeDCProtocol(msg));
                 emit receivedChatMessage(lastChatMessage);
             }
         }
@@ -285,7 +293,7 @@ void HubConnection::connectHub()
 			hubSocket->connectToHost(hubAddress, hubPort);
             hubSocket->setReadBufferSize(10*(1<<20)); //Set TCP read buffer to 10MB
 
-			emit receivedChatMessage(tr("<::info>Connecting to %1:%2...").arg(hubAddress).arg(hubPort));
+			emit receivedChatMessage(tr("&lt;::info&gt;Connecting to %1:%2...").arg(hubAddress).arg(hubPort));
 		}
 	}
 	else
@@ -337,7 +345,7 @@ void HubConnection::socketError(QAbstractSocket::SocketError error)
         {
             //Check if the error was due to bad nickname
             int interval = 30000; //30 seconds
-            if (lastChatMessage.contains("<-VerliHub-> Bad nickname: Wait"))
+            if (lastChatMessage.contains("&lt;-VerliHub-&gt; Bad nickname: Wait"))
             {
                 int pos1 = lastChatMessage.indexOf("Wait") + 4;
                 int pos2 = lastChatMessage.indexOf("sec");
@@ -358,7 +366,7 @@ void HubConnection::socketError(QAbstractSocket::SocketError error)
     }
 
 	emit hubError(errorString);
-    emit receivedChatMessage("<::error>" + errorString);
+    emit receivedChatMessage("&lt;::error&gt;" + errorString);
 }
 
 void HubConnection::reconnectTimeout()
