@@ -44,6 +44,7 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     connect(networkBootstrap, SIGNAL(sendMulticastAnnounce()), this, SLOT(sendMulticastAnnounce()));
     connect(networkBootstrap, SIGNAL(sendRequestAllBuckets(QHostAddress)),
             this, SLOT(requestAllBuckets(QHostAddress)));
+    connect(networkBootstrap, SIGNAL(appendChatLine(QString)), this, SIGNAL(appendChatLine(QString)));
         
     // Network topology manager
     networkTopology = new NetworkTopology(this);
@@ -924,6 +925,11 @@ void Dispatcher::removeNetworkScanRange(quint32 rangeBase)
     networkBootstrap->removeNetworkScanRange(rangeBase);
 }
 
+void Dispatcher::initiateLinscan()
+{
+    networkBootstrap->initiateLinscan();
+}
+
 // ------------------=====================   Raw transmission functions   =====================----------------------
 
 void Dispatcher::sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *datagram)
@@ -963,7 +969,7 @@ void Dispatcher::sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *dat
                 if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
                 {
                     if (size != 10*(1<<20))
-                        qDebug() << "Dispatcher::sendUnicastRawDatagram: Value returned inconsistent with value set";
+                        qDebug() << "Dispatcher::sendUnicastRawDatagram: Value returned inconsistent with value set. Actual size is " << size;
                 }
             }
 

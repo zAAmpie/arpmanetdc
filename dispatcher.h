@@ -93,6 +93,9 @@ signals:
     void incomingProtocolCapabilityResponse(QHostAddress fromHost, char capability);
     void incomingUploadRequest(quint8 protocol, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length);
     void incomingDataPacket(quint8 protocolInstruction, QByteArray datagram);
+    //
+    // Debug messages
+    void appendChatLine(QString message);
 
 public slots:
     // Bootstrapping
@@ -119,6 +122,7 @@ public slots:
     // Buckets
     void requestBucketContents(QHostAddress host);
     void requestAllBuckets(QHostAddress host);
+    void initiateLinscan();
 
     // TTH
     void sendTTHTreeRequest(QHostAddress host, QByteArray tthRoot, quint32 startOffset, quint32 numberOfBuckets);
