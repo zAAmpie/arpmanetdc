@@ -27,6 +27,9 @@
 #include <QSet>
 #include <QProgressBar>
 #include <QDateTime>
+#include <QTreeView>
+#include <QListView>
+#include <QUrl>
 
 //Custom delegate to display HTML code in QTableView
 class HTMLDelegate : public QStyledItemDelegate
@@ -91,5 +94,37 @@ protected:
 private:
     QString pText;
 };
+
+//Draggable QTreeView
+class CDragTreeView : public QTreeView
+{
+public:
+    CDragTreeView(QWidget *parent = 0) : QTreeView(parent) {} //Empty constructor
+
+    void mousePressEvent(QMouseEvent *event);
+    void mouseMoveEvent(QMouseEvent *event);
+
+    void dragMoveEvent(QDragMoveEvent *event);
+    void dragEnterEvent(QDragEnterEvent *event) {}
+    void dropEvent(QDropEvent *event) {}
+
+private:
+    QPoint dragStartPosition;
+};
+
+//Droppble QTreeView
+class CDropTreeView : public QTreeView
+{
+    Q_OBJECT
+public:
+    CDropTreeView(QWidget *parent = 0) : QTreeView(parent) {} //Empty constructor
+    
+    void dragMoveEvent(QDragMoveEvent *event);
+    void dragEnterEvent(QDragEnterEvent *event);
+    void dropEvent(QDropEvent *event);
+signals:
+    void droppedURLList(QList<QUrl> list);
+};
+
 
 #endif

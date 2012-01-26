@@ -31,9 +31,11 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
 		this, SLOT(hashFileThreadDone(QString, QString, qint64, QString, QString, QString, QList<QString> *, HashFileThread *)), Qt::QueuedConnection);
 	connect(pHashFileThread, SIGNAL(failed(QString, HashFileThread *)), this, SLOT(hashFileFailed(QString, HashFileThread *)), Qt::QueuedConnection);
     connect(pHashFileThread, SIGNAL(doneBucket(QByteArray, int, QByteArray)), this, SLOT(hashBucketDone(QByteArray, int, QByteArray)), Qt::QueuedConnection);
+    connect(pHashFileThread, SIGNAL(doneFile(QString, QByteArray, quint64)), this, SIGNAL(returnTTHFromPath(QString, QByteArray, quint64)), Qt::QueuedConnection);
 	connect(this, SIGNAL(runHashThread(QString, QString)), pHashFileThread, SLOT(processFile(QString, QString)), Qt::QueuedConnection);
     connect(this, SIGNAL(runHashBucket(QByteArray, int, QByteArray *, ReturnEncoding)), pHashFileThread, SLOT(processBucket(QByteArray, int, QByteArray *, ReturnEncoding)), Qt::QueuedConnection);
     connect(this, SIGNAL(stopHashingThread()), pHashFileThread, SLOT(stopHashing()));
+    connect(this, SIGNAL(calculateTTHFromPath(QString)), pHashFileThread, SLOT(hashFile(QString)), Qt::QueuedConnection);
 
 	pHashFileThread->moveToThread(hashThread);
 
@@ -928,6 +930,57 @@ void ShareSearch::query1MBTTH(QByteArray tthRoot, qint64 offset)
 	emit return1MBTTH(results);
 }
 
+
+//------------------------------============================== GET HASH FROM FILE PATCH (SHARE WIDGET) ==============================------------------------------
+
+//Gets the hash from a filepath if it exists in the database
+void ShareSearch::requestTTHFromPath(QString filePath)
+{
+    //Query the database with the search string
+	QString queryStr = tr("SELECT DISTINCT [tth], [fileSize] FROM FileShares WHERE [active] = 1 AND [filePath] = ?;");
+
+	QByteArray tthResult;
+    quint64 fileSize;
+	sqlite3 *db = pParent->database();	
+	sqlite3_stmt *statement;
+
+	//Prepare a query
+	QByteArray query;
+	query.append(queryStr);
+	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+	{
+        //Bind parameters
+		int res = 0;
+		res = res | sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
+
+		int cols = sqlite3_column_count(statement);
+		int result = 0;
+		while (sqlite3_step(statement) == SQLITE_ROW)
+		{
+			QByteArray tthRoot = QByteArray().append((char*)sqlite3_column_text(statement, 0));
+            tthResult = QByteArray::fromBase64(tthRoot);
+            fileSize = sqlite3_column_int64(statement, 1);
+		}
+		sqlite3_finalize(statement);	
+	}
+
+	//Catch all error messages
+	QString error = sqlite3_errmsg(db);
+	if (error != "not an error")
+		QString error = "error";
+
+    if (!tthResult.isEmpty())
+    {
+	    //Report results
+	    emit returnTTHFromPath(filePath, tthResult, fileSize);
+    }
+    else
+    {
+        //Hash file
+        emit calculateTTHFromPath(filePath);
+    }
+}
+
 //------------------------------============================== HASH 1MB BUCKET (TRANSFER MANAGER) ==============================------------------------------
 
 //Hashes a 1MB bucket
@@ -968,7 +1021,7 @@ void ShareSearch::saveTTHSource(QByteArray tthRoot, QHostAddress peerAddress)
 		//Bind parameters
 		int res = 0;
 		QString tthRootStr = QString(tthRoot.toBase64().data());
-		res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size(), SQLITE_STATIC);
+		res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size()*2, SQLITE_STATIC);
 		res = res | sqlite3_bind_text16(statement, 2, peerAddress.toString().utf16(), peerAddress.toString().size()*2, SQLITE_STATIC);
 
 		int cols = sqlite3_column_count(statement);

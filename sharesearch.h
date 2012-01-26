@@ -90,6 +90,11 @@ public slots:
     //Return the 1MB TTH given a TTH root and file offset
 	void query1MBTTH(QByteArray tthRoot, qint64 offset);
 
+    //----------========== GET HASH FROM FILE PATCH (SHARE WIDGET) ==========----------
+
+    //Gets the hash from a filepath if it exists in the database
+    void requestTTHFromPath(QString filePath);
+
     //----------========== HASH 1MB BUCKET (TRANSFER MANAGER) ==========----------
 
     //Hashes a 1MB bucket
@@ -198,6 +203,13 @@ signals:
 	
     //Signal to return 1MB TTH
 	void return1MBTTH(QByteArray tth1MB);
+
+    //----------========== GET HASH FROM FILE PATCH (SHARE WIDGET) ==========----------
+
+    //Signal the reply of the hash
+    void returnTTHFromPath(QString filePath, QByteArray tthRoot, quint64 fileSize);
+    //Signal hashFileThread to calculate hash
+    void calculateTTHFromPath(QString filePath);
 
     //----------========== HASH 1MB BUCKET (TRANSFER MANAGER) ==========----------
 

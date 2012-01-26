@@ -21,6 +21,9 @@
 #include <QtGui>
 #include "checkableproxymodel.h"
 #include "sharesearch.h"
+#include "customtableitems.h"
+
+typedef QPair<quint64, QHash<QString, quint64>> ContainerContentsType;
 
 class ArpmanetDC;
 
@@ -38,15 +41,29 @@ public:
 
 
 private slots:
+    //Context menu for magnets
+    void contextMenuRequested(const QPoint &pos);
+
+    //Magnet request from ShareSearch
+    void returnTTHFromPath(QString filePath, QByteArray tthRoot, quint64 fileSize);
+
+    //Item dropped in container
+    void droppedURLList(QList<QUrl> list);
+
+    void switchedContainer(const QString &name);
+
 	//Slots
 	void selectedItemsChanged();
 
 	void saveSharePressed();
-
 	void refreshButtonPressed();
+    void containerButtonPressed();
+    void addContainerButtonPressed();
+    void removeContainerButtonPressed();
+
+    void calculateMagnetActionPressed();
 
 	void changeRoot(QString path);
-
     void pathLoaded(QString path);
 
 signals:
@@ -58,6 +75,9 @@ signals:
 
 	//Update shares without saving
 	void updateShares();
+
+    //Request TTH from filePath for magnets
+    void requestTTHFromPath(QString filePath);
 
 private:
 	//Functions
@@ -77,14 +97,27 @@ private:
     QList<QString> pLoadingPaths;
     bool finishedLoading;
 
+    //Containers
+    QHash<QString, ContainerContentsType> pContainerHash;
+    QStandardItem *pParentItem;
+
 	//GUI elements
 	QTreeView *fileTree;
 	QFileSystemModel *fileModel;
 	CheckableProxyModel *checkProxyModel;
 
+    QSplitter *splitter;
+
+    QComboBox *containerCombo;
+    CDropTreeView *containerTreeView;
+    QStandardItemModel *containerModel;
+
     QLabel *busyLabel;
 
-	QPushButton *saveButton, *refreshButton;
+	QPushButton *saveButton, *refreshButton, *containerButton, *addContainerButton, *removeContainerButton;
+
+    QMenu *contextMenu;
+    QAction *calculateMagnetAction;
 
 };
 

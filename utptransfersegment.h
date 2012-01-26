@@ -47,7 +47,7 @@ private:
     UTPSocket *utpSocket;
     sockaddr_in addr;
     UTPFunctionTable utp_callbacks;
-
+    
     const unsigned char * fileMap;
     qint64 segmentOffset;
 

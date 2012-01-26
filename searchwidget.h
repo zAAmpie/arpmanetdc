@@ -55,6 +55,7 @@ private slots:
     //Actions
     void downloadActionPressed();
     void downloadToActionPressed();
+    void calculateMagnetActionPressed();
     
     //User double clicked on a result
     void resultDoubleClicked(QModelIndex index);
@@ -102,7 +103,7 @@ private:
     QMenu *resultsMenu;
 
     //Actions
-    QAction *downloadAction, *downloadToAction;
+    QAction *downloadAction, *downloadToAction, *calculateMagnetAction;
 
 	//Search
 	QLineEdit *searchLineEdit;

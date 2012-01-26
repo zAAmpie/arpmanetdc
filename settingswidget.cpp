@@ -128,6 +128,7 @@ void SettingsWidget::placeWidgets()
 	flayoutR->addRow(new QLabel("<font color=\"red\">External IP:</font>"), guessLayout);
 	flayoutR->addRow(new QLabel("<font color=\"red\">External port:</font>"), externalPortLineEdit);
     flayoutR->addRow(new QLabel("<font color=\"red\">Transfer protocol preferences</font>"), protocolLayout);
+    flayoutR->setContentsMargins(0,0,0,0);
 
     advancedWidget->setLayout(flayoutR);
 

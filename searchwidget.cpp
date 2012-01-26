@@ -118,10 +118,12 @@ void SearchWidget::createWidgets()
 
     downloadAction = new QAction(QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Download"), this);
     downloadToAction = new QAction(QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Download to folder..."), this);
+    calculateMagnetAction = new QAction(QIcon(":/ArpmanetDC/Resources/MagnetIcon.png"), tr("Copy magnet link"), this);
 
     resultsMenu = new QMenu((QWidget *)pParent);
 	resultsMenu->addAction(downloadAction);
     resultsMenu->addAction(downloadToAction);
+    resultsMenu->addAction(calculateMagnetAction);
 
 	pWidget = new QWidget();
 }
@@ -157,6 +159,7 @@ void SearchWidget::connectWidgets()
 
     connect(downloadAction, SIGNAL(triggered()), this, SLOT(downloadActionPressed()));
     connect(downloadToAction, SIGNAL(triggered()), this, SLOT(downloadToActionPressed()));
+    connect(calculateMagnetAction, SIGNAL(triggered()), this, SLOT(calculateMagnetActionPressed()));
 
 	connect(searchButton, SIGNAL(clicked()), this, SLOT(searchPressed()));
 	connect(searchLineEdit, SIGNAL(returnPressed()), this, SLOT(searchPressed()));
@@ -254,6 +257,29 @@ void SearchWidget::downloadToActionPressed()
         QString finalPath = path + fileName;
         emit queueDownload((int)NormalQueuePriority, tthRoot, finalPath, fileSize, senderIP);
     }
+}
+
+void SearchWidget::calculateMagnetActionPressed()
+{
+    //Get a result
+	QModelIndex selectedIndex = resultsTable->selectionModel()->selectedRows().first();
+                
+    //Get the selected item in column 0 and its parent
+    QStandardItem *selItem = resultsModel->itemFromIndex(selectedIndex);
+    QStandardItem *parent = selItem->parent();
+    //If the item has a parent -> use the data from the parent
+    if (parent)
+        selectedIndex = parent->index();
+
+	//Get TTH and filename of the result
+	QString tthBase32 = resultsModel->data(resultsModel->index(selectedIndex.row(), 8)).toString();
+    QString fileName = resultsModel->data(resultsModel->index(selectedIndex.row(), 0)).toString();
+    quint64 fileSize = resultsModel->data(resultsModel->index(selectedIndex.row(), 5)).toULongLong();
+
+    //Construct magnet link
+    QString magnetLink = tr("magnet:?xt=urn:tree:tiger:%1&xl=%2&dn=%3").arg(tthBase32).arg(fileSize).arg(fileName.replace(" ", "+"));
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->setText(magnetLink);
 }
 
 QByteArray SearchWidget::idGenerator()
@@ -403,6 +429,10 @@ void SearchWidget::showContextMenu(const QPoint &pos)
 {
     if (resultsTable->selectionModel()->selectedRows().size() == 0)
         return;
+    else if (resultsTable->selectionModel()->selectedRows().size() == 1)
+        calculateMagnetAction->setVisible(true);
+    else
+        calculateMagnetAction->setVisible(false);
 
 	QPoint globalPos = resultsTable->viewport()->mapToGlobal(pos);
 

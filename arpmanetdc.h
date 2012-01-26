@@ -41,6 +41,10 @@
 #include <sqlite/sqlite3.h>
 #include "protocoldef.h"
 
+#define QT_NO_DEBUG_OUTPUT
+
+#define SHARED_MEMORY_KEY "ArpmanetDCv0.1"
+
 #define DEFAULT_EXTERNAL_PORT "4012"
 
 #define DEFAULT_HUB_ADDRESS "arpmanet.ath.cx"
@@ -82,7 +86,7 @@ class ArpmanetDC : public QMainWindow
 	Q_OBJECT
 
 public:
-    ArpmanetDC(QWidget *parent = 0, Qt::WFlags flags = 0);
+    ArpmanetDC(QStringList arguments, QWidget *parent = 0, Qt::WFlags flags = 0);
 	~ArpmanetDC();
 
 	//Get functions
@@ -108,6 +112,11 @@ public:
     Dispatcher *dispatcherObject() const;
     TransferWidget *transferWidgetObject() const;
     ResourceExtractor *resourceExtractorObject() const;
+
+    //Used to determine if objects were created yet upon application exit
+    bool createdGUI;
+
+    QSize sizeHint() const; //reimplement sizeHint to determine initial screen size
 
 public slots:
     //Sets the global status label in the status bar to msg
@@ -193,6 +202,7 @@ private slots:
     void calculateHashRate();
 
 	//GUI interaction
+    void mainChatLinkClicked(const QUrl &link);
     void chatLineEditReturnPressed();
 	void sendChatMessage();
     void quickSearchPressed();
@@ -216,6 +226,9 @@ private slots:
 
     //-----===== SYSTEM TRAY ICON =====-----
     void systemTrayActivated(QSystemTrayIcon::ActivationReason reason);
+
+    //-----===== SHARED MEMORY =====-----
+    void checkSharedMemory();
 
 signals:
     //Private queued signal for cross-thread comms
@@ -293,6 +306,9 @@ private:
 	QTimer *updateSharesTimer;
     QTimer *updateTimer;
 
+    QStringList pArguments;
+    QSharedMemory *pSharedMemory;
+
 	//Global lists
 	QHash<QByteArray, QueueStruct> *pQueueList;
     QHash<QByteArray, FinishedDownloadStruct> *pFinishedList;
@@ -321,6 +337,8 @@ private:
     QSystemTrayIcon *systemTrayIcon;
     QMenu *systemTrayMenu;
     QAction *restoreAction, *quitAction;
+    QSize windowSize;
+    bool wasMaximized;
 
 	//-----===== Widgets =====-----
 

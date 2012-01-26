@@ -5,7 +5,12 @@
 int main(int argc, char *argv[])
 {
 	QApplication a(argc, argv);
-	ArpmanetDC w;
-	w.show();
-	return a.exec();
+	ArpmanetDC w(a.arguments());
+    if (w.createdGUI)
+    {
+        w.show();
+	    return a.exec();
+    }
+    else
+        return 0;
 }

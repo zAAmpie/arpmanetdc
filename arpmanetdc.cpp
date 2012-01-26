@@ -1,8 +1,45 @@
 #include "arpmanetdc.h"
 
-ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
+ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 	: QMainWindow(parent, flags)
 {
+    createdGUI = false;
+    pArguments = arguments;
+    pSharedMemory = new QSharedMemory(SHARED_MEMORY_KEY);
+    QByteArray magnetArg;
+    if (pArguments.size() >= 2)
+        magnetArg.append(pArguments.at(1));
+    else
+        magnetArg.append(tr("DUPLICATE_INSTANCE"));
+
+    //Try to attach to shared memory space
+    if (pSharedMemory->attach())
+    {
+        //This means another instance is running
+        pSharedMemory->lock();
+        memcpy((char *)pSharedMemory->data(), magnetArg.constData(), qMin(magnetArg.size(), pSharedMemory->size()));
+        pSharedMemory->unlock();
+        
+        //Close this instance
+        return;
+    }
+    else
+    {
+        //No other instance is running, create shared memory sector (1KiB max)
+        if (!pSharedMemory->create(1024))
+        {
+            //Couldn't create shared memory space
+            qDebug() << "ArpmanetDC::Constructor: Could not create shared memory space";
+        }
+        else
+        {
+            //Initialize shared memory
+            pSharedMemory->lock();
+            memset((char *)pSharedMemory->data(), '\0', pSharedMemory->size());
+            pSharedMemory->unlock();
+        }
+    }
+
 	//QApplication::setStyle(new QCleanlooksStyle());
 
     //Register QHostAddress for queueing over threads
@@ -316,6 +353,11 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     //Init type icon list with resource extractor class
     pTypeIconList = new ResourceExtractor();
 
+    //Set up shared memory timer
+    QTimer *sharedMemoryTimer = new QTimer(this);
+    connect(sharedMemoryTimer, SIGNAL(timeout()), this, SLOT(checkSharedMemory()));
+    sharedMemoryTimer->start(500);
+
 	//Set up timer to ensure each and every update doesn't signal a complete list sort!
 	sortDue = false;
 	QTimer *sortTimer = new QTimer();
@@ -339,6 +381,10 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
 	if (interval > 0)
 		updateSharesTimer->start(interval);
 
+    //Search for magnet if arguments contain one
+    if (!magnetArg.isEmpty() && QString(magnetArg).compare("DUPLICATE_INSTANCE") != 0)
+        mainChatLinkClicked(QUrl(QString(magnetArg)));
+
     //Show settings window if nick is still default
     if (pSettings->value("nick") == DEFAULT_NICK && pSettings->value("password") == DEFAULT_PASSWORD)
     {
@@ -347,49 +393,57 @@ ArpmanetDC::ArpmanetDC(QWidget *parent, Qt::WFlags flags)
     }
     else
         pHub->connectHub();
+
+    createdGUI = true;
 }
 
 ArpmanetDC::~ArpmanetDC()
 {
-	//Destructor
-    systemTrayIcon->hide(); //Icon isn't automatically hidden after program exit
-
-	pHub->deleteLater();
-    pTransferManager->deleteLater();
-    pDispatcher->deleteLater();
-
-    //saveSettings();
-    delete pSettings;
-
-    transferThread->quit();
-    if (transferThread->wait(5000))
-        delete transferThread;
-    else
+    if (createdGUI)
     {
-        transferThread->terminate();
-        delete transferThread;
+	    //Destructor
+        systemTrayIcon->hide(); //Icon isn't automatically hidden after program exit
+
+	    pHub->deleteLater();
+        pTransferManager->deleteLater();
+        pDispatcher->deleteLater();
+
+        //saveSettings();
+        delete pSettings;
+
+        transferThread->quit();
+        if (transferThread->wait(5000))
+            delete transferThread;
+        else
+        {
+            transferThread->terminate();
+            delete transferThread;
+        }
+
+        bucketFlushThread->quit();
+        statusLabel->setText(tr("Flushing downloaded data to disk, please wait."));
+        if (bucketFlushThread->wait(ULONG_MAX))
+            delete bucketFlushThread;
+        else
+        {
+            bucketFlushThread->terminate();
+            delete bucketFlushThread;
+        }
+
+	    dbThread->quit();
+	    if (dbThread->wait(5000))
+		    delete dbThread;
+        else
+        {
+            dbThread->terminate();
+            delete dbThread;
+        }
+
+	    sqlite3_close(db);
     }
 
-    bucketFlushThread->quit();
-    statusLabel->setText(tr("Flushing downloaded data to disk, please wait."));
-    if (bucketFlushThread->wait(ULONG_MAX))
-        delete bucketFlushThread;
-    else
-    {
-        bucketFlushThread->terminate();
-        delete bucketFlushThread;
-    }
-
-	dbThread->quit();
-	if (dbThread->wait(5000))
-		delete dbThread;
-    else
-    {
-        dbThread->terminate();
-        delete dbThread;
-    }
-	sqlite3_close(db);
-	
+    //Destroy and detach the shared memory sector
+    pSharedMemory->deleteLater();
 }
 
 bool ArpmanetDC::setupDatabase()
@@ -609,7 +663,8 @@ void ArpmanetDC::createWidgets()
 	
 	//Chat
 	mainChatTextEdit = new QTextBrowser(this);
-	mainChatTextEdit->setOpenExternalLinks(true);
+	mainChatTextEdit->setOpenExternalLinks(false);
+    mainChatTextEdit->setOpenLinks(false);
 	
 	chatLineEdit = new QLineEdit(this);
 
@@ -793,8 +848,13 @@ void ArpmanetDC::placeWidgets()
 	addToolBar(toolBar);
 	setStatusBar(statusBar);
 	setIconSize(QSize(64,64));	
-	setCentralWidget(splitterHorizontal);	
-	setMinimumSize(800,600);
+	setCentralWidget(splitterHorizontal);
+    
+    //Set the window in the center of the screen
+    QSize appSize = sizeHint();
+    int x = (QApplication::desktop()->screenGeometry().width() - appSize.width()) / 2;
+    int y = (QApplication::desktop()->screenGeometry().height() - appSize.height()) / 2;
+    move(x, y);
 }
 
 void ArpmanetDC::connectWidgets()
@@ -807,6 +867,8 @@ void ArpmanetDC::connectWidgets()
 
     //Quick search
     connect(quickSearchLineEdit, SIGNAL(returnPressed()), this, SLOT(quickSearchPressed()));
+
+    connect(mainChatTextEdit, SIGNAL(anchorClicked(const QUrl &)), this, SLOT(mainChatLinkClicked(const QUrl &)));
 	
 	//Connect actions
 	connect(queueAction, SIGNAL(triggered()), this, SLOT(queueActionPressed()));
@@ -1371,10 +1433,10 @@ void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)
 void ArpmanetDC::appendChatLine(QString msg)
 {
 	//Change mainchat user nick format
-	if (msg.left(1).compare("<") == 0)
+	if (msg.left(4).compare("&lt;") == 0)
 	{
-		QString nick = msg.mid(1,msg.indexOf(">")-1);
-		msg.remove(0,msg.indexOf(">")+1);
+		QString nick = msg.mid(4,msg.indexOf("&gt;")-4);
+		msg.remove(0,msg.indexOf("&gt;")+4);
 		if (nick == "::error")
 			msg = tr("<font color=\"red\"><b>%1</b></font>").arg(msg);
 		else if (nick == "::info")
@@ -1463,6 +1525,8 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
 	//Not present - create new
 	if (foundItems.isEmpty())
 	{
+        additionalInfoLabel->setText(tr("User logged in: %1").arg(nick));
+
 		//Add new row into table
 		userListModel->appendRow(new QStandardItem());
 		
@@ -1836,6 +1900,41 @@ void ArpmanetDC::searchWordListReceived(QStandardItemModel *wordList)
     searchCompleter->completionPrefix();
 }
 
+void ArpmanetDC::mainChatLinkClicked(const QUrl &link)
+{
+    //Process internal links
+    QString scheme = link.scheme();
+    if (scheme == "magnet")
+    {
+        //Magnet link
+        QString strLink = link.toString();
+
+        QString type = tr("urn:tree:tiger:");
+        int pos = strLink.indexOf(type);
+        QString tth = strLink.mid(pos + type.size(), 39);
+
+        //Search for tth
+        SearchWidget *sWidget = new SearchWidget(searchCompleter, pTypeIconList, pTransferManager, tth, this);
+ 
+        connect(sWidget, SIGNAL(search(quint64, QString, QByteArray, SearchWidget *)), this, SLOT(searchButtonPressed(quint64, QString, QByteArray, SearchWidget *)));
+
+	    searchWidgetHash.insert(sWidget->widget(), sWidget);
+        searchWidgetIDHash.insert(sWidget->id(), sWidget);
+
+	    tabs->addTab(sWidget->widget(), QIcon(":/ArpmanetDC/Resources/SearchIcon.png"), tr("Search"));
+
+	    tabs->setCurrentIndex(tabs->indexOf(sWidget->widget()));
+
+        //Wait for widget to open
+        QApplication::processEvents();
+
+        //Search
+        sWidget->searchPressed();
+    }
+    else
+        QDesktopServices::openUrl(link);
+}
+
 void ArpmanetDC::convertHTMLLinks(QString &msg)
 {
 	//Replace html links with hrefs
@@ -1873,7 +1972,7 @@ void ArpmanetDC::convertMagnetLinks(QString &msg)
 {
 	//Replace magnet links with hrefs
 	int currentIndex = 0;
-	QString regex = "(magnet:\\?xt\\=urn:(?:tree:tiger|sha1):([a-z0-9]{32,39})([a-z0-9\\/&#95;:@=.+?,##%&~\\-_()]*))";
+	QString regex = "(magnet:\\?xt\\=urn:(?:tree:tiger|sha1):([a-z0-9]{32,39})([a-z0-9\\/&#95;:@=.+?,##%&~\\-_()'\\[\\]]*))";
 	QRegExp rx(regex, Qt::CaseInsensitive);
 
 	int pos = 0;
@@ -1904,7 +2003,7 @@ void ArpmanetDC::convertMagnetLinks(QString &msg)
             sizeStr = bytesToSize(size.toULongLong());
 
 			//Parse filename
-			QString fileNameRegEx = "&dn=([a-z0-9+\\-_.]*(?:[\\.]+[a-z0-9+\\-_]*))";
+			QString fileNameRegEx = "&dn=([a-z0-9+\\-_.\\[\\]()']*(?:[\\.]+[a-z0-9+\\-_\\[\\]]*))";
 			QRegExp fRx(fileNameRegEx, Qt::CaseInsensitive);
 
 			//Replace +'s with spaces
@@ -2017,6 +2116,37 @@ ResourceExtractor *ArpmanetDC::resourceExtractorObject() const
     return pTypeIconList;
 }
 
+QSize ArpmanetDC::sizeHint() const
+{
+    //Check size of primary screen
+    QRect screenSize = QApplication::desktop()->screenGeometry(QApplication::desktop()->primaryScreen());
+    
+    //Return an appropriate size for the screen size
+    if (screenSize.width() >= 1280)
+    {
+        if (screenSize.height() >= 1024) //SXVGA or larger (1280x1024)
+            return QSize(1200, 800); 
+        else if (screenSize.height() >= 768) //WXGA (1280x768)
+            return QSize(1200, 750);
+    }
+    else if (screenSize.width() >= 1024)
+    {
+        if (screenSize.height() >= 768)
+            return QSize(1000, 750); //XGA (1024x768)
+        else if (screenSize.height() >= 600)
+            return QSize(1000, 550); //WSVGA (1024x600)
+    }
+    else if (screenSize.width() >= 800)
+    {
+        if (screenSize.height() >= 600)
+            return QSize(750, 550); //SVGA (800x600)
+        else if (screenSize.height() >= 480)
+            return QSize(750, 450); //WVGA (854x480 or 800x480)
+    }
+    
+    return QSize(600, 450); //VGA (seriously, any lower is just sad)
+}
+
 //Event handlers
 void ArpmanetDC::changeEvent(QEvent *e)
 {
@@ -2025,15 +2155,23 @@ void ArpmanetDC::changeEvent(QEvent *e)
     if (e->type() == QEvent::WindowStateChange)
     {
         QWindowStateChangeEvent *wEvent = (QWindowStateChangeEvent*)e;
-        if (wEvent->oldState() != Qt::WindowMinimized && isMinimized())
+        Qt::WindowStates state = wEvent->oldState();
+        if (state != Qt::WindowMinimized && isMinimized())
         {
+            wasMaximized = isMaximized();
+            windowSize = size();
             //Trick necessary to hide window in Windows 7 (the call to hide should not be in the event function)
             QTimer::singleShot(0, this, SLOT(hide()));
             restoreAction->setEnabled(true);
         }
-        else
+        else if (state.testFlag(Qt::WindowMinimized))
         {
+            if (wasMaximized)
+                showMaximized();
+            else
+                resize(windowSize);
             restoreAction->setEnabled(false);
+            activateWindow();
         }
     }
 }
@@ -2043,4 +2181,42 @@ void ArpmanetDC::closeEvent(QCloseEvent *e)
     //Will maybe later add an option to bypass the close operation and ask the user 
     //if the program should be minimized to tray rather than closed... For now it works normally
     QMainWindow::closeEvent(e);
+}
+
+void ArpmanetDC::checkSharedMemory()
+{
+    //Check if new magnet links have been added to the shared memory from other instances
+    if (!pSharedMemory->isAttached())
+        if (!pSharedMemory->attach())
+            qDebug() << "ArpmanetDC::checkSharedMemory: Could not attach to shared memory";
+
+    pSharedMemory->lock();
+    QByteArray data((const char *)pSharedMemory->constData(), pSharedMemory->size()); //Read data
+    
+    if (!QString(data).isEmpty())
+    {
+        //Something was loaded into shared memory
+        memset((char *)pSharedMemory->data(), '\0', pSharedMemory->size()); //Set data to zero
+    }
+
+    pSharedMemory->unlock();
+
+    QString message(data);
+    if (message.compare("DUPLICATE_INSTANCE") == 0)
+    {
+        //Restore instance if minimized
+        if (restoreAction->isEnabled())
+        {
+            restoreAction->trigger();
+        }
+
+        //Duplicate instances were started
+        activateWindow();
+        QMessageBox::information((QWidget *)this, tr("ArpmanetDC"), tr("You can only run a single instance of ArpmanetDC.\nPlease close all other instances first before trying again."));
+    }
+    else if (message.startsWith("magnet"))
+    {
+        //Other instance sent a magnet link to this process
+        mainChatLinkClicked(QUrl(message));
+    }
 }

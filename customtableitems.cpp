@@ -1,8 +1,10 @@
 #include "customtableitems.h"
+#include "checkableproxymodel.h"
 #include <QTextDocument>
 #include <QAbstractTextDocumentLayout>
 #include <QPainter>
 #include "util.h"
+#include <QtGui>
 
 HTMLDelegate::HTMLDelegate(QTableView *tableView)
 {
@@ -279,4 +281,84 @@ void TextProgressBar::paintEvent(QPaintEvent *paintEvent)
         painter.setPen(Qt::gray);
         painter.drawText(rect, Qt::AlignCenter, pText);
     }
+}
+
+void CDragTreeView::mousePressEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton)
+        dragStartPosition = event->pos();
+
+    QTreeView::mousePressEvent(event);
+}
+
+void CDragTreeView::mouseMoveEvent(QMouseEvent *event)
+{
+    // if not left button - return
+    if (!(event->buttons() & Qt::LeftButton)) 
+    {
+        QTreeView::mouseMoveEvent(event);
+        return;
+    }
+ 
+    if ((event->pos() - dragStartPosition).manhattanLength() < QApplication::startDragDistance())
+    {
+        QTreeView::mouseMoveEvent(event);
+        return;
+    }
+
+    // if no item selected, return (else it would crash)
+    if (selectionModel()->selectedRows().isEmpty()) return;
+ 
+    QSortFilterProxyModel *pProxyModel = reinterpret_cast<CheckableProxyModel *>(model());
+    QFileSystemModel *pModel = reinterpret_cast<QFileSystemModel *>(pProxyModel->sourceModel());
+    
+    QDrag *drag = new QDrag(this);
+    QMimeData *mimeData = new QMimeData;
+ 
+    // construct list of QUrls
+    // other widgets accept this mime type, we can drop to them
+    QList<QUrl> list;
+    for (int i = 0; i < selectionModel()->selectedRows().size(); i++)
+    {
+        QModelIndex selectedIndex = selectionModel()->selectedRows().at(i);
+    
+        list.append(QUrl(pModel->filePath(pProxyModel->mapToSource(selectedIndex))));
+    }
+ 
+    // mime stuff
+    mimeData->setUrls(list);
+    drag->setMimeData(mimeData);
+ 
+    // start drag
+    drag->start(Qt::CopyAction | Qt::MoveAction);
+
+    QTreeView::mouseMoveEvent(event);
+}
+
+void CDragTreeView::dragMoveEvent(QDragMoveEvent *event)
+{
+    event->acceptProposedAction();
+}
+
+void CDropTreeView::dragEnterEvent(QDragEnterEvent *event)
+{
+    QStringList formats = event->mimeData()->formats();
+    if (formats.contains("text/uri-list"))
+        event->acceptProposedAction();        
+}
+
+void CDropTreeView::dropEvent(QDropEvent *event)
+{
+    QList<QUrl> list;
+
+    if (event->mimeData()->hasUrls())
+        list = event->mimeData()->urls();
+    emit droppedURLList(list);
+
+    event->acceptProposedAction();
+}
+
+void CDropTreeView::dragMoveEvent(QDragMoveEvent *event)
+{
+    event->acceptProposedAction();
 }
