@@ -81,6 +81,7 @@ public slots:
 private slots:
     void bootstrapTimeoutEvent();
     void collectBucketGarbage();
+    void saveActivePeers();
 
 private:
     QHash<QByteArray, QHostAddress> CIDHosts;
@@ -91,6 +92,7 @@ private:
     void updateHostTimestamp(QByteArray &bucket, QHostAddress &host, qint64 age = 0);
 
     QTimer *bootstrapTimeoutTimer;
+    QTimer *savePeersTimer;
 
     void setCIDHostAddress(QByteArray &cid, QHostAddress &host);
 

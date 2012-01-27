@@ -44,6 +44,8 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     connect(networkBootstrap, SIGNAL(sendMulticastAnnounce()), this, SLOT(sendMulticastAnnounce()));
     connect(networkBootstrap, SIGNAL(sendRequestAllBuckets(QHostAddress)),
             this, SLOT(requestAllBuckets(QHostAddress)));
+    connect(networkBootstrap, SIGNAL(requestLastKnownPeers()), this, SIGNAL(requestLastKnownPeers()));
+    connect(this, SIGNAL(sendLastKnownPeers(QList<QHostAddress>)), networkBootstrap, SLOT(receiveLastKnownPeers(QList<QHostAddress>)));
         
     // Network topology manager
     networkTopology = new NetworkTopology(this);
@@ -58,6 +60,7 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     connect(networkTopology, SIGNAL(requestAllBuckets(QHostAddress)), this, SLOT(requestAllBuckets(QHostAddress)));
     connect(networkTopology, SIGNAL(changeBootstrapStatus(int)), networkBootstrap, SLOT(setBootstrapStatus(int)));
     connect(networkBootstrap, SIGNAL(bootstrapStatusChanged(int)), networkTopology, SLOT(setBootstrapStatus(int)));
+    connect(networkTopology, SIGNAL(saveLastKnownPeers(QList<QHostAddress>)), this, SIGNAL(saveLastKnownPeers(QList<QHostAddress>)));
 
     // Rejoin multicast timer
     rejoinMulticastTimer = new QTimer();
@@ -151,6 +154,7 @@ void Dispatcher::receiveP2PData()
 void Dispatcher::handleProtocolInstruction(quint8 &quint8DatagramType, quint8 &quint8ProtocolInstruction, QByteArray &datagram,
                                            QHostAddress &senderHost)
 {
+    QString ipStr;
     // try to sort this from most frequently used to less frequently used
     switch(quint8ProtocolInstruction)
     {
@@ -171,6 +175,7 @@ void Dispatcher::handleProtocolInstruction(quint8 &quint8DatagramType, quint8 &q
         break;
 
     case BucketExchangePacket:
+        ipStr = senderHost.toString();
         emit bucketContentsArrived(datagram.mid(2), senderHost);
         break;
 
@@ -883,6 +888,7 @@ void Dispatcher::sendLocalBucket(QHostAddress &host)
 
 void Dispatcher::sendAllBuckets(QHostAddress &host)
 {
+    QString ipStr = host.toString();
     QList<QByteArray> bucketList = networkTopology->getAllBuckets();
     QListIterator<QByteArray> it(bucketList);
     while (it.hasNext())
@@ -905,6 +911,7 @@ void Dispatcher::requestBucketContents(QHostAddress host)
 
 void Dispatcher::requestAllBuckets(QHostAddress host)
 {
+    QString ipStr = host.toString();
     QByteArray *datagram = new QByteArray;
     datagram->append(UnicastPacket);
     datagram->append(RequestAllBucketsPacket);
