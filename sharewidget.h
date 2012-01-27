@@ -43,6 +43,7 @@ public:
 private slots:
     //Context menu for magnets
     void contextMenuRequested(const QPoint &pos);
+    void containerContextMenuRequested(const QPoint &pos);
 
     //Magnet request from ShareSearch
     void returnTTHFromPath(QString filePath, QByteArray tthRoot, quint64 fileSize);
@@ -62,6 +63,9 @@ private slots:
     void removeContainerButtonPressed();
 
     void calculateMagnetActionPressed();
+    void removeContainerEntryActionPressed();
+
+    void containerTreeViewKeyPressed(Qt::Key key);
 
 	void changeRoot(QString path);
     void pathLoaded(QString path);
@@ -116,8 +120,8 @@ private:
 
 	QPushButton *saveButton, *refreshButton, *containerButton, *addContainerButton, *removeContainerButton;
 
-    QMenu *contextMenu;
-    QAction *calculateMagnetAction;
+    QMenu *contextMenu, *containerContextMenu;
+    QAction *calculateMagnetAction, *removeContainerEntryAction;
 
 };
 

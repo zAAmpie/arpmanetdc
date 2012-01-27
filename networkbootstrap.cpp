@@ -12,16 +12,19 @@ NetworkBootstrap::NetworkBootstrap(QObject *parent) :
         line = file.readLine(64);
         while (line.length() >= 8)
         {
-            line = file.readLine(64);
             QHostAddress ip;
             if (!ip.setAddress(line.trimmed()))
+            {
+                line = file.readLine(64);
                 continue;
+            }
             lastGoodNodes.append(ip);
+            line = file.readLine(64);
         }
     }
     // Read dynamically saved hosts from datastore
     // Note: Must reply with empty list if no nodes are stored, otherwise the entries in nodes.dat won't be queried.
-    emit requestLastKnownPeers();
+    QTimer::singleShot(100, this, SIGNAL(requestLastKnownPeers())); //This signal isn't connected yet when this line is reached - wait 100msecs
 
     // Init bootstrap
     setBootstrapStatus(-2);

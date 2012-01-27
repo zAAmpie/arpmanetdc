@@ -95,35 +95,59 @@ private:
     QString pText;
 };
 
-//Draggable QTreeView
-class CDragTreeView : public QTreeView
+//TreeView that can display placeholder text
+class CTextTreeView : public QTreeView
 {
+
 public:
-    CDragTreeView(QWidget *parent = 0) : QTreeView(parent) {} //Empty constructor
+    CTextTreeView(const QString &text = "", QWidget *parent = 0) : QTreeView(parent) {pText = text;}
+
+    void setPlaceholderText(const QString &text) {pText = text;}
+    QString placeholderText() {return pText;}
+
+protected:
+    void paintEvent(QPaintEvent *);
+private:
+    QString pText;
+
+};
+
+//Draggable QTreeView
+class CDragTreeView : public CTextTreeView
+{
+    Q_OBJECT
+public:
+    CDragTreeView(QString text = "", QWidget *parent = 0) : CTextTreeView(text, parent) {} //Empty constructor
 
     void mousePressEvent(QMouseEvent *event);
     void mouseMoveEvent(QMouseEvent *event);
 
     void dragMoveEvent(QDragMoveEvent *event);
-    void dragEnterEvent(QDragEnterEvent *event) {}
-    void dropEvent(QDropEvent *event) {}
+    //void dragEnterEvent(QDragEnterEvent *event) {}
+    //void dropEvent(QDropEvent *event) {}
 
+    void keyPressEvent(QKeyEvent *event);
+signals:
+    void keyPressed(Qt::Key key);
 private:
     QPoint dragStartPosition;
 };
 
 //Droppble QTreeView
-class CDropTreeView : public QTreeView
+class CDropTreeView : public CTextTreeView
 {
     Q_OBJECT
 public:
-    CDropTreeView(QWidget *parent = 0) : QTreeView(parent) {} //Empty constructor
+    CDropTreeView(QString text = "", QWidget *parent = 0) : CTextTreeView(text, parent) {} //Empty constructor
     
     void dragMoveEvent(QDragMoveEvent *event);
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);
+
+    void keyPressEvent(QKeyEvent *event);
 signals:
     void droppedURLList(QList<QUrl> list);
+    void keyPressed(Qt::Key key);
 };
 
 

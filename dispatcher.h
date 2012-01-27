@@ -59,6 +59,9 @@ signals:
     void announceReplyArrived(bool isMulticast, QHostAddress &hostAddr, QByteArray &cid, QByteArray &bucket);
     void announceForwardArrived(QHostAddress &hostAddr, QByteArray &cid, QByteArray &bucket);
     void announceArrived(QHostAddress &hostAddr, QByteArray &cid, QByteArray &bucket);
+    void requestLastKnownPeers(); 
+    void sendLastKnownPeers(QList<QHostAddress> peers);
+    void saveLastKnownPeers(QList<QHostAddress> peers);
 
     // Search signals
     void searchResultsReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult);

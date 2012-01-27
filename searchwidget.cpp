@@ -116,8 +116,8 @@ void SearchWidget::createWidgets()
 	//resultsTable->hideColumn(7);
     //resultsTable->hideColumn(8);
 
-    downloadAction = new QAction(QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Download"), this);
-    downloadToAction = new QAction(QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Download to folder..."), this);
+    downloadAction = new QAction(QIcon(":/ArpmanetDC/Resources/DownloadIcon.png"), tr("Download"), this);
+    downloadToAction = new QAction(QIcon(":/ArpmanetDC/Resources/DownloadIcon.png"), tr("Download to folder..."), this);
     calculateMagnetAction = new QAction(QIcon(":/ArpmanetDC/Resources/MagnetIcon.png"), tr("Copy magnet link"), this);
 
     resultsMenu = new QMenu((QWidget *)pParent);

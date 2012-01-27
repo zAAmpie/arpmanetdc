@@ -48,6 +48,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     qRegisterMetaType<QueuePriority>("QueuePriority");
     qRegisterMetaType<FinishedDownloadStruct>("FinishedDownloadStruct");
     qRegisterMetaType<QDir>("QDir");
+    qRegisterMetaType<QList<QHostAddress>>("QList<QHostAddress>");
 
     //Set database pointer to zero at start
 	db = 0;
@@ -248,6 +249,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(pDispatcher, SIGNAL(searchQuestionReceived(QHostAddress, QByteArray, quint64, QByteArray)), 
             pShare, SLOT(querySearchString(QHostAddress, QByteArray, quint64, QByteArray)), Qt::QueuedConnection);
     
+    //TTH searches and trees
     connect(pDispatcher, SIGNAL(TTHSearchQuestionReceived(QByteArray,QHostAddress)),
             pShare, SLOT(TTHSearchQuestionReceived(QByteArray, QHostAddress)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(sendTTHSearchResult(QHostAddress, QByteArray)),
@@ -256,6 +258,14 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
             pShare, SLOT(incomingTTHTreeRequest(QHostAddress, QByteArray,quint32,quint32)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(sendTTHTreeReply(QHostAddress, QByteArray)),
             pDispatcher, SLOT(sendTTHTreeReply(QHostAddress,QByteArray)), Qt::QueuedConnection);
+
+    //Bootstrapped peers
+    connect(pShare, SIGNAL(sendLastKnownPeers(QList<QHostAddress>)), 
+            pDispatcher, SIGNAL(sendLastKnownPeers(QList<QHostAddress>)), Qt::QueuedConnection);
+    connect(pDispatcher, SIGNAL(requestLastKnownPeers()),
+            pShare, SLOT(requestLastKnownPeers()), Qt::QueuedConnection);
+    connect(pDispatcher, SIGNAL(saveLastKnownPeers(QList<QHostAddress>)),
+            pShare, SLOT(saveLastKnownPeers(QList<QHostAddress>)), Qt::QueuedConnection);
 
     //Connect ShareSearch to TransferManager - loads and saves a set of sources to the database
     connect(pTransferManager, SIGNAL(filePathNameRequest(QByteArray)),
@@ -485,6 +495,9 @@ bool ArpmanetDC::setupDatabase()
 	//Create TTHSources table - list of all sources for a transfer
 	queries.append("CREATE TABLE TTHSources (rowID INTEGER PRIMARY KEY, tthRoot TEXT, source TEXT, UNIQUE(tthRoot, source));");
     queries.append("CREATE INDEX IDX_TTHSOURCES_TTHROOT on TTHSources(tthRoot);");
+
+    //Create LastKnownPeers table - list of the last known peers for bootstrap
+    queries.append("CREATE TABLE LastKnownPeers (rowID INTEGER PRIMARY KEY, ip TEXT, UNIQUE(ip));");
 	
 	//Create QueuedDownloads table - saves all queued downloads to restart transfers after restart
 	queries.append("CREATE TABLE QueuedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, fileSize INTEGER, priority INTEGER, tthRoot TEXT, hostIP TEXT, UNIQUE(tthRoot));");
