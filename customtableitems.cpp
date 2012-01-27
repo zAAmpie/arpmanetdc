@@ -1,8 +1,10 @@
 #include "customtableitems.h"
+#include "checkableproxymodel.h"
 #include <QTextDocument>
 #include <QAbstractTextDocumentLayout>
 #include <QPainter>
 #include "util.h"
+#include <QtGui>
 
 HTMLDelegate::HTMLDelegate(QTableView *tableView)
 {
@@ -279,4 +281,123 @@ void TextProgressBar::paintEvent(QPaintEvent *paintEvent)
         painter.setPen(Qt::gray);
         painter.drawText(rect, Qt::AlignCenter, pText);
     }
+}
+
+void CDragTreeView::mousePressEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton)
+        dragStartPosition = event->pos();
+
+    State s = state();
+    if (s == DragSelectingState || s == DraggingState)
+        setState(NoState);
+
+    QTreeView::mousePressEvent(event);
+}
+
+void CDragTreeView::mouseMoveEvent(QMouseEvent *event)
+{
+    //On left-button click
+    if (!(event->buttons() & Qt::LeftButton)) 
+    {
+        QTreeView::mouseMoveEvent(event);
+        return;
+    }
+ 
+    //Check if drag distance is exceeded before starting drag
+    if ((event->pos() - dragStartPosition).manhattanLength() < QApplication::startDragDistance())
+    {
+        QTreeView::mouseMoveEvent(event);
+        return;
+    }
+
+    //Don't drag if no item is selected
+    if (selectionModel()->selectedRows().isEmpty())
+    {
+        QTreeView::mouseMoveEvent(event);
+        return;
+    }
+ 
+    QSortFilterProxyModel *pProxyModel = reinterpret_cast<CheckableProxyModel *>(model());
+    QFileSystemModel *pModel = reinterpret_cast<QFileSystemModel *>(pProxyModel->sourceModel());
+    
+    QDrag *drag = new QDrag(this);
+    QMimeData *mimeData = new QMimeData;
+ 
+    //Construct list of file paths
+    QList<QUrl> list;
+    for (int i = 0; i < selectionModel()->selectedRows().size(); i++)
+    {
+        QModelIndex selectedIndex = selectionModel()->selectedRows().at(i);
+    
+        list.append(QUrl(pModel->filePath(pProxyModel->mapToSource(selectedIndex))));
+    }
+ 
+    //Mime stuff
+    mimeData->setUrls(list);
+    drag->setMimeData(mimeData);
+ 
+    //Start drag
+    drag->exec(Qt::MoveAction, Qt::MoveAction);
+
+    QTreeView::mouseMoveEvent(event);
+}
+
+void CDragTreeView::dragMoveEvent(QDragMoveEvent *event)
+{
+    event->acceptProposedAction();
+    //QTreeView::dragMoveEvent(event);
+}
+
+void CDragTreeView::keyPressEvent(QKeyEvent *event)
+{
+    emit keyPressed((Qt::Key)event->key());
+    QTreeView::keyPressEvent(event);
+}
+
+void CDropTreeView::dragEnterEvent(QDragEnterEvent *event)
+{
+    QStringList formats = event->mimeData()->formats();
+    if (formats.contains("text/uri-list"))
+        event->acceptProposedAction();   
+}
+
+void CDropTreeView::dropEvent(QDropEvent *event)
+{
+    QList<QUrl> list;
+
+    if (event->mimeData()->hasUrls())
+        list = event->mimeData()->urls();
+    emit droppedURLList(list);
+
+    event->acceptProposedAction();
+}
+
+void CDropTreeView::dragMoveEvent(QDragMoveEvent *event)
+{
+    event->acceptProposedAction();
+}
+
+void CDropTreeView::keyPressEvent(QKeyEvent *event)
+{
+    emit keyPressed((Qt::Key)event->key());
+    QTreeView::keyPressEvent(event);
+}
+
+void CTextTreeView::paintEvent(QPaintEvent *event)
+{
+    if (model() && model()->rowCount() == 0)
+    {
+        QRect rect = event->rect();
+        
+        QPainter painter(viewport());
+        painter.setPen(Qt::gray);
+        QFont font = painter.font();
+        font.setPointSize(14);
+        font.setItalic(true);
+        painter.setFont(font);
+        painter.drawText(rect, Qt::AlignCenter, pText);
+    }
+
+    QTreeView::paintEvent(event);
 }

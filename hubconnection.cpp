@@ -1,11 +1,20 @@
 #include "hubconnection.h"
 
+#ifdef Q_WS_WIN //If windows
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else //If Q_WS_X11
+#include <sys/socket.h>
+#include <sys/types.h>
+#endif
+
 HubConnection::HubConnection(QObject *parent) :
     QObject(parent)
 {
     hubSocket = new QTcpSocket(this);
     connect(hubSocket, SIGNAL(readyRead()), this, SLOT(processHubMessage()));
 	connect(hubSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(socketError(QAbstractSocket::SocketError)));
+    connect(hubSocket, SIGNAL(connected()), this, SLOT(socketConnected()));
 
 	//Initialize variables - if they're not going to be set
 	hubAddress = "127.0.0.1";
@@ -30,6 +39,7 @@ HubConnection::HubConnection(QString address, quint16 port, QString nick, QStrin
 	hubSocket = new QTcpSocket(this);
     connect(hubSocket, SIGNAL(readyRead()), this, SLOT(processHubMessage()));
 	connect(hubSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(socketError(QAbstractSocket::SocketError)));
+    connect(hubSocket, SIGNAL(connected()), this, SLOT(socketConnected()));
 
 	//Initialize variables - use set functions for type checking
 	setHubAddress(address);
@@ -291,8 +301,7 @@ void HubConnection::connectHub()
 			registeredUser = false;
             hubSocket->close();
 			hubSocket->connectToHost(hubAddress, hubPort);
-            hubSocket->setReadBufferSize(10*(1<<20)); //Set TCP read buffer to 10MB
-
+            
 			emit receivedChatMessage(tr("&lt;::info&gt;Connecting to %1:%2...").arg(hubAddress).arg(hubPort));
 		}
 	}
@@ -379,6 +388,25 @@ void HubConnection::keepaliveTimeout()
 {
     if (hubIsOnline)
         hubSocket->write(generateMyINFOString().toAscii());
+}
+
+//Slot called when hub socket is connected with hub
+void HubConnection::socketConnected()
+{
+    //Set TCP send buffer to 4MB
+    int size = 4 * 1<<20;
+    if (::setsockopt(hubSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(size)) == -1)
+    {
+        qDebug() << "HubConnection::socketConnected: Could not set send buffer to 4MB";
+    }
+    if (::setsockopt(hubSocket->socketDescriptor(), SOL_SOCKET, SO_RCVBUF, (char *)&size, sizeof(size)) == -1)
+    {
+        qDebug() << "HubConnection::socketConnected: Could not set receive buffer to 4MB";
+    }
+
+    //Try to keep the socket alive
+    hubSocket->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
+    hubSocket->setSocketOption(QAbstractSocket::LowDelayOption, 1);
 }
 
 // Get functions, so that we do not need to reconnect on every settings change

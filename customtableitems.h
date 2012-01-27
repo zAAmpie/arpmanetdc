@@ -27,6 +27,9 @@
 #include <QSet>
 #include <QProgressBar>
 #include <QDateTime>
+#include <QTreeView>
+#include <QListView>
+#include <QUrl>
 
 //Custom delegate to display HTML code in QTableView
 class HTMLDelegate : public QStyledItemDelegate
@@ -91,5 +94,61 @@ protected:
 private:
     QString pText;
 };
+
+//TreeView that can display placeholder text
+class CTextTreeView : public QTreeView
+{
+
+public:
+    CTextTreeView(const QString &text = "", QWidget *parent = 0) : QTreeView(parent) {pText = text;}
+
+    void setPlaceholderText(const QString &text) {pText = text;}
+    QString placeholderText() {return pText;}
+
+protected:
+    void paintEvent(QPaintEvent *);
+private:
+    QString pText;
+
+};
+
+//Draggable QTreeView
+class CDragTreeView : public CTextTreeView
+{
+    Q_OBJECT
+public:
+    CDragTreeView(QString text = "", QWidget *parent = 0) : CTextTreeView(text, parent) {} //Empty constructor
+
+    void mousePressEvent(QMouseEvent *event);
+    void mouseMoveEvent(QMouseEvent *event);
+
+    void dragMoveEvent(QDragMoveEvent *event);
+    //void dragEnterEvent(QDragEnterEvent *event) {}
+    //void dropEvent(QDropEvent *event) {}
+
+    void keyPressEvent(QKeyEvent *event);
+signals:
+    void keyPressed(Qt::Key key);
+private:
+    QPoint dragStartPosition;
+};
+
+//Droppble QTreeView
+class CDropTreeView : public CTextTreeView
+{
+    Q_OBJECT
+public:
+    CDropTreeView(QString text = "", QWidget *parent = 0) : CTextTreeView(text, parent) {} //Empty constructor
+    
+    void dragMoveEvent(QDragMoveEvent *event);
+    void dragEnterEvent(QDragEnterEvent *event);
+    void dropEvent(QDropEvent *event);
+
+    void keyPressEvent(QKeyEvent *event);
+signals:
+    void droppedURLList(QList<QUrl> list);
+    void keyPressed(Qt::Key key);
+};
+
 
 #endif

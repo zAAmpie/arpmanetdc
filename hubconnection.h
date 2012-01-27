@@ -73,6 +73,9 @@ private slots:
     //Keepalive timer expired
     void keepaliveTimeout();
 
+    //Slot called when hub socket is connected with hub
+    void socketConnected();
+
 private:
 	//Escaping functions
     QString escapeDCProtocol(QString);
