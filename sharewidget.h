@@ -23,7 +23,7 @@
 #include "sharesearch.h"
 #include "customtableitems.h"
 
-typedef QPair<quint64, QHash<QString, quint64>> ContainerContentsType;
+typedef QPair<quint64, QHash<QString, quint64> > ContainerContentsType;
 
 class ArpmanetDC;
 

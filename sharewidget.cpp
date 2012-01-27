@@ -406,7 +406,10 @@ void ShareWidget::switchedContainer(const QString &name)
             icon = pParent->resourceExtractorObject()->getIconFromName(suffix);
         }
         else if (fi.isDir())
-            icon = pParent->resourceExtractorObject()->getIconFromName(tr("folder"));
+        {
+            QString f = tr("folder");
+            icon = pParent->resourceExtractorObject()->getIconFromName(f);
+        }
 
         row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, fileName, icon));
         row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, filePath));
@@ -549,7 +552,10 @@ void ShareWidget::droppedURLList(QList<QUrl> list)
             icon = pParent->resourceExtractorObject()->getIconFromName(suffix);
         }
         else
-            icon = pParent->resourceExtractorObject()->getIconFromName(tr("folder"));
+        {
+            QString f = tr("folder");
+            icon = pParent->resourceExtractorObject()->getIconFromName(f);
+        }
             
         row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, fileName, icon));
         row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, filePath));
