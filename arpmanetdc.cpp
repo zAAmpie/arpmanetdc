@@ -48,7 +48,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     qRegisterMetaType<QueuePriority>("QueuePriority");
     qRegisterMetaType<FinishedDownloadStruct>("FinishedDownloadStruct");
     qRegisterMetaType<QDir>("QDir");
-    qRegisterMetaType<QList<QHostAddress>>("QList<QHostAddress>");
+    qRegisterMetaType<QList<QHostAddress> >("QList<QHostAddress>");
 
     //Set database pointer to zero at start
 	db = 0;
