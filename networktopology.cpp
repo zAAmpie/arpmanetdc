@@ -16,13 +16,21 @@ NetworkTopology::NetworkTopology(QObject *parent) :
     garbageCollectTimer->setSingleShot(false);
     connect(garbageCollectTimer, SIGNAL(timeout()), this, SLOT(collectBucketGarbage()));
     garbageCollectTimer->start();
+
+    savePeersTimer = new QTimer();
+    savePeersTimer->setInterval(300000); // 5 min
+    garbageCollectTimer->setSingleShot(false);
+    connect(savePeersTimer, SIGNAL(timeout()), this, SLOT(saveActivePeers()));
+    savePeersTimer->start();
 }
 
 NetworkTopology::~NetworkTopology()
 {
     delete bootstrapTimeoutTimer;
     delete garbageCollectTimer;
-    if (QDateTime::currentMSecsSinceEpoch() - startupTime > 120000)
+    delete savePeersTimer;
+    //Emitting signal in this destructor will likely not be transmitted since every object is going down along with it
+    if (QDateTime::currentMSecsSinceEpoch() - startupTime > 120000) //Don't save hosts unless the program has been online for 2min
     {
         QList<QHostAddress> activeNodes = getForwardingPeers(100);
         emit saveLastKnownPeers(activeNodes);
@@ -321,6 +329,13 @@ void NetworkTopology::collectBucketGarbage()
             }
         }
     }
+}
+
+void NetworkTopology::saveActivePeers()
+{
+    //Emit a signal, saving the last active nodes to the database
+    QList<QHostAddress> activeNodes = getForwardingPeers(100);
+    emit saveLastKnownPeers(activeNodes);
 }
 
 // DEBUGGING

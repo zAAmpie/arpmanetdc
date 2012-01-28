@@ -931,6 +931,81 @@ void ShareSearch::query1MBTTH(QByteArray tthRoot, qint64 offset)
 }
 
 
+//Save the last known bootstrapped peers
+void ShareSearch::saveLastKnownPeers(QList<QHostAddress> peers)
+{
+    //Insert a bootstrap peer into the database
+    QStringList queryStr;
+    for (int i = 0; i < peers.size(); i++)
+    {
+        queryStr.append(tr("INSERT INTO LastKnownPeers ([ip]) VALUES (?);"));
+    }
+
+	sqlite3 *db = pParent->database();	
+	sqlite3_stmt *statement;
+
+    for (int i = 0; i < queryStr.size(); i++)
+    {
+	    //Prepare a query
+	    QByteArray query;
+	    query.append(queryStr.at(i));
+	    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+	    {
+		    //Bind parameters
+		    int res = 0;
+            QString ip = peers.at(i).toString();
+		    res = res | sqlite3_bind_text16(statement, 2, ip.utf16(), ip.size()*2, SQLITE_STATIC);
+
+		    int cols = sqlite3_column_count(statement);
+		    int result = 0;
+		    while (sqlite3_step(statement) == SQLITE_ROW);
+		    sqlite3_finalize(statement);	
+	    }
+
+	    //Catch all error messages
+	    QString error = sqlite3_errmsg(db);
+	    if (error != "not an error")
+		    QString error = "error";
+    }
+
+    //Commit to ensure access to database hasn't blocked hashing process
+    commitTransaction();
+}
+
+//Return the last known bootstrapped peers
+void ShareSearch::requestLastKnownPeers()
+{
+    //Query the database with the search string
+	QString queryStr = tr("SELECT DISTINCT [ip] FROM LastKnownPeers;");
+
+	QList<QHostAddress> peers;
+	sqlite3 *db = pParent->database();	
+	sqlite3_stmt *statement;
+
+	//Prepare a query
+	QByteArray query;
+	query.append(queryStr);
+	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+	{
+        int cols = sqlite3_column_count(statement);
+		int result = 0;
+		while (sqlite3_step(statement) == SQLITE_ROW)
+		{
+			peers.append(QHostAddress(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0))));
+		}
+		sqlite3_finalize(statement);	
+	}
+
+	//Catch all error messages
+	QString error = sqlite3_errmsg(db);
+	if (error != "not an error")
+		QString error = "error";
+
+    //Signal to return last known peers
+    emit sendLastKnownPeers(peers);
+}
+
+
 //------------------------------============================== GET HASH FROM FILE PATCH (SHARE WIDGET) ==============================------------------------------
 
 //Gets the hash from a filepath if it exists in the database

@@ -90,6 +90,12 @@ public slots:
     //Return the 1MB TTH given a TTH root and file offset
 	void query1MBTTH(QByteArray tthRoot, qint64 offset);
 
+    //Save the last known bootstrapped peers
+    void saveLastKnownPeers(QList<QHostAddress> peers);
+
+    //Return the last known bootstrapped peers
+    void requestLastKnownPeers();
+
     //----------========== GET HASH FROM FILE PATCH (SHARE WIDGET) ==========----------
 
     //Gets the hash from a filepath if it exists in the database
@@ -204,6 +210,9 @@ signals:
     //Signal to return 1MB TTH
 	void return1MBTTH(QByteArray tth1MB);
 
+    //Signal to return last known peers
+    void sendLastKnownPeers(QList<QHostAddress> peers);
+    
     //----------========== GET HASH FROM FILE PATCH (SHARE WIDGET) ==========----------
 
     //Signal the reply of the hash
