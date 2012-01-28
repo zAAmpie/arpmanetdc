@@ -3,7 +3,7 @@
 #ifdef Q_WS_WIN //If windows
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#else //If Q_WS_X11
+#else //If Q_OS_LINUX
 #include <sys/socket.h>
 #include <sys/types.h>
 #endif
@@ -947,6 +947,20 @@ void Dispatcher::sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *dat
     //if (senderUdpSocket->writeDatagram(*datagram, dstAddress, dispatchPort) == -1)
     //    emit writeUdpUnicastFailed();
 
+
+    // **************************************
+    /* man 7 socket:
+       SO_SNDBUF
+              Sets or gets the maximum socket send buffer in bytes.  The  ker‐
+              nel doubles this value (to allow space for bookkeeping overhead)
+              when it is set using setsockopt(2), and this  doubled  value  is
+              returned  by  getsockopt(2).   The  default  value is set by the
+              /proc/sys/net/core/wmem_default file  and  the  maximum  allowed
+              value is set by the /proc/sys/net/core/wmem_max file.  The mini‐
+              mum (doubled) value for this option is 2048.
+    */
+
+
     if (senderUdpSocket->peerAddress() != dstAddress)
     {
         senderUdpSocket->disconnectFromHost();
@@ -954,26 +968,28 @@ void Dispatcher::sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *dat
     }
 
     int size = 0;
+    int maxSize = getMaximumSendBufferSize();
     socklen_t *s = new socklen_t(sizeof(size));
-    if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
+    if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, s) != -1) //successfully read
     {
-        if (size != 4*(1<<20)) //set if not already set
+        if (size != maxSize) //set if not already set
         {
-            size = 4*(1<<20); //10MB
-            if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(size)) == -1) //couldn't write
+            size = maxSize;
+            if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, sizeof(size)) == -1) //couldn't write
             {
-                qDebug() << "Dispatcher::sendUnicastRawDatagram: Could not set sending buffer to 10MB";
+                qDebug() << "Dispatcher::sendUnicastRawDatagram: Could not set sending buffer size";
             }
+#ifndef Q_OS_LINUX
             else
             {
                 //verify if set correctly
-                if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
+                if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, s) != -1) //successfully read
                 {
-                    if (size != 4*(1<<20))
-                        qDebug() << "Dispatcher::sendUnicastRawDatagram: Value returned inconsistent with value set";
+                    if (size != maxSize)
+                        qDebug() << "Dispatcher::sendUnicastRawDatagram: Value returned inconsistent with value set " << size << maxSize;
                 }
             }
-
+#endif
         }
     }
     delete s;
@@ -1000,26 +1016,28 @@ void Dispatcher::sendBroadcastRawDatagram(QByteArray &datagram)
     }
 
     int size = 0;
+    int maxSize = getMaximumSendBufferSize();
     socklen_t *s = new socklen_t(sizeof(size));
-    if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
+    if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, s) != -1) //successfully read
     {
-        if (size != 4*(1<<20)) //set if not already set
+        if (size != maxSize) //set if not already set
         {
-            size = 4*(1<<20); //10MB
-            if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(size)) == -1) //couldn't write
+            size = maxSize;
+            if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, sizeof(size)) == -1) //couldn't write
             {
-                qDebug() << "Dispatcher::sendBroadcastRawDatagram: Could not set sending buffer to 10MB";
+                qDebug() << "Dispatcher::sendBroadcastRawDatagram: Could not set sending buffer size";
             }
+#ifndef Q_OS_LINUX
             else
             {
                 //verify if set correctly
-                if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
+                if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, s) != -1) //successfully read
                 {
-                    if (size != 4*(1<<20))
-                        qDebug() << "Dispatcher::sendBroadcastRawDatagram: Value returned inconsistent with value set";
+                    if (size != maxSize)
+                        qDebug() << "Dispatcher::sendBroadcastRawDatagram: Value returned inconsistent with value set " << size << maxSize;
                 }
             }
-
+#endif
         }
     }
     delete s;
@@ -1044,26 +1062,28 @@ void Dispatcher::sendMulticastRawDatagram(QByteArray &datagram)
     }
 
     int size = 0;
+    int maxSize = getMaximumSendBufferSize();
     socklen_t *s = new socklen_t(sizeof(size));
-    if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
+    if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, s) != -1) //successfully read
     {
-        if (size != 10*(1<<20)) //set if not already set
+        if (size != maxSize) //set if not already set
         {
-            size = 10*(1<<20); //10MB
-            if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(size)) == -1) //couldn't write
+            size = maxSize;
+            if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, sizeof(size)) == -1) //couldn't write
             {
-                qDebug() << "Dispatcher::sendMulticastRawDatagram: Could not set sending buffer to 10MB";
+                qDebug() << "Dispatcher::sendMulticastRawDatagram: Could not set sending buffer size";
             }
+#ifndef Q_OS_LINUX
             else
             {
                 //verify if set correctly
-                if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
+                if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, s) != -1) //successfully read
                 {
-                    if (size != 10*(1<<20))
-                        qDebug() << "Dispatcher::sendMulticastRawDatagram: Value returned inconsistent with value set";
+                    if (size != maxSize)
+                        qDebug() << "Dispatcher::sendMulticastRawDatagram: Value returned inconsistent with value set " << size << maxSize;
                 }
             }
-
+#endif
         }
     }
     delete s;
@@ -1104,6 +1124,29 @@ void Dispatcher::rejoinMulticastTimeout()
 #if QT_VERSION >= 0x040800
     receiverUdpSocket->joinMulticastGroup(mcastAddress);
 #endif
+}
+
+int Dispatcher::getMaximumSendBufferSize()
+{
+    if (maximumSendBufferSize == 0)
+    {
+        int size = 10*(1<<20);
+#ifdef Q_OS_LINUX
+        QFile file("/proc/sys/net/core/wmem_max");
+        if (file.open(QIODevice::ReadOnly | QIODevice::Text))
+        {
+            QString line = file.readLine();
+            size = line.toLong();
+            qDebug() << "wmem_max:" << size;
+        }
+        if (size < 10240)
+            size = 10240;
+        else if (size > (10*(1<<20)))
+            size = 10*(1<<20);
+#endif
+        maximumSendBufferSize = size;
+    }
+    return maximumSendBufferSize;
 }
 
 // ------------------=====================   GET FUNCTIONS   =====================----------------------

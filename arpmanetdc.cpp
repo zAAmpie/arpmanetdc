@@ -19,6 +19,10 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
         pSharedMemory->lock();
         memcpy((char *)pSharedMemory->data(), magnetArg.constData(), qMin(magnetArg.size(), pSharedMemory->size()));
         pSharedMemory->unlock();
+
+#ifdef Q_OS_LINUX
+        pSharedMemory->detach();
+#endif
         
         //Close this instance
         return;
@@ -453,6 +457,10 @@ ArpmanetDC::~ArpmanetDC()
 
     //Destroy and detach the shared memory sector
     pSharedMemory->deleteLater();
+
+#ifdef Q_OS_LINUX
+    pSharedMemory->detach();
+#endif
 }
 
 bool ArpmanetDC::setupDatabase()
