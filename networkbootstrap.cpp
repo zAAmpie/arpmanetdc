@@ -100,6 +100,15 @@ void NetworkBootstrap::performBootstrap()
         emit sendMulticastAnnounce();
         emit sendBroadcastAnnounce();
         bootstrapTimer->start(15000);
+        break;
+    case NETWORK_BCAST:
+        emit sendBroadcastAnnounce();
+        bootstrapTimer->start(120000);
+        break;
+    case NETWORK_MCAST:
+        emit sendMulticastAnnounce();
+        bootstrapTimer->start(120000);
+        break;
     }
 }
 

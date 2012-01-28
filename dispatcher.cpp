@@ -138,6 +138,7 @@ void Dispatcher::receiveP2PData()
             handleProtocolInstruction(quint8DatagramType, quint8ProtocolInstruction, datagram, senderHost);
             emit broadcastPacketReceived();
             break;
+
         case UnicastPacket:
             handleProtocolInstruction(quint8DatagramType, quint8ProtocolInstruction, datagram, senderHost);
             emit unicastPacketReceiced();
@@ -669,7 +670,6 @@ void Dispatcher::handleIncomingUploadRequest(QHostAddress &fromHost, QByteArray 
     //QByteArray protocolHint = datagram.mid(43);
     emit incomingUploadRequest(protocol, fromHost, tth, offset, length);
 }
-
 
 void Dispatcher::sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length)
 {
