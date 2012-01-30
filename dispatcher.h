@@ -217,6 +217,8 @@ private:
 
     // Misc functions
     QByteArray fixedCIDLength(QByteArray);
+    int getMaximumSendBufferSize();
+    int maximumSendBufferSize;
 
     // Multicast rejoin timer
     QTimer *rejoinMulticastTimer;

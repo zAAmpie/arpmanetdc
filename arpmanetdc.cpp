@@ -19,6 +19,10 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
         pSharedMemory->lock();
         memcpy((char *)pSharedMemory->data(), magnetArg.constData(), qMin(magnetArg.size(), pSharedMemory->size()));
         pSharedMemory->unlock();
+
+#ifdef Q_OS_LINUX
+        pSharedMemory->detach();
+#endif
         
         //Close this instance
         return;
@@ -40,7 +44,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
         }
     }
 
-	//QApplication::setStyle(new QCleanlooksStyle());
+    //QApplication::setStyle(new QCleanlooksStyle());
 
     //Register QHostAddress for queueing over threads
     qRegisterMetaType<QHostAddress>("QHostAddress");
@@ -48,7 +52,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     qRegisterMetaType<QueuePriority>("QueuePriority");
     qRegisterMetaType<FinishedDownloadStruct>("FinishedDownloadStruct");
     qRegisterMetaType<QDir>("QDir");
-    qRegisterMetaType<QList<QHostAddress>>("QList<QHostAddress>");
+    qRegisterMetaType<QList<QHostAddress> >("QList<QHostAddress>");
 
     //Set database pointer to zero at start
 	db = 0;
@@ -454,6 +458,10 @@ ArpmanetDC::~ArpmanetDC()
 
     //Destroy and detach the shared memory sector
     pSharedMemory->deleteLater();
+
+#ifdef Q_OS_LINUX
+    pSharedMemory->detach();
+#endif
 }
 
 bool ArpmanetDC::setupDatabase()
