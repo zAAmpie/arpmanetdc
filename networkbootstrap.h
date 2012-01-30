@@ -85,6 +85,7 @@ private slots:
     void networkScanTimerEvent();
     void keepaliveTimerEvent();
     void linscanTimerEvent();
+    void linscanOutputTimerEvent();
 
 private:
     // Bootstrap
@@ -96,6 +97,7 @@ private:
     QTimer *networkScanTimer;
     QTimer *keepaliveTimer;
     QTimer *linscanTimer;
+    QTimer *linscanOutputTimer;
 
     // Network scanning ranges
     QMap<quint32, quint32> networkScanRanges;
@@ -105,6 +107,9 @@ private:
     // Linear scan iterator
     // A bit hackish, but it does the job
     QMap<quint32, quint32>::iterator linscanIterator;
+
+    // Linear scan output queue
+    QList<QHostAddress> linscanOutputQueue;
 };
 
 #endif // NETWORKBOOTSTRAP_H

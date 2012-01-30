@@ -206,6 +206,10 @@ void NetworkBootstrap::initiateLinscan()
     linscanTimer = new QTimer(this);
     connect(linscanTimer, SIGNAL(timeout()), this, SLOT(linscanTimerEvent()));
 
+    // hackish PoC/PoS (depends on how you look at it), TODO: use only one timer
+    linscanOutputTimer = new QTimer(this);
+    connect(linscanOutputTimer, SIGNAL(timeout()), this, SLOT(linscanOutputTimerEvent()));
+
     // Initialize iterator to networkScanRanges
     linscanIterator = networkScanRanges.begin();
 
@@ -222,6 +226,8 @@ void NetworkBootstrap::killLinscan()
     // TODO: Show amount of hosts added during linear scan
     linscanTimer->stop();
     delete linscanTimer;
+    linscanOutputTimer->stop();
+    delete linscanOutputTimer;
     emit appendChatLine("<font color=\"grey\">[LINSCAN] Linear scan stopped</font>");
 
     // Start bootstrap timer again
@@ -242,11 +248,28 @@ void NetworkBootstrap::linscanTimerEvent()
         QHostAddress scanHost = QHostAddress(host);
         if (scanHost.isNull() || scanHost == QHostAddress(QHostAddress::LocalHost) || scanHost == QHostAddress(QHostAddress::Null) || scanHost == QHostAddress(QHostAddress::Any))
             continue;
-        emit sendRequestAllBuckets(scanHost);
+        //emit sendRequestAllBuckets(scanHost);
+        linscanOutputQueue.push_back(scanHost);
     }
+    if (!linscanOutputTimer->isActive())
+        linscanOutputTimer->start(50);
 
     ++linscanIterator;
     if (linscanIterator==networkScanRanges.end())
         killLinscan();
 
+}
+
+// I remember the days when some of the routers crashed every 2 hours when all those Windows virii were scanning for friends like there were no tomorrow.
+// These outages were not caused by the sheer volume of traffic (the bit throughput rate was not at all that high), but rather because it tried to send data
+// to many hosts at once. Ethernet ARPs every IP before the first packet to a destination is sent, to look up the ethernet address associated with that particular
+// IP address, so that the Ethernet layer can actually deliver the frame to the relevant NIC. Should we drop a bomb like this at an inopportune time, we might as
+// well repeat what we have learned 6 years ago.
+// I suggest moderating the output rate of the scanner. We really do not need 2 timers for this, but this was the quickest/easiest way to draft the concept.
+void NetworkBootstrap::linscanOutputTimerEvent()
+{
+    if (!linscanOutputQueue.isEmpty())
+        emit sendRequestAllBuckets(linscanOutputQueue.takeFirst());
+    else
+        linscanOutputTimer->stop();
 }

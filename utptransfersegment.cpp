@@ -148,7 +148,14 @@ size_t uTPTransferSegment::uTPGetRBSize()
 
 void uTPTransferSegment::uTPState(int state)
 {
-    // TODO (or ignore?)
+    if (state == UTP_STATE_CONNECT || state == UTP_STATE_WRITABLE)
+    {
+        if (UTP_Write(utpSocket, segmentLength))
+        {
+            // Testing only, this can really be improved, persistent connections will perform better.
+            UTP_Close(utpSocket);
+        }
+    }
 }
 
 void uTPTransferSegment::uTPError(int errcode)
