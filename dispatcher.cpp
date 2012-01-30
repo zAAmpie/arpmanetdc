@@ -521,22 +521,29 @@ void Dispatcher::handleReceivedSearchForwardRequest(QHostAddress &fromAddr, QByt
         sendBroadcastRawDatagram(searchToForward);
     // else drop silently
 
+    // handle search question while here, in case we don't hear ourselves broadcast it.
+    // TODO: add duplicate search killer with moving window somewhere in this mess.
+    handleReceivedSearchQuestion(fromAddr, datagram);
+
     emit searchForwardReceived(); // stats
 }
 
 // kan later besluit of ons host adres uit pakkie uit wil parse of van socket af wil kry of wat.
+// update: kry uit pakkie sodat forwarded searches na searcher gaan en nie na forwarder nie
+//       : TODO: dink oor 'n manier om die DDoS moontlikheid wat hierin skuil aan te spreek :)
 void Dispatcher::handleReceivedSearchQuestion(QHostAddress &fromHost, QByteArray &datagram)
 {
-    QByteArray tmp = datagram.mid(6, 8);
-    quint64 searchID = getQuint64FromByteArray(&tmp);
-    QByteArray clientCID = datagram.mid(14, 24);
-    tmp = datagram.mid(38, 2);
-    int searchLength = getQuint16FromByteArray(&tmp);
-    QByteArray searchData = datagram.mid(40, searchLength);
-    QByteArray bucket = datagram.mid(40 + searchLength);
+    datagram.remove(0, 2);
+    QHostAddress sendToHost = QHostAddress(getQuint32FromByteArray(&datagram));
+    quint64 searchID = getQuint64FromByteArray(&datagram);
+    QByteArray clientCID = datagram.left(8);
+    datagram.remove(0, 8);
+    int searchLength = getQuint16FromByteArray(&datagram);
+    QByteArray searchData = datagram.left(searchLength);
+    QByteArray bucket = datagram.right(datagram.length() - searchLength);
 
     if (searchData.length() > 0)
-        emit searchQuestionReceived(fromHost, clientCID, searchID, searchData);
+        emit searchQuestionReceived(sendToHost, clientCID, searchID, searchData);
 
     if (bucket.length() > 0)
         emit bucketContentsArrived(bucket, fromHost);
@@ -631,6 +638,8 @@ void Dispatcher::handleReceivedTTHSearchForwardRequest(QHostAddress &fromAddr, Q
         sendBroadcastRawDatagram(searchToForward);
     // else drop silently
 
+    handleReceivedTTHSearchQuestion(fromAddr, datagram);
+
     emit searchForwardReceived(); // stats
 }
 
@@ -647,13 +656,18 @@ void Dispatcher::handleArrivedTTHSearchResult(QHostAddress &fromAddr, QByteArray
 
 void Dispatcher::handleReceivedTTHSearchQuestion(QHostAddress &fromAddr, QByteArray &datagram)
 {
-    QByteArray tmp = datagram.mid(2, 4);
-    QHostAddress allegedFromAddr = QHostAddress(getQuint32FromByteArray(&tmp));
-    if (fromAddr != allegedFromAddr) // mainly to catch misconfigured nodes behind NAT
-        return;
+    //QByteArray tmp = datagram.mid(2, 4);
+    //QHostAddress allegedFromAddr = QHostAddress(getQuint32FromByteArray(&tmp));
+    //if (fromAddr != allegedFromAddr) // mainly to catch misconfigured nodes behind NAT
+    //    return;
 
-    QByteArray tth(datagram.mid(6));
-    emit TTHSearchQuestionReceived(tth, fromAddr);
+    //QByteArray tth(datagram.mid(6));
+    //emit TTHSearchQuestionReceived(tth, fromAddr);
+
+    // update: results must go to address specified in packet, otherwise they end up at the forwarding node.
+    datagram.remove(0, 2);
+    QHostAddress sendToHost = QHostAddress(getQuint32FromByteArray(&datagram));
+    emit TTHSearchQuestionReceived(datagram, sendToHost);
 }
 
 // ------------------=====================   Data transfer functions   =====================----------------------
