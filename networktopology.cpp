@@ -110,7 +110,8 @@ void NetworkTopology::bucketContentsArrived(QByteArray bucket, QHostAddress send
         iter++;
         QHostAddress addr = QHostAddress(getQuint32FromByteArray(&bucket));
         qint64 age = (qint64)(getQuint16FromByteArray(&bucket) * 1000);
-        if (getHostAge(bucketID, addr) > age)
+        qint64 storedAge = getHostAge(bucketID, addr);
+        if ((storedAge > age) || (storedAge == -1))
             updateHostTimestamp(bucketID, addr, age);
     }
     // the replyee is not in his own bucket, since buckets only contain dispatch ip's as seen from the network.
@@ -158,7 +159,7 @@ QByteArray NetworkTopology::getOwnBucket()
 {
     QByteArray ownBucket = getOwnBucketId();
     QByteArray bucket = getBucket(ownBucket);
-    // I believe this below is wrong, just sending a bucket ID alone is the preferred way.
+    // I believe this below is wrong, just sending a bucket ID alone is the preferred way when our own bucket is empty.
     //if (bucket.length() == 24)
     //{
     //    bucket.append(toQByteArray(dispatchIP.toIPv4Address()));
