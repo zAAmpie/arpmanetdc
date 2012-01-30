@@ -240,6 +240,8 @@ void NetworkBootstrap::linscanTimerEvent()
     for (quint32 host = rangeBase; host <= rangeBase + rangeLength; ++host)
     {
         QHostAddress scanHost = QHostAddress(host);
+        if (scanHost.isNull() || scanHost == QHostAddress(QHostAddress::LocalHost) || scanHost == QHostAddress(QHostAddress::Null) || scanHost == QHostAddress(QHostAddress::Any))
+            continue;
         emit sendRequestAllBuckets(scanHost);
     }
 
