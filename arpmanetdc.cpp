@@ -149,6 +149,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 	connect(pDispatcher, SIGNAL(bootstrapStatusChanged(int)), this, SLOT(bootstrapStatusChanged(int)));
     connect(pDispatcher, SIGNAL(searchResultsReceived(QHostAddress, QByteArray, quint64, QByteArray)),
             this, SLOT(searchResultReceived(QHostAddress, QByteArray, quint64, QByteArray)));
+	connect(pDispatcher, SIGNAL(appendChatLine(QString)), this, SLOT(appendChatLine(QString)));
 
     // Create Transfer manager
     transferThread = new ExecThread();
@@ -924,6 +925,12 @@ void ArpmanetDC::chatLineEditReturnPressed()
     {
         appendChatLine("DEBUG CID Host contents");
         appendChatLine(pDispatcher->getDebugCIDHostContents());
+        chatLineEdit->setText("");
+    }
+    else if (chatLineEdit->text().compare("+linscan") == 0)
+    {
+        appendChatLine("DEBUG Linear scan hosts on network");
+        pDispatcher->initiateLinscan();
         chatLineEdit->setText("");
     }
     else

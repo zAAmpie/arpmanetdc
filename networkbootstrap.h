@@ -61,6 +61,9 @@ signals:
     // Initialize scanlist
     void requestLastKnownPeers();
 
+    // Debug messages
+    void appendChatLine(QString message);
+
 public slots:
     // Bootstrapping
     void performBootstrap();
@@ -73,11 +76,15 @@ public slots:
     // Initialize scanlist
     void receiveLastKnownPeers(QList<QHostAddress> peers);
 
+    // Do linear scan
+    void initiateLinscan();
+    void killLinscan();
 
 private slots:
     // Timer events
     void networkScanTimerEvent();
     void keepaliveTimerEvent();
+    void linscanTimerEvent();
 
 private:
     // Bootstrap
@@ -88,11 +95,16 @@ private:
     QTimer *bootstrapTimer;
     QTimer *networkScanTimer;
     QTimer *keepaliveTimer;
+    QTimer *linscanTimer;
 
     // Network scanning ranges
     QMap<quint32, quint32> networkScanRanges;
     quint32 totalScanHosts;
     int networkScanTimeouts;
+
+    // Linear scan iterator
+    // A bit hackish, but it does the job
+    QMap<quint32, quint32>::iterator linscanIterator;
 };
 
 #endif // NETWORKBOOTSTRAP_H

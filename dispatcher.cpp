@@ -17,6 +17,7 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     mcastAddress = QHostAddress("239.255.40.12");
     bcastAddress = QHostAddress("255.255.255.255");
     protocolCapabilityBitmask = 0;
+    maximumSendBufferSize = 0;
 
     // Init P2P dispatch socket
     receiverUdpSocket = new QUdpSocket(this);
@@ -46,6 +47,7 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
             this, SLOT(requestAllBuckets(QHostAddress)));
     connect(networkBootstrap, SIGNAL(requestLastKnownPeers()), this, SIGNAL(requestLastKnownPeers()));
     connect(this, SIGNAL(sendLastKnownPeers(QList<QHostAddress>)), networkBootstrap, SLOT(receiveLastKnownPeers(QList<QHostAddress>)));
+    connect(networkBootstrap, SIGNAL(appendChatLine(QString)), this, SIGNAL(appendChatLine(QString)));
         
     // Network topology manager
     networkTopology = new NetworkTopology(this);
@@ -155,7 +157,6 @@ void Dispatcher::receiveP2PData()
 void Dispatcher::handleProtocolInstruction(quint8 &quint8DatagramType, quint8 &quint8ProtocolInstruction, QByteArray &datagram,
                                            QHostAddress &senderHost)
 {
-    QString ipStr;
     // try to sort this from most frequently used to less frequently used
     switch(quint8ProtocolInstruction)
     {
@@ -176,7 +177,6 @@ void Dispatcher::handleProtocolInstruction(quint8 &quint8DatagramType, quint8 &q
         break;
 
     case BucketExchangePacket:
-        ipStr = senderHost.toString();
         emit bucketContentsArrived(datagram.mid(2), senderHost);
         break;
 
@@ -902,7 +902,6 @@ void Dispatcher::sendLocalBucket(QHostAddress &host)
 
 void Dispatcher::sendAllBuckets(QHostAddress &host)
 {
-    QString ipStr = host.toString();
     QList<QByteArray> bucketList = networkTopology->getAllBuckets();
     QListIterator<QByteArray> it(bucketList);
     while (it.hasNext())
@@ -925,7 +924,6 @@ void Dispatcher::requestBucketContents(QHostAddress host)
 
 void Dispatcher::requestAllBuckets(QHostAddress host)
 {
-    QString ipStr = host.toString();
     QByteArray *datagram = new QByteArray;
     datagram->append(UnicastPacket);
     datagram->append(RequestAllBucketsPacket);
@@ -943,6 +941,11 @@ void Dispatcher::addNetworkScanRange(quint32 rangeBase, quint32 rangeEnd)
 void Dispatcher::removeNetworkScanRange(quint32 rangeBase)
 {
     networkBootstrap->removeNetworkScanRange(rangeBase);
+}
+
+void Dispatcher::initiateLinscan()
+{
+    networkBootstrap->initiateLinscan();
 }
 
 // ------------------=====================   Raw transmission functions   =====================----------------------
@@ -979,12 +982,13 @@ void Dispatcher::sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *dat
         return;
     }
 
-    if (senderUdpSocket->peerAddress() != dstAddress)
+    /*if (senderUdpSocket->peerAddress() != dstAddress)
     {
         senderUdpSocket->disconnectFromHost();
         senderUdpSocket->connectToHost(dstAddress, dispatchPort);
-    }
+    }*/
 
+    QAbstractSocket::SocketState state = senderUdpSocket->state();
     int size = 0;
     int maxSize = getMaximumSendBufferSize();
     socklen_t *s = new socklen_t(sizeof(size));
@@ -1013,10 +1017,10 @@ void Dispatcher::sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *dat
     delete s;
 
     int res;
-    if ((res = senderUdpSocket->write(*datagram)) == -1)
-        emit writeUdpUnicastFailed();
-    //if (res = senderUdpSocket->writeDatagram(*datagram, dstAddress, dispatchPort) == -1)
+    //if ((res = senderUdpSocket->write(*datagram)) == -1)
     //    emit writeUdpUnicastFailed();
+    if (res = senderUdpSocket->writeDatagram(*datagram, dstAddress, dispatchPort) == -1)
+        emit writeUdpUnicastFailed();
 
     delete datagram;
 }
@@ -1027,11 +1031,11 @@ void Dispatcher::sendBroadcastRawDatagram(QByteArray &datagram)
     //    emit writeUdpBroadcastFailed();
 
     //if ((senderUdpSocket->state() != QAbstractSocket::ConnectingState && senderUdpSocket->state() != QAbstractSocket::ConnectedState) && senderUdpSocket->peerAddress() != bcastAddress)
-    if (senderUdpSocket->peerAddress() != bcastAddress)
+    /*if (senderUdpSocket->peerAddress() != bcastAddress)
     {
         senderUdpSocket->disconnectFromHost();
         senderUdpSocket->connectToHost(bcastAddress, dispatchPort);
-    }
+    }*/
 
     int size = 0;
     int maxSize = getMaximumSendBufferSize();
@@ -1061,10 +1065,10 @@ void Dispatcher::sendBroadcastRawDatagram(QByteArray &datagram)
     delete s;
 
     int res;
-    if ((res = senderUdpSocket->write(datagram)) == -1)
-        emit writeUdpBroadcastFailed();
-    //if (senderUdpSocket->writeDatagram(datagram, bcastAddress, dispatchPort) == -1)
+    //if ((res = senderUdpSocket->write(datagram)) == -1)
     //    emit writeUdpBroadcastFailed();
+    if (senderUdpSocket->writeDatagram(datagram, bcastAddress, dispatchPort) == -1)
+        emit writeUdpBroadcastFailed();
 }
 
 void Dispatcher::sendMulticastRawDatagram(QByteArray &datagram)
@@ -1073,11 +1077,11 @@ void Dispatcher::sendMulticastRawDatagram(QByteArray &datagram)
     //    emit writeUdpMulticastFailed();
 
     //if ((senderUdpSocket->state() != QAbstractSocket::ConnectingState && senderUdpSocket->state() != QAbstractSocket::ConnectedState) && senderUdpSocket->peerAddress() != mcastAddress)
-    if (senderUdpSocket->peerAddress() != mcastAddress)
+    /*if (senderUdpSocket->peerAddress() != mcastAddress)
     {
         senderUdpSocket->disconnectFromHost();
         senderUdpSocket->connectToHost(mcastAddress, dispatchPort);
-    }
+    }*/
 
     int size = 0;
     int maxSize = getMaximumSendBufferSize();
@@ -1107,10 +1111,10 @@ void Dispatcher::sendMulticastRawDatagram(QByteArray &datagram)
     delete s;
 
     int res;
-    if ((res = senderUdpSocket->write(datagram)) == -1)
-        emit writeUdpMulticastFailed();
-    //if (senderUdpSocket->writeDatagram(datagram, mcastAddress, dispatchPort) == -1)
+    //if ((res = senderUdpSocket->write(datagram)) == -1)
     //    emit writeUdpMulticastFailed();
+    if (senderUdpSocket->writeDatagram(datagram, mcastAddress, dispatchPort) == -1)
+        emit writeUdpMulticastFailed();
 }
 
 // ------------------=====================   Misc functions   =====================----------------------

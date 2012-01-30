@@ -195,3 +195,56 @@ void NetworkBootstrap::removeNetworkScanRange(quint32 rangeBase)
         networkScanRanges.remove(rangeBase);
     }
 }
+
+void NetworkBootstrap::initiateLinscan()
+{
+    // TODO: Check whether Timer is already running
+    // Stop random network scanner
+    networkScanTimer->stop();
+
+    // Init linear scanning timer
+    linscanTimer = new QTimer(this);
+    connect(linscanTimer, SIGNAL(timeout()), this, SLOT(linscanTimerEvent()));
+
+    // Initialize iterator to networkScanRanges
+    linscanIterator = networkScanRanges.begin();
+
+    // Start timer!
+    linscanTimer->start(1500);
+
+    qDebug() << "NetworkBootstrap::initiateLinscan(): Starting linear scan";
+    emit appendChatLine("<font color=\"grey\">[LINSCAN] Linear scan started</font>");
+}
+
+
+void NetworkBootstrap::killLinscan()
+{
+    // TODO: Show amount of hosts added during linear scan
+    linscanTimer->stop();
+    delete linscanTimer;
+    emit appendChatLine("<font color=\"grey\">[LINSCAN] Linear scan stopped</font>");
+
+    // Start bootstrap timer again
+    networkScanTimer->start(2000);
+}
+
+void NetworkBootstrap::linscanTimerEvent()
+{
+    // TODO: Replace unicast with multicast
+    quint32 rangeBase = linscanIterator.key();
+    quint32 rangeLength = linscanIterator.value();
+    qDebug() << "NetworkBootstrap::linscanTimerEvent(): Scanning range " << QHostAddress(rangeBase).toString() << " - " << QHostAddress(rangeBase + rangeLength).toString();
+    QString msg = "<font color=\"grey\">[LINSCAN] Scanning range " + QHostAddress(rangeBase).toString() + " - " + QHostAddress(rangeBase + rangeLength).toString() + "</font>";
+    emit appendChatLine(msg);
+
+    for (quint32 host = rangeBase; host <= rangeBase + rangeLength; ++host)
+    {
+        QHostAddress scanHost = QHostAddress(host);
+        emit sendRequestAllBuckets(scanHost);
+    }
+
+    ++linscanIterator;
+    if (linscanIterator==networkScanRanges.end())
+        killLinscan();
+
+}

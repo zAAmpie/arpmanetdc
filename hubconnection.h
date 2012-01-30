@@ -59,6 +59,8 @@ signals:
 	void hubOnline();
 	//Socket error emitted every time
 	void hubError(QString error);
+    // Debug messages
+    void appendChatLine(QString message);
 
 private slots:
 	//Received a message from the hub
