@@ -59,7 +59,8 @@
 
 #define SHARE_DATABASE_PATH "arpmanetdc.sqlite"
 
-#define UNSUPPORTED_TRANSFER_PROTOCOLS "BTP;uTP;FECTP" //Semi-colon separated - only used to gray out protocol in settings
+//#define UNSUPPORTED_TRANSFER_PROTOCOLS "BTP;uTP;FECTP" //Semi-colon separated - only used to gray out protocol in settings
+#define UNSUPPORTED_TRANSFER_PROTOCOLS "BTP;FECTP"
 
 //Initialize the protocol map
 static QMap<QString, char> initMapValues() {

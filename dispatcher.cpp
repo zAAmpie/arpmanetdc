@@ -535,9 +535,10 @@ void Dispatcher::handleReceivedSearchQuestion(QHostAddress &fromHost, QByteArray
 {
     datagram.remove(0, 2);
     QHostAddress sendToHost = QHostAddress(getQuint32FromByteArray(&datagram));
+    QString q = sendToHost.toString();
     quint64 searchID = getQuint64FromByteArray(&datagram);
-    QByteArray clientCID = datagram.left(8);
-    datagram.remove(0, 8);
+    QByteArray clientCID = datagram.left(24);
+    datagram.remove(0, 24);
     int searchLength = getQuint16FromByteArray(&datagram);
     QByteArray searchData = datagram.left(searchLength);
     QByteArray bucket = datagram.right(datagram.length() - searchLength);
