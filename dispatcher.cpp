@@ -995,10 +995,10 @@ void Dispatcher::sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *dat
     delete s;
 
     int res;
-    //if ((res = senderUdpSocket->write(*datagram)) == -1)
-    //    emit writeUdpUnicastFailed();
-    if (res = senderUdpSocket->writeDatagram(*datagram, dstAddress, dispatchPort) == -1)
+    if ((res = senderUdpSocket->write(*datagram)) == -1)
         emit writeUdpUnicastFailed();
+    //if (res = senderUdpSocket->writeDatagram(*datagram, dstAddress, dispatchPort) == -1)
+    //    emit writeUdpUnicastFailed();
 
     delete datagram;
 }
