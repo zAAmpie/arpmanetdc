@@ -1799,7 +1799,7 @@ VersionStruct ShareSearch::getMajorMinorVersions(QString fileName)
     QString name = fi.completeBaseName();
 
     //Check if file is a movie file
-    if (!ext.contains(QRegExp("\\b(?:avi|mpg|mkv|wmv|asf|flv)\\b",Qt::CaseInsensitive)))
+    if (!ext.contains(QRegExp("\\b(?:avi|mpg|mkv|wmv|asf|flv|mp4|ts|mpeg)\\b",Qt::CaseInsensitive)))
         return v;
 
     //Get major and minor numbers

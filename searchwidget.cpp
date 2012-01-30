@@ -70,7 +70,7 @@ void SearchWidget::createWidgets()
     minorVersionLineEdit->setMaximumWidth(40);
     minorVersionLineEdit->setValidator(new QIntValidator(0, 65535, 0));
 
-	searchButton = new QPushButton(QIcon(tr(":/ArpmanetDC/Resources/SearchIcon.png")),tr("Search"));
+	searchButton = new QPushButton(QIcon(tr(":/ArpmanetDC/Resources/SearchIcon.png")),tr("&Search"));
 	searchButton->setIconSize(QSize(16,16));
 
 	searchProgress = new TextProgressBar(tr("Searching"));
