@@ -1068,9 +1068,9 @@ void ShareSearch::requestTTHFromPath(QString filePath)
 //------------------------------============================== HASH 1MB BUCKET (TRANSFER MANAGER) ==============================------------------------------
 
 //Hashes a 1MB bucket
-void ShareSearch::hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray *bucket)
+void ShareSearch::hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray bucket)
 {
-    if (!bucket->isEmpty())
+    if (!bucket.isEmpty())
         //Start hash bucket thread
         emit runHashBucket(rootTTH, bucketNumber, bucket, BinaryEncoded);
     else

@@ -285,8 +285,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(pShare, SIGNAL(tthSourceLoaded(QByteArray, QHostAddress)),
             pTransferManager, SLOT(incomingTTHSource(QByteArray, QHostAddress)), Qt::QueuedConnection);
 
-    connect(pTransferManager, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)),
-            pShare, SLOT(hashBucketRequest(QByteArray, int, QByteArray *)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray)),
+            pShare, SLOT(hashBucketRequest(QByteArray, int, QByteArray)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(hashBucketReply(QByteArray, int, QByteArray)),
             pTransferManager, SLOT(hashBucketReply(QByteArray,int,QByteArray)), Qt::QueuedConnection);
 

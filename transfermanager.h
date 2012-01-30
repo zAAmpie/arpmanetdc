@@ -73,7 +73,7 @@ signals:
     void assembleOutputFile(QString tmpfilebase, QString outfile, int startbucket, int lastbucket);
 
     // Request hashing of a bucket that has finished downloading
-    void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
+    void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray bucket);
 
     void transmitDatagram(QHostAddress dstHost, QByteArray *datagram);
 

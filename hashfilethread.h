@@ -45,7 +45,7 @@ public slots:
 	//Hashes a particular file
 	void processFile(QString filePath, QString rootDir);
     //Hashes a bucket
-    void processBucket(QByteArray rootTTH, int bucketNumber, QByteArray *bucket, ReturnEncoding encoding = BinaryEncoded);
+    void processBucket(QByteArray rootTTH, int bucketNumber, QByteArray bucket, ReturnEncoding encoding = BinaryEncoded);
     //Hashes a file and return just the root TTH
     void hashFile(QString filePath);
 

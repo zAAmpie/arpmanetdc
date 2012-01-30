@@ -104,7 +104,7 @@ public slots:
     //----------========== HASH 1MB BUCKET (TRANSFER MANAGER) ==========----------
 
     //Hashes a 1MB bucket
-    void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
+    void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray bucket);
 
 	//----------========== TTH SOURCES FOR TRANSFERS (TRANSFER MANAGER) ==========----------
 	
@@ -282,7 +282,7 @@ signals:
 	//Signals to interface with hashing thread objects
 	void runHashThread(QString filePath, QString rootDir);
 	void runParseThread(QString directoryPath);
-    void runHashBucket(QByteArray rootTTH, int bucketNumber, QByteArray *bucket, ReturnEncoding encoding);
+    void runHashBucket(QByteArray rootTTH, int bucketNumber, QByteArray bucket, ReturnEncoding encoding);
 
     //Signals to stop processing
     void stopHashingThread();

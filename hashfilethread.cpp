@@ -109,13 +109,13 @@ void HashFileThread::processFile(QString filePath, QString rootDir)
 }
 
 //Hashes a bucket
-void HashFileThread::processBucket(QByteArray rootTTH, int bucketNumber, QByteArray *bucket, ReturnEncoding encoding)
+void HashFileThread::processBucket(QByteArray rootTTH, int bucketNumber, QByteArray bucket, ReturnEncoding encoding)
 {
     Tiger totalTTH;
 	QByteArray tth;
 	
     //Calculate TTH of bucket - can be any size
-    totalTTH.Update((byte *)bucket->data(), bucket->size());
+    totalTTH.Update((byte *)bucket.data(), bucket.size());
 
     byte *digestTTH = new byte[totalTTH.DigestSize()];
 	totalTTH.Final(digestTTH);

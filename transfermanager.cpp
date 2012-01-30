@@ -172,7 +172,7 @@ void TransferManager::startNextDownload()
     currentDownloadCount++;
     Transfer *t = new DownloadTransfer(this);
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
-    connect(t, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)), this, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)));
+    connect(t, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray)), this, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray)));
     connect(t, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray,quint32,quint32)),
             this, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray,quint32,quint32)));
     connect(t, SIGNAL(searchTTHAlternateSources(QByteArray)), this, SIGNAL(searchTTHAlternateSources(QByteArray)));

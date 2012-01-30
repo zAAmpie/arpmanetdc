@@ -85,7 +85,7 @@ void DownloadTransfer::requestHashBucket(QByteArray rootTTH, int bucketNumber, Q
 {
     if (bucketFlushStateBitmap.at(bucketNumber) == BucketNotFlushed)
     {
-        emit hashBucketRequest(rootTTH, bucketNumber, bucket);
+        emit hashBucketRequest(rootTTH, bucketNumber, *bucket);
         bucketFlushStateBitmap[bucketNumber] = BucketFlushed;
     }
 }
