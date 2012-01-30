@@ -29,10 +29,16 @@ void TransferManager::destroyTransferObject(Transfer* transferObject)
     if (transferObjectTable.remove(*transferObject->getTTH(), transferObject) != 0)
     {
         if (type == TRANSFER_TYPE_DOWNLOAD)
-        {
-            //Decrease download count
             currentDownloadCount--;
+
+        QMutableHashIterator<QHostAddress, Transfer *> i(peerProtocolDiscoveryWaitingPool);
+        while (i.hasNext())
+        {
+            i.next();
+            if (i.value() == transferObject)
+                i.remove();
         }
+            
     }
 
     transferObject->deleteLater();
@@ -176,7 +182,7 @@ void TransferManager::startNextDownload()
             this, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)));
     connect(t, SIGNAL(flushBucket(QString,QByteArray*)), this, SIGNAL(flushBucket(QString,QByteArray*)));
     connect(t, SIGNAL(assembleOutputFile(QString,QString,int,int)), this, SIGNAL(assembleOutputFile(QString,QString,int,int)));
-    connect(t, SIGNAL(transferFinished(QByteArray)), this, SIGNAL(downloadCompleted(QByteArray)));
+    connect(t, SIGNAL(transferFinished(QByteArray)), this, SLOT(transferDownloadCompleted(QByteArray)));
     t->setFileName(i.filePathName);
     t->setTTH(i.tth);
     t->setFileSize(i.fileSize);
@@ -193,6 +199,7 @@ void TransferManager::startNextDownload()
 void TransferManager::changeQueuedDownloadPriority(int oldPriority, int newPriority, QByteArray tth)
 {
     DownloadTransferQueueItem item;
+    int index = 0;
     if (downloadTransferQueue.contains(oldPriority))
     {
         QListIterator<DownloadTransferQueueItem> i(*downloadTransferQueue.value(oldPriority));
@@ -204,12 +211,18 @@ void TransferManager::changeQueuedDownloadPriority(int oldPriority, int newPrior
                 break;
             }
             i.next();
+            index++;
         }
     }
     if (item.filePathName != "")
     {
+        //Remove from old priority queue
+        downloadTransferQueue.value(oldPriority)->removeAt(index);
+
+        //Add to new priority queue
         if (!downloadTransferQueue.contains(newPriority))
         {
+            //Add priority type if it doesn't exist
             QList<DownloadTransferQueueItem> *list = new QList<DownloadTransferQueueItem>();
             downloadTransferQueue.insert(newPriority, list);
         }
@@ -264,8 +277,20 @@ void TransferManager::stopTransfer(QByteArray tth, int transferType, QHostAddres
         //transferObjectTable.remove(tth, t);
 
         //Start next transfer
-        startNextDownload();
+        if (currentDownloadCount < maximumSimultaneousDownloads)
+            startNextDownload();
     }
+}
+
+//Download completed
+void TransferManager::transferDownloadCompleted(QByteArray tth)
+{
+    //Update counts and start next download in queue
+    if (currentDownloadCount-1 < maximumSimultaneousDownloads)
+        startNextDownload();
+
+    //Emit completed to GUI
+    emit downloadCompleted(tth);
 }
 
 // look for pointer to Transfer object matching tth, transfer type and host address
@@ -337,7 +362,7 @@ void TransferManager::incomingProtocolCapabilityResponse(QHostAddress peer, char
     if (peerProtocolDiscoveryWaitingPool.contains(peer) && peerProtocolDiscoveryWaitingPool.value(peer))
     {
         peerProtocolDiscoveryWaitingPool.value(peer)->receivedPeerProtocolCapability(peer, protocols);
-        peerProtocolDiscoveryWaitingPool.remove(peer);
+        peerProtocolDiscoveryWaitingPool.take(peer);
     }
 }
 
@@ -359,10 +384,10 @@ void TransferManager::requestPeerProtocolCapability(QHostAddress peer, Transfer 
     //if (peerProtocolCapabilities.contains(peer))
     //    transferObject->receivedPeerProtocolCapability(peer, peerProtocolCapabilities.value(peer));
     //else
-    {
+    //{
         peerProtocolDiscoveryWaitingPool.insert(peer, transferObject);
         emit requestProtocolCapability(peer);
-    }
+    //}
 }
 
 void TransferManager::setMaximumSimultaneousDownloads(int n)

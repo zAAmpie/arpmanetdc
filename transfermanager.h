@@ -98,6 +98,9 @@ public slots:
     //Stop a transfer already running
     void stopTransfer(QByteArray tth, int type, QHostAddress host);
 
+    //Download completed
+    void transferDownloadCompleted(QByteArray tth);
+
     // Response from hashing engine when bucket finished hashing
     void hashBucketReply(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH);
 
@@ -123,7 +126,7 @@ private:
     QMultiHash<QByteArray, Transfer*> transferObjectTable;
     QMultiHash<QByteArray, UploadTransferQueueItem*> uploadTransferQueue;
     QHash<QHostAddress, char> peerProtocolCapabilities;
-    QHash<QHostAddress, Transfer*> peerProtocolDiscoveryWaitingPool;
+    QMultiHash<QHostAddress, Transfer*> peerProtocolDiscoveryWaitingPool;
     int maximumSimultaneousDownloads;
     int currentDownloadCount;
 

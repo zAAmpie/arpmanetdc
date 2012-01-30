@@ -104,7 +104,7 @@ void SearchWidget::createWidgets()
     resultsTable->setContextMenuPolicy(Qt::CustomContextMenu);
     resultsTable->header()->setHighlightSections(false);
     resultsTable->setExpandsOnDoubleClick(false);
-
+    resultsTable->setSelectionMode(QAbstractItemView::ExtendedSelection);
     parentItem = resultsModel->invisibleRootItem();
 
 	//resultsTable->setShowGrid(true);
@@ -378,6 +378,7 @@ void SearchWidget::searchPressed()
 	resultsModel->removeRows(0, resultsModel->rowCount());
     totalResultCount = 0;
     uniqueResultCount = 0;
+    resultNumberLabel->setText(tr(""));
 
 	if (!searchLineEdit->text().isEmpty())
 	{
