@@ -30,6 +30,7 @@ NetworkTopology::~NetworkTopology()
     delete garbageCollectTimer;
     delete savePeersTimer;
     //Emitting signal in this destructor will likely not be transmitted since every object is going down along with it
+    //::yes that is true, this was put here when we wrote them to nodes.dat, which worked well. this signal is probably useless.
     if (QDateTime::currentMSecsSinceEpoch() - startupTime > 120000) //Don't save hosts unless the program has been online for 2min
     {
         QList<QHostAddress> activeNodes = getForwardingPeers(100);
@@ -109,7 +110,8 @@ void NetworkTopology::bucketContentsArrived(QByteArray bucket, QHostAddress send
         iter++;
         QHostAddress addr = QHostAddress(getQuint32FromByteArray(&bucket));
         qint64 age = (qint64)(getQuint16FromByteArray(&bucket) * 1000);
-        if (getHostAge(bucketID, addr) > age)
+        qint64 storedAge = getHostAge(bucketID, addr);
+        if ((storedAge > age) || (storedAge == -1))
             updateHostTimestamp(bucketID, addr, age);
     }
     // the replyee is not in his own bucket, since buckets only contain dispatch ip's as seen from the network.
@@ -157,11 +159,12 @@ QByteArray NetworkTopology::getOwnBucket()
 {
     QByteArray ownBucket = getOwnBucketId();
     QByteArray bucket = getBucket(ownBucket);
-    if (bucket.length() == 24)
-    {
-        bucket.append(toQByteArray(dispatchIP.toIPv4Address()));
-        bucket.append(toQByteArray((quint16)0));
-    }
+    // I believe this below is wrong, just sending a bucket ID alone is the preferred way when our own bucket is empty.
+    //if (bucket.length() == 24)
+    //{
+    //    bucket.append(toQByteArray(dispatchIP.toIPv4Address()));
+    //    bucket.append(toQByteArray((quint16)0));
+    //}
     return bucket;
 }
 
@@ -281,8 +284,8 @@ void NetworkTopology::bootstrapTimeoutEvent()
         qsrand(time);
         QByteArray bucketID;
         for (int i = 0; i < 3; i++)
-            bucketID.append(toQByteArray((quint64)qrand()*qrand()));
-        ownBucketId.insert(bucketID, 2);
+            bucketID.append(toQByteArray((quint64)qrand()*(quint64)qrand()));
+        ownBucketId.insert(bucketID, 1);
         emit changeBootstrapStatus(NETWORK_BCAST_ALONE);
     }
 }
@@ -329,6 +332,8 @@ void NetworkTopology::collectBucketGarbage()
             }
         }
     }
+    if (buckets.isEmpty())
+        emit changeBootstrapStatus(NETWORK_BCAST_ALONE);
 }
 
 void NetworkTopology::saveActivePeers()
