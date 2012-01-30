@@ -55,6 +55,8 @@ SearchWidget::~SearchWidget()
 
 void SearchWidget::createWidgets()
 {
+    resultNumberLabel = new QLabel("");
+
 	searchLineEdit = new QLineEdit();
     searchLineEdit->setCompleter(pCompleter);
     searchLineEdit->setPlaceholderText("Type here to search");
@@ -141,6 +143,7 @@ void SearchWidget::placeWidgets()
     hlayout->addWidget(new QLabel(tr("Episode")));
     hlayout->addWidget(minorVersionLineEdit);
 	hlayout->addWidget(searchButton);
+    hlayout->addWidget(resultNumberLabel);
 	hlayout->addStretch(1);
 	hlayout->addWidget(searchProgress);
 
@@ -349,7 +352,8 @@ void SearchWidget::addSearchResult(QHostAddress sender, QByteArray cid, QByteArr
     {
         //Add new row
         parentItem->appendRow(row);
-
+        totalResultCount++;
+        uniqueResultCount++;
         sortDue = true;
     }
     else
@@ -362,6 +366,7 @@ void SearchWidget::addSearchResult(QHostAddress sender, QByteArray cid, QByteArr
         QStandardItem *hitItem = resultsModel->itemFromIndex(resultsModel->index(results.first()->row(), 1));
         hitItem->setText(tr("%1").arg(hitItem->text().toLongLong()+1));
 
+        totalResultCount++;
         sortDue = true;
     }
 
@@ -371,6 +376,8 @@ void SearchWidget::searchPressed()
 {
     //Clear model
 	resultsModel->removeRows(0, resultsModel->rowCount());
+    totalResultCount = 0;
+    uniqueResultCount = 0;
 
 	if (!searchLineEdit->text().isEmpty())
 	{
@@ -415,6 +422,7 @@ void SearchWidget::sortTimeout()
         Qt::SortOrder order = resultsTable->header()->sortIndicatorOrder();
         resultsTable->sortByColumn(column, order);
 
+        resultNumberLabel->setText(tr("Returned %1 unique and %2 total results").arg(uniqueResultCount).arg(totalResultCount));
         sortDue = false;
     }
 }

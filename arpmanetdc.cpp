@@ -385,7 +385,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     //Set up timer to update the number of CID hosts currently bootstrapped to
     updateTimer = new QTimer();
     connect(updateTimer, SIGNAL(timeout()), this, SLOT(updateGUIEverySecond()));
-    updateTimer->start(1000);
+    updateTimer->start(5000);
 
 	//Set up timer to auto update shares
 	updateSharesTimer = new QTimer();

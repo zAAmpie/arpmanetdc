@@ -392,8 +392,18 @@ int NetworkTopology::getNumberOfCIDHosts()
 int NetworkTopology::getNumberOfHosts()
 {
     int count = 0;
+    QList<QString> resultList;
     QHashIterator<QByteArray, HostIntPair*> i(buckets);
     while (i.hasNext())
-        count += i.next().value()->first->count();
-    return count;
+    {
+        foreach (QHostAddress addr, *i.next().value()->first)
+        {
+            QString ip = addr.toString();
+            if (!resultList.contains(ip))
+                resultList.append(ip);
+        }
+        //count += i.next().value()->first->count();
+    }
+    //return count;
+    return resultList.count();
 }
