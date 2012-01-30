@@ -959,7 +959,11 @@ void Dispatcher::sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *dat
               value is set by the /proc/sys/net/core/wmem_max file.  The mini‐
               mum (doubled) value for this option is 2048.
     */
-
+    if (dstAddress.isNull())
+    {
+        delete datagram;
+        return;
+    }
 
     if (senderUdpSocket->peerAddress() != dstAddress)
     {
@@ -1009,6 +1013,9 @@ void Dispatcher::sendBroadcastRawDatagram(QByteArray &datagram)
     //    emit writeUdpBroadcastFailed();
 
     //if ((senderUdpSocket->state() != QAbstractSocket::ConnectingState && senderUdpSocket->state() != QAbstractSocket::ConnectedState) && senderUdpSocket->peerAddress() != bcastAddress)
+    if (dstAddress.isNull())
+        return;
+
     if (senderUdpSocket->peerAddress() != bcastAddress)
     {
         senderUdpSocket->disconnectFromHost();
@@ -1055,6 +1062,9 @@ void Dispatcher::sendMulticastRawDatagram(QByteArray &datagram)
     //    emit writeUdpMulticastFailed();
 
     //if ((senderUdpSocket->state() != QAbstractSocket::ConnectingState && senderUdpSocket->state() != QAbstractSocket::ConnectedState) && senderUdpSocket->peerAddress() != mcastAddress)
+    if (dstAddress.isNull())
+        return;
+
     if (senderUdpSocket->peerAddress() != mcastAddress)
     {
         senderUdpSocket->disconnectFromHost();
