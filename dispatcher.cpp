@@ -45,6 +45,8 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     connect(networkBootstrap, SIGNAL(sendMulticastAnnounce()), this, SLOT(sendMulticastAnnounce()));
     connect(networkBootstrap, SIGNAL(sendRequestAllBuckets(QHostAddress)),
             this, SLOT(requestAllBuckets(QHostAddress)));
+    connect(networkBootstrap, SIGNAL(requestLastKnownPeers()), this, SIGNAL(requestLastKnownPeers()));
+    connect(this, SIGNAL(sendLastKnownPeers(QList<QHostAddress>)), networkBootstrap, SLOT(receiveLastKnownPeers(QList<QHostAddress>)));
     connect(networkBootstrap, SIGNAL(appendChatLine(QString)), this, SIGNAL(appendChatLine(QString)));
         
     // Network topology manager
@@ -60,6 +62,7 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     connect(networkTopology, SIGNAL(requestAllBuckets(QHostAddress)), this, SLOT(requestAllBuckets(QHostAddress)));
     connect(networkTopology, SIGNAL(changeBootstrapStatus(int)), networkBootstrap, SLOT(setBootstrapStatus(int)));
     connect(networkBootstrap, SIGNAL(bootstrapStatusChanged(int)), networkTopology, SLOT(setBootstrapStatus(int)));
+    connect(networkTopology, SIGNAL(saveLastKnownPeers(QList<QHostAddress>)), this, SIGNAL(saveLastKnownPeers(QList<QHostAddress>)));
 
     // Rejoin multicast timer
     rejoinMulticastTimer = new QTimer();
