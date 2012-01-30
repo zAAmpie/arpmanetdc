@@ -96,6 +96,8 @@ private:
 	quint64 pID;
 	static quint64 staticID;
 
+    quint32 totalResultCount;
+    quint32 uniqueResultCount;
 
 	//===== Main GUI elements =====
 
@@ -112,7 +114,8 @@ private:
 	QPushButton *searchButton;
 	QProgressBar *searchProgress;
 
-	//Results
+    //Results
+    QLabel *resultNumberLabel;
 	QTreeView *resultsTable;
 	QStandardItemModel *resultsModel;
     QStandardItem *parentItem;

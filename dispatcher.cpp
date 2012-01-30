@@ -17,6 +17,7 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     mcastAddress = QHostAddress("239.255.40.12");
     bcastAddress = QHostAddress("255.255.255.255");
     protocolCapabilityBitmask = 0;
+    maximumSendBufferSize = 0;
 
     // Init P2P dispatch socket
     receiverUdpSocket = new QUdpSocket(this);
@@ -958,23 +959,28 @@ void Dispatcher::sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *dat
               value is set by the /proc/sys/net/core/wmem_max file.  The mini‐
               mum (doubled) value for this option is 2048.
     */
+    if (dstAddress.isNull())
+    {
+        delete datagram;
+        return;
+    }
 
-
-    if (senderUdpSocket->peerAddress() != dstAddress)
+    /*if (senderUdpSocket->peerAddress() != dstAddress)
     {
         senderUdpSocket->disconnectFromHost();
         senderUdpSocket->connectToHost(dstAddress, dispatchPort);
-    }
+    }*/
 
+    QAbstractSocket::SocketState state = senderUdpSocket->state();
     int size = 0;
     int maxSize = getMaximumSendBufferSize();
     socklen_t *s = new socklen_t(sizeof(size));
-    if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, s) != -1) //successfully read
+    if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
     {
         if (size != maxSize) //set if not already set
         {
             size = maxSize;
-            if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, sizeof(size)) == -1) //couldn't write
+            if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(size)) == -1) //couldn't write
             {
                 qDebug() << "Dispatcher::sendUnicastRawDatagram: Could not set sending buffer size";
             }
@@ -982,7 +988,7 @@ void Dispatcher::sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *dat
             else
             {
                 //verify if set correctly
-                if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, s) != -1) //successfully read
+                if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
                 {
                     if (size != maxSize)
                         qDebug() << "Dispatcher::sendUnicastRawDatagram: Value returned inconsistent with value set " << size << maxSize;
@@ -994,10 +1000,10 @@ void Dispatcher::sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *dat
     delete s;
 
     int res;
-    if ((res = senderUdpSocket->write(*datagram)) == -1)
-        emit writeUdpUnicastFailed();
-    //if (res = senderUdpSocket->writeDatagram(*datagram, dstAddress, dispatchPort) == -1)
+    //if ((res = senderUdpSocket->write(*datagram)) == -1)
     //    emit writeUdpUnicastFailed();
+    if (res = senderUdpSocket->writeDatagram(*datagram, dstAddress, dispatchPort) == -1)
+        emit writeUdpUnicastFailed();
 
     delete datagram;
 }
@@ -1008,21 +1014,21 @@ void Dispatcher::sendBroadcastRawDatagram(QByteArray &datagram)
     //    emit writeUdpBroadcastFailed();
 
     //if ((senderUdpSocket->state() != QAbstractSocket::ConnectingState && senderUdpSocket->state() != QAbstractSocket::ConnectedState) && senderUdpSocket->peerAddress() != bcastAddress)
-    if (senderUdpSocket->peerAddress() != bcastAddress)
+    /*if (senderUdpSocket->peerAddress() != bcastAddress)
     {
         senderUdpSocket->disconnectFromHost();
         senderUdpSocket->connectToHost(bcastAddress, dispatchPort);
-    }
+    }*/
 
     int size = 0;
     int maxSize = getMaximumSendBufferSize();
     socklen_t *s = new socklen_t(sizeof(size));
-    if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, s) != -1) //successfully read
+    if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
     {
         if (size != maxSize) //set if not already set
         {
             size = maxSize;
-            if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, sizeof(size)) == -1) //couldn't write
+            if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(size)) == -1) //couldn't write
             {
                 qDebug() << "Dispatcher::sendBroadcastRawDatagram: Could not set sending buffer size";
             }
@@ -1030,7 +1036,7 @@ void Dispatcher::sendBroadcastRawDatagram(QByteArray &datagram)
             else
             {
                 //verify if set correctly
-                if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, s) != -1) //successfully read
+                if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
                 {
                     if (size != maxSize)
                         qDebug() << "Dispatcher::sendBroadcastRawDatagram: Value returned inconsistent with value set " << size << maxSize;
@@ -1042,10 +1048,10 @@ void Dispatcher::sendBroadcastRawDatagram(QByteArray &datagram)
     delete s;
 
     int res;
-    if ((res = senderUdpSocket->write(datagram)) == -1)
-        emit writeUdpBroadcastFailed();
-    //if (senderUdpSocket->writeDatagram(datagram, bcastAddress, dispatchPort) == -1)
+    //if ((res = senderUdpSocket->write(datagram)) == -1)
     //    emit writeUdpBroadcastFailed();
+    if (senderUdpSocket->writeDatagram(datagram, bcastAddress, dispatchPort) == -1)
+        emit writeUdpBroadcastFailed();
 }
 
 void Dispatcher::sendMulticastRawDatagram(QByteArray &datagram)
@@ -1054,21 +1060,21 @@ void Dispatcher::sendMulticastRawDatagram(QByteArray &datagram)
     //    emit writeUdpMulticastFailed();
 
     //if ((senderUdpSocket->state() != QAbstractSocket::ConnectingState && senderUdpSocket->state() != QAbstractSocket::ConnectedState) && senderUdpSocket->peerAddress() != mcastAddress)
-    if (senderUdpSocket->peerAddress() != mcastAddress)
+    /*if (senderUdpSocket->peerAddress() != mcastAddress)
     {
         senderUdpSocket->disconnectFromHost();
         senderUdpSocket->connectToHost(mcastAddress, dispatchPort);
-    }
+    }*/
 
     int size = 0;
     int maxSize = getMaximumSendBufferSize();
     socklen_t *s = new socklen_t(sizeof(size));
-    if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, s) != -1) //successfully read
+    if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
     {
         if (size != maxSize) //set if not already set
         {
             size = maxSize;
-            if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, sizeof(size)) == -1) //couldn't write
+            if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(size)) == -1) //couldn't write
             {
                 qDebug() << "Dispatcher::sendMulticastRawDatagram: Could not set sending buffer size";
             }
@@ -1076,7 +1082,7 @@ void Dispatcher::sendMulticastRawDatagram(QByteArray &datagram)
             else
             {
                 //verify if set correctly
-                if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, s) != -1) //successfully read
+                if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
                 {
                     if (size != maxSize)
                         qDebug() << "Dispatcher::sendMulticastRawDatagram: Value returned inconsistent with value set " << size << maxSize;
@@ -1088,10 +1094,10 @@ void Dispatcher::sendMulticastRawDatagram(QByteArray &datagram)
     delete s;
 
     int res;
-    if ((res = senderUdpSocket->write(datagram)) == -1)
-        emit writeUdpMulticastFailed();
-    //if (senderUdpSocket->writeDatagram(datagram, mcastAddress, dispatchPort) == -1)
+    //if ((res = senderUdpSocket->write(datagram)) == -1)
     //    emit writeUdpMulticastFailed();
+    if (senderUdpSocket->writeDatagram(datagram, mcastAddress, dispatchPort) == -1)
+        emit writeUdpMulticastFailed();
 }
 
 // ------------------=====================   Misc functions   =====================----------------------

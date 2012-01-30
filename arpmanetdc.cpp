@@ -386,7 +386,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     //Set up timer to update the number of CID hosts currently bootstrapped to
     updateTimer = new QTimer();
     connect(updateTimer, SIGNAL(timeout()), this, SLOT(updateGUIEverySecond()));
-    updateTimer->start(1000);
+    updateTimer->start(5000);
 
 	//Set up timer to auto update shares
 	updateSharesTimer = new QTimer();
@@ -688,6 +688,7 @@ void ArpmanetDC::createWidgets()
     mainChatTextEdit->setOpenLinks(false);
 	
 	chatLineEdit = new QLineEdit(this);
+    chatLineEdit->setPlaceholderText(tr("Type here to chat"));
 
     quickSearchLineEdit = new QLineEdit(this);
     quickSearchLineEdit->setPlaceholderText("Type here to search");
@@ -1558,19 +1559,19 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
 		if (mode.compare("P") == 0)
 		{
 			//Passive user
-			item->setText(tr("<font size=\"2\">%1</font>").arg(nick));
+			item->setText(tr("<font color=\"red\">%1</font>").arg(nick));
 			item->setIcon(QIcon(*userFirewallIcon));
 		}
 		else if (client.compare("ArpmanetDC") == 0)
 		{
 			//Active user - ArpmanetDC
-			item->setText(tr("<font size=\"2\">%1</font>").arg(nick));
+			item->setText(tr("<font color=\"green\">%1</font>").arg(nick));
 			item->setIcon(QIcon(*arpmanetUserIcon));
 		}
 		else
 		{
 			//Active user - other client
-            item->setText(tr("<font size=\"2\">%1</font>").arg(nick));
+            item->setText(tr("<font color=\"black\">%1</font>").arg(nick));
 			item->setIcon(QIcon(*userIcon));
 		}
 		

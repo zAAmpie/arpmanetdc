@@ -934,10 +934,16 @@ void ShareSearch::query1MBTTH(QByteArray tthRoot, qint64 offset)
 //Save the last known bootstrapped peers
 void ShareSearch::saveLastKnownPeers(QList<QHostAddress> peers)
 {
+    if (peers.isEmpty())
+        return;
+
     //Insert a bootstrap peer into the database
     QStringList queryStr;
+    queryStr.append(tr("DELETE FROM LastKnownPeers;"));
     for (int i = 0; i < peers.size(); i++)
     {
+        if (peers.at(i).toString().isEmpty())
+            peers.removeAt(i--);
         queryStr.append(tr("INSERT INTO LastKnownPeers ([ip]) VALUES (?);"));
     }
 
@@ -953,8 +959,11 @@ void ShareSearch::saveLastKnownPeers(QList<QHostAddress> peers)
 	    {
 		    //Bind parameters
 		    int res = 0;
-            QString ip = peers.at(i).toString();
-		    res = res | sqlite3_bind_text16(statement, 2, ip.utf16(), ip.size()*2, SQLITE_STATIC);
+            if (query.contains("INSERT INTO"))
+            {
+                QString ip = peers.at(i-1).toString();
+		        res = res | sqlite3_bind_text16(statement, 1, ip.utf16(), ip.size()*2, SQLITE_STATIC);
+            }
 
 		    int cols = sqlite3_column_count(statement);
 		    int result = 0;
