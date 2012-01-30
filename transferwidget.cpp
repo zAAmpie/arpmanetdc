@@ -64,6 +64,8 @@ void TransferWidget::createWidgets()
     transferListTable->setWordWrap(false);
     //transferListTable->setItemDelegate(new HTMLDelegate(transferListTable));
     transferListTable->setItemDelegateForColumn(1, new ProgressDelegate());
+    
+    transferListTable->hideColumn(8);
 
     //Action
     deleteAction = new QAction(QIcon(":/ArpmanetDC/Resources/RemoveIcon.png"), tr("Stop transfer"), this);
@@ -157,7 +159,7 @@ void TransferWidget::updateStatus()
         //Get the download host from the queue, upload hosts are contained within the struct
         if (s.transferType == TRANSFER_TYPE_DOWNLOAD)
             s.host = q.fileHost;
-
+        
         //Check if entry exists
         QList<QStandardItem *> findResults = transferListModel->findItems(base32TTH.data(), Qt::MatchExactly, 7);
 

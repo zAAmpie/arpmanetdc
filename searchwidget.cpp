@@ -114,9 +114,11 @@ void SearchWidget::createWidgets()
 	//resultsTable->setItemDelegate(new HTMLDelegate(resultsTable));
 
 	//resultsTable->hideColumn(5);
-	//resultsTable->hideColumn(6);
-	//resultsTable->hideColumn(7);
+	resultsTable->hideColumn(6);
+	resultsTable->hideColumn(7);
     //resultsTable->hideColumn(8);
+    resultsTable->hideColumn(9);
+    //resultsTable->hideColumn(10);
 
     downloadAction = new QAction(QIcon(":/ArpmanetDC/Resources/DownloadIcon.png"), tr("Download"), this);
     downloadToAction = new QAction(QIcon(":/ArpmanetDC/Resources/DownloadIcon.png"), tr("Download to folder..."), this);
@@ -344,7 +346,10 @@ void SearchWidget::addSearchResult(QHostAddress sender, QByteArray cid, QByteArr
     row.append(new CStandardItem(CStandardItem::IntegerType, tr("%1").arg(res.minorVersion)));
     row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, base32TTH.data()));
     row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, sender.toString()));
-    row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, cid.data()));
+
+    QByteArray base32CID(cid);
+    base32Encode(base32CID);
+    row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, base32CID.data()));
 
     //If new entry
     
