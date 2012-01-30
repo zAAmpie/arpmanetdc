@@ -934,6 +934,9 @@ void ShareSearch::query1MBTTH(QByteArray tthRoot, qint64 offset)
 //Save the last known bootstrapped peers
 void ShareSearch::saveLastKnownPeers(QList<QHostAddress> peers)
 {
+    if (peers.isEmpty())
+        return;
+
     //Insert a bootstrap peer into the database
     QStringList queryStr;
     for (int i = 0; i < peers.size(); i++)

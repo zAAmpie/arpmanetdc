@@ -50,12 +50,13 @@ void PMWidget::receivePrivateMessage(QString msg)
 	if (!msg.isEmpty())
 	{
 		//Change chat user nick format
-		if (msg.left(1).compare("<") == 0)
-		{
-			QString nick = msg.mid(1,msg.indexOf(">")-1);
-			msg.remove(0,msg.indexOf(">")+1);
-			msg.prepend(tr("<b>%1</b>").arg(nick));
-		}
+		//Change mainchat user nick format
+	if (msg.left(4).compare("&lt;") == 0)
+	{
+		QString nick = msg.mid(4,msg.indexOf("&gt;")-4);
+		msg.remove(0,msg.indexOf("&gt;")+4);
+		msg.prepend(tr("<b>%1</b>").arg(nick));
+	}
 
 		//Replace new lines with <br/>
 		msg.replace("\n"," <br/>");

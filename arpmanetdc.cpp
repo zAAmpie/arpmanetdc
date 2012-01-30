@@ -679,6 +679,7 @@ void ArpmanetDC::createWidgets()
     mainChatTextEdit->setOpenLinks(false);
 	
 	chatLineEdit = new QLineEdit(this);
+    chatLineEdit->setPlaceholderText(tr("Type here to chat"));
 
     quickSearchLineEdit = new QLineEdit(this);
     quickSearchLineEdit->setPlaceholderText("Type here to search");
@@ -1543,19 +1544,19 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
 		if (mode.compare("P") == 0)
 		{
 			//Passive user
-			item->setText(tr("<font size=\"2\">%1</font>").arg(nick));
+			item->setText(tr("<font color=\"red\">%1</font>").arg(nick));
 			item->setIcon(QIcon(*userFirewallIcon));
 		}
 		else if (client.compare("ArpmanetDC") == 0)
 		{
 			//Active user - ArpmanetDC
-			item->setText(tr("<font size=\"2\">%1</font>").arg(nick));
+			item->setText(tr("<font color=\"green\">%1</font>").arg(nick));
 			item->setIcon(QIcon(*arpmanetUserIcon));
 		}
 		else
 		{
 			//Active user - other client
-            item->setText(tr("<font size=\"2\">%1</font>").arg(nick));
+            item->setText(tr("<font color=\"black\">%1</font>").arg(nick));
 			item->setIcon(QIcon(*userIcon));
 		}
 		
