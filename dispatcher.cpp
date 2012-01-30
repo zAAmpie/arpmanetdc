@@ -970,12 +970,12 @@ void Dispatcher::sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *dat
     int size = 0;
     int maxSize = getMaximumSendBufferSize();
     socklen_t *s = new socklen_t(sizeof(size));
-    if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, s) != -1) //successfully read
+    if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
     {
         if (size != maxSize) //set if not already set
         {
             size = maxSize;
-            if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, sizeof(size)) == -1) //couldn't write
+            if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(size)) == -1) //couldn't write
             {
                 qDebug() << "Dispatcher::sendUnicastRawDatagram: Could not set sending buffer size";
             }
@@ -983,7 +983,7 @@ void Dispatcher::sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *dat
             else
             {
                 //verify if set correctly
-                if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, s) != -1) //successfully read
+                if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
                 {
                     if (size != maxSize)
                         qDebug() << "Dispatcher::sendUnicastRawDatagram: Value returned inconsistent with value set " << size << maxSize;
@@ -1018,12 +1018,12 @@ void Dispatcher::sendBroadcastRawDatagram(QByteArray &datagram)
     int size = 0;
     int maxSize = getMaximumSendBufferSize();
     socklen_t *s = new socklen_t(sizeof(size));
-    if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, s) != -1) //successfully read
+    if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
     {
         if (size != maxSize) //set if not already set
         {
             size = maxSize;
-            if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, sizeof(size)) == -1) //couldn't write
+            if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(size)) == -1) //couldn't write
             {
                 qDebug() << "Dispatcher::sendBroadcastRawDatagram: Could not set sending buffer size";
             }
@@ -1031,7 +1031,7 @@ void Dispatcher::sendBroadcastRawDatagram(QByteArray &datagram)
             else
             {
                 //verify if set correctly
-                if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, s) != -1) //successfully read
+                if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
                 {
                     if (size != maxSize)
                         qDebug() << "Dispatcher::sendBroadcastRawDatagram: Value returned inconsistent with value set " << size << maxSize;
@@ -1064,12 +1064,12 @@ void Dispatcher::sendMulticastRawDatagram(QByteArray &datagram)
     int size = 0;
     int maxSize = getMaximumSendBufferSize();
     socklen_t *s = new socklen_t(sizeof(size));
-    if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, s) != -1) //successfully read
+    if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
     {
         if (size != maxSize) //set if not already set
         {
             size = maxSize;
-            if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, sizeof(size)) == -1) //couldn't write
+            if (::setsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, sizeof(size)) == -1) //couldn't write
             {
                 qDebug() << "Dispatcher::sendMulticastRawDatagram: Could not set sending buffer size";
             }
@@ -1077,7 +1077,7 @@ void Dispatcher::sendMulticastRawDatagram(QByteArray &datagram)
             else
             {
                 //verify if set correctly
-                if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, &size, s) != -1) //successfully read
+                if (::getsockopt(senderUdpSocket->socketDescriptor(), SOL_SOCKET, SO_SNDBUF, (char *)&size, s) != -1) //successfully read
                 {
                     if (size != maxSize)
                         qDebug() << "Dispatcher::sendMulticastRawDatagram: Value returned inconsistent with value set " << size << maxSize;
