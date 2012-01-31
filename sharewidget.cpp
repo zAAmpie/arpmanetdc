@@ -46,6 +46,10 @@ void ShareWidget::createWidgets()
 	saveButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Save shares"));
 	refreshButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/RefreshIcon.png"), tr("Refresh shares"));
     containerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/ContainerIcon.png"), tr("Show Containers"));
+
+    //========== DEBUG ==========
+    containerButton->setVisible(false);
+    //========== END DEBUG ==========
     
     addContainerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/AddIcon.png"), tr("Add"));
     addContainerButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
