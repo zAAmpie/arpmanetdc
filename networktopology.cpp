@@ -312,24 +312,29 @@ void NetworkTopology::collectBucketGarbage()
     // Iterate over buckets: shake hosts from small buckets if they also occur in large buckets
     while (ib.hasNext())
     {
+        QListIterator<QHostAddress> ilh(*ib.peekNext().value()->first);
+        QListIterator<qint64> ili(*ib.peekNext().value()->second);
         QByteArray bucket = ib.next().key();
-        QMutableListIterator<QHostAddress> ilh(*ib.peekNext().value()->first);
-        QMutableListIterator<qint64> ili(*ib.peekNext().value()->second);
         while (ilh.hasNext())
         {
             if (ili.hasNext())
                 ili.next();
             QHostAddress testForHost = ilh.next();
             int currentBucketSize = buckets.value(bucket)->first->count();
-            QMutableHashIterator<QByteArray, HostIntPair*> ib2(buckets);
+            QHashIterator<QByteArray, HostIntPair*> ib2(buckets);
             while (ib2.hasNext())
             {
                 QByteArray testBucket = ib2.next().key();
                 int testBucketSize = buckets.value(testBucket)->first->count();
                 if ((currentBucketSize < testBucketSize) && (buckets.value(testBucket)->first->contains(testForHost)))
                 {
-                    ili.remove();
-                    ilh.remove();
+                    int i = buckets.value(bucket)->first->indexOf(testForHost);
+                    if (i != -1)
+                    {
+                        buckets.value(bucket)->first->removeAt(i);
+                        buckets.value(bucket)->second->removeAt(i);
+                        qDebug() << "NetworkTopology::collectBucketGarbage(): pluck duplicate entry in small bucket: " << testForHost.toString();
+                    }
                 }
             }
         }
@@ -339,6 +344,7 @@ void NetworkTopology::collectBucketGarbage()
             delete buckets.value(bucket)->second;
             delete buckets.value(bucket);
             ib.remove();
+            qDebug() << "NetworkTopology::collectBucketGarbage(): delete empty bucket pass 1: " << bucket.toBase64();
         }
     }
 
@@ -348,7 +354,7 @@ void NetworkTopology::collectBucketGarbage()
     ib.toFront();
     while (ib.hasNext())
     {
-        QMutableListIterator<qint64> il(*ib.peekNext().value()->second);
+        QListIterator<qint64> il(*ib.peekNext().value()->second);
         QByteArray bucket = ib.next().key();
         if (il.hasNext())
         {
@@ -367,14 +373,15 @@ void NetworkTopology::collectBucketGarbage()
                 QHostAddress h = QHostAddress(il.previous());
                 emit requestBucketContents(h);
             }
-            // Delete empty buckets
-            if (buckets.value(bucket)->first->isEmpty())
-            {
-                delete buckets.value(bucket)->first;
-                delete buckets.value(bucket)->second;
-                delete buckets.value(bucket);
-                ib.remove();
-            }
+        }
+        // Delete empty buckets
+        if (buckets.value(bucket)->first->isEmpty())
+        {
+            delete buckets.value(bucket)->first;
+            delete buckets.value(bucket)->second;
+            delete buckets.value(bucket);
+            ib.remove();
+            qDebug() << "NetworkTopology::collectBucketGarbage(): delete empty bucket pass 2: " << bucket.toBase64();
         }
     }
     if (buckets.isEmpty())
