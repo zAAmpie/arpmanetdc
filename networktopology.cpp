@@ -220,6 +220,12 @@ void NetworkTopology::setCIDHostAddress(QByteArray &cid, QHostAddress &host)
 
 void NetworkTopology::updateHostTimestamp(QByteArray &bucket, QHostAddress &host, qint64 age)
 {
+    if (host.isNull() || host == QHostAddress(QHostAddress::LocalHost) || host == QHostAddress(QHostAddress::Null) || host == QHostAddress(QHostAddress::Any))
+        return;
+
+    if (host.isInSubnet(QHostAddress("169.254.0.0"), 16))
+        return;
+
     qint64 time = QDateTime::currentMSecsSinceEpoch() - age;
 
     if (buckets.contains(bucket))
