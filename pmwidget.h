@@ -40,6 +40,9 @@ public slots:
 	//Slots for incoming PM message
 	void receivePrivateMessage(QString message);
 
+    //User login changed
+    void userLoginChanged(bool loggedIn);
+
 private slots:
 	//Slot for when user presses return
 	void sendMessage();
@@ -60,6 +63,7 @@ private:
 
 	//Parameters
 	QString pOtherNick;
+    bool userOnline;
 
 	//GUI elements
 	QTextBrowser *chatBrowser;

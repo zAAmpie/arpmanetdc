@@ -51,13 +51,14 @@ void DownloadQueueWidget::createWidgets()
 
 	//Set model
 	queueTable->setModel(queueModel);
-	//queueTable->hideColumn(4);
 	queueTable->setSortingEnabled(true);
     queueTable->horizontalHeader()->setHighlightSections(false);
     queueTable->horizontalHeader()->setStretchLastSection(true);
     queueTable->setColumnWidth(0, 300);
     queueTable->setColumnWidth(1, 200);
     queueTable->setColumnWidth(3, 75);
+
+    queueTable->hideColumn(6);
 
 	//===== Actions =====
 	setPriorityLowAction = new QAction(lowPriorityIcon, tr("Low priority"), this);

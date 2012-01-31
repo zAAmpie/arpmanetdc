@@ -368,6 +368,7 @@ private:
 	CTabWidget *tabs;
 	QColor tabTextColorNotify;
 	QColor tabTextColorNormal;
+    QColor tabTextColorOffline;
 
 	//Bars
 	QToolBar *toolBar;

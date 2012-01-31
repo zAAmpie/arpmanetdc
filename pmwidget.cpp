@@ -10,6 +10,8 @@ PMWidget::PMWidget(QString otherNick, ArpmanetDC *parent)
 	createWidgets();
 	placeWidgets();
 	connectWidgets();
+
+    userOnline = true;
 }
 
 PMWidget::~PMWidget()
@@ -75,8 +77,36 @@ void PMWidget::receivePrivateMessage(QString msg)
 	}
 }
 
+//User login changed
+void PMWidget::userLoginChanged(bool loggedIn)
+{
+    //Set parameter
+    userOnline = loggedIn;
+
+    //Show user login changed
+    QString info;
+    if (userOnline)
+        info = tr("<font color=\"darkgray\">User now online</font>");
+    else
+        info = tr("<font color=\"darkgray\">User went offline</font>");
+    chatBrowser->append(tr("<b>[%1]</b> %2").arg(QTime::currentTime().toString()).arg(info));
+}
+
 void PMWidget::sendMessage()
 {
+    //Check if user is actually online
+    if (!userOnline)
+    {
+        //Output line with current time
+        QString info = tr("<font color=\"darkgray\">User currently offline. Personal message wil not be sent.</font>");
+		chatBrowser->append(tr("<b>[%1]</b> %2").arg(QTime::currentTime().toString()).arg(info));
+
+        chatLineEdit->setText("");
+
+        //Don't send PM - useless anyway
+        return;
+    }
+
 	QString msg = chatLineEdit->text();
 	chatLineEdit->setText("");
 

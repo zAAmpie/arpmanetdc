@@ -684,6 +684,7 @@ void ArpmanetDC::createWidgets()
 	tabs->setIconSize(QSize(16,16));
 	tabs->setTabsClosable(true);
 	tabTextColorNotify = QColor(Qt::red);
+    tabTextColorOffline = QColor(Qt::gray);
 	
 	//Chat
 	mainChatTextEdit = new QTextBrowser(this);
@@ -966,6 +967,7 @@ void ArpmanetDC::quickSearchPressed()
     quickSearchLineEdit->clear();  
 
     connect(sWidget, SIGNAL(search(quint64, QString, QByteArray, SearchWidget *)), this, SLOT(searchButtonPressed(quint64, QString, QByteArray, SearchWidget *)));
+    connect(sWidget, SIGNAL(queueDownload(int, QByteArray, QString, quint64, QHostAddress)), pTransferManager, SLOT(queueDownload(int, QByteArray, QString, quint64, QHostAddress)));
 
 	searchWidgetHash.insert(sWidget->widget(), sWidget);
     searchWidgetIDHash.insert(sWidget->id(), sWidget);
@@ -1435,8 +1437,8 @@ void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)
 
 		tabs->addTab(pmWidget->widget(), QIcon(":/ArpmanetDC/Resources/UserIcon.png"), tr("PM - %1").arg(otherNick));
 		
-		//If on mainchat, switch to PM
-		if (tabs->currentIndex() == 0)
+		//If on mainchat and not typing, switch to PM
+		if (tabs->currentIndex() == 0 && chatLineEdit->text().isEmpty())
 		{
 			tabs->setCurrentIndex(tabs->indexOf(pmWidget->widget()));
 		}
@@ -1458,7 +1460,7 @@ void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)
 	else
 	{
 		//If on mainchat, switch to PM
-		if (tabs->currentIndex() == 0)
+		if (tabs->currentIndex() == 0 && chatLineEdit->text().isEmpty())
 		{
 			tabs->setCurrentIndex(tabs->indexOf(foundWidget));
 		}
@@ -1632,6 +1634,32 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
 
 		//Update user count
 		userHubCountLabel->setText(tr("Hub Users: %1/%2").arg(userListModel->findItems("ArpmanetDC", Qt::MatchExactly, 5).count()).arg(userListModel->rowCount()));		
+
+        //Check if PM windows are open for this user - notify
+	    QWidget *foundWidget = 0;
+	    QHashIterator<QWidget *, PMWidget *> i(pmWidgetHash);
+	    while (i.hasNext())
+	    {
+		    if (i.peekNext().value())
+		    {
+			    if (i.peekNext().value()->otherNick() == nick)
+			    {
+				    foundWidget = i.peekNext().key();
+				    break;
+			    }
+		    }
+		    i.next();
+	    }
+
+        //Notify existing tab
+	    if (foundWidget)
+	    {
+		    //Notify tab
+            tabs->tabBar()->setTabTextColor(tabs->indexOf(foundWidget), tabTextColorNormal);
+
+            //Set online status
+            pmWidgetHash.value(foundWidget)->userLoginChanged(true);
+	    }
 	}
 	//Present - edit existing
 	else
@@ -1643,14 +1671,22 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
 		if (mode.compare("P") == 0)
 		{
 			//Passive user
+            userListModel->item(foundIndex,0)->setText(tr("<font color=\"red\">%1</font>").arg(nick));
 			userListModel->item(foundIndex, 0)->setIcon(QIcon(*userFirewallIcon));
 		}
-		else
+		else if (client.compare("ArpmanetDC") == 0)
 		{
-			//Active user
+			//Active user - ArpmanetDC
+            userListModel->item(foundIndex,0)->setText(tr("<font color=\"green\">%1</font>").arg(nick));
 			userListModel->item(foundIndex, 0)->setIcon(QIcon(*userIcon));
 		}
-
+        else
+        {
+            //Active user
+            userListModel->item(foundIndex,0)->setText(tr("<font color=\"black\">%1</font>").arg(nick));
+			userListModel->item(foundIndex, 0)->setIcon(QIcon(*userIcon));
+        }
+        
 		if (!desc.isEmpty())
 		{
 			//Edit description
@@ -1691,6 +1727,32 @@ void ArpmanetDC::userListUserLoggedOut(QString nick)
 
 	//Update user count
 	userHubCountLabel->setText(tr("Hub Users: %1/%2").arg(userListModel->findItems("ArpmanetDC", Qt::MatchExactly, 5).count()).arg(userListModel->rowCount()));
+
+    //Check if a tab exists with a PM for this nick
+	QWidget *foundWidget = 0;
+	QHashIterator<QWidget *, PMWidget *> i(pmWidgetHash);
+	while (i.hasNext())
+	{
+		if (i.peekNext().value())
+		{
+			if (i.peekNext().value()->otherNick() == nick)
+			{
+				foundWidget = i.peekNext().key();
+				break;
+			}
+		}
+		i.next();
+	}
+
+    //Notify existing tab
+	if (foundWidget)
+	{
+		//Notify tab
+        tabs->tabBar()->setTabTextColor(tabs->indexOf(foundWidget), tabTextColorOffline);
+
+        //Set offline status
+        pmWidgetHash.value(foundWidget)->userLoginChanged(false);
+	}
 }
 
 void ArpmanetDC::userListNickListReceived(QStringList list)
@@ -1976,6 +2038,7 @@ void ArpmanetDC::mainChatLinkClicked(const QUrl &link)
         SearchWidget *sWidget = new SearchWidget(searchCompleter, pTypeIconList, pTransferManager, tth, this);
  
         connect(sWidget, SIGNAL(search(quint64, QString, QByteArray, SearchWidget *)), this, SLOT(searchButtonPressed(quint64, QString, QByteArray, SearchWidget *)));
+        connect(sWidget, SIGNAL(queueDownload(int, QByteArray, QString, quint64, QHostAddress)), pTransferManager, SLOT(queueDownload(int, QByteArray, QString, quint64, QHostAddress)));
 
 	    searchWidgetHash.insert(sWidget->widget(), sWidget);
         searchWidgetIDHash.insert(sWidget->id(), sWidget);
