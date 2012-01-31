@@ -307,15 +307,53 @@ void NetworkTopology::setBootstrapStatus(int status)
 
 void NetworkTopology::collectBucketGarbage()
 {
-    qint64 cutoffTime = QDateTime::currentMSecsSinceEpoch() - 1800000;  // 30 minutes ago
-    QHashIterator<QByteArray, HostIntPair*> ib(buckets);
+    QMutableHashIterator<QByteArray, HostIntPair*> ib(buckets);
+
+    // Iterate over buckets: shake hosts from small buckets if they also occur in large buckets
     while (ib.hasNext())
     {
-        QListIterator<qint64> il(*ib.peekNext().value()->second);
+        QByteArray bucket = ib.next().key();
+        QMutableListIterator<QHostAddress> ilh(*ib.peekNext().value()->first);
+        QMutableListIterator<qint64> ili(*ib.peekNext().value()->second);
+        while (ilh.hasNext())
+        {
+            if (ili.hasNext())
+                ili.next();
+            QHostAddress testForHost = ilh.next();
+            int currentBucketSize = buckets.value(bucket)->first->count();
+            QMutableHashIterator<QByteArray, HostIntPair*> ib2(buckets);
+            while (ib2.hasNext())
+            {
+                QByteArray testBucket = ib.next().key();
+                int testBucketSize = buckets.value(testBucket)->first->count();
+                if ((currentBucketSize < testBucketSize) && (buckets.value(testBucket)->first->contains(testForHost)))
+                {
+                    ili.remove();
+                    ilh.remove();
+                }
+            }
+        }
+        if (buckets.value(bucket)->first->isEmpty())
+        {
+            delete buckets.value(bucket)->first;
+            delete buckets.value(bucket)->second;
+            delete buckets.value(bucket);
+            ib.remove();
+        }
+    }
+
+    // Iterate over buckets: prune stale entries and refresh entries about to become stale
+    qint64 cutoffTime = QDateTime::currentMSecsSinceEpoch() - 1800000;  // 30 minutes ago
+    qint64 bucketRequestTime = QDateTime::currentMSecsSinceEpoch() - 900000;  // 30 minutes ago
+    ib.toFront();
+    while (ib.hasNext())
+    {
+        QMutableListIterator<qint64> il(*ib.peekNext().value()->second);
         QByteArray bucket = ib.next().key();
         if (il.hasNext())
         {
             il.toBack();
+            // Purge old entries
             while ((il.hasPrevious()) && (il.previous() < cutoffTime))
             {
                 QHostAddress h = QHostAddress(buckets.value(bucket)->first->back());
@@ -323,12 +361,19 @@ void NetworkTopology::collectBucketGarbage()
                 buckets.value(bucket)->first->removeLast();
                 buckets.value(bucket)->second->removeLast();
             }
+            // Request buckets from semi-old entries
+            while ((il.hasPrevious()) && (il.peekPrevious() < bucketRequestTime))
+            {
+                QHostAddress h = QHostAddress(il.previous());
+                emit requestBucketContents(h);
+            }
+            // Delete empty buckets
             if (buckets.value(bucket)->first->isEmpty())
             {
                 delete buckets.value(bucket)->first;
                 delete buckets.value(bucket)->second;
                 delete buckets.value(bucket);
-                buckets.remove(bucket);
+                ib.remove();
             }
         }
     }
