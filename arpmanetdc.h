@@ -225,6 +225,9 @@ private slots:
 	//Right-click menus
 	void showUserListContextMenu(const QPoint&);
 
+    //Userlist keypresses
+    void userListKeyPressed(Qt::Key key, QString keyStr);
+
     //-----===== SYSTEM TRAY ICON =====-----
     void systemTrayActivated(QSystemTrayIcon::ActivationReason reason);
 

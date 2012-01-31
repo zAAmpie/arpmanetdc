@@ -95,16 +95,32 @@ private:
     QString pText;
 };
 
+
+//TableView that emits keypresses
+class CKeyTableView : public QTableView
+{
+    Q_OBJECT
+public:
+    CKeyTableView(QWidget *parent = 0) : QTableView(parent) {}
+
+    void keyPressEvent(QKeyEvent *event);
+signals:
+    void keyPressed(Qt::Key key, QString keyStr);
+};
+
 //TreeView that can display placeholder text
 class CTextTreeView : public QTreeView
 {
-
+    Q_OBJECT
 public:
     CTextTreeView(const QString &text = "", QWidget *parent = 0) : QTreeView(parent) {pText = text;}
 
     void setPlaceholderText(const QString &text) {pText = text;}
     QString placeholderText() {return pText;}
 
+    void keyPressEvent(QKeyEvent *event);
+signals:
+    void keyPressed(Qt::Key key);
 protected:
     void paintEvent(QPaintEvent *);
 private:
@@ -115,7 +131,6 @@ private:
 //Draggable QTreeView
 class CDragTreeView : public CTextTreeView
 {
-    Q_OBJECT
 public:
     CDragTreeView(QString text = "", QWidget *parent = 0) : CTextTreeView(text, parent) {} //Empty constructor
 
@@ -126,9 +141,6 @@ public:
     //void dragEnterEvent(QDragEnterEvent *event) {}
     //void dropEvent(QDropEvent *event) {}
 
-    void keyPressEvent(QKeyEvent *event);
-signals:
-    void keyPressed(Qt::Key key);
 private:
     QPoint dragStartPosition;
 };
@@ -144,10 +156,8 @@ public:
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);
 
-    void keyPressEvent(QKeyEvent *event);
 signals:
     void droppedURLList(QList<QUrl> list);
-    void keyPressed(Qt::Key key);
 };
 
 

@@ -349,12 +349,6 @@ void CDragTreeView::dragMoveEvent(QDragMoveEvent *event)
     //QTreeView::dragMoveEvent(event);
 }
 
-void CDragTreeView::keyPressEvent(QKeyEvent *event)
-{
-    emit keyPressed((Qt::Key)event->key());
-    QTreeView::keyPressEvent(event);
-}
-
 void CDropTreeView::dragEnterEvent(QDragEnterEvent *event)
 {
     QStringList formats = event->mimeData()->formats();
@@ -378,7 +372,7 @@ void CDropTreeView::dragMoveEvent(QDragMoveEvent *event)
     event->acceptProposedAction();
 }
 
-void CDropTreeView::keyPressEvent(QKeyEvent *event)
+void CTextTreeView::keyPressEvent(QKeyEvent *event)
 {
     emit keyPressed((Qt::Key)event->key());
     QTreeView::keyPressEvent(event);
@@ -400,4 +394,11 @@ void CTextTreeView::paintEvent(QPaintEvent *event)
     }
 
     QTreeView::paintEvent(event);
+}
+
+void CKeyTableView::keyPressEvent(QKeyEvent *event)
+{
+    if (event->type() == QKeyEvent::KeyPress)
+        emit keyPressed((Qt::Key)event->key(), event->text());
+    QTableView::keyPressEvent(event);
 }

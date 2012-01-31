@@ -33,6 +33,7 @@ void DownloadFinishedWidget::createWidgets()
 	finishedTable->setContextMenuPolicy(Qt::CustomContextMenu);
     finishedTable->horizontalHeader()->setHighlightSections(false);
     finishedTable->horizontalHeader()->setStretchLastSection(true);
+    finishedTable->setTextElideMode(Qt::ElideRight);
 
 	//Model
 	finishedModel = new QStandardItemModel(0, 5);

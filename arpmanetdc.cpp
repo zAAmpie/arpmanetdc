@@ -713,7 +713,7 @@ void ArpmanetDC::createWidgets()
 	userSortProxy->setSourceModel(userListModel);
 	
 	//Table
-	userListTable = new QTableView(this);
+	userListTable = new CKeyTableView(this);
 	userListTable->setContextMenuPolicy(Qt::CustomContextMenu);
 	
 	//Link table and model
@@ -730,7 +730,9 @@ void ArpmanetDC::createWidgets()
 	userListTable->setGridStyle(Qt::DotLine);
 	userListTable->verticalHeader()->hide();
 	userListTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    userListTable->setSelectionMode(QAbstractItemView::SingleSelection);
     userListTable->setItemDelegate(new HTMLDelegate(userListTable));
+    userListTable->setAutoScroll(false);
 
 	userListTable->hideColumn(2);
 	userListTable->hideColumn(3);
@@ -886,6 +888,7 @@ void ArpmanetDC::connectWidgets()
 {
 	//Context menu
 	connect(userListTable, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showUserListContextMenu(const QPoint&)));
+    connect(userListTable, SIGNAL(keyPressed(Qt::Key, QString)), this, SLOT(userListKeyPressed(Qt::Key, QString)));
 
 	//Send chat message when enter is pressed
     connect(chatLineEdit, SIGNAL(returnPressed()), this, SLOT(chatLineEditReturnPressed()));
@@ -1156,6 +1159,21 @@ void ArpmanetDC::showUserListContextMenu(const QPoint &pos)
 	QPoint globalPos = userListTable->viewport()->mapToGlobal(pos);
 
 	userListMenu->popup(globalPos);
+}
+
+//Userlist keypresses
+void ArpmanetDC::userListKeyPressed(Qt::Key key, QString keyStr)
+{
+    QList<QModelIndex> matchList = userSortProxy->match(userSortProxy->index(0,2), Qt::DisplayRole, QVariant(keyStr));
+ 
+    if (matchList.size() > 0)
+    {
+        QModelIndex index = matchList.first();
+        userListTable->selectRow(index.row());
+
+        QList<QModelIndex> selectedList = userListTable->selectionModel()->selectedRows();
+        userListTable->scrollTo(userSortProxy->index(index.row(), 0), QAbstractItemView::PositionAtCenter);
+    }
 }
 
 //When a tab is deleted - free from memory

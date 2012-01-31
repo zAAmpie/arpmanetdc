@@ -37,6 +37,7 @@ void DownloadQueueWidget::createWidgets()
 	queueTable->setSelectionBehavior(QAbstractItemView::SelectRows);
 	//queueTable->setItemDelegate(new HTMLDelegate(queueTable));
 	queueTable->setContextMenuPolicy(Qt::CustomContextMenu);
+    queueTable->setTextElideMode(Qt::ElideRight);
 
 	//Model
 	queueModel = new QStandardItemModel(0, 7);
