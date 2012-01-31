@@ -395,6 +395,9 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 	if (interval > 0)
 		updateSharesTimer->start(interval);
 
+    //Save uptime
+    uptime = QDateTime::currentDateTime();
+
     //Search for magnet if arguments contain one
     if (!magnetArg.isEmpty() && QString(magnetArg).compare("DUPLICATE_INSTANCE") != 0)
         mainChatLinkClicked(QUrl(QString(magnetArg)));
@@ -915,22 +918,27 @@ void ArpmanetDC::connectWidgets()
 
 void ArpmanetDC::chatLineEditReturnPressed()
 {
-    if (chatLineEdit->text().compare("+debugbuckets") == 0)
+    if (chatLineEdit->text().compare("/debugbuckets") == 0)
     {
         appendChatLine("DEBUG Bucket contents");
         appendChatLine(pDispatcher->getDebugBucketsContents());
         chatLineEdit->setText("");
     }
-    else if (chatLineEdit->text().compare("+debugcidhosts") == 0)
+    else if (chatLineEdit->text().compare("/debugcidhosts") == 0)
     {
         appendChatLine("DEBUG CID Host contents");
         appendChatLine(pDispatcher->getDebugCIDHostContents());
         chatLineEdit->setText("");
     }
-    else if (chatLineEdit->text().compare("+linscan") == 0)
+    else if (chatLineEdit->text().compare("/linscan") == 0)
     {
         appendChatLine("DEBUG Linear scan hosts on network");
         pDispatcher->initiateLinscan();
+        chatLineEdit->setText("");
+    }
+    else if (chatLineEdit->text().compare("/uptime") == 0 || chatLineEdit->text().compare("/u") == 0)
+    {
+        pHub->sendChatMessage(tr("/me uptime: %1").arg(uptimeFromInt(QDateTime::currentMSecsSinceEpoch() - uptime.toMSecsSinceEpoch())));
         chatLineEdit->setText("");
     }
     else
@@ -1459,12 +1467,23 @@ void ArpmanetDC::appendChatLine(QString msg)
 	{
 		QString nick = msg.mid(4,msg.indexOf("&gt;")-4);
 		msg.remove(0,msg.indexOf("&gt;")+4);
-		if (nick == "::error")
-			msg = tr("<font color=\"red\"><b>%1</b></font>").arg(msg);
-		else if (nick == "::info")
-			msg = tr("<font color=\"green\"><b>%1</b></font>").arg(msg);
-		else
-			msg.prepend(tr("<b>%1</b>").arg(nick));
+
+        //If using the /me command
+        if (msg.left(5).compare(" /me ") == 0)
+        {
+            msg.remove(1,4);
+            msg.prepend(tr("<i><b>* %1</b>").arg(nick));
+            msg.append("</i>");
+        }
+        else
+        {
+		    if (nick == "::error")
+			    msg = tr("<font color=\"red\"><b>%1</b></font>").arg(msg);
+		    else if (nick == "::info")
+			    msg = tr("<font color=\"green\"><b>%1</b></font>").arg(msg);
+		    else
+			    msg.prepend(tr("<b>%1</b>").arg(nick));
+        }
 	}
 
 	//Replace new lines with <br/>
@@ -1473,7 +1492,7 @@ void ArpmanetDC::appendChatLine(QString msg)
 
 	//Replace nick with red text
 	msg.replace(pSettings->value("nick"), tr("<font color=\"red\">%1</font>").arg(pSettings->value("nick")));
-
+    
 	//Convert plain text links to HTML links
 	convertHTMLLinks(msg);
 

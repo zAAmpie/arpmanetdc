@@ -307,6 +307,8 @@ private:
 	QTimer *updateSharesTimer;
     QTimer *updateTimer;
 
+    QDateTime uptime;
+
     QStringList pArguments;
     QSharedMemory *pSharedMemory;
 

@@ -58,6 +58,8 @@ quint64 sizeToBytes(QString size);
 quint64 rateToBytes(QString rate);
 //Function to convert time duration in msecs to string
 QString timeFromInt(qint64 timeMsecs);
+//Function to convert uptime in msecs to string
+QString uptimeFromInt(qint64 uptimeMsecs);
 //Function to adjust a tableviews rows to fit contents (much faster fixed size version)
 void resizeRowsToContents(QTableView *tableView);
 

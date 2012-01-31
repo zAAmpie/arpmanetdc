@@ -168,6 +168,48 @@ QString timeFromInt(qint64 timeMsecs)
     return QObject::tr("%1:%2:%3").arg(hoursStr).arg(minutesStr).arg(secondsStr);
 }
 
+//Function to convert uptime in msecs to string
+QString uptimeFromInt(qint64 uptimeMsecs)
+{
+    int weeks = (uptimeMsecs / 604800000);
+    uptimeMsecs -= weeks * 604800000;
+    int days = (uptimeMsecs / 86400000);
+    uptimeMsecs -= days * 86400000;
+    int hours = uptimeMsecs / 3600000;
+    uptimeMsecs -= hours * 3600000;
+    int minutes = uptimeMsecs / 60000;
+    uptimeMsecs -= minutes * 60000;
+    int seconds = uptimeMsecs / 1000;
+    uptimeMsecs -= seconds * 1000;
+
+    QString weeksStr, daysStr, hoursStr, minutesStr, secondsStr;
+
+    if (weeks > 0)
+        weeksStr = QObject::tr("%1 week%2").arg(weeks).arg(weeks != 1 ? "s" : "");
+
+    if (days > 0)
+        daysStr = QObject::tr("%1 day%2").arg(days).arg(days != 1 ? "s" : "");
+    if (weeks > 0)
+        daysStr.prepend(", ");
+
+    if (hours > 0)
+        hoursStr = QObject::tr("%1 hour%2").arg(hours).arg(hours != 1 ? "s" : "");
+    if (days > 0 || weeks > 0)
+        hoursStr.prepend(", ");
+
+    if (minutes > 0)
+        minutesStr = QObject::tr("%1 minute%2").arg(minutes).arg(minutes != 1 ? "s" : "");
+    if (hours > 0 || days > 0 || weeks > 0)
+        minutesStr.prepend(", ");
+
+    secondsStr = QObject::tr("%1 second%2").arg(seconds).arg(seconds != 1 ? "s" : "");
+    
+    if (minutes > 0 | hours > 0 || days > 0 || weeks > 0)
+        secondsStr.prepend(", ");
+    
+    return QObject::tr("%1%2%3%4%5").arg(weeksStr).arg(daysStr).arg(hoursStr).arg(minutesStr).arg(secondsStr);
+}
+
 void resizeRowsToContents(QTableView *tableView)
 {
     if (!tableView)
