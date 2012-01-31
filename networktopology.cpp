@@ -324,7 +324,7 @@ void NetworkTopology::collectBucketGarbage()
             QMutableHashIterator<QByteArray, HostIntPair*> ib2(buckets);
             while (ib2.hasNext())
             {
-                QByteArray testBucket = ib.next().key();
+                QByteArray testBucket = ib2.next().key();
                 int testBucketSize = buckets.value(testBucket)->first->count();
                 if ((currentBucketSize < testBucketSize) && (buckets.value(testBucket)->first->contains(testForHost)))
                 {
@@ -344,7 +344,7 @@ void NetworkTopology::collectBucketGarbage()
 
     // Iterate over buckets: prune stale entries and refresh entries about to become stale
     qint64 cutoffTime = QDateTime::currentMSecsSinceEpoch() - 1800000;  // 30 minutes ago
-    qint64 bucketRequestTime = QDateTime::currentMSecsSinceEpoch() - 900000;  // 30 minutes ago
+    qint64 bucketRequestTime = QDateTime::currentMSecsSinceEpoch() - 900000;  // 15 minutes ago
     ib.toFront();
     while (ib.hasNext())
     {
