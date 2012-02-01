@@ -143,8 +143,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     pDispatcher->setCID(cid);
 
     // Tell Dispatcher what protocols we support from a nice and central place
-    //pDispatcher->setProtocolCapabilityBitmask(FailsafeTransferProtocol);
-    pDispatcher->setProtocolCapabilityBitmask(FailsafeTransferProtocol | uTPProtocol);
+    pDispatcher->setProtocolCapabilityBitmask(FailsafeTransferProtocol);
+    //pDispatcher->setProtocolCapabilityBitmask(FailsafeTransferProtocol | uTPProtocol);
 
     //Connect Dispatcher to GUI - handle search replies from other clients
 	connect(pDispatcher, SIGNAL(bootstrapStatusChanged(int)), this, SLOT(bootstrapStatusChanged(int)), Qt::QueuedConnection);

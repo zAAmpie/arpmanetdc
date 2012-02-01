@@ -79,7 +79,7 @@ static const QMap<QString, char> PROTOCOL_MAP = initMapValues();
 #define MAX_MAINCHAT_BLOCKS 1000
 #define MAX_STATUS_HISTORY_ENTRIES 20 //Tooltip of status label
 
-#define VERSION_STRING "0.1.1"
+#define VERSION_STRING "0.1.2"
 
 //Main GUI window class
 class ArpmanetDC : public QMainWindow
