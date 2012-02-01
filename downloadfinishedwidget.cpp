@@ -147,7 +147,7 @@ void DownloadFinishedWidget::openActionPressed()
         if (fi.exists() && fi.isFile())
         {
 	        //"Start" the file
-	        QProcess::startDetached(filePath + fileName);
+            QDesktopServices::openUrl(QUrl(filePath + fileName));
 
             //Deselect to avoid infinite loop
             finishedTable->selectionModel()->select(QItemSelection(selectedIndex, finishedModel->index(selectedIndex.row(), 4)), QItemSelectionModel::Deselect);

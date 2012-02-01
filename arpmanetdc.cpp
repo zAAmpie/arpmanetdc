@@ -1402,7 +1402,6 @@ void ArpmanetDC::downloadCompleted(QByteArray tth)
     if (pQueueList->contains(tth))
     {
         file = pQueueList->value(tth);
-        pQueueList->remove(tth);
     }
     else
         return;
@@ -1415,10 +1414,12 @@ void ArpmanetDC::downloadCompleted(QByteArray tth)
     item.fileName = file.fileName;
     item.filePath = file.filePath;
     item.fileSize = file.fileSize;
-    item.tthRoot = file.tthRoot;
+    item.tthRoot = new QByteArray(*file.tthRoot);
     item.downloadedDate = QDateTime::currentDateTime().toString("dd-MM-yyyy HH:mm:ss:zzz");
    
     addFinishedDownloadToList(item);
+
+    deleteFromQueue(tth);
 
     //Set status
     setStatus(tr("Download completed: %1").arg(item.fileName));
