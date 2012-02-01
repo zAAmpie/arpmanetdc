@@ -65,9 +65,9 @@ void NetworkTopology::announceReplyArrived(bool isMulticast, QHostAddress &hostA
         not_multicast = false;
     }
 
-    if (incomingAnnouncementCount < 20)
+    //if (incomingAnnouncementCount < 20)
         emit requestAllBuckets(hostAddr);
-    incomingAnnouncementCount++;
+    //incomingAnnouncementCount++;
 
     // determine own bucket id
     if (ownBucketId.contains(bucketId))
@@ -119,7 +119,7 @@ void NetworkTopology::bucketContentsArrived(QByteArray bucket, QHostAddress send
     // update: only do this for empty buckets, i.e. hosts that are alone on a segment, otherwise other buckets are
     // cross-contaminated by interpreting the gossiper as part of it.
     if (iter == 0)
-        updateHostTimestamp(bucketID, senderHost, 0);
+        updateHostTimestamp(bucketID, senderHost);
 }
 
 void NetworkTopology::initiateBucketRequests()
@@ -236,8 +236,26 @@ void NetworkTopology::updateHostTimestamp(QByteArray &bucket, QHostAddress &host
             buckets.value(bucket)->first->removeAt(pos);
             buckets.value(bucket)->second->removeAt(pos);
         }
-        buckets.value(bucket)->first->prepend(host);
-        buckets.value(bucket)->second->prepend(time);
+        // this is wrong, the entries must be inserted in the correct order
+        //buckets.value(bucket)->first->prepend(host);
+        //buckets.value(bucket)->second->prepend(time);
+
+        // optimization: dig the const stuff out of the 24-byte deep reference beforehand
+        qint64list *timestampList = buckets.value(bucket)->second;
+        int length = timestampList->size();
+        int insertPos = length;
+        for (int i = 0; i < length; i++)
+        {
+            if (time >= timestampList->at(i))
+            {
+                insertPos = i;
+                break;
+            }
+        }
+
+        //qDebug() << timestampList->at(insertPos) << " <= " << time << " inserting at " << insertPos;
+        buckets.value(bucket)->first->insert(insertPos, host);
+        timestampList->insert(insertPos, time);
     }
     else
     {
@@ -254,13 +272,12 @@ void NetworkTopology::updateHostTimestamp(QByteArray &bucket, QHostAddress &host
 
 qint64 NetworkTopology::getHostAge(QByteArray &bucket, QHostAddress &host)
 {
-    qint64 time = QDateTime::currentMSecsSinceEpoch();
     qint64 age = -1;
     if (buckets.contains(bucket))
     {
         int pos = buckets.value(bucket)->first->indexOf(host);
         if (pos > -1)
-            age = time - buckets.value(bucket)->second->at(pos);
+            age = QDateTime::currentMSecsSinceEpoch() - buckets.value(bucket)->second->at(pos);
     }
     return age;
 }
@@ -376,8 +393,8 @@ void NetworkTopology::collectBucketGarbage()
             // Request buckets from semi-old entries
             while ((il.hasPrevious()) && (il.peekPrevious() < bucketRequestTime))
             {
-                QHostAddress h = QHostAddress(il.previous());
-                emit requestBucketContents(h);
+                int p = buckets.value(bucket)->second->indexOf(il.previous());
+                emit requestBucketContents(buckets.value(bucket)->first->at(p));
             }
         }
         // Delete empty buckets
