@@ -151,6 +151,9 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(pDispatcher, SIGNAL(searchResultsReceived(QHostAddress, QByteArray, quint64, QByteArray)),
             this, SLOT(searchResultReceived(QHostAddress, QByteArray, quint64, QByteArray)), Qt::QueuedConnection);
 	connect(pDispatcher, SIGNAL(appendChatLine(QString)), this, SLOT(appendChatLine(QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(getHostCount()), pDispatcher, SLOT(getHostCount()), Qt::QueuedConnection);
+    connect(pDispatcher, SIGNAL(returnHostCount(int)), this, SLOT(returnHostCount(int)), Qt::QueuedConnection);
+    connect(this, SIGNAL(initiateSearch(quint64, QByteArray)), pDispatcher, SLOT(initiateSearch(quint64, QByteArray)), Qt::QueuedConnection);
 
     // Create Transfer manager
     transferThread = new ExecThread();
@@ -1264,7 +1267,12 @@ void ArpmanetDC::tabChanged(int index)
 void ArpmanetDC::searchButtonPressed(quint64 id, QString searchStr, QByteArray searchPacket, SearchWidget *sWidget)
 {
 	//Search button was pressed on a search tab
-	pDispatcher->initiateSearch(id, searchPacket);
+	emit initiateSearch(id, searchPacket);
+
+    //Replace the id
+    searchWidgetIDHash.remove(searchWidgetIDHash.key(sWidget));
+    searchWidgetIDHash.insert(id, sWidget);
+
     pShare->querySearchString(QHostAddress("127.0.0.1"), QByteArray("ME!"), id, searchPacket);
 
 	tabs->setTabText(tabs->indexOf(sWidget->widget()), tr("Search - %1").arg(searchStr.left(20)));
@@ -1292,6 +1300,11 @@ void ArpmanetDC::searchResultReceived(QHostAddress senderHost, QByteArray sender
 {
     if (searchWidgetIDHash.contains(searchID))
         searchWidgetIDHash.value(searchID)->addSearchResult(senderHost, senderCID, searchResult);
+}
+
+void ArpmanetDC::returnHostCount(int count)
+{
+    CIDHostsLabel->setText(tr("%1").arg(count));
 }
 
 void ArpmanetDC::shareSaveButtonPressed()
@@ -1582,8 +1595,7 @@ void ArpmanetDC::sortUserList()
 void ArpmanetDC::updateGUIEverySecond()
 {
     //Called every second to update the GUI
-    //CIDHostsLabel->setText(tr("%1").arg(pDispatcher->getNumberOfCIDHosts()));
-    CIDHostsLabel->setText(tr("%1").arg(pDispatcher->getNumberOfHosts()));
+    emit getHostCount();    
 }
 
 //Calculate rates

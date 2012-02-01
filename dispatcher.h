@@ -101,6 +101,9 @@ signals:
     // Debug messages
     void appendChatLine(QString message);
 
+    //GUI user count
+    void returnHostCount(int count);
+
 public slots:
     // Bootstrapping
     void sendMulticastAnnounce();
@@ -113,7 +116,7 @@ public slots:
     void removeNetworkScanRange(quint32 rangeBase);
 
     // Search
-    bool initiateSearch(quint64 &searchID, QByteArray &searchPacket);
+    bool initiateSearch(quint64 searchID, QByteArray searchPacket);
     void sendSearchResult(QHostAddress toHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult);
     bool initiateTTHSearch(QByteArray tth);
     void sendTTHSearchResult(QHostAddress toHost, QByteArray tth);
@@ -139,6 +142,9 @@ public slots:
     void sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *datagram);
     void sendBroadcastRawDatagram(QByteArray &datagram);
     void sendMulticastRawDatagram(QByteArray &datagram);
+
+    //GUI user count
+    void getHostCount();
 
     // debugging
     QString getDebugBucketsContents();

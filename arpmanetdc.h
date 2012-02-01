@@ -168,6 +168,7 @@ private slots:
 	//Dispatcher slots
 	void bootstrapStatusChanged(int status);
     void searchResultReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult);
+    void returnHostCount(int count);
 
     //ShareSearch slot
 	void fileHashed(QString fileName, quint64 fileSize);
@@ -265,6 +266,13 @@ signals:
     
     //Signals for transferWidget
     void stopTransfer(QByteArray tth, int transferType, QHostAddress hostAddr);
+
+    //----------========== DISPATCHER SIGNALS ==========----------
+
+    //Initiate search
+    void initiateSearch(quint64 id, QByteArray searchPacket);
+    //Signals for host count
+    void getHostCount();
 
 protected:
     void changeEvent(QEvent *e);

@@ -398,7 +398,7 @@ void Dispatcher::handleReceivedAnnounce(quint8 datagramType, QHostAddress &sende
 
 // ------------------=====================   Search functions   =====================----------------------
 
-bool Dispatcher::initiateSearch(quint64 &searchId, QByteArray &searchData)
+bool Dispatcher::initiateSearch(quint64 searchId, QByteArray searchData)
 {
     QByteArray datagram;
     if (networkBootstrap->getBootstrapStatus() == NETWORK_MCAST)
@@ -1198,6 +1198,12 @@ int Dispatcher::getNumberOfHosts()
 QByteArray Dispatcher::getCID()
 {
     return CID;
+}
+
+//GUI user count
+void Dispatcher::getHostCount()
+{
+    emit returnHostCount(networkTopology->getNumberOfHosts());
 }
 
 // ------------------=====================   DEBUGGING   =====================----------------------

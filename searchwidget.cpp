@@ -449,6 +449,8 @@ void SearchWidget::searchPressed()
     resultsQueue.clear();
     resultNumberLabel->setText(tr(""));
 
+    pID = staticID++;
+
 	if (!searchLineEdit->text().isEmpty())
 	{
         qint16 majorVersion = -1;
