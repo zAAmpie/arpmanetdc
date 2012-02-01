@@ -53,9 +53,9 @@ NetworkBootstrap::NetworkBootstrap(QObject *parent) :
 
 NetworkBootstrap::~NetworkBootstrap()
 {
-    delete bootstrapTimer;
-    delete networkScanTimer;
-    delete keepaliveTimer;
+    bootstrapTimer->deleteLater();
+    networkScanTimer->deleteLater();
+    keepaliveTimer->deleteLater();
 }
 
 void NetworkBootstrap::receiveLastKnownPeers(QList<QHostAddress> peers)

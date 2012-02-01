@@ -6,18 +6,18 @@ NetworkTopology::NetworkTopology(QObject *parent) :
     unbootstrapped = true;
     not_multicast = true;
     incomingAnnouncementCount = 0;
-    bootstrapTimeoutTimer = new QTimer();
+    bootstrapTimeoutTimer = new QTimer(this);
     bootstrapTimeoutTimer->setSingleShot(true);
     connect(bootstrapTimeoutTimer, SIGNAL(timeout()), this, SLOT(bootstrapTimeoutEvent()));
     bootstrapTimeoutTimer->start(32000);
 
-    garbageCollectTimer = new QTimer();
+    garbageCollectTimer = new QTimer(this);
     garbageCollectTimer->setInterval(600000); // 10 min
     garbageCollectTimer->setSingleShot(false);
     connect(garbageCollectTimer, SIGNAL(timeout()), this, SLOT(collectBucketGarbage()));
     garbageCollectTimer->start();
 
-    savePeersTimer = new QTimer();
+    savePeersTimer = new QTimer(this);
     savePeersTimer->setInterval(300000); // 5 min
     garbageCollectTimer->setSingleShot(false);
     connect(savePeersTimer, SIGNAL(timeout()), this, SLOT(saveActivePeers()));
@@ -26,9 +26,9 @@ NetworkTopology::NetworkTopology(QObject *parent) :
 
 NetworkTopology::~NetworkTopology()
 {
-    delete bootstrapTimeoutTimer;
-    delete garbageCollectTimer;
-    delete savePeersTimer;
+    bootstrapTimeoutTimer->deleteLater();
+    garbageCollectTimer->deleteLater();
+    savePeersTimer->deleteLater();
     //Emitting signal in this destructor will likely not be transmitted since every object is going down along with it
     //::yes that is true, this was put here when we wrote them to nodes.dat, which worked well. this signal is probably useless.
     if (QDateTime::currentMSecsSinceEpoch() - startupTime > 120000) //Don't save hosts unless the program has been online for 2min

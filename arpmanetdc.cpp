@@ -470,6 +470,15 @@ ArpmanetDC::~ArpmanetDC()
             delete dbThread;
         }
 
+        dispatcherThread->quit();
+        if (dispatcherThread->wait(5000))
+            delete dispatcherThread;
+        else
+        {
+            dispatcherThread->terminate();
+            delete dispatcherThread;
+        }
+
 	    sqlite3_close(db);
     }
 

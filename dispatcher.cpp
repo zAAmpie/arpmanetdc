@@ -65,7 +65,7 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     connect(networkTopology, SIGNAL(saveLastKnownPeers(QList<QHostAddress>)), this, SIGNAL(saveLastKnownPeers(QList<QHostAddress>)));
 
     // Rejoin multicast timer
-    rejoinMulticastTimer = new QTimer();
+    rejoinMulticastTimer = new QTimer(this);
     rejoinMulticastTimer->setInterval(300000);
     rejoinMulticastTimer->setSingleShot(false);
     connect(rejoinMulticastTimer, SIGNAL(timeout()), this, SLOT(rejoinMulticastTimeout()));
@@ -74,14 +74,14 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
 
 Dispatcher::~Dispatcher()
 {
-    delete networkBootstrap;
+    networkBootstrap->deleteLater();
 #if QT_VERSION >= 0x040800
     receiverUdpSocket->leaveMulticastGroup(mcastAddress);
 #endif
-    delete rejoinMulticastTimer;
-    delete networkTopology;
-    delete senderUdpSocket;
-    delete receiverUdpSocket;
+    rejoinMulticastTimer->deleteLater();
+    networkTopology->deleteLater();
+    senderUdpSocket->deleteLater();
+    receiverUdpSocket->deleteLater();
 }
 
 void Dispatcher::reconfigureDispatchHostPort(QHostAddress ip, quint16 port)
