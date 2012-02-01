@@ -18,6 +18,7 @@ SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconL
 	connectWidgets();
 
 	pID = staticID++;
+    resultsHash = new QMultiHash<QString, QString>();
 
     sortDue = false;
     sortTimer = new QTimer();
@@ -38,6 +39,7 @@ SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconL
 	connectWidgets();
 
 	pID = staticID++;
+    resultsHash = new QMultiHash<QString, QString>();
 
     sortDue = false;
     sortTimer = new QTimer();
@@ -326,9 +328,22 @@ void SearchWidget::addSearchResult(QHostAddress sender, QByteArray cid, QByteArr
     QFileInfo fi(res.fileName);
     QByteArray base32TTH(res.tthRoot);
     base32Encode(base32TTH);
+    QString tthStr(base32TTH.data());
+
+    QByteArray base32CID(cid);
+    base32Encode(base32CID);
+    QString cidStr(base32CID.data());
 
     //Get parent matching base32TTH
     QList<QStandardItem *> results = resultsModel->findItems(base32TTH.data(), Qt::MatchExactly, 8);
+
+    //Check if results contain the same filepath and cid
+    if (resultsHash->values(tthStr).contains(cidStr))
+        //Silently return
+        return;
+
+    //Add to hash
+    resultsHash->insert(tthStr, cidStr);
 
     //Create new row
     QList<QStandardItem *> row;
@@ -346,13 +361,9 @@ void SearchWidget::addSearchResult(QHostAddress sender, QByteArray cid, QByteArr
     row.append(new CStandardItem(CStandardItem::IntegerType, tr("%1").arg(res.minorVersion)));
     row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, base32TTH.data()));
     row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, sender.toString()));
-
-    QByteArray base32CID(cid);
-    base32Encode(base32CID);
     row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, base32CID.data()));
 
     //If new entry
-    
     if (results.isEmpty())
     {
         //Add new row
@@ -383,6 +394,7 @@ void SearchWidget::searchPressed()
 	resultsModel->removeRows(0, resultsModel->rowCount());
     totalResultCount = 0;
     uniqueResultCount = 0;
+    resultsHash->clear();
     resultNumberLabel->setText(tr(""));
 
 	if (!searchLineEdit->text().isEmpty())
