@@ -31,7 +31,6 @@ public:
 	explicit HubConnection(QString address, quint16 port, QString nick, QString password, QString version, QObject *parent = 0);
 	~HubConnection();
 
-    void connectHub();
     void setHubAddress(QString address);
     void setHubPort(quint16 port);
     void setNick(QString nick);
@@ -61,6 +60,9 @@ signals:
 	void hubError(QString error);
     // Debug messages
     void appendChatLine(QString message);
+
+public slots:
+    void connectHub();
 
 private slots:
 	//Received a message from the hub

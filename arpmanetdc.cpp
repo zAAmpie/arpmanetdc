@@ -409,7 +409,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
             settingsAction->trigger();
     }
     else
-        pHub->connectHub();
+        QTimer::singleShot(5000, pHub, SLOT(connectHub()));
 
     createdGUI = true;
 }
@@ -1678,7 +1678,7 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
 		{
 			//Active user - ArpmanetDC
             userListModel->item(foundIndex,0)->setText(tr("<font color=\"green\">%1</font>").arg(nick));
-			userListModel->item(foundIndex, 0)->setIcon(QIcon(*userIcon));
+			userListModel->item(foundIndex, 0)->setIcon(QIcon(*arpmanetUserIcon));
 		}
         else
         {
