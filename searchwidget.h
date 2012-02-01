@@ -24,8 +24,18 @@
 #include "util.h"
 #include "resourceextractor.h"
 
+#define PROCESS_RESULTS_EVERY_MS 100
+#define RESULTS_PER_PROCESS 100
+
 class ArpmanetDC;
 class TransferManager;
+
+struct ResultStruct
+{
+    QHostAddress sender;
+    QByteArray cid;
+    QByteArray result;
+};
 
 //Class encapsulating all widgets/signals for search tab
 class SearchWidget : public QObject
@@ -66,6 +76,9 @@ private slots:
     //Stop the progress thingy after x seconds
     void stopProgress();
 
+    //Process search result
+    void processSearchResult();
+
 signals:
 	//Search for string
 	void search(quint64 id, QString searchStr, QByteArray searchPacket, SearchWidget *sWidget);
@@ -92,6 +105,8 @@ private:
     QTimer *sortTimer;
     bool sortDue;
 
+    QTimer *processResultTimer;
+
 	//Parameters
 	quint64 pID;
 	static quint64 staticID;
@@ -115,13 +130,19 @@ private:
 	QPushButton *searchButton;
 	QProgressBar *searchProgress;
 
+    //Results queue
+    QQueue<ResultStruct> resultsQueue;
+
     //Results
     QLabel *resultNumberLabel;
 	QTreeView *resultsTable;
 	QStandardItemModel *resultsModel;
     QStandardItem *parentItem;
 
-    QMultiHash<QString, QString> resultsHash;
+    QHash<QString, QStandardItem *> itemHash;
+    QMultiHash<QString, QString> cidHash;
+
+
 
 };
 

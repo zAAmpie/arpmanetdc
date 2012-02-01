@@ -24,6 +24,10 @@ SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconL
     sortTimer = new QTimer(this);
     connect(sortTimer, SIGNAL(timeout()), this, SLOT(sortTimeout()));
     sortTimer->start(500); //Sort every 500msec if necessary
+
+    processResultTimer = new QTimer(this);
+    connect(processResultTimer, SIGNAL(timeout()), this, SLOT(processSearchResult()));
+    processResultTimer->setInterval(PROCESS_RESULTS_EVERY_MS);
 }
 
 SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconList, TransferManager *transferManager, QString startupSearchString, ArpmanetDC *parent)
@@ -45,6 +49,10 @@ SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconL
     sortTimer = new QTimer(this);
     connect(sortTimer, SIGNAL(timeout()), this, SLOT(sortTimeout()));
     sortTimer->start(500); //Sort every 500msec if necessary
+
+    processResultTimer = new QTimer(this);
+    connect(processResultTimer, SIGNAL(timeout()), this, SLOT(processSearchResult()));
+    processResultTimer->setInterval(PROCESS_RESULTS_EVERY_MS);
 
     //Search for startup string
     searchLineEdit->setText(startupSearchString);
@@ -306,90 +314,125 @@ void SearchWidget::addSearchResult(QHostAddress sender, QByteArray cid, QByteArr
     if (cid == ownCID)
         return;
 
-    SearchStruct res;
+    ResultStruct r;
+    r.cid = cid;
+    r.sender = sender;
+    r.result = result;
 
-    //Get data from packet
+    //Enqueue result
+    resultsQueue.enqueue(r);
 
-    //Packet reply structure
-    //===========================================
-    //fileName          String (variable size)
-    //relativePath      String (variable size)
-    //fileSize          quint64
-    //majorVersion      qint16
-    //minorVersion      qint16
-    //tthRoot           QByteArray (variable size)
-
-    res.fileName = getStringFromByteArray(&result);
-    res.relativePath = getStringFromByteArray(&result);
-    res.fileSize = getQuint64FromByteArray(&result);
-    res.majorVersion = getQint16FromByteArray(&result);
-    res.minorVersion = getQint16FromByteArray(&result);
-    res.tthRoot = result;
-
-    //Convert to correct unit
-    QString sizeStr = bytesToSize(res.fileSize);
-
-    QFileInfo fi(res.fileName);
-    QByteArray base32TTH(res.tthRoot);
-    base32Encode(base32TTH);
-    QString tthStr(base32TTH.data());
-
-    QByteArray base32CID(cid);
-    base32Encode(base32CID);
-    QString cidStr(base32CID.data());
-
-    //Get parent matching base32TTH
-    QList<QStandardItem *> results = resultsModel->findItems(base32TTH.data(), Qt::MatchExactly, 8);
-
-    //Check if results contain the same filepath and cid
-    if (resultsHash.values(tthStr).contains(cidStr))
-        //Silently return
-        return;
-
-    //Add to hash
-    resultsHash.insert(tthStr, cidStr);
-
-    //Create new row
-    QList<QStandardItem *> row;
-    QString ext = fi.suffix();
-    row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, res.fileName, pIconList->getIconFromName(ext)));
-    if (results.isEmpty())
-        row.append(new CStandardItem(CStandardItem::IntegerType, "1"));
-    else
-        row.append(new CStandardItem(CStandardItem::IntegerType, ""));
-    row.append(new CStandardItem(CStandardItem::SizeType, sizeStr));
-    row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, fi.suffix()));
-    row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, res.relativePath));
-    row.append(new CStandardItem(CStandardItem::IntegerType, tr("%1").arg(res.fileSize)));
-    row.append(new CStandardItem(CStandardItem::IntegerType, tr("%1").arg(res.majorVersion)));
-    row.append(new CStandardItem(CStandardItem::IntegerType, tr("%1").arg(res.minorVersion)));
-    row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, base32TTH.data()));
-    row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, sender.toString()));
-    row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, base32CID.data()));
-
-    //If new entry
-    if (results.isEmpty())
+    //Start processing
+    if (!processResultTimer->isActive())
     {
-        //Add new row
-        parentItem->appendRow(row);
-        totalResultCount++;
-        uniqueResultCount++;
-        sortDue = true;
+        if (!searchProgress->isVisible())
+            searchProgress->setVisible(true);
+        processResultTimer->start();
     }
-    else
+}
+
+void SearchWidget::processSearchResult()
+{
+    //Stop timer if queue is empty
+    if (resultsQueue.isEmpty())
     {
-        //Add children to the first column item
-        QStandardItem *item = resultsModel->itemFromIndex(resultsModel->index(results.first()->row(), 0));
-        item->appendRow(row);
-
-        //Append hit counter for parent
-        QStandardItem *hitItem = resultsModel->itemFromIndex(resultsModel->index(results.first()->row(), 1));
-        hitItem->setText(tr("%1").arg(hitItem->text().toLongLong()+1));
-
-        totalResultCount++;
-        sortDue = true;
+        stopProgress();
+        processResultTimer->stop();
     }
 
+    for (int i = 0; i < qMin(RESULTS_PER_PROCESS, resultsQueue.size()); ++i)
+    {
+        //Get result from queue
+        ResultStruct r = resultsQueue.dequeue();
+
+        SearchStruct res;
+
+        //Get data from packet
+
+        //Packet reply structure
+        //===========================================
+        //fileName          String (variable size)
+        //relativePath      String (variable size)
+        //fileSize          quint64
+        //majorVersion      qint16
+        //minorVersion      qint16
+        //tthRoot           QByteArray (variable size)
+
+        res.fileName = getStringFromByteArray(&r.result);
+        res.relativePath = getStringFromByteArray(&r.result);
+        res.fileSize = getQuint64FromByteArray(&r.result);
+        res.majorVersion = getQint16FromByteArray(&r.result);
+        res.minorVersion = getQint16FromByteArray(&r.result);
+        res.tthRoot = r.result;
+
+        //Convert to correct unit
+        QString sizeStr = bytesToSize(res.fileSize);
+
+        QFileInfo fi(res.fileName);
+        QByteArray base32TTH(res.tthRoot);
+        base32Encode(base32TTH);
+        QString tthStr(base32TTH.data());
+
+        QByteArray base32CID(r.cid);
+        base32Encode(base32CID);
+        QString cidStr(base32CID.data());
+
+        //Get parent matching base32TTH
+        QStandardItem *pItem = itemHash.value(tthStr);
+        //QList<QStandardItem *> results = resultsModel->findItems(base32TTH.data(), Qt::MatchExactly, 8); //VERY SLOW
+
+        //Check if results contain the same filepath and cid
+        if (cidHash.values(tthStr).contains(cidStr))
+            //Silently return
+            continue;
+
+        //Add cid to hash
+        cidHash.insert(tthStr, cidStr);
+
+        //Create new row
+        QList<QStandardItem *> row;
+        QString ext = fi.suffix();
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, res.fileName, pIconList->getIconFromName(ext)));
+        if (!pItem)
+            row.append(new CStandardItem(CStandardItem::IntegerType, "1"));
+        else
+            row.append(new CStandardItem(CStandardItem::IntegerType, ""));
+        row.append(new CStandardItem(CStandardItem::SizeType, sizeStr));
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, fi.suffix()));
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, res.relativePath));
+        row.append(new CStandardItem(CStandardItem::IntegerType, tr("%1").arg(res.fileSize)));
+        row.append(new CStandardItem(CStandardItem::IntegerType, tr("%1").arg(res.majorVersion)));
+        row.append(new CStandardItem(CStandardItem::IntegerType, tr("%1").arg(res.minorVersion)));
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, base32TTH.data()));
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, r.sender.toString()));
+        row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, base32CID.data()));
+
+        //If new entry
+        if (!pItem)
+        {
+            //Insert item into hash
+            itemHash.insert(tthStr, row.first());
+
+            //Add new row
+            parentItem->appendRow(row);
+            totalResultCount++;
+            uniqueResultCount++;
+            sortDue = true;
+        }
+        else
+        {
+            //Add children to the first column item
+            QStandardItem *item = resultsModel->itemFromIndex(resultsModel->index(pItem->row(), 0));
+            item->appendRow(row);
+
+            //Append hit counter for parent
+            QStandardItem *hitItem = resultsModel->itemFromIndex(resultsModel->index(pItem->row(), 1));
+            hitItem->setText(tr("%1").arg(hitItem->text().toLongLong()+1));
+
+            totalResultCount++;
+            sortDue = true;
+        }
+    }
 }
 
 void SearchWidget::searchPressed()
@@ -398,7 +441,9 @@ void SearchWidget::searchPressed()
 	resultsModel->removeRows(0, resultsModel->rowCount());
     totalResultCount = 0;
     uniqueResultCount = 0;
-    resultsHash.clear();
+    cidHash.clear();
+    itemHash.clear();
+    resultsQueue.clear();
     resultNumberLabel->setText(tr(""));
 
 	if (!searchLineEdit->text().isEmpty())
@@ -432,7 +477,7 @@ void SearchWidget::searchPressed()
         emit search(pID, searchLineEdit->text(), packet, this);
 		searchProgress->setVisible(true);
 
-        QTimer::singleShot(10000, this, SLOT(stopProgress()));
+        //QTimer::singleShot(10000, this, SLOT(stopProgress()));
 	}
 }
 
