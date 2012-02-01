@@ -21,6 +21,10 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
 	connect(commitTimer, SIGNAL(timeout()), this, SLOT(commitTransaction()));
 	commitTimer->setInterval(60000);
 
+    searchHistoryTimer = new QTimer(this);
+    connect(searchHistoryTimer, SIGNAL(timeout()), this, SLOT(garbageCollectSearchHistory()));
+    searchHistoryTimer->start(120000); //Every 2min
+
 	updateTime = new QTime();
 
 	//Create a new thread
@@ -704,6 +708,31 @@ void ShareSearch::querySearchString(QHostAddress senderHost, QByteArray cid, qui
     qint16 minorVersion = getQint16FromByteArray(&searchPacket);
     QString searchStr = getStringFromByteArray(&searchPacket); 
    
+    //Check if the same host asked for the same search query in the past few seconds
+    qint64 currentAge = QDateTime::currentMSecsSinceEpoch();
+    qint64 age = searchHistoryHash.value(cid).value(searchStr); //will be 0 if not found
+    if (age != 0 && (currentAge - age < 10000))
+    {
+        //Return if found and the host searched for this query in the past 10 seconds
+        return;
+    }
+    else
+    {
+        //Either not found or searched more than 10 seconds ago for this string
+        if (!searchHistoryHash.contains(cid))
+        {
+            //This host hasn't searched yet - insert
+            QHash<QString, qint64> hash;
+            hash.insert(searchStr, currentAge);
+            searchHistoryHash.insert(cid, hash);
+        }
+        else
+        {
+            //This host has searched, insert/overwrite the current searchstring
+            searchHistoryHash[cid].insert(searchStr, currentAge);
+        }
+    }
+
 	//Split string into words
 	QStringList wordList = searchStr.split(" ");
 
@@ -1786,6 +1815,28 @@ void ShareSearch::requestFinishedList()
 }
 
 //------------------------------=============================== MISC. OTHER UTILITY FUNCTIONS ===============================------------------------------
+
+//Search history
+void ShareSearch::garbageCollectSearchHistory()
+{
+    qint64 currentAge = QDateTime::currentMSecsSinceEpoch();
+    QMutableHashIterator<QByteArray, QHash<QString, qint64> > i(searchHistoryHash);
+    while (i.hasNext())
+    {
+        QMutableHashIterator<QString, qint64> *k = new QMutableHashIterator<QString, qint64>(i.next().value());
+        while (k->hasNext())
+        {
+            k->next();
+            if (currentAge - k->value() > 30000) //Remove all entries older than 30 seconds
+                k->remove();
+        }
+
+        delete k; //Need to delete the iterator still attached to the hash that might be deleted in the following step
+
+        if (i.value().isEmpty()) //Remove the host entry if no entries are contained in its hash
+            i.remove();
+    }
+}
 
 //Get the major and minor versions for a specific fileName
 VersionStruct ShareSearch::getMajorMinorVersions(QString fileName)

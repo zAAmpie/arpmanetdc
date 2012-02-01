@@ -61,8 +61,6 @@ struct VersionStruct //Used to store/return major and minor version of a file
     qint16 minorVersion;
 };
 
-
-
 class ShareSearch : public QObject
 {
 	Q_OBJECT
@@ -198,6 +196,9 @@ private slots:
 	//Database commands
 	void commitTransaction(bool startNewTransaction = true);
 
+    //Search history
+    void garbageCollectSearchHistory();
+
 signals:
 	//----------========== SEARCH QUERIES (DISPATCHER) ==========----------
 	
@@ -316,6 +317,10 @@ private:
 	ArpmanetDC *pParent;
 	HashFileThread *pHashFileThread;
 	ParseDirectoryThread *pParseDirectoryThread;
+
+    //Search history check
+    QHash<QByteArray, QHash<QString, qint64> > searchHistoryHash;
+    QTimer *searchHistoryTimer;
 
 	quint32 pMaxResults;
 	quint64 pTotalShare;
