@@ -159,7 +159,7 @@ void NetworkBootstrap::networkScanTimerEvent()
             else
                 it.next();
         }
-        qDebug() << "NetworkBootstrap::networkScanTimerEvent(): Scanning host:" << scanHost.toString();
+        //qDebug() << "NetworkBootstrap::networkScanTimerEvent(): Scanning host:" << scanHost.toString();
         emit sendRequestAllBuckets(scanHost);
     }
 }

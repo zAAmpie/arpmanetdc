@@ -409,18 +409,19 @@ QString NetworkTopology::getDebugBucketsContents()
     while (bucketIterator.hasNext())
     {
         bucketIterator.next();
+        rstring.append("\n<font color=\"red\">");
         rstring.append(bucketIterator.key().toBase64());
-        rstring.append("\n");
+        rstring.append("</font>\n");
         QListIterator<QHostAddress> ipIterator(*bucketIterator.value()->first);
         QListIterator<qint64> lastseenIterator(*bucketIterator.value()->second);
         while (ipIterator.hasNext() && lastseenIterator.hasNext())
         {
+            rstring.append("<font color=\"green\">");
+            rstring.append(QDateTime::fromMSecsSinceEpoch(lastseenIterator.next()).toString("hh:mm:ss"));
+            rstring.append("</font> <font color=\"blue\">");
             rstring.append(ipIterator.next().toString());
-            rstring.append(" ");
-            rstring.append(QString::number(lastseenIterator.next()));
-            rstring.append("\n");
+            rstring.append("</font>\n");
         }
-        rstring.append("\n");
     }
     return rstring;
 }
