@@ -129,6 +129,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     //pHub->connectHub();
 
     //Create Dispatcher connection
+    dispatcherThread = new ExecThread();
 	pDispatcher = new Dispatcher(QHostAddress(pSettings->value("externalIP")), pSettings->value("externalPort").toShort());
 
     // conjure up something unique here and save it for every subsequent client invocation
@@ -146,10 +147,10 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     pDispatcher->setProtocolCapabilityBitmask(FailsafeTransferProtocol | uTPProtocol);
 
     //Connect Dispatcher to GUI - handle search replies from other clients
-	connect(pDispatcher, SIGNAL(bootstrapStatusChanged(int)), this, SLOT(bootstrapStatusChanged(int)));
+	connect(pDispatcher, SIGNAL(bootstrapStatusChanged(int)), this, SLOT(bootstrapStatusChanged(int)), Qt::QueuedConnection);
     connect(pDispatcher, SIGNAL(searchResultsReceived(QHostAddress, QByteArray, quint64, QByteArray)),
-            this, SLOT(searchResultReceived(QHostAddress, QByteArray, quint64, QByteArray)));
-	connect(pDispatcher, SIGNAL(appendChatLine(QString)), this, SLOT(appendChatLine(QString)));
+            this, SLOT(searchResultReceived(QHostAddress, QByteArray, quint64, QByteArray)), Qt::QueuedConnection);
+	connect(pDispatcher, SIGNAL(appendChatLine(QString)), this, SLOT(appendChatLine(QString)), Qt::QueuedConnection);
 
     // Create Transfer manager
     transferThread = new ExecThread();
@@ -190,7 +191,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(this, SIGNAL(changeQueuedDownloadPriority(int, int, QByteArray)),
             pTransferManager, SLOT(changeQueuedDownloadPriority(int, int, QByteArray)), Qt::QueuedConnection);
     connect(this, SIGNAL(stopTransfer(QByteArray, int, QHostAddress)),
-            pTransferManager, SLOT(stopTransfer(QByteArray, int, QHostAddress)));
+            pTransferManager, SLOT(stopTransfer(QByteArray, int, QHostAddress)), Qt::QueuedConnection);
 
     // Set network scan ranges in Dispatcher, initial shotgun approach
     //pDispatcher->addNetworkScanRange(QHostAddress("143.160.0.1").toIPv4Address(), 65534);
@@ -305,6 +306,9 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(pTransferManager, SIGNAL(assembleOutputFile(QString,QString,int,int)),
             pBucketFlushThread, SLOT(assembleOutputFile(QString,QString,int,int)), Qt::QueuedConnection);
 
+    pDispatcher->moveToThread(dispatcherThread);
+    dispatcherThread->start();
+
 	pShare->moveToThread(dbThread);
 	dbThread->start();
 
@@ -348,6 +352,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     helpWidget = 0;
     //transferWidget = 0;
 
+    arpmanetDCUsers = 0;
+
     //Set window icon
     setWindowIcon(QIcon(QPixmap(":/ArpmanetDC/Resources/Logo128x128.png")));
 
@@ -358,6 +364,12 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 	*arpmanetUserIcon = QPixmap(":/ArpmanetDC/Resources/ArpmanetUserIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 	userFirewallIcon = new QPixmap();
 	*userFirewallIcon = QPixmap(":/ArpmanetDC/Resources/FirewallIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    oldVersionUserIcon = new QPixmap();
+    *oldVersionUserIcon = QPixmap(":/ArpmanetDC/Resources/SkullUserIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    newerVersionUserIcon = new QPixmap();
+    *newerVersionUserIcon = QPixmap(":/ArpmanetDC/Resources/CoolUserIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+
+
     fullyBootstrappedIcon = new QPixmap();
 	*fullyBootstrappedIcon = QPixmap(":/ArpmanetDC/Resources/ServerOnlineIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 	bootstrappedIcon = new QPixmap();
@@ -1604,9 +1616,18 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
 		}
 		else if (client.compare("ArpmanetDC") == 0)
 		{
-			//Active user - ArpmanetDC
+            //Active user - ArpmanetDC
+            arpmanetDCUsers++;
+
 			item->setText(tr("<font color=\"green\">%1</font>").arg(nick));
-			item->setIcon(QIcon(*arpmanetUserIcon));
+
+            if (version == VERSION_STRING)
+                item->setIcon(QIcon(*arpmanetUserIcon));
+            else if (firstVersionLarger(VERSION_STRING, version))
+                item->setIcon(QIcon(*oldVersionUserIcon));
+            else
+                item->setIcon(QIcon(*newerVersionUserIcon));
+            
 		}
 		else
 		{
@@ -1634,7 +1655,7 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
 		sortDue = true;
 
 		//Update user count
-		userHubCountLabel->setText(tr("Hub Users: %1/%2").arg(userListModel->findItems("ArpmanetDC", Qt::MatchExactly, 5).count()).arg(userListModel->rowCount()));		
+		userHubCountLabel->setText(tr("Hub Users: %1/%2").arg(arpmanetDCUsers).arg(userListModel->rowCount()));		
 
         //Check if PM windows are open for this user - notify
 	    QWidget *foundWidget = 0;
@@ -1679,7 +1700,13 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
 		{
 			//Active user - ArpmanetDC
             userListModel->item(foundIndex,0)->setText(tr("<font color=\"green\">%1</font>").arg(nick));
-			userListModel->item(foundIndex, 0)->setIcon(QIcon(*arpmanetUserIcon));
+			
+            if (version == VERSION_STRING)
+                userListModel->item(foundIndex, 0)->setIcon(QIcon(*arpmanetUserIcon));
+            else if (firstVersionLarger(VERSION_STRING, version))
+                userListModel->item(foundIndex, 0)->setIcon(QIcon(*oldVersionUserIcon));
+            else
+                userListModel->item(foundIndex, 0)->setIcon(QIcon(*newerVersionUserIcon));            
 		}
         else
         {
@@ -1717,6 +1744,10 @@ void ArpmanetDC::userListUserLoggedOut(QString nick)
 	//Find the items matching the nickname in the model
 	QList<QStandardItem *> items = userListModel->findItems(nick, Qt::MatchFixedString, 2);
 	
+    //Get type of client
+    if (userListModel->item(items.first()->row(), 5)->text() == "ArpmanetDC")
+        arpmanetDCUsers--;
+
 	if (items.size() == 0)
 		return;
 
@@ -1727,7 +1758,7 @@ void ArpmanetDC::userListUserLoggedOut(QString nick)
 		additionalInfoLabel->setText(tr("User not in list: %1").arg(nick));
 
 	//Update user count
-	userHubCountLabel->setText(tr("Hub Users: %1/%2").arg(userListModel->findItems("ArpmanetDC", Qt::MatchExactly, 5).count()).arg(userListModel->rowCount()));
+	userHubCountLabel->setText(tr("Hub Users: %1/%2").arg(arpmanetDCUsers).arg(userListModel->rowCount()));
 
     //Check if a tab exists with a PM for this nick
 	QWidget *foundWidget = 0;

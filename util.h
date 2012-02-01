@@ -60,6 +60,8 @@ quint64 rateToBytes(QString rate);
 QString timeFromInt(qint64 timeMsecs);
 //Function to convert uptime in msecs to string
 QString uptimeFromInt(qint64 uptimeMsecs);
+//Function to compare version strings (ex. 1.2.1)
+bool firstVersionLarger(QString first, QString second);
 //Function to adjust a tableviews rows to fit contents (much faster fixed size version)
 void resizeRowsToContents(QTableView *tableView);
 

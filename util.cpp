@@ -210,6 +210,33 @@ QString uptimeFromInt(qint64 uptimeMsecs)
     return QObject::tr("%1%2%3%4%5").arg(weeksStr).arg(daysStr).arg(hoursStr).arg(minutesStr).arg(secondsStr);
 }
 
+bool firstVersionLarger(QString first, QString second)
+{
+    QStringList firstList = first.split(".");
+    QStringList secondList = second.split(".");
+
+    //Ensure version lengths are the same
+    while (firstList.size() > secondList.size())
+        secondList.append("0");
+    while (secondList.size() > firstList.size())
+        firstList.append("0");
+
+    for (int i = 0; i < firstList.size(); i++)
+    {
+        //Compare version numbers
+        int f = firstList.at(i).toInt();
+        int s = secondList.at(i).toInt();
+
+        if (f > s)
+            return true;
+        else if (f < s)
+            return false;
+        //Else continue with next set of numbers
+    }
+    //They are the same! Check this
+    return true;
+}
+
 void resizeRowsToContents(QTableView *tableView)
 {
     if (!tableView)

@@ -33,5 +33,7 @@
         <file>Resources/GreenUpIcon.png</file>
         <file>Resources/GuessIcon.png</file>
         <file>Resources/RedDownIcon.png</file>
+        <file>Resources/CoolUserIcon.png</file>
+        <file>Resources/SkullUserIcon.png</file>
     </qresource>
 </RCC>

@@ -296,6 +296,7 @@ private:
     ResourceExtractor *pTypeIconList;
 
     //Threads
+    ExecThread *dispatcherThread;
     ExecThread *dbThread;
     ExecThread *transferThread;
     ExecThread *bucketFlushThread;
@@ -311,6 +312,8 @@ private:
     QTimer *updateTimer;
 
     QDateTime uptime;
+
+    int arpmanetDCUsers;
 
     QStringList pArguments;
     QSharedMemory *pSharedMemory;
@@ -330,7 +333,7 @@ private:
 	quint32 mainChatBlocks;
 
 	//User list icons
-	QPixmap *userIcon, *arpmanetUserIcon, *userFirewallIcon, *bootstrappedIcon, *unbootstrappedIcon, *fullyBootstrappedIcon;
+	QPixmap *userIcon, *arpmanetUserIcon, *oldVersionUserIcon, *newerVersionUserIcon, *userFirewallIcon, *bootstrappedIcon, *unbootstrappedIcon, *fullyBootstrappedIcon;
 
     //Menus
     QMenu *userListMenu;
