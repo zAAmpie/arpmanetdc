@@ -43,27 +43,29 @@ ShareWidget::~ShareWidget()
 
 void ShareWidget::createWidgets()
 {
-	saveButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Save shares"));
-	refreshButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/RefreshIcon.png"), tr("Refresh shares"));
-    containerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/ContainerIcon.png"), tr("Show Containers"));
+    pWidget = new QWidget((QWidget *)pParent);
+
+	saveButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Save shares"), pWidget);
+	refreshButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/RefreshIcon.png"), tr("Refresh shares"), pWidget);
+    containerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/ContainerIcon.png"), tr("Show Containers"), pWidget);
 
     //========== DEBUG ==========
     containerButton->setVisible(false);
     //========== END DEBUG ==========
     
-    addContainerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/AddIcon.png"), tr("Add"));
+    addContainerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/AddIcon.png"), tr("Add"), pWidget);
     addContainerButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    removeContainerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/DeleteIcon.png"), tr("Delete"));
+    removeContainerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/DeleteIcon.png"), tr("Delete"), pWidget);
     removeContainerButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     
-    containerCombo = new QComboBox();
+    containerCombo = new QComboBox(pWidget);
     containerCombo->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 
-    QSortFilterProxyModel *proxyModel = new QSortFilterProxyModel;
+    QSortFilterProxyModel *proxyModel = new QSortFilterProxyModel(this);
     proxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
     QAbstractItemModel *m = containerCombo->model();
     QAbstractItemView *v = containerCombo->view();
-    proxyModel->setSourceModel(new QStandardItemModel());
+    proxyModel->setSourceModel(new QStandardItemModel(this));
     containerCombo->setModel(proxyModel);
     //containerCombo->view()->setModel(proxyModel);
 
@@ -73,7 +75,7 @@ void ShareWidget::createWidgets()
     contents.first = 0;
     pContainerHash.insert(tr("Sample container"), contents);
 
-    containerModel = new QStandardItemModel(0, 4);
+    containerModel = new QStandardItemModel(0, 4, this);
     containerModel->setHeaderData(0, Qt::Horizontal, tr("Filename"));
     containerModel->setHeaderData(1, Qt::Horizontal, tr("Filepath"));
     containerModel->setHeaderData(2, Qt::Horizontal, tr("Filesize"));
@@ -81,7 +83,7 @@ void ShareWidget::createWidgets()
 
     pParentItem = containerModel->invisibleRootItem();
 
-    containerTreeView = new CDropTreeView(tr("Drag files/folders here to add..."));
+    containerTreeView = new CDropTreeView(tr("Drag files/folders here to add..."), pWidget);
     containerTreeView->setModel(containerModel);
     containerTreeView->setAcceptDrops(true);
     containerTreeView->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -91,16 +93,16 @@ void ShareWidget::createWidgets()
     containerTreeView->setColumnWidth(1, 100);
     containerTreeView->hideColumn(3);
             
-	fileModel = new QFileSystemModel();
+	fileModel = new QFileSystemModel(this);
 	//fileModel->setFilter(QDir::Dirs | QDir::Drives | QDir::NoDotAndDotDot);
 	fileModel->setRootPath("c:/");
 	fileModel->setResolveSymlinks(false);
 
-	checkProxyModel = new CheckableProxyModel();
+	checkProxyModel = new CheckableProxyModel(this);
 	checkProxyModel->setSourceModel(fileModel);
 	checkProxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
 		
-	fileTree = new CDragTreeView(tr("Drag files/folders here to add"));
+	fileTree = new CDragTreeView(tr("Drag files/folders here to add"), pWidget);
 	fileTree->setModel(checkProxyModel);
 	//fileTree->sortByColumn(0, Qt::AscendingOrder);
 	fileTree->setColumnWidth(0, 500);
@@ -115,15 +117,15 @@ void ShareWidget::createWidgets()
 	checkProxyModel->setDefaultCheckState(Qt::Unchecked);	
 	//checkProxyModel->sort(0, Qt::AscendingOrder);
 
-    busyLabel = new QLabel(tr("<font color=\"red\">Busy loading directory structure. Please wait...</font>"));
+    busyLabel = new QLabel(tr("<font color=\"red\">Busy loading directory structure. Please wait...</font>"), pWidget);
 
     //Context menu
-    contextMenu = new QMenu((QWidget *)pParent);
-    calculateMagnetAction = new QAction(QIcon(":/ArpmanetDC/Resources/MagnetIcon.png"), tr("Copy magnet link"), (QWidget *)pParent);
+    contextMenu = new QMenu(pWidget);
+    calculateMagnetAction = new QAction(QIcon(":/ArpmanetDC/Resources/MagnetIcon.png"), tr("Copy magnet link"), pWidget);
     contextMenu->addAction(calculateMagnetAction);
 
     containerContextMenu = new QMenu((QWidget *)pParent);
-    removeContainerEntryAction = new QAction(QIcon(":/ArpmanetDC/Resources/RemoveIcon.png"), tr("Remove entry"), (QWidget *)pParent);
+    removeContainerEntryAction = new QAction(QIcon(":/ArpmanetDC/Resources/RemoveIcon.png"), tr("Remove entry"), pWidget);
     containerContextMenu->addAction(removeContainerEntryAction);
 }
 
@@ -151,7 +153,7 @@ void ShareWidget::placeWidgets()
     containerWidget->setLayout(containerLayout);
     containerWidget->setContentsMargins(0,0,0,0);
 
-    splitter = new QSplitter(Qt::Horizontal, (QWidget *)pParent);
+    splitter = new QSplitter(Qt::Horizontal, pWidget);
     splitter->addWidget(fileTree);
     splitter->addWidget(containerWidget);
 
@@ -165,7 +167,6 @@ void ShareWidget::placeWidgets()
     splitter->setCollapsible(0,false);
     splitter->setCollapsible(1, false);
        
-	pWidget = new QWidget((QWidget *)pParent);
 	pWidget->setLayout(vlayout);
 
     QList<int> sizeList;

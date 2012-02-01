@@ -30,7 +30,7 @@ DownloadQueueWidget::~DownloadQueueWidget()
 void DownloadQueueWidget::createWidgets()
 {
 	//Table View
-	queueTable = new QTableView();
+	queueTable = new QTableView((QWidget *)pParent);
 	queueTable->setShowGrid(false);
 	queueTable->setGridStyle(Qt::DotLine);
 	queueTable->verticalHeader()->hide();
@@ -40,7 +40,7 @@ void DownloadQueueWidget::createWidgets()
     queueTable->setTextElideMode(Qt::ElideRight);
 
 	//Model
-	queueModel = new QStandardItemModel(0, 7);
+	queueModel = new QStandardItemModel(0, 7, queueTable);
 	queueModel->setHeaderData(0, Qt::Horizontal, tr("Filename"));
 	queueModel->setHeaderData(1, Qt::Horizontal, tr("Path"));
     queueModel->setHeaderData(2, Qt::Horizontal, tr("Status"));
@@ -67,12 +67,12 @@ void DownloadQueueWidget::createWidgets()
 	deleteAction = new QAction(QIcon(":/ArpmanetDC/Resources/RemoveIcon.png"), tr("Delete"), this);
 
     //===== Menus =====
-    setPriorityMenu = new QMenu(tr("Set priority"), pParent);
+    setPriorityMenu = new QMenu(tr("Set priority"), queueTable);
 	setPriorityMenu->addAction(setPriorityHighAction);
 	setPriorityMenu->addAction(setPriorityNormalAction);
 	setPriorityMenu->addAction(setPriorityLowAction);
 
-	queueMenu = new QMenu(pParent);
+	queueMenu = new QMenu(queueTable);
 	queueMenu->addAction(deleteAction);
 	queueMenu->addSeparator();
 	queueMenu->addMenu(setPriorityMenu);

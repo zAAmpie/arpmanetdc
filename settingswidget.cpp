@@ -19,23 +19,25 @@ SettingsWidget::~SettingsWidget()
 
 void SettingsWidget::createWidgets()
 {
+    pWidget = new QWidget();
+
     //========== BASIC SETTINGS ==========
 
-	hubAddressLineEdit = new QLineEdit(pSettings->value("hubAddress"),(QWidget *)pParent);
+	hubAddressLineEdit = new QLineEdit(pSettings->value("hubAddress"),pWidget);
 	
-	hubPortLineEdit = new QLineEdit(pSettings->value("hubPort"), (QWidget *)pParent);
+	hubPortLineEdit = new QLineEdit(pSettings->value("hubPort"), pWidget);
 	hubPortLineEdit->setValidator(new QIntValidator(0, 65535, this));
 
-	nickLineEdit = new QLineEdit(pSettings->value("nick"), (QWidget *)pParent);
+	nickLineEdit = new QLineEdit(pSettings->value("nick"), pWidget);
 	
-	passwordLineEdit = new QLineEdit(pSettings->value("password"), (QWidget *)pParent);
+	passwordLineEdit = new QLineEdit(pSettings->value("password"), pWidget);
 	passwordLineEdit->setEchoMode(QLineEdit::Password);
     
-    downloadPathLineEdit = new QLineEdit(pSettings->value("downloadPath"), (QWidget *)pParent);
+    downloadPathLineEdit = new QLineEdit(pSettings->value("downloadPath"), pWidget);
 
-    browseDownloadPathButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/FolderIcon.png"), tr("Browse"), (QWidget *)pParent);
+    browseDownloadPathButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/FolderIcon.png"), tr("Browse"), pWidget);
 
-	shareUpdateIntervalSpinBox = new QSpinBox((QWidget *)pParent);
+	shareUpdateIntervalSpinBox = new QSpinBox(pWidget);
 	shareUpdateIntervalSpinBox->setRange(0, 10080); //Maximum is every week
 	int value = pSettings->value("autoUpdateShareInterval").toInt()/60000;
 	shareUpdateIntervalSpinBox->setValue(value);
@@ -47,21 +49,21 @@ void SettingsWidget::createWidgets()
 
     //========== ADVANCED SETTINGS ==========
 
-	ipLineEdit = new QLineEdit(pSettings->value("externalIP"), (QWidget *)pParent);
+	ipLineEdit = new QLineEdit(pSettings->value("externalIP"), pWidget);
 	ipLineEdit->setValidator(new IPValidator(this));
 
-	externalPortLineEdit = new QLineEdit(pSettings->value("externalPort"), (QWidget *)pParent);
+	externalPortLineEdit = new QLineEdit(pSettings->value("externalPort"), pWidget);
 	externalPortLineEdit->setValidator(new QIntValidator(0, 65535, this));
 
-    protocolList = new QListWidget((QWidget *)pParent);
+    protocolList = new QListWidget(pWidget);
     protocolList->setMaximumHeight(150);
     protocolList->setMaximumWidth(100);
     protocolList->setSelectionMode(QAbstractItemView::SingleSelection);
 
-    guessIPButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/GuessIcon.png"), tr("Guess External IP"), (QWidget *)pParent);
+    guessIPButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/GuessIcon.png"), tr("Guess External IP"), pWidget);
     
-    protocolUpButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/GreenUpIcon.png"), tr("Up"), (QWidget *)pParent);
-    protocolDownButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/RedDownIcon.png"), tr("Down"), (QWidget *)pParent);
+    protocolUpButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/GreenUpIcon.png"), tr("Up"), pWidget);
+    protocolDownButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/RedDownIcon.png"), tr("Down"), pWidget);
 
     //Enqueue supported protocols
     QString protocolHint = pSettings->value("protocolHint");
@@ -78,13 +80,13 @@ void SettingsWidget::createWidgets()
     }
 
     //========== MISC ==========
-    saveButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Save changes"), (QWidget *)pParent);
-    toggleAdvancedCheckBox = new QCheckBox(tr("Show advanced settings"), (QWidget *)pParent);
+    saveButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Save changes"), pWidget);
+    toggleAdvancedCheckBox = new QCheckBox(tr("Show advanced settings"), pWidget);
     if (pSettings->value("showAdvanced") == "1")
         toggleAdvancedCheckBox->setChecked(true);
     else
         toggleAdvancedCheckBox->setChecked(false);
-    advancedWidget = new QWidget();
+    advancedWidget = new QWidget(pWidget);
 }
 
 void SettingsWidget::placeWidgets()
@@ -147,7 +149,6 @@ void SettingsWidget::placeWidgets()
     layout->addStretch(1);
 	layout->addLayout(hlayout);
 
-	pWidget = new QWidget();
 	pWidget->setLayout(layout);
     
     if (!toggleAdvancedCheckBox->isChecked())

@@ -21,11 +21,13 @@ PMWidget::~PMWidget()
 
 void PMWidget::createWidgets()
 {
+    pWidget = new QWidget((QWidget *)pParent);
+
 	//Chat line
-	chatLineEdit = new QLineEdit();
+	chatLineEdit = new QLineEdit(pWidget);
 
 	//Chat browser
-	chatBrowser = new QTextBrowser();
+	chatBrowser = new QTextBrowser(pWidget);
 	chatBrowser->setOpenExternalLinks(true);
 }
 
@@ -37,7 +39,7 @@ void PMWidget::placeWidgets()
 	vlayout->addWidget(chatLineEdit);
 	vlayout->setContentsMargins(0,0,0,0);
 
-	pWidget = new QWidget();
+	
 	pWidget->setLayout(vlayout);
 }
 

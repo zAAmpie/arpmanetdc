@@ -23,7 +23,7 @@ DownloadFinishedWidget::~DownloadFinishedWidget()
 void DownloadFinishedWidget::createWidgets()
 {
 	//Table View
-	finishedTable = new QTableView();
+	finishedTable = new QTableView((QWidget *)pParent);
 	finishedTable->setShowGrid(false);
 	finishedTable->setGridStyle(Qt::DotLine);
     finishedTable->setWordWrap(false);
@@ -36,7 +36,7 @@ void DownloadFinishedWidget::createWidgets()
     finishedTable->setTextElideMode(Qt::ElideRight);
 
 	//Model
-	finishedModel = new QStandardItemModel(0, 5);
+	finishedModel = new QStandardItemModel(0, 5, finishedTable);
 	finishedModel->setHeaderData(0, Qt::Horizontal, tr("Filename"));
 	finishedModel->setHeaderData(1, Qt::Horizontal, tr("Path"));
 	finishedModel->setHeaderData(2, Qt::Horizontal, tr("Size"));
@@ -57,7 +57,7 @@ void DownloadFinishedWidget::createWidgets()
 	clearAction = new QAction(QIcon(":/ArpmanetDC/Resources/RemoveIcon.png"), tr("Clear list"), this);
     deleteAction = new QAction(QIcon(":/ArpmanetDC/Resources/RemoveIcon.png"), tr("Delete entry"), this);
 
-    finishedMenu = new QMenu(pParent);
+    finishedMenu = new QMenu(finishedTable);
 	finishedMenu->addAction(openAction);
     finishedMenu->addAction(deleteAction);
     finishedMenu->addSeparator();

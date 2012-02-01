@@ -120,7 +120,7 @@ private:
 	QStandardItemModel *resultsModel;
     QStandardItem *parentItem;
 
-    QMultiHash<QString, QString> *resultsHash;
+    QMultiHash<QString, QString> resultsHash;
 
 };
 

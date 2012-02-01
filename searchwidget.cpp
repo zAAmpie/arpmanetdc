@@ -18,10 +18,9 @@ SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconL
 	connectWidgets();
 
 	pID = staticID++;
-    resultsHash = new QMultiHash<QString, QString>();
-
+    
     sortDue = false;
-    sortTimer = new QTimer();
+    sortTimer = new QTimer(this);
     connect(sortTimer, SIGNAL(timeout()), this, SLOT(sortTimeout()));
     sortTimer->start(500); //Sort every 500msec if necessary
 }
@@ -39,10 +38,9 @@ SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconL
 	connectWidgets();
 
 	pID = staticID++;
-    resultsHash = new QMultiHash<QString, QString>();
-
+    
     sortDue = false;
-    sortTimer = new QTimer();
+    sortTimer = new QTimer(this);
     connect(sortTimer, SIGNAL(timeout()), this, SLOT(sortTimeout()));
     sortTimer->start(500); //Sort every 500msec if necessary
 
@@ -57,31 +55,33 @@ SearchWidget::~SearchWidget()
 
 void SearchWidget::createWidgets()
 {
-    resultNumberLabel = new QLabel("");
+    pWidget = new QWidget((QWidget *)pParent);
 
-	searchLineEdit = new QLineEdit();
+    resultNumberLabel = new QLabel("", pWidget);
+
+	searchLineEdit = new QLineEdit((QWidget *)pParent);
     searchLineEdit->setCompleter(pCompleter);
     searchLineEdit->setPlaceholderText("Type here to search");
     searchLineEdit->setMinimumWidth(200);
 
-    majorVersionLineEdit = new QLineEdit("0");
+    majorVersionLineEdit = new QLineEdit("0", pWidget);
     majorVersionLineEdit->setMaximumWidth(40);
     majorVersionLineEdit->setValidator(new QIntValidator(0, 65535, 0));
 
-    minorVersionLineEdit = new QLineEdit("0");
+    minorVersionLineEdit = new QLineEdit("0", pWidget);
     minorVersionLineEdit->setMaximumWidth(40);
     minorVersionLineEdit->setValidator(new QIntValidator(0, 65535, 0));
 
-	searchButton = new QPushButton(QIcon(tr(":/ArpmanetDC/Resources/SearchIcon.png")),tr("&Search"));
+	searchButton = new QPushButton(QIcon(tr(":/ArpmanetDC/Resources/SearchIcon.png")),tr("&Search"), pWidget);
 	searchButton->setIconSize(QSize(16,16));
 
-	searchProgress = new TextProgressBar(tr("Searching"));
+	searchProgress = new TextProgressBar(tr("Searching"), pWidget);
 	searchProgress->setStyle(new QPlastiqueStyle());
 	searchProgress->setValue(0);
 	searchProgress->setRange(0,0);
 	searchProgress->setVisible(false);
 
-	resultsModel = new QStandardItemModel(0, 11);
+	resultsModel = new QStandardItemModel(0, 11, this);
 	//Display
 	resultsModel->setHeaderData(0, Qt::Horizontal, tr("Filename"));
 	resultsModel->setHeaderData(1, Qt::Horizontal, tr("Hits"));
@@ -97,7 +97,7 @@ void SearchWidget::createWidgets()
     resultsModel->setHeaderData(9, Qt::Horizontal, tr("Sender IP"));
     resultsModel->setHeaderData(10, Qt::Horizontal, tr("Sender CID"));
 
-	resultsTable = new QTreeView();
+	resultsTable = new QTreeView(pWidget);
 	resultsTable->setModel(resultsModel);
     resultsTable->setSortingEnabled(true);
     resultsTable->setUniformRowHeights(true);
@@ -126,12 +126,10 @@ void SearchWidget::createWidgets()
     downloadToAction = new QAction(QIcon(":/ArpmanetDC/Resources/DownloadIcon.png"), tr("Download to folder..."), this);
     calculateMagnetAction = new QAction(QIcon(":/ArpmanetDC/Resources/MagnetIcon.png"), tr("Copy magnet link"), this);
 
-    resultsMenu = new QMenu((QWidget *)pParent);
+    resultsMenu = new QMenu(pWidget);
 	resultsMenu->addAction(downloadAction);
     resultsMenu->addAction(downloadToAction);
-    resultsMenu->addAction(calculateMagnetAction);
-
-	pWidget = new QWidget();
+    resultsMenu->addAction(calculateMagnetAction);	
 }
 
 void SearchWidget::placeWidgets()
@@ -338,12 +336,12 @@ void SearchWidget::addSearchResult(QHostAddress sender, QByteArray cid, QByteArr
     QList<QStandardItem *> results = resultsModel->findItems(base32TTH.data(), Qt::MatchExactly, 8);
 
     //Check if results contain the same filepath and cid
-    if (resultsHash->values(tthStr).contains(cidStr))
+    if (resultsHash.values(tthStr).contains(cidStr))
         //Silently return
         return;
 
     //Add to hash
-    resultsHash->insert(tthStr, cidStr);
+    resultsHash.insert(tthStr, cidStr);
 
     //Create new row
     QList<QStandardItem *> row;
@@ -394,7 +392,7 @@ void SearchWidget::searchPressed()
 	resultsModel->removeRows(0, resultsModel->rowCount());
     totalResultCount = 0;
     uniqueResultCount = 0;
-    resultsHash->clear();
+    resultsHash.clear();
     resultNumberLabel->setText(tr(""));
 
 	if (!searchLineEdit->text().isEmpty())
