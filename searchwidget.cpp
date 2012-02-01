@@ -333,6 +333,9 @@ void SearchWidget::addSearchResult(QHostAddress sender, QByteArray cid, QByteArr
 
 void SearchWidget::processSearchResult()
 {
+    if (!searchProgress->isVisible())
+        searchProgress->setVisible(true);
+
     //Stop timer if queue is empty
     if (resultsQueue.isEmpty())
     {
@@ -477,7 +480,7 @@ void SearchWidget::searchPressed()
         emit search(pID, searchLineEdit->text(), packet, this);
 		searchProgress->setVisible(true);
 
-        //QTimer::singleShot(10000, this, SLOT(stopProgress()));
+        QTimer::singleShot(10000, this, SLOT(stopProgress()));
 	}
 }
 
