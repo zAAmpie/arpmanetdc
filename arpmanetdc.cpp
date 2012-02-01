@@ -422,7 +422,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
             settingsAction->trigger();
     }
     else
-        QTimer::singleShot(5000, pHub, SLOT(connectHub()));
+        //Wait 1 second for everything to initialize before starting the hub
+        QTimer::singleShot(1000, pHub, SLOT(connectHub()));
 
     createdGUI = true;
 }
