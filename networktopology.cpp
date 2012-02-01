@@ -236,26 +236,29 @@ void NetworkTopology::updateHostTimestamp(QByteArray &bucket, QHostAddress &host
             buckets.value(bucket)->first->removeAt(pos);
             buckets.value(bucket)->second->removeAt(pos);
         }
-        // this is wrong, the entries must be inserted in the correct order
-        //buckets.value(bucket)->first->prepend(host);
-        //buckets.value(bucket)->second->prepend(time);
-
-        // optimization: dig the const stuff out of the 24-byte deep reference beforehand
-        qint64list *timestampList = buckets.value(bucket)->second;
-        int length = timestampList->size();
-        int insertPos = length;
-        for (int i = 0; i < length; i++)
+        if (age == 0)
         {
-            if (time >= timestampList->at(i))
-            {
-                insertPos = i;
-                break;
-            }
+            buckets.value(bucket)->first->prepend(host);
+            buckets.value(bucket)->second->prepend(time);
         }
+        else
+        {
+            // optimization: dig the const stuff out of the 24-byte deep reference beforehand
+            qint64list *timestampList = buckets.value(bucket)->second;
+            int length = timestampList->size();
+            int insertPos = length;
+            for (int i = 0; i < length; i++)
+            {
+                if (time >= timestampList->at(i))
+                {
+                    insertPos = i;
+                    break;
+                }
+            }
 
-        //qDebug() << timestampList->at(insertPos) << " <= " << time << " inserting at " << insertPos;
-        buckets.value(bucket)->first->insert(insertPos, host);
-        timestampList->insert(insertPos, time);
+            buckets.value(bucket)->first->insert(insertPos, host);
+            timestampList->insert(insertPos, time);
+        }
     }
     else
     {
