@@ -214,7 +214,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     pDispatcher->addNetworkScanRange(QHostAddress("143.160.93.1").toIPv4Address(), QHostAddress("143.160.95.254").toIPv4Address());
     pDispatcher->addNetworkScanRange(QHostAddress("143.160.109.1").toIPv4Address(), QHostAddress("143.160.111.254").toIPv4Address());
     pDispatcher->addNetworkScanRange(QHostAddress("143.160.125.1").toIPv4Address(), QHostAddress("143.160.127.254").toIPv4Address());
-    pDispatcher->addNetworkScanRange(QHostAddress("143.160.133.1").toIPv4Address(), QHostAddress("143.160.159.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("143.160.133.1").toIPv4Address(), QHostAddress("143.160.175.254").toIPv4Address());
     pDispatcher->addNetworkScanRange(QHostAddress("172.31.65.1").toIPv4Address(), QHostAddress("172.31.65.254").toIPv4Address());
     pDispatcher->addNetworkScanRange(QHostAddress("172.31.94.1").toIPv4Address(), QHostAddress("172.31.95.254").toIPv4Address());
     pDispatcher->addNetworkScanRange(QHostAddress("172.31.113.1").toIPv4Address(), QHostAddress("172.31.114.254").toIPv4Address());
@@ -222,6 +222,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     pDispatcher->addNetworkScanRange(QHostAddress("172.31.164.1").toIPv4Address(), QHostAddress("172.31.164.254").toIPv4Address());
     pDispatcher->addNetworkScanRange(QHostAddress("172.31.180.1").toIPv4Address(), QHostAddress("172.31.180.254").toIPv4Address());
     pDispatcher->addNetworkScanRange(QHostAddress("172.31.187.1").toIPv4Address(), QHostAddress("172.31.189.254").toIPv4Address());
+    pDispatcher->addNetworkScanRange(QHostAddress("172.31.191.1").toIPv4Address(), QHostAddress("172.31.191.254").toIPv4Address());
 
 	//Set up thread for database / ShareSearch
 	dbThread = new ExecThread();
