@@ -43,6 +43,9 @@ ResourceExtractor::ResourceExtractor(QObject *parent) : QObject(parent)
     list.clear();
     list << "xls" << "xlsm" << "xlsx" << "csv"; //Excel
     typeList.append(list);
+    list.clear();
+    list << "iso" << "bin" << "mdf" << "nrg" << "img" << ""; //Images
+    typeList.append(list);
 
     mapToIconList(typeList);
 }
