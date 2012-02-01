@@ -95,6 +95,7 @@ private:
 	//Parameters
 	quint64 pID;
 	static quint64 staticID;
+    QByteArray ownCID;
 
     quint32 totalResultCount;
     quint32 uniqueResultCount;

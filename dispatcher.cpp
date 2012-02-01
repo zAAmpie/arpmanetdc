@@ -1195,6 +1195,11 @@ int Dispatcher::getNumberOfHosts()
     return networkTopology->getNumberOfHosts();
 }
 
+QByteArray Dispatcher::getCID()
+{
+    return CID;
+}
+
 // ------------------=====================   DEBUGGING   =====================----------------------
 
 QString Dispatcher::getDebugBucketsContents()

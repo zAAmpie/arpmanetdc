@@ -52,6 +52,7 @@ public:
     quint16 getDispatchPort();
     int getNumberOfCIDHosts();
     int getNumberOfHosts();
+    QByteArray getCID();
 
 signals:
     // Bootstrap signals

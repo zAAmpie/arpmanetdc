@@ -18,6 +18,7 @@ SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconL
 	connectWidgets();
 
 	pID = staticID++;
+    ownCID = parent->dispatcherObject()->getCID();
     
     sortDue = false;
     sortTimer = new QTimer(this);
@@ -38,6 +39,7 @@ SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconL
 	connectWidgets();
 
 	pID = staticID++;
+    ownCID = parent->dispatcherObject()->getCID();
     
     sortDue = false;
     sortTimer = new QTimer(this);
@@ -300,6 +302,10 @@ QByteArray SearchWidget::idGenerator()
 
 void SearchWidget::addSearchResult(QHostAddress sender, QByteArray cid, QByteArray result)
 {
+    //Ignore results from yourself
+    if (cid == ownCID)
+        return;
+
     SearchStruct res;
 
     //Get data from packet
