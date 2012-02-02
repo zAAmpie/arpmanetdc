@@ -5,6 +5,7 @@
 #include <QHash>
 #include <QPair>
 #include <QFileInfo>
+#include <QStringList>
 
 #define CONTAINER_EXTENSION "adcc"
 
@@ -17,7 +18,7 @@ struct ContainerLookupReturnStruct
     QString filePath;
     QByteArray rootTTH;
     quint64 fileSize;
-}
+};
 
 class ContainerThread : public QObject
 {
