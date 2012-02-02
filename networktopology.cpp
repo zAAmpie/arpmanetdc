@@ -12,7 +12,7 @@ NetworkTopology::NetworkTopology(QObject *parent) :
     bootstrapTimeoutTimer->start(32000);
 
     garbageCollectTimer = new QTimer(this);
-    garbageCollectTimer->setInterval(600000); // 10 min
+    garbageCollectTimer->setInterval(300000); // 5 min
     garbageCollectTimer->setSingleShot(false);
     connect(garbageCollectTimer, SIGNAL(timeout()), this, SLOT(collectBucketGarbage()));
     garbageCollectTimer->start();
@@ -246,14 +246,30 @@ void NetworkTopology::updateHostTimestamp(QByteArray &bucket, QHostAddress &host
             // optimization: dig the const stuff out of the 24-byte deep reference beforehand
             qint64list *timestampList = buckets.value(bucket)->second;
             int length = timestampList->size();
-            int insertPos = length;
-            for (int i = 0; i < length; i++)
+
+            // *** slow linear method ***
+            //int insertPos = length;
+            //for (int i = 0; i < length; i++)
+            //{
+            //    if (time >= timestampList->at(i))
+            //    {
+            //        insertPos = i;
+            //        break;
+            //    }
+            //}
+
+            // *** faster binary method ***
+            int left = 0;
+            int right = length;
+            int insertPos = (left + right) / 2;
+            while (left < right)
             {
-                if (time >= timestampList->at(i))
-                {
-                    insertPos = i;
-                    break;
-                }
+                if (time > timestampList->at(insertPos))
+                    right = insertPos;
+                else
+                    left = insertPos + 1;
+
+                insertPos = (left + right) / 2;
             }
 
             buckets.value(bucket)->first->insert(insertPos, host);
@@ -471,18 +487,18 @@ int NetworkTopology::getNumberOfCIDHosts()
 int NetworkTopology::getNumberOfHosts()
 {
     int count = 0;
-    QList<QString> resultList;
+    QSet<quint32> resultSet;
     QHashIterator<QByteArray, HostIntPair*> i(buckets);
     while (i.hasNext())
     {
         foreach (QHostAddress addr, *i.next().value()->first)
         {
-            QString ip = addr.toString();
-            if (!resultList.contains(ip))
-                resultList.append(ip);
+            quint32 ip = addr.toIPv4Address();
+            if (!resultSet.contains(ip))
+                resultSet.insert(ip);
         }
         //count += i.next().value()->first->count();
     }
     //return count;
-    return resultList.count();
+    return resultSet.count();
 }
