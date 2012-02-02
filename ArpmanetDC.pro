@@ -47,7 +47,8 @@ SOURCES += main.cpp\
     transfersegment.cpp \
     fstptransfersegment.cpp \
     bucketflushthread.cpp \
-    utptransfersegment.cpp
+    utptransfersegment.cpp \
+    containerthread.cpp
 
 HEADERS  += arpmanetdc.h \
     hubconnection.h \
@@ -80,7 +81,8 @@ HEADERS  += arpmanetdc.h \
     transfersegment.h \
     fstptransfersegment.h \
     bucketflushthread.h \
-    utptransfersegment.h
+    utptransfersegment.h \
+    containerthread.h
 
 #FORMS    += arpmanetdc.ui
 
