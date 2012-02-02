@@ -82,9 +82,19 @@ void ContainerThread::saveContainers(QHash<QString, ContainerContentsType> conta
     }
 }
 
+//Process downloaded container
+void ContainerThread::processContainer(QString containerPath)
+{
+    //TODO: 
+    //Process a downloaded container and return the contents within to be queued
+    //Return a meaningful signal
+    emit returnProcessedContainer();
+}
+
 //Return hashes from DB
 void ContainerThread::returnTTHsFromPaths(QHash<QString, QList<ContainerLookupReturnStruct> > results, QString containerPath)
 {
+    //Assume index and header has already been written!
     QFile file(containerPath);
     if (!file.open(QIODevice::Append))
         return;
@@ -95,26 +105,26 @@ void ContainerThread::returnTTHsFromPaths(QHash<QString, QList<ContainerLookupRe
     {
         i.next();
 
-        QString path = i.key();
+        QDir path(i.key());
 
         //Iterate through all files inside shared path
         QListIterator<ContainerLookupReturnStruct> k(i.value());
         while (k.hasNext())
         {
-            QString filePath = k.peekNext().filePath;
+            QString relativePath = path.relativeFilePath(k.peekNext().filePath); //Save relative path
             quint64 fileSize = k.peekNext().fileSize;
             QByteArray fileTTH = k.next().rootTTH;
 
             //===================================
             //        DATA ENTRY STRUCTURE
             //===================================
-            // filePath     - String (variable)
+            // relativePath - String (variable)
             // sizeOfTTH    - quint16
             // fileTTH      - ByteArray
             // fileSize     - quint64
             
             QByteArray entry;
-            entry.append(stringToByteArray(filePath));
+            entry.append(stringToByteArray(relativePath));
             entry.append(sizeOfByteArray(&fileTTH));
             entry.append(fileTTH);
             entry.append(quint64ToByteArray(fileSize));

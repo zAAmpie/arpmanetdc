@@ -53,6 +53,32 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
 	pParseDirectoryThread->moveToThread(hashThread);
 
 	hashThread->start();
+
+    //Create container thead
+    containerThread = new ExecThread();
+
+    pContainerThread = new ContainerThread();
+    connect(pContainerThread, SIGNAL(returnContainers(QHash<QString, ContainerContentsType>)), 
+        this, SIGNAL(returnContainers(QHash<QString, ContainerContentsType>)), Qt::QueuedConnection);
+    connect(pContainerThread, SIGNAL(requestTTHsFromPaths(QHash<QString, QStringList>, QString)),
+        this, SLOT(requestTTHsFromPaths(QHash<QString, QStringList>, QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(getContainers(QString)), 
+        pContainerThread, SLOT(requestContainers(QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(saveContainers(QHash<QString, ContainerContentsType>, QString)),
+        pContainerThread, SLOT(saveContainers(QHash<QString, ContainerContentsType>, QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(returnTTHsFromPaths(QHash<QString, QList<ContainerLookupReturnStruct> >, QString)),
+        pContainerThread, SLOT(returnTTHsFromPaths(QHash<QString, QList<ContainerLookupReturnStruct> >, QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(procContainer(QString)),
+        pContainerThread, SLOT(processContainer(QString)), Qt::QueuedConnection);
+    
+    //TODO: Alter this signal for correct parameters
+    //connect(pContainerThread, SIGNAL(returnProcessedContainer()),
+    //    this, SIGNAL(returnProcessedContainer()), Qt::QueuedConnection);
+    
+
+    pContainerThread->moveToThread(containerThread);
+
+    containerThread->start();
 }
 
 ShareSearch::~ShareSearch()
@@ -1093,6 +1119,95 @@ void ShareSearch::requestTTHFromPath(QString filePath)
         emit calculateTTHFromPath(filePath);
     }
 }
+
+//------------------------------============================== GET HASHES FROM FILEPATHS (CONTAINERTHREAD) ==============================------------------------------
+
+//Gets a list of TTHs from a list of paths that exist in the database
+void ShareSearch::requestTTHsFromPaths(QHash<QString, QStringList> filePaths, QString containerPath)
+{
+    //Query the database with the search string
+    QString queryStr;
+    
+    sqlite3 *db = pParent->database();	
+	sqlite3_stmt *statement;
+
+    QHash<QString, QList<ContainerLookupReturnStruct> > result;
+
+    QHashIterator<QString, QStringList> i(filePaths);
+    //Iterate through all paths
+    while (i.hasNext())
+    {
+        i.next();
+
+        QList<ContainerLookupReturnStruct> returnList;
+
+        QListIterator<QString> k(i.value());
+        //Iterate through all files in each path
+        while (k.hasNext())
+        {
+            QString filePath = k.next();
+            queryStr = tr("SELECT [tth], [fileSize] FROM FileShares WHERE [active] = 1 AND [filePath] = ?;");
+
+	        QByteArray tthResult;
+            quint64 fileSize;
+	
+	        //Prepare a query
+	        QByteArray query;
+	        query.append(queryStr);
+	        if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+	        {
+                //Bind parameters
+		        int res = 0;
+		        res = res | sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
+
+		        int cols = sqlite3_column_count(statement);
+		        int result = 0;
+		        while (sqlite3_step(statement) == SQLITE_ROW)
+		        {
+			        QByteArray tthRoot = QByteArray().append((char*)sqlite3_column_text(statement, 0));
+                    tthResult = QByteArray::fromBase64(tthRoot);
+                    fileSize = sqlite3_column_int64(statement, 1);
+		        }
+		        sqlite3_finalize(statement);	
+	        }
+
+	        //Catch all error messages
+	        QString error = sqlite3_errmsg(db);
+	        if (error != "not an error")
+		        QString error = "error";
+
+            //Construct struct
+            ContainerLookupReturnStruct c;
+            c.filePath = filePath;
+            c.fileSize = fileSize;
+            c.rootTTH = tthResult;
+
+            //Add struct to list
+            returnList.append(c);
+        }
+
+        //Add list to hash
+        result.insert(i.key(), returnList);
+    }
+    
+    //Return results
+    emit returnTTHsFromPaths(result, containerPath);
+}
+
+//Request all containers in a directory
+void ShareSearch::requestContainers(QString containerDirectory)
+{
+    //Emit signal to containerThread
+    emit getContainers(containerDirectory);
+}
+    
+//Process a container
+void ShareSearch::processContainer(QString containerPath)
+{
+    //Emit signal to containerThread
+    emit procContainer(containerPath);
+}
+
 
 //------------------------------============================== HASH 1MB BUCKET (TRANSFER MANAGER) ==============================------------------------------
 

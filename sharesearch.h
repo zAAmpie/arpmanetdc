@@ -31,6 +31,7 @@
 #include "downloadfinishedwidget.h"
 #include "util.h"
 #include "protocoldef.h"
+#include "containerthread.h"
 
 class ArpmanetDC;
 class ParseDirectoryThread;
@@ -94,10 +95,21 @@ public slots:
     //Return the last known bootstrapped peers
     void requestLastKnownPeers();
 
-    //----------========== GET HASH FROM FILE PATCH (SHARE WIDGET) ==========----------
+    //----------========== GET HASH FROM FILE PATH (SHARE WIDGET) ==========----------
 
     //Gets the hash from a filepath if it exists in the database
     void requestTTHFromPath(QString filePath);
+
+    //----------========== GET HASHES FROM FILE PATHS (CONTAINERTHREAD) ==========----------
+
+    //Gets a list of TTHs from a list of paths that exist in the database
+    void requestTTHsFromPaths(QHash<QString, QStringList> filePaths, QString containerPath);
+
+    //Request all containers in a directory
+    void requestContainers(QString containerDirectory);
+    
+    //Process a container
+    void processContainer(QString containerPath);
 
     //----------========== HASH 1MB BUCKET (TRANSFER MANAGER) ==========----------
 
@@ -221,6 +233,17 @@ signals:
     //Signal hashFileThread to calculate hash
     void calculateTTHFromPath(QString filePath);
 
+    //----------========== GET HASHES FROM FILE PATHS (CONTAINERTHREAD) ==========----------
+
+    //Signal to return hashes from paths
+    void returnTTHsFromPaths(QHash<QString, QList<ContainerLookupReturnStruct> > results, QString containerPath);
+
+    //Return the containers requested
+    void returnContainers(QHash<QString, ContainerContentsType> containerHash);
+
+    //Save the containers to files in the directory specified
+    void saveContainers(QHash<QString, ContainerContentsType> containerHash, QString containerDirectory);
+
     //----------========== HASH 1MB BUCKET (TRANSFER MANAGER) ==========----------
 
     //Signal the reply of the 1MB bucket hash
@@ -285,6 +308,10 @@ signals:
 	void runParseThread(QString directoryPath);
     void runHashBucket(QByteArray rootTTH, int bucketNumber, QByteArray bucket, ReturnEncoding encoding);
 
+    //Request all containers in a directory
+    void getContainers(QString containerDirectory);
+    void procContainer(QString containerPath);
+
     //Signals to stop processing
     void stopHashingThread();
     void stopParsingThread();
@@ -317,6 +344,7 @@ private:
 	ArpmanetDC *pParent;
 	HashFileThread *pHashFileThread;
 	ParseDirectoryThread *pParseDirectoryThread;
+    ContainerThread *pContainerThread;
 
     //Search history check
     QHash<QByteArray, QHash<QString, qint64> > searchHistoryHash;
@@ -334,7 +362,7 @@ private:
     
     bool pStopHashing, pStopParsing;
 
-	ExecThread *hashThread;
+	ExecThread *hashThread, *containerThread;
 
 	QList<FileListStruct> *pFileList;
 	QList<QDir> *pDirList;

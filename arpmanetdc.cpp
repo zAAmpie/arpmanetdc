@@ -54,6 +54,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     qRegisterMetaType<QDir>("QDir");
     qRegisterMetaType<QList<QHostAddress> >("QList<QHostAddress>");
     qRegisterMetaType<QHash<QString, ContainerContentsType> >("QHash<QString, ContainerContentsType>");
+    qRegisterMetaType<QHash<QString, QStringList> >("QHash<QString, QStringList>");
+    qRegisterMetaType<QHash<QString, QList<ContainerLookupReturnStruct> > >("QHash<QString, QList<ContainerLookupReturnStruct> >");
 
     //Set database pointer to zero at start
 	db = 0;

@@ -35,11 +35,17 @@ public slots:
     //Return hashes from DB
     void returnTTHsFromPaths(QHash<QString, QList<ContainerLookupReturnStruct> > results, QString containerPath);
 
+    //Process downloaded container
+    void processContainer(QString containerPath);
+
 signals:
     //Return the containers requested
     void returnContainers(QHash<QString, ContainerContentsType> containerHash);
     //Request hashes from a list of filepaths from DB
     void requestTTHsFromPaths(QHash<QString, QStringList> filePaths, QString containerPath);
+
+    //Return processed container information
+    void returnProcessedContainer(); //TODO
 
 private:
     //Process a file
