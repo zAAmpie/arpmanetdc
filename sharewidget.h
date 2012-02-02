@@ -61,6 +61,7 @@ private slots:
     void containerButtonPressed();
     void addContainerButtonPressed();
     void removeContainerButtonPressed();
+    void renameContainerButtonPressed();
 
     void calculateMagnetActionPressed();
     void removeContainerEntryActionPressed();
@@ -118,7 +119,7 @@ private:
 
     QLabel *busyLabel;
 
-	QPushButton *saveButton, *refreshButton, *containerButton, *addContainerButton, *removeContainerButton;
+	QPushButton *saveButton, *refreshButton, *containerButton, *addContainerButton, *removeContainerButton, *renameContainerButton;
 
     QMenu *contextMenu, *containerContextMenu;
     QAction *calculateMagnetAction, *removeContainerEntryAction;

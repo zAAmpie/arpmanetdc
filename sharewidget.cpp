@@ -50,13 +50,15 @@ void ShareWidget::createWidgets()
     containerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/ContainerIcon.png"), tr("Show Containers"), pWidget);
 
     //========== DEBUG ==========
-    containerButton->setVisible(false);
+    //containerButton->setVisible(false);
     //========== END DEBUG ==========
     
     addContainerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/AddIcon.png"), tr("Add"), pWidget);
     addContainerButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     removeContainerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/DeleteIcon.png"), tr("Delete"), pWidget);
     removeContainerButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    renameContainerButton = new QPushButton(QIcon(""), tr("Rename"), pWidget);
+    renameContainerButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     
     containerCombo = new QComboBox(pWidget);
     containerCombo->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
@@ -141,8 +143,9 @@ void ShareWidget::placeWidgets()
 
     QGridLayout *topContainerLayout = new QGridLayout;
     topContainerLayout->addWidget(containerCombo, 0, 0);
-    topContainerLayout->addWidget(addContainerButton, 0, 1);
-    topContainerLayout->addWidget(removeContainerButton, 0, 2);
+    topContainerLayout->addWidget(renameContainerButton, 0, 1);
+    topContainerLayout->addWidget(addContainerButton, 0, 2);
+    topContainerLayout->addWidget(removeContainerButton, 0, 3);
 
     QVBoxLayout *containerLayout = new QVBoxLayout;
     containerLayout->addLayout(topContainerLayout);
@@ -198,6 +201,7 @@ void ShareWidget::connectWidgets()
     connect(containerButton, SIGNAL(clicked()), this, SLOT(containerButtonPressed()));
     connect(addContainerButton, SIGNAL(clicked()), this, SLOT(addContainerButtonPressed()));
     connect(removeContainerButton, SIGNAL(clicked()), this, SLOT(removeContainerButtonPressed()));
+    connect(renameContainerButton, SIGNAL(clicked()), this, SLOT(renameContainerButtonPressed()));
 
     //Actions
     connect(calculateMagnetAction, SIGNAL(triggered()), this, SLOT(calculateMagnetActionPressed()));
@@ -249,21 +253,86 @@ void ShareWidget::saveSharePressed()
 
 	//Construct list of selected directory paths
 	QList<QDir> *dirList = new QList<QDir>();
+    QList<QString> strList;
 	foreach (const QModelIndex index, selectedDirectories)
-		dirList->append(QDir(index.data(QFileSystemModel::FilePathRole).toString()));
+    {
+        strList.append(index.data(QFileSystemModel::FilePathRole).toString());
+        if (!strList.last().endsWith("/"))
+            strList.last().append("/");
+    }
 	foreach (const QModelIndex index, selectedFiles)
-		dirList->append(QDir(index.data(QFileSystemModel::FilePathRole).toString()));
+    {
+        strList.append(index.data(QFileSystemModel::FilePathRole).toString());
+    }
 
-	//Ensure files in containers are all shared
+    QList<QString> finalList;
+    QList<QString> containerList;
+
+	//Massively complex system to ensure that only parent directories are shared across sharing selections and ALL containers
+
+    //Pass 1 : Remove all subdirectories between containers
     foreach (ContainerContentsType c, pContainerHash)
     {
         QHashIterator<QString, quint64> i(c.second);
         while (i.hasNext())
         {
-            dirList->append(QDir(i.next().key()));
+            i.next();
+            QMutableListIterator<QString> k(containerList);
+            while (k.hasNext())
+            {
+                k.next();
+                if (k.value().contains(i.key())) //If existing directory is a subdirectory of new directory - remove old one
+                {
+                    k.remove();
+                }
+            }
+            
+            //Add new directory if it doesn't exist yet
+            if (!containerList.contains(i.key()))
+                containerList.append(i.key());
         }
     }
-    	
+
+    //Pass 2 : Remove all subdirectories from strList where parent directories are contained in containerList
+    QMutableListIterator<QString> i(strList);
+    while (i.hasNext())
+    {
+        i.next();
+        QListIterator<QString> k(containerList);
+        while (k.hasNext())
+        {
+            if (i.value().contains(k.next())) //A path in strList is a subdirectory of a path in containerList
+            {
+                i.remove();
+                break;
+            }
+        }
+    }
+
+    //Pass 3 : Remove all subdirectories from containerList where parent directories are contained in strList
+    QMutableListIterator<QString> j(containerList);
+    while (j.hasNext())
+    {
+        j.next();
+        QListIterator<QString> m(strList);
+        while (m.hasNext())
+        {
+            if (j.value().contains(m.next())) //A path in containerList is a subdirectory of a path in strList
+            {
+                j.remove();
+                break;
+            }
+        }
+    }
+
+    //Combine the two
+    finalList.append(strList);
+    finalList.append(containerList);
+
+    //Convert to QDirs
+    foreach (QString str, finalList)
+        dirList->append(QDir(str));
+
    	pShare->stopParsing();
     pShare->stopHashing();
     emit updateShares(dirList);
@@ -314,6 +383,8 @@ void ShareWidget::addContainerButtonPressed()
         containerTreeView->setEnabled(true);
         containerTreeView->setPlaceholderText(tr("Drag files/folders here to add..."));
     }
+    else if (!name.isEmpty())
+        QMessageBox::information(pParent, tr("ArpmanetDC"), tr("A container with that name already exists. Please try another name."));
 }
 
 void ShareWidget::removeContainerButtonPressed()
@@ -345,6 +416,29 @@ void ShareWidget::removeContainerButtonPressed()
             switchedContainer(containerCombo->currentText());            
         }
     }
+}
+
+void ShareWidget::renameContainerButtonPressed()
+{
+    QString oldName = containerCombo->currentText();
+    QString newName = QInputDialog::getText((QWidget *)pParent, tr("ArpmanetDC"), tr("Please enter a new name for container <b>%1</b>").arg(oldName));
+    if (!newName.isEmpty() && !pContainerHash.contains(newName))
+    {
+        //Replace container
+        ContainerContentsType c = pContainerHash.value(oldName);
+        pContainerHash.remove(oldName);
+        pContainerHash.insert(newName, c);
+
+        //Add container name to combo box
+        containerCombo->removeItem(containerCombo->currentIndex());
+        containerCombo->addItem(QIcon(":/ArpmanetDC/Resources/ContainerIcon.png"), newName);
+        containerCombo->setCurrentIndex(containerCombo->count()-1);        
+
+        //Sort list of containers
+        containerCombo->view()->model()->sort(0);
+    }
+    else if (!newName.isEmpty())
+        QMessageBox::information(pParent, tr("ArpmanetDC"), tr("A container with that name already exists. Please try another name."));
 }
 
 void ShareWidget::calculateMagnetActionPressed()
