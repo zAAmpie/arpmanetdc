@@ -232,6 +232,7 @@ private slots:
 	void helpActionPressed();
 	void privateMessageActionPressed();
 	void reconnectActionPressed();
+        void openDownloadDirActionPressed();
 
 	//Tab clicked
 	void tabDeleted(int index);
@@ -370,7 +371,7 @@ private:
     QMenu *userListMenu;
 
 	//Actions
-	QAction *reconnectAction, *shareAction, *searchAction, *queueAction, *downloadFinishedAction, *settingsAction, *helpAction, *privateMessageAction;
+        QAction *reconnectAction, *shareAction, *searchAction, *queueAction, *downloadFinishedAction, *settingsAction, *helpAction, *privateMessageAction, *openDownloadDirAction;
 
     //-----===== System tray =====-----
 
