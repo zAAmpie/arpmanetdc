@@ -50,7 +50,7 @@ void ShareWidget::createWidgets()
     containerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/ContainerIcon.png"), tr("Show Containers"), pWidget);
 
     //========== DEBUG ==========
-    //containerButton->setVisible(false);
+    containerButton->setVisible(false);
     //========== END DEBUG ==========
     
     addContainerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/AddIcon.png"), tr("Add"), pWidget);
