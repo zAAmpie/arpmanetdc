@@ -68,13 +68,11 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
         pContainerThread, SLOT(saveContainers(QHash<QString, ContainerContentsType>, QString)), Qt::QueuedConnection);
     connect(this, SIGNAL(returnTTHsFromPaths(QHash<QString, QList<ContainerLookupReturnStruct> >, QString)),
         pContainerThread, SLOT(returnTTHsFromPaths(QHash<QString, QList<ContainerLookupReturnStruct> >, QString)), Qt::QueuedConnection);
-    connect(this, SIGNAL(procContainer(QString)),
-        pContainerThread, SLOT(processContainer(QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(procContainer(QHostAddress, QString, QString)),
+        pContainerThread, SLOT(processContainer(QHostAddress, QString, QString)), Qt::QueuedConnection);
     
-    //TODO: Alter this signal for correct parameters
-    //connect(pContainerThread, SIGNAL(returnProcessedContainer()),
-    //    this, SIGNAL(returnProcessedContainer()), Qt::QueuedConnection);
-    
+    connect(pContainerThread, SIGNAL(returnProcessedContainer(QHostAddress, ContainerContentsType, QList<ContainerLookupReturnStruct>, QString)),
+        pParent, SLOT(returnProcessedContainer(QHostAddress, ContainerContentsType, QList<ContainerLookupReturnStruct>, QString)), Qt::QueuedConnection);
 
     pContainerThread->moveToThread(containerThread);
 
@@ -1215,10 +1213,10 @@ void ShareSearch::requestContainers(QString containerDirectory)
 }
     
 //Process a container
-void ShareSearch::processContainer(QString containerPath)
+void ShareSearch::processContainer(QHostAddress host, QString containerPath, QString downloadPath)
 {
     //Emit signal to containerThread
-    emit procContainer(containerPath);
+    emit procContainer(host, containerPath, downloadPath);
 }
 
 

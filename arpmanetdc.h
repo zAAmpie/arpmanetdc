@@ -157,6 +157,9 @@ public slots:
     //Queue the containers for saving after shares have been updated
     void queueSaveContainers(QHash<QString, ContainerContentsType> containerHash, QString containerDirectory);
 
+    //Return the contents of a container downloaded
+    void returnProcessedContainer(QHostAddress host, ContainerContentsType index, QList<ContainerLookupReturnStruct> data, QString downloadPath);
+
 private slots:
     //-----===== OBJECT SLOTS =====-----
 
@@ -266,6 +269,8 @@ signals:
 
     //Save the containers to files in the directory specified
     void saveContainers(QHash<QString, ContainerContentsType> containerHash, QString containerDirectory);
+    //Process downloaded container
+    void processContainer(QHostAddress host, QString containerPath, QString downloadPath);
 
     //----------========== TRANSFERMANAGER SIGNALS ==========----------
 

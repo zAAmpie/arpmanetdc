@@ -102,12 +102,94 @@ void ContainerThread::saveContainers(QHash<QString, ContainerContentsType> conta
 }
 
 //Process downloaded container
-void ContainerThread::processContainer(QString containerPath)
+void ContainerThread::processContainer(QHostAddress host, QString containerPath, QString downloadPath)
 {
-    //TODO: 
-    //Process a downloaded container and return the contents within to be queued
-    //Return a meaningful signal
-    emit returnProcessedContainer();
+    //Get container index
+    QFileInfo fileInfo(containerPath);
+    ContainerContentsType c;
+    c.first = 0;
+
+    QFile file(fileInfo.filePath());
+    if (!file.open(QIODevice::ReadOnly))
+        return;
+
+    //Read header from file
+    QByteArray header = file.read(HEADER_LENGTH);
+    if (header.size() < HEADER_LENGTH)
+    {
+        file.close();
+        return;
+    }
+
+    //===================================
+    //            HEADER LAYOUT
+    //===================================
+    // totalBytes  - quint64
+    // indexSize   - quint64
+
+    quint64 totalBytes = getQuint64FromByteArray(&header);
+    quint64 indexSize = getQuint64FromByteArray(&header);
+
+    //Read index from file
+    QByteArray index = file.read(indexSize);
+    if (index.size() < indexSize)
+    {
+        file.close();
+        return;
+    }
+
+    //===================================
+    //            INDEX LAYOUT
+    //===================================
+    // filePath  - String (variable size)
+    // pathSize  - quint64
+
+    while (!index.isEmpty())
+    {
+        QString filePath = getStringFromByteArray(&index);
+        quint64 pathSize = getQuint64FromByteArray(&index);
+
+        //Insert entry into hash
+        c.second.insert(filePath, pathSize);
+        c.first += pathSize;
+    }
+
+    //===================================
+    //        DATA ENTRY STRUCTURE
+    //===================================
+    // relativePath - String (variable)
+    // sizeOfTTH    - quint16
+    // fileTTH      - ByteArray
+    // fileSize     - quint64
+    
+    QString relPath;
+    QByteArray fileTTH;
+    quint64 fileSize;
+
+    QList<ContainerLookupReturnStruct> containerData;
+    
+    //Read entire file (it shouldn't be too big. touch wood)
+    QByteArray buffer = file.readAll();
+    file.close();
+    
+    //Process buffer
+    while (!buffer.isEmpty())
+    {
+        ContainerLookupReturnStruct r;
+        
+        //Fill parameters
+        r.filePath = getStringFromByteArray(&header);
+        quint16 size = getQuint16FromByteArray(&header);
+        r.rootTTH = header.left(size);
+        header.remove(0, size);
+        r.fileSize = getQuint64FromByteArray(&header);
+
+        //Insert into list
+        containerData.append(r);
+    }
+    
+    //Return results
+    emit returnProcessedContainer(host, c, containerData, downloadPath);
 }
 
 //Return hashes from DB
@@ -151,9 +233,15 @@ void ContainerThread::returnTTHsFromPaths(QHash<QString, QList<ContainerLookupRe
             //Write entry to file
             qint64 written = file.write(entry);
             if (written != entry.size())
+            {
+                file.close();
                 return;
+            }
         }
     }
+
+    //Close file
+    file.close();
 }
 
 //Process a file index (for local display)
@@ -169,7 +257,10 @@ ContainerContentsType ContainerThread::processContainerFileIndex(QFileInfo fileI
     //Read header from file
     QByteArray header = file.read(HEADER_LENGTH);
     if (header.size() < HEADER_LENGTH)
+    {
+        file.close();
         return c;
+    }
 
     //===================================
     //            HEADER LAYOUT
@@ -183,7 +274,10 @@ ContainerContentsType ContainerThread::processContainerFileIndex(QFileInfo fileI
     //Read index from file
     QByteArray index = file.read(indexSize);
     if (index.size() < indexSize)
+    {
+        file.close();
         return c;
+    }
 
     //===================================
     //            INDEX LAYOUT
@@ -201,6 +295,7 @@ ContainerContentsType ContainerThread::processContainerFileIndex(QFileInfo fileI
         c.first += pathSize;
     }
 
+    file.close();
     return c;
 }
 
@@ -230,11 +325,17 @@ bool ContainerThread::writeContainerFileIndex(QString filePath, ContainerContent
     qint64 written;
     written = file.write(header);
     if (written != header.size())
+    {
+        file.close();
         return false;
+    }
 
     written = file.write(index);
     if (written != index.size())
+    {
+        file.close();
         return false;
+    }
 
     file.close();
     return true;

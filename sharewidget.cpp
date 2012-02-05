@@ -19,8 +19,8 @@ ShareWidget::ShareWidget(ShareSearch *share, ArpmanetDC *parent)
     //Container signals/slots
     connect(this, SIGNAL(requestContainers(QString)), 
         pShare, SLOT(requestContainers(QString)), Qt::QueuedConnection);
-    connect(this, SIGNAL(processContainer(QString)), 
-        pShare, SLOT(processContainer(QString)), Qt::QueuedConnection);
+    //connect(this, SIGNAL(processContainer(QString)), 
+    //    pShare, SLOT(processContainer(QString)), Qt::QueuedConnection);
     connect(this, SIGNAL(saveContainers(QHash<QString, ContainerContentsType>, QString)),
         pParent, SLOT(queueSaveContainers(QHash<QString, ContainerContentsType>, QString)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(returnContainers(QHash<QString, ContainerContentsType>)),
