@@ -9,7 +9,7 @@
 
 #define CONTAINER_EXTENSION "adcc"
 
-#define HEADER_LENGTH 8
+#define HEADER_LENGTH 16
 
 typedef QPair<quint64, QHash<QString, quint64> > ContainerContentsType;
 

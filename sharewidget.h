@@ -53,7 +53,13 @@ private slots:
 
     void switchedContainer(const QString &name);
 
-	//Slots
+    //===== CONTAINERS =====
+
+    //Return the containers requested
+    void returnContainers(QHash<QString, ContainerContentsType> containerHash);
+
+	//===== GUI =====
+    //Slots
 	void selectedItemsChanged();
 
 	void saveSharePressed();
@@ -84,6 +90,17 @@ signals:
     //Request TTH from filePath for magnets
     void requestTTHFromPath(QString filePath);
 
+    //===== CONTAINERS =====
+
+    //Request all containers in a directory
+    void requestContainers(QString containerDirectory);
+    
+    //Process a container
+    void processContainer(QString containerPath);
+    
+    //Save the containers to files in the directory specified
+    void saveContainers(QHash<QString, ContainerContentsType> containerHash, QString containerDirectory);
+
 private:
 	//Functions
 	void createWidgets();
@@ -105,6 +122,7 @@ private:
     //Containers
     QHash<QString, ContainerContentsType> pContainerHash;
     QStandardItem *pParentItem;
+    QString pContainerDirectory;
 
 	//GUI elements
 	QTreeView *fileTree;

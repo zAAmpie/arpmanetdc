@@ -5,7 +5,7 @@
 
 ContainerThread::ContainerThread(QObject *parent) : QObject(parent)
 {
-
+    
 }
 
 ContainerThread::~ContainerThread()
@@ -38,10 +38,15 @@ void ContainerThread::requestContainers(QString containerDirectory)
 //Save the containers to files in the directory specified
 void ContainerThread::saveContainers(QHash<QString, ContainerContentsType> containerHash, QString containerDirectory)
 {
+    //Make container directory if it doesn't exist
+    QDir contDir(containerDirectory);
+    if (!containerHash.isEmpty() && !contDir.exists())
+        contDir.mkpath(contDir.absolutePath());
+
     QHashIterator<QString, ContainerContentsType> i(containerHash);
     while (i.hasNext())
     {
-        QString containerPath = containerDirectory + i.next().key();
+        QString containerPath = containerDirectory + i.next().key() + "." + QString(CONTAINER_EXTENSION);
         ContainerContentsType contents = i.value();
 
         //Parse all paths in the container to write index
@@ -55,16 +60,27 @@ void ContainerThread::saveContainers(QHash<QString, ContainerContentsType> conta
             quint64 pathSize = 0;
             QStringList allFilePaths;            
 
-            QDirIterator diri(path, QDir::Files | QDir::NoSymLinks | QDir::Readable, QDirIterator::Subdirectories);
-            while (diri.hasNext())
+            QFileInfo fi(path);
+            //Iterate through all files and subdirectories if path is a directory
+            if (fi.isDir())
             {
-                diri.next();
+                QDirIterator diri(path, QDir::Files | QDir::NoSymLinks | QDir::Readable, QDirIterator::Subdirectories);
+                while (diri.hasNext())
+                {
+                    diri.next();
             
-                //Read file information
-                allFilePaths.append(diri.filePath());
+                    //Read file information
+                    allFilePaths.append(diri.filePath());
 
-                //Update path size
-                pathSize += diri.fileInfo().size();
+                    //Update path size
+                    pathSize += diri.fileInfo().size();
+                }
+            }
+            //Save file information if path is a file
+            else if (fi.isFile())
+            {
+                pathSize = fi.size();
+                allFilePaths.append(path);
             }
 
             //Set path size in containerHash

@@ -79,6 +79,8 @@ static const QMap<QString, char> PROTOCOL_MAP = initMapValues();
 #define MAX_MAINCHAT_BLOCKS 1000
 #define MAX_STATUS_HISTORY_ENTRIES 20 //Tooltip of status label
 
+#define CONTAINER_DIRECTORY "/Containers/" //The directory in which the containers are stored
+
 #define VERSION_STRING "0.1.3"
 
 //Main GUI window class

@@ -444,6 +444,8 @@ ArpmanetDC::~ArpmanetDC()
 	    pHub->deleteLater();
         pTransferManager->deleteLater();
         pDispatcher->deleteLater();
+        pBucketFlushThread->deleteLater();
+        pShare->deleteLater();
 
         //saveSettings();
         delete pSettings;
@@ -467,7 +469,7 @@ ArpmanetDC::~ArpmanetDC()
             delete bucketFlushThread;
         }
 
-	    dbThread->quit();
+        dbThread->quit();
 	    if (dbThread->wait(5000))
 		    delete dbThread;
         else

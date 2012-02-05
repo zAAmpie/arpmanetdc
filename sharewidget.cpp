@@ -8,14 +8,35 @@ ShareWidget::ShareWidget(ShareSearch *share, ArpmanetDC *parent)
 	pParent = parent;
 	pShare = share;
 
+    //Shares signals/slots
     connect(this, SIGNAL(updateShares(QList<QDir> *)), pShare, SLOT(updateShares(QList<QDir> *)), Qt::QueuedConnection);
 	connect(this, SIGNAL(updateShares()), pShare, SLOT(updateShares()), Qt::QueuedConnection);
+
+    //Magnet links signals/slots
     connect(this, SIGNAL(requestTTHFromPath(QString)), pShare, SLOT(requestTTHFromPath(QString)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(returnTTHFromPath(QString, QByteArray, quint64)), this, SLOT(returnTTHFromPath(QString, QByteArray, quint64)), Qt::QueuedConnection);
 
+    //Container signals/slots
+    connect(this, SIGNAL(requestContainers(QString)), 
+        pShare, SLOT(requestContainers(QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(processContainer(QString)), 
+        pShare, SLOT(processContainer(QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(saveContainers(QHash<QString, ContainerContentsType>, QString)),
+        pShare, SIGNAL(saveContainers(QHash<QString, ContainerContentsType>, QString)), Qt::QueuedConnection);
+    connect(pShare, SIGNAL(returnContainers(QHash<QString, ContainerContentsType>)),
+        this, SLOT(returnContainers(QHash<QString, ContainerContentsType>)), Qt::QueuedConnection);
+    
 	createWidgets();
 	placeWidgets();
 	connectWidgets();
+
+    pContainerDirectory = QDir::currentPath();
+    if (pContainerDirectory.endsWith("/"))
+        pContainerDirectory.chop(1);
+    pContainerDirectory.append(CONTAINER_DIRECTORY);
+
+    //Populate container list
+    emit requestContainers(pContainerDirectory);
 
 	//Populate share list
 	QList<QDir> *shares = pShare->getShares();
@@ -50,7 +71,7 @@ void ShareWidget::createWidgets()
     containerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/ContainerIcon.png"), tr("Show Containers"), pWidget);
 
     //========== DEBUG ==========
-    containerButton->setVisible(false);
+    //containerButton->setVisible(false);
     //========== END DEBUG ==========
     
     addContainerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/AddIcon.png"), tr("Add"), pWidget);
@@ -335,8 +356,11 @@ void ShareWidget::saveSharePressed()
 
    	pShare->stopParsing();
     pShare->stopHashing();
+    //Update shares
     emit updateShares(dirList);
-
+    //Save containers
+    emit saveContainers(pContainerHash, pContainerDirectory);
+    //Let GUI know
 	emit saveButtonPressed();
 }
 
@@ -542,6 +566,26 @@ void ShareWidget::returnTTHFromPath(QString filePath, QByteArray tthRoot, quint6
         clipboard->setText(magnetLink);
 
         QWhatsThis::showText(contextMenu->pos(), tr("Magnet link copied to clipboard"));
+    }
+}
+
+//Return the containers requested
+void ShareWidget::returnContainers(QHash<QString, ContainerContentsType> containerHash)
+{
+    //Clear model
+    containerModel->removeRows(0, containerModel->rowCount());
+
+    //Clear container list
+    containerCombo->clear();
+
+    //Replace the current container hash
+    pContainerHash.clear();
+    pContainerHash = containerHash;
+
+    QHashIterator<QString, ContainerContentsType> i(pContainerHash);
+    while (i.hasNext())
+    {
+        containerCombo->addItem(QIcon(":/ArpmanetDC/Resources/ContainerIcon.png"), i.next().key());
     }
 }
 

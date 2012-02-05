@@ -86,6 +86,11 @@ ShareSearch::~ShareSearch()
 	//Destructor
 	delete pDirList;
 	delete pFileList;
+
+    pHashFileThread->deleteLater();
+    pParseDirectoryThread->deleteLater();
+    pContainerThread->deleteLater();
+
 	hashThread->quit();
 	if (hashThread->wait(5000))
 		delete hashThread;
@@ -93,6 +98,14 @@ ShareSearch::~ShareSearch()
     {
         hashThread->terminate();
         delete hashThread;
+    }
+    containerThread->quit();
+	if (containerThread->wait(5000))
+		delete containerThread;
+    else
+    {
+        containerThread->terminate();
+        delete containerThread;
     }
 }
 
@@ -1146,7 +1159,7 @@ void ShareSearch::requestTTHsFromPaths(QHash<QString, QStringList> filePaths, QS
         while (k.hasNext())
         {
             QString filePath = k.next();
-            queryStr = tr("SELECT [tth], [fileSize] FROM FileShares WHERE [active] = 1 AND [filePath] = ?;");
+            queryStr = tr("SELECT [tth], [fileSize] FROM FileShares WHERE [filePath] = ?;");
 
 	        QByteArray tthResult;
             quint64 fileSize;
