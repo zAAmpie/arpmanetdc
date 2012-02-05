@@ -17,7 +17,7 @@ SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconL
 	placeWidgets();
 	connectWidgets();
 
-	pID = staticID++;
+	pID = 0;
     ownCID = parent->dispatcherObject()->getCID();
     
     sortDue = false;
@@ -42,7 +42,7 @@ SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconL
 	placeWidgets();
 	connectWidgets();
 
-	pID = staticID++;
+	pID = 0;
     ownCID = parent->dispatcherObject()->getCID();
     
     sortDue = false;
@@ -449,7 +449,14 @@ void SearchWidget::searchPressed()
     resultsQueue.clear();
     resultNumberLabel->setText(tr(""));
 
-    pID = staticID++;
+    //Hash the current staticID along with the client CID
+    QByteArray hash;
+    hash.append(quint64ToByteArray(staticID++));
+    hash.append(pParent->dispatcherObject()->getCID());
+    
+    //Compute an unsigned 64bit id from the generated MD5 hash
+    QByteArray resID = QCryptographicHash::hash(hash, QCryptographicHash::Md5);
+    pID = getQuint64FromByteArray(&resID);
 
 	if (!searchLineEdit->text().isEmpty())
 	{
