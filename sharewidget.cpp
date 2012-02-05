@@ -22,7 +22,7 @@ ShareWidget::ShareWidget(ShareSearch *share, ArpmanetDC *parent)
     connect(this, SIGNAL(processContainer(QString)), 
         pShare, SLOT(processContainer(QString)), Qt::QueuedConnection);
     connect(this, SIGNAL(saveContainers(QHash<QString, ContainerContentsType>, QString)),
-        pShare, SIGNAL(saveContainers(QHash<QString, ContainerContentsType>, QString)), Qt::QueuedConnection);
+        pParent, SLOT(queueSaveContainers(QHash<QString, ContainerContentsType>, QString)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(returnContainers(QHash<QString, ContainerContentsType>)),
         this, SLOT(returnContainers(QHash<QString, ContainerContentsType>)), Qt::QueuedConnection);
     
@@ -289,6 +289,9 @@ void ShareWidget::saveSharePressed()
     QList<QString> finalList;
     QList<QString> containerList;
 
+    //Add container directory to share automatically
+    containerList.append(pContainerDirectory);
+
 	//Massively complex system to ensure that only parent directories are shared across sharing selections and ALL containers
 
     //Pass 1 : Remove all subdirectories between containers
@@ -517,7 +520,7 @@ void ShareWidget::switchedContainer(const QString &name)
         QString filePath = fi.filePath();
         quint64 fileSize = i.peekNext().value();
         if (fileName.isEmpty())
-            fileName = filePath;
+            fileName = QDir(filePath).dirName();
 
         //Add contents to model
         QList<QStandardItem *> row;
@@ -587,6 +590,24 @@ void ShareWidget::returnContainers(QHash<QString, ContainerContentsType> contain
     {
         containerCombo->addItem(QIcon(":/ArpmanetDC/Resources/ContainerIcon.png"), i.next().key());
     }
+
+    //Sort list of containers
+    containerCombo->view()->model()->sort(0);
+
+    //Disable tree view if no containers exist
+    if (containerCombo->count() == 0)
+    {
+        containerTreeView->setEnabled(false);
+        containerTreeView->setPlaceholderText(tr("To start using containers, click Add..."));
+    }
+    else
+    {
+        //Enable tree view if it was disabled
+        containerTreeView->setEnabled(true);
+        containerTreeView->setPlaceholderText(tr("Drag files/folders here to add..."));            
+    }
+
+    
 }
 
 //Context menu for magnets

@@ -254,6 +254,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(this, SIGNAL(clearFinishedDownloads()), pShare, SLOT(clearFinishedDownloads()), Qt::QueuedConnection);
     connect(this, SIGNAL(requestAutoCompleteWordList(QStandardItemModel *)), pShare, SLOT(requestAutoCompleteWordList(QStandardItemModel *)), Qt::QueuedConnection);
     connect(this, SIGNAL(saveAutoCompleteWordList(QString)), pShare, SLOT(saveAutoCompleteWordList(QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(saveContainers(QHash<QString, ContainerContentsType>, QString)), pShare, SIGNAL(saveContainers(QHash<QString, ContainerContentsType>, QString)), Qt::QueuedConnection);
    
     //Connect ShareSearch to Dispatcher - reply to search request from other clients
     connect(pShare, SIGNAL(returnSearchResult(QHostAddress, QByteArray, quint64, QByteArray)), 
@@ -1402,6 +1403,9 @@ void ArpmanetDC::hashingDone(int msecs, int numFiles)
 	shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr(true)));
     shareSizeLabel->setToolTip(tr("Share size: %1\nFiles shared: %2").arg(pShare->totalShareStr(false)).arg(numFiles));
 	hashingProgressBar->setRange(0,1);
+
+    //Start processing containers if there are outstanding
+    emit saveContainers(pContainerHash, pContainerDirectory);
 }
 
 void ArpmanetDC::parsingDone(int msecs)
@@ -2063,6 +2067,14 @@ void ArpmanetDC::removeTransfer(QByteArray tth, int transferType, QHostAddress h
 
     if (queueWidget)
         queueWidget->removeQueuedDownload(tth);
+}
+
+//Queue the containers for saving after shares have been updated
+void ArpmanetDC::queueSaveContainers(QHash<QString, ContainerContentsType> containerHash, QString containerDirectory)
+{
+    //Save container info
+    pContainerHash = containerHash;
+    pContainerDirectory = containerDirectory;
 }
 
 //System tray was activated

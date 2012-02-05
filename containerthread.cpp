@@ -43,6 +43,9 @@ void ContainerThread::saveContainers(QHash<QString, ContainerContentsType> conta
     if (!containerHash.isEmpty() && !contDir.exists())
         contDir.mkpath(contDir.absolutePath());
 
+    //Clean all container files in the directory
+    cleanContainers(containerDirectory);
+
     QHashIterator<QString, ContainerContentsType> i(containerHash);
     while (i.hasNext())
     {
@@ -235,4 +238,23 @@ bool ContainerThread::writeContainerFileIndex(QString filePath, ContainerContent
 
     file.close();
     return true;
+}
+
+//Clean container directory of all containers
+bool ContainerThread::cleanContainers(QString containerDirectory)
+{
+    QDir cDir(containerDirectory);
+    cDir.setNameFilters(QStringList("*." + QString(CONTAINER_EXTENSION)));
+
+    //Get all container files in directory
+    QFileInfoList list = cDir.entryInfoList(QDir::Files);
+    
+    bool res = true;
+    foreach (QFileInfo fi, list)
+    {
+        //Remove all containers
+        res = res & QFile::remove(fi.filePath());
+    }
+
+    return res;
 }

@@ -45,13 +45,15 @@ signals:
     void requestTTHsFromPaths(QHash<QString, QStringList> filePaths, QString containerPath);
 
     //Return processed container information
-    void returnProcessedContainer(); //TODO
+    void returnProcessedContainer();
 
 private:
     //Process a file
     ContainerContentsType processContainerFileIndex(QFileInfo fileInfo);
     //Write a file
     bool writeContainerFileIndex(QString name, ContainerContentsType contents);
+    //Clean container directory of all containers
+    bool cleanContainers(QString containerDirectory);
 };
 
 #endif

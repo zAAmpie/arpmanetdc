@@ -152,6 +152,11 @@ public slots:
     //Stops a transfer
     void removeTransfer(QByteArray tth, int transferType, QHostAddress hostAddr);
 
+    //-----------========== SHARE WIDGET - CONTAINERS ==========----------
+
+    //Queue the containers for saving after shares have been updated
+    void queueSaveContainers(QHash<QString, ContainerContentsType> containerHash, QString containerDirectory);
+
 private slots:
     //-----===== OBJECT SLOTS =====-----
 
@@ -259,6 +264,9 @@ signals:
     void requestAutoCompleteWordList(QStandardItemModel *wordList);
     void saveAutoCompleteWordList(QString word);
 
+    //Save the containers to files in the directory specified
+    void saveContainers(QHash<QString, ContainerContentsType> containerHash, QString containerDirectory);
+
     //----------========== TRANSFERMANAGER SIGNALS ==========----------
 
     //Signals for queue
@@ -314,6 +322,10 @@ private:
 	//Parameters
 	//SettingsStruct pSettings;
     QHash<QString, QString> *pSettings;
+
+    //Containers
+    QHash<QString, ContainerContentsType> pContainerHash;
+    QString pContainerDirectory;
 
     quint64 pFilesHashedSinceUpdate, pFileSizeHashedSinceUpdate;
     QTimer *hashRateTimer;
