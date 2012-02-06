@@ -328,10 +328,12 @@ QByteArray qint16ToByteArray(qint16 num)
 QByteArray quint32ToByteArray(quint32 num)
 {
 	//Convert quint32 to QByteArray
-	QByteArray numBA;
-	QDataStream ds(&numBA,QIODevice::WriteOnly);
+    //QByteArray numBA((const char *)&num, 4);
+    QByteArray numBA;
+    QDataStream ds(&numBA,QIODevice::WriteOnly);
 	ds.setVersion(QDataStream::Qt_4_6);
 	ds << (quint32)num;
+
 	return numBA;
 }
 
@@ -421,6 +423,8 @@ quint32 getQuint32FromByteArray(QByteArray *data)
     QDataStream ds(data,QIODevice::ReadOnly);
     ds.setVersion(QDataStream::Qt_4_6);
     ds >> num;
+    //memcpy(&num, data->constData(), 4);
+    
     data->remove(0,4);
     return num;
 }
