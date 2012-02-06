@@ -65,10 +65,11 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 
     //Get database path
     //TODO: Check command line arguments for specified database path
-#ifdef Q_OS_LINUX
-    shareDatabasePath = QDir::homePath() + "/.arpmanetdc.sqlite";
-#else
     shareDatabasePath = DEFAULT_SHARE_DATABASE_PATH;
+#ifdef Q_OS_LINUX
+    if (!QFileInfo(shareDatabasePath).exists())
+        shareDatabasePath = QDir::homePath() + "/.arpmanetdc.sqlite";
+    qDebug() << shareDatabasePath;
 #endif
 
     setupDatabase();
