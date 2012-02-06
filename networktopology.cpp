@@ -105,6 +105,8 @@ void NetworkTopology::bucketContentsArrived(QByteArray bucket, QHostAddress send
     QByteArray bucketID = bucket.mid(0, 24);
     bucket.remove(0, 24);
     int iter = 0;
+    qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
+    qint64 cutoffTime = currentTime - 60000; // 1 minute
     while (bucket.length() >= 6)
     {
         iter++;
@@ -114,7 +116,19 @@ void NetworkTopology::bucketContentsArrived(QByteArray bucket, QHostAddress send
         if ((storedAge > age) || (storedAge == -1))
         {
             //updateHostTimestamp(bucketID, addr, age); // do not believe everything we hear
-            emit sendUnicastAnnounce(addr); // let us hear the *real* bucket ID from the peer.
+            if (announceToHostTimestamps.contains(addr))
+            {
+                if (announceToHostTimestamps.value(addr) < cutoffTime)
+                {
+                    emit sendUnicastAnnounce(addr); // let us hear the *real* bucket ID from the peer.
+                    announceToHostTimestamps[addr] = currentTime;
+                }
+            }
+            else
+            {
+                emit sendUnicastAnnounce(addr);
+                announceToHostTimestamps[addr] = currentTime;
+            }
         }
     }
     // the replyee is not in his own bucket, since buckets only contain dispatch ip's as seen from the network.
