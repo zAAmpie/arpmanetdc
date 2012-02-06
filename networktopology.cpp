@@ -290,6 +290,11 @@ void NetworkTopology::updateHostTimestamp(QByteArray &bucket, QHostAddress &host
         p->second = b;
         buckets.insert(bucket, p);
     }
+    if (buckets.value(bucket)->first->count() > 10)
+    {
+        buckets.value(bucket)->first->removeLast();
+        buckets.value(bucket)->second->removeLast();
+    }
 }
 
 qint64 NetworkTopology::getHostAge(QByteArray &bucket, QHostAddress &host)
