@@ -70,7 +70,6 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 #else
     shareDatabasePath = DEFAULT_SHARE_DATABASE_PATH;
 #endif
-    qDebug() << shareDatabasePath;
 
     setupDatabase();
     pSettings = new QHash<QString, QString>();
@@ -2404,8 +2403,11 @@ void ArpmanetDC::changeEvent(QEvent *e)
         {
             wasMaximized = isMaximized();
             windowSize = size();
+#ifdef Q_OS_WIN32
             //Trick necessary to hide window in Windows 7 (the call to hide should not be in the event function)
+            //Gives problems in Linux (especially on a tiling windows manager such as Xmonad)!
             QTimer::singleShot(0, this, SLOT(hide()));
+#endif
             restoreAction->setEnabled(true);
         }
         else if (state.testFlag(Qt::WindowMinimized))
