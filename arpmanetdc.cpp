@@ -63,6 +63,15 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     //Set database pointer to zero at start
 	db = 0;
 
+    //Get database path
+    //TODO: Check command line arguments for specified database path
+#ifdef Q_OS_LINUX
+    shareDatabasePath = QDir::homePath() + "/.arpmanetdc.sqlite";
+#else
+    shareDatabasePath = DEFAULT_SHARE_DATABASE_PATH;
+#endif
+    qDebug() << shareDatabasePath;
+
     setupDatabase();
     pSettings = new QHash<QString, QString>();
 
@@ -506,7 +515,7 @@ ArpmanetDC::~ArpmanetDC()
 bool ArpmanetDC::setupDatabase()
 {
 	//Create database/open existing database
-	if (sqlite3_open(SHARE_DATABASE_PATH, &db))
+	if (sqlite3_open(shareDatabasePath.toUtf8().data(), &db))
 	{
 		QString error("Can't open database");
 		sqlite3_close(db);
