@@ -108,6 +108,7 @@ public slots:
     // Bootstrapping
     void sendMulticastAnnounce();
     void sendBroadcastAnnounce();
+    void sendUnicastAnnounce(QHostAddress dst);
     void sendMulticastAnnounceReply();
     void sendBroadcastAnnounceReply();
     void sendUnicastAnnounceReply(QHostAddress &dstHost);

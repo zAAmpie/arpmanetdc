@@ -112,7 +112,10 @@ void NetworkTopology::bucketContentsArrived(QByteArray bucket, QHostAddress send
         qint64 age = (qint64)(getQuint16FromByteArray(&bucket) * 1000);
         qint64 storedAge = getHostAge(bucketID, addr);
         if ((storedAge > age) || (storedAge == -1))
-            updateHostTimestamp(bucketID, addr, age);
+        {
+            //updateHostTimestamp(bucketID, addr, age); // do not believe everything we hear
+            emit sendUnicastAnnounce(addr); // let us hear the *real* bucket ID from the peer.
+        }
     }
     // the replyee is not in his own bucket, since buckets only contain dispatch ip's as seen from the network.
     // we take the address the message came from as his dispatch ip and update the buckets accordingly.

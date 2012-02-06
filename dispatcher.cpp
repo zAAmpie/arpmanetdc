@@ -56,6 +56,7 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
             networkTopology, SLOT(announceReplyArrived(bool,QHostAddress&,QByteArray&,QByteArray&)));
     connect(this, SIGNAL(announceForwardArrived(QHostAddress&,QByteArray&,QByteArray&)),
             networkTopology, SLOT(announceForwardReplyArrived(QHostAddress&,QByteArray&,QByteArray&)));
+    connect(networkTopology, SIGNAL(sendUnicastAnnounce(QHostAddress)), this, SLOT(sendUnicastAnnounce(QHostAddress)));
     connect(this, SIGNAL(bucketContentsArrived(QByteArray, QHostAddress)), networkTopology, SLOT(bucketContentsArrived(QByteArray, QHostAddress)));
     connect(networkBootstrap, SIGNAL(initiateBucketExchanges()), networkTopology, SLOT(initiateBucketRequests()));
     connect(networkTopology, SIGNAL(requestBucketContents(QHostAddress)), this, SLOT(requestBucketContents(QHostAddress)));
@@ -297,6 +298,18 @@ void Dispatcher::sendBroadcastAnnounce()
     datagram.append(CID);
     datagram.append(networkTopology->getOwnBucketId());
     sendBroadcastRawDatagram(datagram);
+}
+
+void Dispatcher::sendUnicastAnnounce(QHostAddress dst)
+{
+    // Unicast announces should be treated as forwarded, so that they do not confuse other bucket IDs elsewhere
+    QByteArray *datagram = new QByteArray;
+    datagram->append(UnicastPacket);
+    datagram->append(AnnounceForwardedPacket);
+    datagram->append(quint32ToByteArray(dispatchIP.toIPv4Address()));
+    datagram->append(CID);
+    datagram->append(networkTopology->getOwnBucketId());
+    sendUnicastRawDatagram(dst, datagram);
 }
 
 void Dispatcher::sendMulticastAnnounceReply()

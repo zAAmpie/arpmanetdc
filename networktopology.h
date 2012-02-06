@@ -61,6 +61,7 @@ signals:
     void changeBootstrapStatus(int status);
     void requestBucketContents(QHostAddress host);
     void sendForwardAnnouncement(QHostAddress host);
+    void sendUnicastAnnounce(QHostAddress host);
     void requestAllBuckets(QHostAddress host);
     void saveLastKnownPeers(QList<QHostAddress> peers);
 
