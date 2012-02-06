@@ -6,6 +6,7 @@
 #include <QPair>
 #include <QFileInfo>
 #include <QStringList>
+#include <QHostAddress>
 
 #define CONTAINER_EXTENSION "adcc"
 
@@ -36,7 +37,7 @@ public slots:
     void returnTTHsFromPaths(QHash<QString, QList<ContainerLookupReturnStruct> > results, QString containerPath);
 
     //Process downloaded container
-    void processContainer(QString containerPath);
+    void processContainer(QHostAddress host, QString containerPath, QString downloadPath);
 
 signals:
     //Return the containers requested
@@ -45,13 +46,15 @@ signals:
     void requestTTHsFromPaths(QHash<QString, QStringList> filePaths, QString containerPath);
 
     //Return processed container information
-    void returnProcessedContainer(); //TODO
+    void returnProcessedContainer(QHostAddress host, ContainerContentsType index, QList<ContainerLookupReturnStruct> data, QString downloadPath);
 
 private:
     //Process a file
     ContainerContentsType processContainerFileIndex(QFileInfo fileInfo);
     //Write a file
     bool writeContainerFileIndex(QString name, ContainerContentsType contents);
+    //Clean container directory of all containers
+    bool cleanContainers(QString containerDirectory);
 };
 
 #endif

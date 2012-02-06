@@ -109,7 +109,7 @@ public slots:
     void requestContainers(QString containerDirectory);
     
     //Process a container
-    void processContainer(QString containerPath);
+    void processContainer(QHostAddress host, QString containerPath, QString downloadPath);
 
     //----------========== HASH 1MB BUCKET (TRANSFER MANAGER) ==========----------
 
@@ -310,7 +310,7 @@ signals:
 
     //Request all containers in a directory
     void getContainers(QString containerDirectory);
-    void procContainer(QString containerPath);
+    void procContainer(QHostAddress host, QString containerPath, QString downloadPath);
 
     //Signals to stop processing
     void stopHashingThread();

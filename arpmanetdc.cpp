@@ -56,6 +56,9 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     qRegisterMetaType<QHash<QString, ContainerContentsType> >("QHash<QString, ContainerContentsType>");
     qRegisterMetaType<QHash<QString, QStringList> >("QHash<QString, QStringList>");
     qRegisterMetaType<QHash<QString, QList<ContainerLookupReturnStruct> > >("QHash<QString, QList<ContainerLookupReturnStruct> >");
+    qRegisterMetaType<ContainerContentsType>("ContainerContentsType");
+    qRegisterMetaType<ContainerLookupReturnStruct>("ContainerLookupReturnStruct");
+    qRegisterMetaType<QList<ContainerLookupReturnStruct> >("QList<ContainerLookupReturnStruct>");
 
     //Set database pointer to zero at start
 	db = 0;
@@ -254,6 +257,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(this, SIGNAL(clearFinishedDownloads()), pShare, SLOT(clearFinishedDownloads()), Qt::QueuedConnection);
     connect(this, SIGNAL(requestAutoCompleteWordList(QStandardItemModel *)), pShare, SLOT(requestAutoCompleteWordList(QStandardItemModel *)), Qt::QueuedConnection);
     connect(this, SIGNAL(saveAutoCompleteWordList(QString)), pShare, SLOT(saveAutoCompleteWordList(QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(saveContainers(QHash<QString, ContainerContentsType>, QString)), pShare, SIGNAL(saveContainers(QHash<QString, ContainerContentsType>, QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(processContainer(QHostAddress, QString, QString)), pShare, SLOT(processContainer(QHostAddress, QString, QString)), Qt::QueuedConnection);
    
     //Connect ShareSearch to Dispatcher - reply to search request from other clients
     connect(pShare, SIGNAL(returnSearchResult(QHostAddress, QByteArray, quint64, QByteArray)), 
@@ -1402,6 +1407,9 @@ void ArpmanetDC::hashingDone(int msecs, int numFiles)
 	shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr(true)));
     shareSizeLabel->setToolTip(tr("Share size: %1\nFiles shared: %2").arg(pShare->totalShareStr(false)).arg(numFiles));
 	hashingProgressBar->setRange(0,1);
+
+    //Start processing containers if there are outstanding
+    emit saveContainers(pContainerHash, pContainerDirectory);
 }
 
 void ArpmanetDC::parsingDone(int msecs)
@@ -1427,20 +1435,33 @@ void ArpmanetDC::downloadCompleted(QByteArray tth)
     if (queueWidget)
         queueWidget->removeQueuedDownload(tth);
 
-    //Add file to finished downloads list
-    FinishedDownloadStruct item;
-    item.fileName = file.fileName;
-    item.filePath = file.filePath;
-    item.fileSize = file.fileSize;
-    item.tthRoot = new QByteArray(*file.tthRoot);
-    item.downloadedDate = QDateTime::currentDateTime().toString("dd-MM-yyyy HH:mm:ss:zzz");
+    //Add file to finished downloads list if it's not a container
+    if (file.fileName.endsWith("." + QString(CONTAINER_EXTENSION)))
+    {
+        FinishedDownloadStruct item;
+        item.fileName = file.fileName;
+        item.filePath = file.filePath;
+        item.fileSize = file.fileSize;
+        item.tthRoot = new QByteArray(*file.tthRoot);
+        item.downloadedDate = QDateTime::currentDateTime().toString("dd-MM-yyyy HH:mm:ss:zzz");
    
-    addFinishedDownloadToList(item);
+        addFinishedDownloadToList(item);
+    }
+    else
+    {
+        //Process container that downloaded successfully
+        QString containerPath = file.filePath;
+        QDir downloadToPath(containerPath);
+        downloadToPath.cdUp();
+        QString downloadPath = downloadToPath.path();
+
+        emit processContainer(file.fileHost, file.filePath, downloadPath);
+    }
 
     deleteFromQueue(tth);
 
     //Set status
-    setStatus(tr("Download completed: %1").arg(item.fileName));
+    setStatus(tr("Download completed: %1").arg(file.fileName));
 }
 
 void ArpmanetDC::downloadStarted(QByteArray tth)
@@ -2063,6 +2084,38 @@ void ArpmanetDC::removeTransfer(QByteArray tth, int transferType, QHostAddress h
 
     if (queueWidget)
         queueWidget->removeQueuedDownload(tth);
+}
+
+//Queue the containers for saving after shares have been updated
+void ArpmanetDC::queueSaveContainers(QHash<QString, ContainerContentsType> containerHash, QString containerDirectory)
+{
+    //Save container info
+    pContainerHash = containerHash;
+    pContainerDirectory = containerDirectory;
+}
+
+//Return the contents of a container downloaded
+void ArpmanetDC::returnProcessedContainer(QHostAddress host, ContainerContentsType index, QList<ContainerLookupReturnStruct> data, QString downloadPath)
+{
+    foreach (ContainerLookupReturnStruct c, data)
+    {
+        //Construct queue item
+        QFileInfo fi(c.filePath);
+        QueueStruct q;
+        q.fileHost = host;
+        q.fileName = fi.fileName();
+        q.filePath = c.filePath;
+        q.fileSize = c.fileSize;
+        q.priority = NormalQueuePriority;
+        q.tthRoot = new QByteArray(c.rootTTH);
+
+        //Add to queue
+        addDownloadToQueue(q);
+
+        //Add to transfer manager queue for download
+        QString finalPath = downloadPath + c.filePath;
+        emit queueDownload((int)q.priority, *q.tthRoot, finalPath, q.fileSize, q.fileHost);
+    }
 }
 
 //System tray was activated
