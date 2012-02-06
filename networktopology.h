@@ -94,6 +94,7 @@ private:
 
     QTimer *bootstrapTimeoutTimer;
     QTimer *savePeersTimer;
+    QTimer *garbageCollectTimer;
 
     void setCIDHostAddress(QByteArray &cid, QHostAddress &host);
 
@@ -108,7 +109,7 @@ private:
     QByteArray CID;
     QHostAddress dispatchIP;
     int bootstrapStatus;
-    QTimer *garbageCollectTimer;
+    QHash<QHostAddress, qint64> announceToHostTimestamps;
 };
 
 #endif // NETWORKTOPOLOGY_H

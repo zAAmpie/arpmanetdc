@@ -105,6 +105,8 @@ void NetworkTopology::bucketContentsArrived(QByteArray bucket, QHostAddress send
     QByteArray bucketID = bucket.mid(0, 24);
     bucket.remove(0, 24);
     int iter = 0;
+    qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
+    qint64 cutoffTime = currentTime - 60000; // 1 minute
     while (bucket.length() >= 6)
     {
         iter++;
@@ -114,7 +116,19 @@ void NetworkTopology::bucketContentsArrived(QByteArray bucket, QHostAddress send
         if ((storedAge > age) || (storedAge == -1))
         {
             //updateHostTimestamp(bucketID, addr, age); // do not believe everything we hear
-            emit sendUnicastAnnounce(addr); // let us hear the *real* bucket ID from the peer.
+            if (announceToHostTimestamps.contains(addr))
+            {
+                if (announceToHostTimestamps.value(addr) < cutoffTime)
+                {
+                    emit sendUnicastAnnounce(addr); // let us hear the *real* bucket ID from the peer.
+                    announceToHostTimestamps[addr] = currentTime;
+                }
+            }
+            else
+            {
+                emit sendUnicastAnnounce(addr);
+                announceToHostTimestamps[addr] = currentTime;
+            }
         }
     }
     // the replyee is not in his own bucket, since buckets only contain dispatch ip's as seen from the network.
@@ -192,8 +206,8 @@ QByteArray NetworkTopology::getBucket(QByteArray bucketid)
         return bucket;
 
     int count = buckets.value(bucketid)->first->count();
-    if (count > 20)
-        count = 20;
+    if (count > 5)
+        count = 5;
 
     for (int i = 0; i < count; i++)
     {
@@ -290,6 +304,11 @@ void NetworkTopology::updateHostTimestamp(QByteArray &bucket, QHostAddress &host
         p->second = b;
         buckets.insert(bucket, p);
     }
+    if (buckets.value(bucket)->first->count() > 10)
+    {
+        buckets.value(bucket)->first->removeLast();
+        buckets.value(bucket)->second->removeLast();
+    }
 }
 
 qint64 NetworkTopology::getHostAge(QByteArray &bucket, QHostAddress &host)
@@ -354,44 +373,45 @@ void NetworkTopology::collectBucketGarbage()
 {
     QMutableHashIterator<QByteArray, HostIntPair*> ib(buckets);
 
-    // Iterate over buckets: shake hosts from small buckets if they also occur in large buckets
-    while (ib.hasNext())
-    {
-        QListIterator<QHostAddress> ilh(*ib.peekNext().value()->first);
-        QListIterator<qint64> ili(*ib.peekNext().value()->second);
-        QByteArray bucket = ib.next().key();
-        while (ilh.hasNext())
-        {
-            if (ili.hasNext())
-                ili.next();
-            QHostAddress testForHost = ilh.next();
-            int currentBucketSize = buckets.value(bucket)->first->count();
-            QHashIterator<QByteArray, HostIntPair*> ib2(buckets);
-            while (ib2.hasNext())
-            {
-                QByteArray testBucket = ib2.next().key();
-                int testBucketSize = buckets.value(testBucket)->first->count();
-                if ((currentBucketSize < testBucketSize) && (buckets.value(testBucket)->first->contains(testForHost)))
-                {
-                    int i = buckets.value(bucket)->first->indexOf(testForHost);
-                    if (i != -1)
-                    {
-                        buckets.value(bucket)->first->removeAt(i);
-                        buckets.value(bucket)->second->removeAt(i);
-                        qDebug() << "NetworkTopology::collectBucketGarbage(): pluck duplicate entry in small bucket: " << testForHost.toString();
-                    }
-                }
-            }
-        }
-        if (buckets.value(bucket)->first->isEmpty())
-        {
-            delete buckets.value(bucket)->first;
-            delete buckets.value(bucket)->second;
-            delete buckets.value(bucket);
-            ib.remove();
-            qDebug() << "NetworkTopology::collectBucketGarbage(): delete empty bucket pass 1: " << bucket.toBase64();
-        }
-    }
+    //Update: This is no longer necessary since we verify the hosts before we insert them into the buckets.
+    // // Iterate over buckets: shake hosts from small buckets if they also occur in large buckets
+    // while (ib.hasNext())
+    // {
+    //     QListIterator<QHostAddress> ilh(*ib.peekNext().value()->first);
+    //     QListIterator<qint64> ili(*ib.peekNext().value()->second);
+    //     QByteArray bucket = ib.next().key();
+    //     while (ilh.hasNext())
+    //     {
+    //         if (ili.hasNext())
+    //             ili.next();
+    //         QHostAddress testForHost = ilh.next();
+    //         int currentBucketSize = buckets.value(bucket)->first->count();
+    //         QHashIterator<QByteArray, HostIntPair*> ib2(buckets);
+    //         while (ib2.hasNext())
+    //         {
+    //             QByteArray testBucket = ib2.next().key();
+    //             int testBucketSize = buckets.value(testBucket)->first->count();
+    //             if ((currentBucketSize < testBucketSize) && (buckets.value(testBucket)->first->contains(testForHost)))
+    //             {
+    //                 int i = buckets.value(bucket)->first->indexOf(testForHost);
+    //                 if (i != -1)
+    //                 {
+    //                     buckets.value(bucket)->first->removeAt(i);
+    //                     buckets.value(bucket)->second->removeAt(i);
+    //                     qDebug() << "NetworkTopology::collectBucketGarbage(): pluck duplicate entry in small bucket: " << testForHost.toString();
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     if (buckets.value(bucket)->first->isEmpty())
+    //     {
+    //         delete buckets.value(bucket)->first;
+    //         delete buckets.value(bucket)->second;
+    //         delete buckets.value(bucket);
+    //         ib.remove();
+    //         qDebug() << "NetworkTopology::collectBucketGarbage(): delete empty bucket pass 1: " << bucket.toBase64();
+    //     }
+    // }
 
     // Iterate over buckets: prune stale entries and refresh entries about to become stale
     qint64 cutoffTime = QDateTime::currentMSecsSinceEpoch() - 1800000;  // 30 minutes ago
