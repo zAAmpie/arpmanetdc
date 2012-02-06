@@ -192,8 +192,8 @@ QByteArray NetworkTopology::getBucket(QByteArray bucketid)
         return bucket;
 
     int count = buckets.value(bucketid)->first->count();
-    if (count > 20)
-        count = 20;
+    if (count > 5)
+        count = 5;
 
     for (int i = 0; i < count; i++)
     {
