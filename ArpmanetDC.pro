@@ -89,3 +89,6 @@ HEADERS  += arpmanetdc.h \
 RESOURCES += \
     arpmanetdc.qrc
 
+unix {
+    include(unixconf.pri)
+}

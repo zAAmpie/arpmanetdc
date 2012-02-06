@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=ArpmanetDC
+GenericName=ArpmanetDC
+Comment=Peer-to-peer direct connect client for Arpmanet network
+TryExec=ArpmanetDC
+Exec=ArpmanetDC
+Icon=ArpmanetDC
+Terminal=false
+Type=Application
+Categories=Network;P2P;FileTransfer;Qt
