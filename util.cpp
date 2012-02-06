@@ -204,7 +204,7 @@ QString uptimeFromInt(qint64 uptimeMsecs)
 
     secondsStr = QObject::tr("%1 second%2").arg(seconds).arg(seconds != 1 ? "s" : "");
     
-    if (minutes > 0 | hours > 0 || days > 0 || weeks > 0)
+    if (minutes > 0 || hours > 0 || days > 0 || weeks > 0)
         secondsStr.prepend(", ");
     
     return QObject::tr("%1%2%3%4%5").arg(weeksStr).arg(daysStr).arg(hoursStr).arg(minutesStr).arg(secondsStr);
@@ -318,31 +318,67 @@ QByteArray quint8ToByteArray(quint8 num)
 QByteArray qint16ToByteArray(qint16 num)
 {
 	//Convert qint16 to QByteArray
-	QByteArray numBA;
-	QDataStream ds(&numBA,QIODevice::WriteOnly);
-	ds.setVersion(QDataStream::Qt_4_6);
-	ds << (qint16)num;
-	return numBA;
+    //QByteArray numBA;
+    //QDataStream ds(&numBA,QIODevice::WriteOnly);
+    //ds.setVersion(QDataStream::Qt_4_6);
+    //ds << (qint16)num;
+    //return numBA;
+
+    QByteArray numBA;
+    union
+    {
+        quint16 num;
+        char c[sizeof(quint16)];
+    } n;
+
+    n.num = num;
+    numBA.resize(2);
+    numBA.setRawData(n.c, 2);
+    return numBA;
 }
 
 QByteArray quint32ToByteArray(quint32 num)
 {
 	//Convert quint32 to QByteArray
-	QByteArray numBA;
-	QDataStream ds(&numBA,QIODevice::WriteOnly);
-	ds.setVersion(QDataStream::Qt_4_6);
-	ds << (quint32)num;
-	return numBA;
+    //QByteArray numBA;
+    //QDataStream ds(&numBA,QIODevice::WriteOnly);
+    //ds.setVersion(QDataStream::Qt_4_6);
+    //ds << (quint32)num;
+    //return numBA;
+
+    QByteArray numBA;
+    union
+    {
+        quint32 num;
+        char c[sizeof(quint32)];
+    } n;
+
+    n.num = num;
+    numBA.resize(4);
+    numBA.setRawData(n.c, 4);
+    return numBA;
 }
 
 QByteArray quint64ToByteArray(quint64 num)
 {
 	//Convert quint64 to QByteArray
-	QByteArray numBA;
-	QDataStream ds(&numBA,QIODevice::WriteOnly);
-	ds.setVersion(QDataStream::Qt_4_6);
-	ds << (quint64)num;
-	return numBA;
+    //QByteArray numBA;
+    //QDataStream ds(&numBA,QIODevice::WriteOnly);
+    //ds.setVersion(QDataStream::Qt_4_6);
+    //ds << (quint64)num;
+    //return numBA;
+
+    QByteArray numBA;
+    union
+    {
+        quint64 num;
+        char c[sizeof(quint64)];
+    } n;
+
+    n.num = num;
+    numBA.resize(8);
+    numBA.setRawData(n.c, 8);
+    return numBA;
 }
 
 QByteArray stringToByteArray(QString str)
@@ -384,39 +420,39 @@ QString getStringFromByteArray(QByteArray *data)
 quint16 getQuint16FromByteArray(QByteArray *data)
 {
 	//Remove a quint16 from a QByteArray
-	quint16 num;
-	QDataStream ds(data,QIODevice::ReadOnly);
-	ds.setVersion(QDataStream::Qt_4_6);
-	ds >> num;
-	data->remove(0,2);
-	return num;
+    quint16 num;
+    QDataStream ds(data,QIODevice::ReadOnly);
+    ds.setVersion(QDataStream::Qt_4_6);
+    ds >> num;
+    data->remove(0,2); // *** I BELIEVE THIS IS KILLING US *** there is no pop_front for a bytearray, although the stupid thing can push_front. I guess remove() copies the BA internally.
+    return num;
 }
 
 quint8 getQuint8FromByteArray(QByteArray *data)
 {
 	//Remove a quint8 from a QByteArray
-	quint8 num;
-	QDataStream ds(data,QIODevice::ReadOnly);
-	ds.setVersion(QDataStream::Qt_4_6);
-	ds >> num;
-	data->remove(0,1);
-	return num;
+    quint8 num;
+    QDataStream ds(data,QIODevice::ReadOnly);
+    ds.setVersion(QDataStream::Qt_4_6);
+    ds >> num;
+    data->remove(0,1);
+    return num;
 }
 
 qint16 getQint16FromByteArray(QByteArray *data)
 {
-	//Remove a quint16 from a QByteArray
-	qint16 num;
-	QDataStream ds(data,QIODevice::ReadOnly);
-	ds.setVersion(QDataStream::Qt_4_6);
-	ds >> num;
-	data->remove(0,2);
-	return num;
+    //Remove a qint16 from a QByteArray
+    qint16 num;
+    QDataStream ds(data,QIODevice::ReadOnly);
+    ds.setVersion(QDataStream::Qt_4_6);
+    ds >> num;
+    data->remove(0,2);
+    return num;
 }
 
 quint32 getQuint32FromByteArray(QByteArray *data)
 {
-    //Remove a quint16 from a QByteArray
+    //Remove a quint32 from a QByteArray
     quint32 num;
     QDataStream ds(data,QIODevice::ReadOnly);
     ds.setVersion(QDataStream::Qt_4_6);
@@ -428,10 +464,10 @@ quint32 getQuint32FromByteArray(QByteArray *data)
 quint64 getQuint64FromByteArray(QByteArray *data)
 {
 	//Remove a quint64 from a QByteArray
-	quint64 num;
-	QDataStream ds(data,QIODevice::ReadOnly);
-	ds.setVersion(QDataStream::Qt_4_6);
-	ds >> num;
-	data->remove(0,8);
-	return num;
+    quint64 num;
+    QDataStream ds(data,QIODevice::ReadOnly);
+    ds.setVersion(QDataStream::Qt_4_6);
+    ds >> num;
+    data->remove(0,8);
+    return num;
 }
