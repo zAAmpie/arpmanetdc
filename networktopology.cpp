@@ -354,44 +354,45 @@ void NetworkTopology::collectBucketGarbage()
 {
     QMutableHashIterator<QByteArray, HostIntPair*> ib(buckets);
 
-    // Iterate over buckets: shake hosts from small buckets if they also occur in large buckets
-    while (ib.hasNext())
-    {
-        QListIterator<QHostAddress> ilh(*ib.peekNext().value()->first);
-        QListIterator<qint64> ili(*ib.peekNext().value()->second);
-        QByteArray bucket = ib.next().key();
-        while (ilh.hasNext())
-        {
-            if (ili.hasNext())
-                ili.next();
-            QHostAddress testForHost = ilh.next();
-            int currentBucketSize = buckets.value(bucket)->first->count();
-            QHashIterator<QByteArray, HostIntPair*> ib2(buckets);
-            while (ib2.hasNext())
-            {
-                QByteArray testBucket = ib2.next().key();
-                int testBucketSize = buckets.value(testBucket)->first->count();
-                if ((currentBucketSize < testBucketSize) && (buckets.value(testBucket)->first->contains(testForHost)))
-                {
-                    int i = buckets.value(bucket)->first->indexOf(testForHost);
-                    if (i != -1)
-                    {
-                        buckets.value(bucket)->first->removeAt(i);
-                        buckets.value(bucket)->second->removeAt(i);
-                        qDebug() << "NetworkTopology::collectBucketGarbage(): pluck duplicate entry in small bucket: " << testForHost.toString();
-                    }
-                }
-            }
-        }
-        if (buckets.value(bucket)->first->isEmpty())
-        {
-            delete buckets.value(bucket)->first;
-            delete buckets.value(bucket)->second;
-            delete buckets.value(bucket);
-            ib.remove();
-            qDebug() << "NetworkTopology::collectBucketGarbage(): delete empty bucket pass 1: " << bucket.toBase64();
-        }
-    }
+    //Update: This is no longer necessary since we verify the hosts before we insert them into the buckets.
+    // // Iterate over buckets: shake hosts from small buckets if they also occur in large buckets
+    // while (ib.hasNext())
+    // {
+    //     QListIterator<QHostAddress> ilh(*ib.peekNext().value()->first);
+    //     QListIterator<qint64> ili(*ib.peekNext().value()->second);
+    //     QByteArray bucket = ib.next().key();
+    //     while (ilh.hasNext())
+    //     {
+    //         if (ili.hasNext())
+    //             ili.next();
+    //         QHostAddress testForHost = ilh.next();
+    //         int currentBucketSize = buckets.value(bucket)->first->count();
+    //         QHashIterator<QByteArray, HostIntPair*> ib2(buckets);
+    //         while (ib2.hasNext())
+    //         {
+    //             QByteArray testBucket = ib2.next().key();
+    //             int testBucketSize = buckets.value(testBucket)->first->count();
+    //             if ((currentBucketSize < testBucketSize) && (buckets.value(testBucket)->first->contains(testForHost)))
+    //             {
+    //                 int i = buckets.value(bucket)->first->indexOf(testForHost);
+    //                 if (i != -1)
+    //                 {
+    //                     buckets.value(bucket)->first->removeAt(i);
+    //                     buckets.value(bucket)->second->removeAt(i);
+    //                     qDebug() << "NetworkTopology::collectBucketGarbage(): pluck duplicate entry in small bucket: " << testForHost.toString();
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     if (buckets.value(bucket)->first->isEmpty())
+    //     {
+    //         delete buckets.value(bucket)->first;
+    //         delete buckets.value(bucket)->second;
+    //         delete buckets.value(bucket);
+    //         ib.remove();
+    //         qDebug() << "NetworkTopology::collectBucketGarbage(): delete empty bucket pass 1: " << bucket.toBase64();
+    //     }
+    // }
 
     // Iterate over buckets: prune stale entries and refresh entries about to become stale
     qint64 cutoffTime = QDateTime::currentMSecsSinceEpoch() - 1800000;  // 30 minutes ago
