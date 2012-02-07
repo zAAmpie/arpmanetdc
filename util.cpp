@@ -204,7 +204,7 @@ QString uptimeFromInt(qint64 uptimeMsecs)
 
     secondsStr = QObject::tr("%1 second%2").arg(seconds).arg(seconds != 1 ? "s" : "");
     
-    if (minutes > 0 | hours > 0 || days > 0 || weeks > 0)
+    if (minutes > 0 || hours > 0 || days > 0 || weeks > 0)
         secondsStr.prepend(", ");
     
     return QObject::tr("%1%2%3%4%5").arg(weeksStr).arg(daysStr).arg(hoursStr).arg(minutesStr).arg(secondsStr);
@@ -460,7 +460,7 @@ quint16 getQuint16FromByteArray(QByteArray *data)
     //Convert to BigEndian
     num = qbswap(num);
 #endif
-	data->remove(0,2);
+	data->remove(0,2); // *** I BELIEVE THIS IS KILLING US *** there is no pop_front for a bytearray, although the stupid thing can push_front. I guess remove() copies the BA internally.
 	return num;
 }
 
