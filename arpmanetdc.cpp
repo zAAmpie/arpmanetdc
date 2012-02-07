@@ -826,6 +826,8 @@ void ArpmanetDC::createWidgets()
 	helpAction = new QAction(QIcon(":/ArpmanetDC/Resources/HelpIcon.png"), tr("Help"), this);
 	privateMessageAction = new QAction(QIcon(":/ArpmanetDC/Resources/PMIcon.png"), tr("Send private message"), this);
 	reconnectAction = new QAction(QIcon(":/ArpmanetDC/Resources/ServerIcon.png"), tr("Reconnect"), this);
+        openDownloadDirAction = new QAction(QIcon(":/ArpmanetDC/Resources/FolderIcon.png"), tr("Download directory"), this);
+
 
     //===== Menus =====
     userListMenu = new QMenu(this);
@@ -858,6 +860,7 @@ void ArpmanetDC::placeWidgets()
 	toolBar->addSeparator();
 	toolBar->addAction(queueAction);
 	toolBar->addAction(downloadFinishedAction);
+        toolBar->addAction(openDownloadDirAction);
 	toolBar->addSeparator();
 	toolBar->addAction(settingsAction);
 	toolBar->addAction(helpAction);
@@ -954,6 +957,7 @@ void ArpmanetDC::connectWidgets()
 	connect(helpAction, SIGNAL(triggered()), this, SLOT(helpActionPressed()));
 	connect(privateMessageAction, SIGNAL(triggered()), this, SLOT(privateMessageActionPressed()));
 	connect(reconnectAction, SIGNAL(triggered()), this, SLOT(reconnectActionPressed()));
+        connect(openDownloadDirAction, SIGNAL(triggered()), this, SLOT(openDownloadDirActionPressed()));
 
     connect(restoreAction, SIGNAL(triggered()), this, SLOT(showNormal()));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
@@ -1116,6 +1120,12 @@ void ArpmanetDC::reconnectActionPressed()
     pHub->setNick(pSettings->value("nick"));
     pHub->setPassword(pSettings->value("password"));
 	pHub->connectHub();
+}
+
+void ArpmanetDC::openDownloadDirActionPressed()
+{
+    QString path = QDir::toNativeSeparators(pSettings->value("downloadPath"));
+    QDesktopServices::openUrl(QUrl("file:///" + path));
 }
 
 void ArpmanetDC::settingsActionPressed()
