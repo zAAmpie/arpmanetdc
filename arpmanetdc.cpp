@@ -817,7 +817,7 @@ void ArpmanetDC::createWidgets()
 	helpAction = new QAction(QIcon(":/ArpmanetDC/Resources/HelpIcon.png"), tr("Help"), this);
 	privateMessageAction = new QAction(QIcon(":/ArpmanetDC/Resources/PMIcon.png"), tr("Send private message"), this);
 	reconnectAction = new QAction(QIcon(":/ArpmanetDC/Resources/ServerIcon.png"), tr("Reconnect"), this);
-        openDownloadDirAction = new QAction(QIcon(":/ArpmanetDC/Resources/FolderIcon.png"), tr("Download Directory"), this);
+        openDownloadDirAction = new QAction(QIcon(":/ArpmanetDC/Resources/FolderIcon.png"), tr("Download directory"), this);
 
 
     //===== Menus =====
