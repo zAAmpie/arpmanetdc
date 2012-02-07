@@ -443,10 +443,12 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 	if (interval > 0)
 		updateSharesTimer->start(interval);
 
+#ifdef Q_OS_WIN
     //Set up timer to check for client updates
     checkForFTPUpdatesTimer = new QTimer(this);
     connect(checkForFTPUpdatesTimer, SIGNAL(timeout()), this, SIGNAL(ftpCheckForUpdate()));
     checkForFTPUpdatesTimer->start(CHECK_FOR_NEW_VERSION_INTERVAL_MS);
+#endif
 
     //Save uptime
     uptime = QDateTime::currentDateTime();
@@ -467,8 +469,10 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 
     createdGUI = true;
 
+#ifdef Q_OS_WIN
     //Check for program updates
     emit ftpCheckForUpdate();
+#endif
 }
 
 ArpmanetDC::~ArpmanetDC()
