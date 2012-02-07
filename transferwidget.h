@@ -42,6 +42,13 @@ public slots:
     //Remove an entry from the list
     void removeTransferEntry(QByteArray tth, int type);
 
+    //Return the status of transfers
+    void returnGlobalTransferStatus(QList<TransferItemStatus> status);
+
+signals:
+    //Request the status of transfers
+    void requestGlobalTransferStatus();
+
 private slots:
     //Right-click menu
     void showTransferListContextMenu(const QPoint&);

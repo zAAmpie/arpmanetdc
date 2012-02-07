@@ -293,6 +293,12 @@ void TransferManager::transferDownloadCompleted(QByteArray tth)
     emit downloadCompleted(tth);
 }
 
+//Get transfer status
+void TransferManager::requestGlobalTransferStatus()
+{
+    emit returnGlobalTransferStatus(getGlobalTransferStatus());
+}
+
 // look for pointer to Transfer object matching tth, transfer type and host address
 Transfer* TransferManager::getTransferObjectPointer(QByteArray &tth, int transferType, QHostAddress hostAddr)
 {

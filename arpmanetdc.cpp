@@ -59,6 +59,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     qRegisterMetaType<ContainerContentsType>("ContainerContentsType");
     qRegisterMetaType<ContainerLookupReturnStruct>("ContainerLookupReturnStruct");
     qRegisterMetaType<QList<ContainerLookupReturnStruct> >("QList<ContainerLookupReturnStruct>");
+    qRegisterMetaType<QList<TransferItemStatus> >("QList<TransferItemStatus>");
 
     //Set database pointer to zero at start
 	db = 0;
@@ -2358,6 +2359,23 @@ TransferWidget *ArpmanetDC::transferWidgetObject() const
 ResourceExtractor *ArpmanetDC::resourceExtractorObject() const
 {
     return pTypeIconList;
+}
+
+//Get the bootstrap node number
+quint32 ArpmanetDC::getBootstrapNodeNumber()
+{
+    if (CIDHostsLabel->text().isEmpty())
+        return 0;
+    else
+        return CIDHostsLabel->text().toUInt();
+}
+
+quint32 ArpmanetDC::getBoostrapStatus()
+{
+    if (bootstrapStatusLabel->text().isEmpty())
+        return 0;
+    else
+        return bootstrapStatusLabel->text().toUInt();
 }
 
 QSize ArpmanetDC::sizeHint() const
