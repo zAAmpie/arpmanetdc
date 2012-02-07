@@ -110,6 +110,7 @@ private:
     QHostAddress dispatchIP;
     int bootstrapStatus;
     QHash<QHostAddress, qint64> announceToHostTimestamps;
+    QHash<QHostAddress, qint64> requestAllBucketsTimestamps;
 };
 
 #endif // NETWORKTOPOLOGY_H

@@ -66,7 +66,24 @@ void NetworkTopology::announceReplyArrived(bool isMulticast, QHostAddress &hostA
     }
 
     //if (incomingAnnouncementCount < 20)
+    qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
+    qint64 cutoffTime = currentTime - 60000; // 1 minute
+    qint64 age = requestAllBucketsTimestamps.value(hostAddr);
+    if (age != 0)
+    {
+        if (age < cutoffTime)
+        {
+            emit requestAllBuckets(hostAddr);
+            requestAllBucketsTimestamps[hostAddr] = currentTime;
+        }
+    }
+    else
+    {
         emit requestAllBuckets(hostAddr);
+        requestAllBucketsTimestamps[hostAddr] = currentTime;
+    }
+
+    //emit requestAllBuckets(hostAddr);
     //incomingAnnouncementCount++;
 
     // determine own bucket id
@@ -116,9 +133,10 @@ void NetworkTopology::bucketContentsArrived(QByteArray bucket, QHostAddress send
         if ((storedAge > age) || (storedAge == -1))
         {
             //updateHostTimestamp(bucketID, addr, age); // do not believe everything we hear
-            if (announceToHostTimestamps.contains(addr))
+            qint64 age = announceToHostTimestamps.value(addr);
+            if (age != 0)
             {
-                if (announceToHostTimestamps.value(addr) < cutoffTime)
+                if (age < cutoffTime)
                 {
                     emit sendUnicastAnnounce(addr); // let us hear the *real* bucket ID from the peer.
                     announceToHostTimestamps[addr] = currentTime;

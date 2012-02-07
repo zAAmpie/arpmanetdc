@@ -334,6 +334,19 @@ void Dispatcher::sendBroadcastAnnounceReply()
 
 void Dispatcher::sendUnicastAnnounceReply(QHostAddress &dstHost)
 {
+    qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
+    qint64 cutoffTime = currentTime - 60000; // 1 minute
+    qint64 age = announceForwardToHostTimestamps.value(dstHost);
+    if (age != 0)
+    {
+        if (age >= cutoffTime)
+        {
+            return;
+        }
+    }
+
+    announceForwardToHostTimestamps[dstHost] = currentTime;
+    
     QByteArray *datagram = new QByteArray;
     datagram->append(UnicastPacket);
     datagram->append(AnnounceReplyPacket);
