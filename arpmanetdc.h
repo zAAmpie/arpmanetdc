@@ -58,7 +58,8 @@
 
 #define DEFAULT_SHOW_ADVANCED "0" //By default don't show advanced settings
 
-#define SHARE_DATABASE_PATH "arpmanetdc.sqlite"
+#define DEFAULT_SHARE_DATABASE_PATH "arpmanetdc.sqlite"
+static QString shareDatabasePath;
 
 #define UNSUPPORTED_TRANSFER_PROTOCOLS "BTP;uTP;FECTP" //Semi-colon separated - only used to gray out protocol in settings
 //#define UNSUPPORTED_TRANSFER_PROTOCOLS "BTP;FECTP"
@@ -242,6 +243,7 @@ private slots:
 	void helpActionPressed();
 	void privateMessageActionPressed();
 	void reconnectActionPressed();
+        void openDownloadDirActionPressed();
 
 	//Tab clicked
 	void tabDeleted(int index);
@@ -387,7 +389,7 @@ private:
     QMenu *userListMenu;
 
 	//Actions
-	QAction *reconnectAction, *shareAction, *searchAction, *queueAction, *downloadFinishedAction, *settingsAction, *helpAction, *privateMessageAction;
+        QAction *reconnectAction, *shareAction, *searchAction, *queueAction, *downloadFinishedAction, *settingsAction, *helpAction, *privateMessageAction, *openDownloadDirAction;
 
     //-----===== System tray =====-----
 
