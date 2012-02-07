@@ -34,6 +34,7 @@
 #include <QTableView>
 #include "base32.h"
 #include "protocoldef.h"
+#include <QtCore>
 
 typedef unsigned char byte;
 static const char *base32Alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"; //Used for Base32 conversions - RFC4648 standard

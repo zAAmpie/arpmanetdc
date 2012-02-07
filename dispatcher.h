@@ -230,6 +230,8 @@ private:
 
     // Multicast rejoin timer
     QTimer *rejoinMulticastTimer;
+
+    QHash<QHostAddress, qint64> announceForwardToHostTimestamps;
 };
 
 #endif // DISPATCHER_H
