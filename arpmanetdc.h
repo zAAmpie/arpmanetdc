@@ -81,7 +81,7 @@ static const QMap<QString, char> PROTOCOL_MAP = initMapValues();
 
 #define CONTAINER_DIRECTORY "/Containers/" //The directory in which the containers are stored
 
-#define VERSION_STRING "0.1.3"
+#define VERSION_STRING "0.1.5"
 
 //Main GUI window class
 class ArpmanetDC : public QMainWindow

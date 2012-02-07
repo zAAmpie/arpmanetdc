@@ -81,6 +81,9 @@ signals:
     void downloadStarted(QByteArray tth);
     void downloadCompleted(QByteArray tth);
 
+    //Transfer status
+    void returnGlobalTransferStatus(QList<TransferItemStatus> status);
+
     // Request peer protocol capabilities
     void requestProtocolCapability(QHostAddress peer);
 
@@ -100,6 +103,9 @@ public slots:
 
     //Download completed
     void transferDownloadCompleted(QByteArray tth);
+
+    //Get transfer status
+    void requestGlobalTransferStatus();
 
     // Response from hashing engine when bucket finished hashing
     void hashBucketReply(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH);

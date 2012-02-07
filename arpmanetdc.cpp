@@ -59,6 +59,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     qRegisterMetaType<ContainerContentsType>("ContainerContentsType");
     qRegisterMetaType<ContainerLookupReturnStruct>("ContainerLookupReturnStruct");
     qRegisterMetaType<QList<ContainerLookupReturnStruct> >("QList<ContainerLookupReturnStruct>");
+    qRegisterMetaType<QList<TransferItemStatus> >("QList<TransferItemStatus>");
 
     //Set database pointer to zero at start
 	db = 0;

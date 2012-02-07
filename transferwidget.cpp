@@ -9,6 +9,9 @@ TransferWidget::TransferWidget(TransferManager *transferManager, ArpmanetDC *par
     pTransferManager = transferManager;
     pTransferList = new QHash<QByteArray, TransferItemStatus>();
 
+    connect(this, SIGNAL(requestGlobalTransferStatus()), pTransferManager, SLOT(requestGlobalTransferStatus()), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(returnGlobalTransferStatus(QList<TransferItemStatus>)), this, SLOT(returnGlobalTransferStatus(QList<TransferItemStatus>)), Qt::QueuedConnection);
+
 	createWidgets();
 	placeWidgets();
 	connectWidgets();
@@ -136,8 +139,12 @@ void TransferWidget::deleteActionPressed()
 void TransferWidget::updateStatus()
 {
     //Get status from transfer manager
-    QList<TransferItemStatus> status = pTransferManager->getGlobalTransferStatus();
+    emit requestGlobalTransferStatus();
+}
 
+//Return the status of transfers
+void TransferWidget::returnGlobalTransferStatus(QList<TransferItemStatus> status)
+{
     //Update local list
     pTransferList->clear();
     foreach (TransferItemStatus s, status)
