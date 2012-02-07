@@ -318,6 +318,20 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(pTransferManager, SIGNAL(assembleOutputFile(QString,QString,int,int)),
             pBucketFlushThread, SLOT(assembleOutputFile(QString,QString,int,int)), Qt::QueuedConnection);
 
+    //Construct the auto update object
+    pFtpUpdate = new FTPUpdate(FTP_UPDATE_HOST, FTP_UPDATE_DIRECTORY, this);
+
+    connect(pFtpUpdate, SIGNAL(returnUpdateResults(bool, QString)),
+        this, SLOT(ftpReturnUpdateResults(bool, QString)));
+    connect(pFtpUpdate, SIGNAL(downloadCompleted(bool)),
+        this, SLOT(ftpDownloadCompleted(bool)));
+    connect(pFtpUpdate, SIGNAL(dataTransferProgress(qint64, qint64)),
+        this, SLOT(ftpDataTransferProgress(qint64, qint64)));
+    connect(this, SIGNAL(ftpCheckForUpdate()),
+        pFtpUpdate, SLOT(checkForUpdate()));
+    connect(this, SIGNAL(ftpDownloadNewestVersion()),
+        pFtpUpdate, SLOT(downloadNewestVersion()));
+    
     pDispatcher->moveToThread(dispatcherThread);
     dispatcherThread->start();
 
@@ -399,26 +413,31 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 
 	//Set up timer to ensure each and every update doesn't signal a complete list sort!
 	sortDue = false;
-	QTimer *sortTimer = new QTimer();
+	QTimer *sortTimer = new QTimer(this);
 	connect(sortTimer, SIGNAL(timeout()), this, SLOT(sortUserList()));
 	sortTimer->start(1000); //Meh, every second ought to do it
 
     //Set up rate timer
-    hashRateTimer = new QTimer();
+    hashRateTimer = new QTimer(this);
     connect(hashRateTimer, SIGNAL(timeout()), this, SLOT(calculateHashRate()));
     hashRateTimer->start(1000);
 
     //Set up timer to update the number of CID hosts currently bootstrapped to
-    updateTimer = new QTimer();
+    updateTimer = new QTimer(this);
     connect(updateTimer, SIGNAL(timeout()), this, SLOT(updateGUIEverySecond()));
     updateTimer->start(5000);
 
 	//Set up timer to auto update shares
-	updateSharesTimer = new QTimer();
+	updateSharesTimer = new QTimer(this);
 	connect(updateSharesTimer, SIGNAL(timeout()), this, SIGNAL(updateShares()));
 	int interval = pSettings->value("autoUpdateShareInterval").toInt();
 	if (interval > 0)
 		updateSharesTimer->start(interval);
+
+    //Set up timer to check for client updates
+    checkForFTPUpdatesTimer = new QTimer(this);
+    connect(checkForFTPUpdatesTimer, SIGNAL(timeout()), this, SIGNAL(ftpCheckForUpdate()));
+    checkForFTPUpdatesTimer->start(CHECK_FOR_NEW_VERSION_INTERVAL_MS);
 
     //Save uptime
     uptime = QDateTime::currentDateTime();
@@ -438,6 +457,9 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
         QTimer::singleShot(1000, pHub, SLOT(connectHub()));
 
     createdGUI = true;
+
+    //Check for program updates
+    emit ftpCheckForUpdate();
 }
 
 ArpmanetDC::~ArpmanetDC()
@@ -1541,6 +1563,54 @@ void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)
 		//Process message
 		pmWidgetHash.value(foundWidget)->receivePrivateMessage(msg);
 	}
+}
+
+//FTP Update slots
+void ArpmanetDC::ftpReturnUpdateResults(bool result, QString newVersion)
+{
+    if (helpWidget)
+    {
+        if (result)
+            helpWidget->updateProgress(100,100);
+        else
+            helpWidget->updateProgress(-1,1);
+    }
+
+    //A new version exists
+    if (result)
+    {
+        //Ask if the user wants to download it
+        if (QMessageBox::information(this, tr("ArpmanetDC"), tr("A new version of the client has been released. Do you want to download ArpmanetDC v%1?").arg(newVersion),
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
+        {
+            //Download new version
+            emit ftpDownloadNewestVersion();
+        }
+    }
+}
+
+void ArpmanetDC::ftpDownloadCompleted(bool error)
+{
+    if (!error)
+    {
+        if (helpWidget)
+            helpWidget->updateProgress(100,100);
+
+        if (QMessageBox::information(this, tr("ArpmanetDC"), tr("Client download complete. Do you want to exit the client to run the new version?"),
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes) == QMessageBox::Yes)
+        {
+            this->close();
+        }
+    }
+}
+
+void ArpmanetDC::ftpDataTransferProgress(qint64 done, qint64 total)
+{
+    //Report downloading progress if helpWidget is open
+    if (helpWidget)
+    {
+        helpWidget->updateProgress(done, total);
+    }
 }
 
 //Received a main chat message from the hub

@@ -34,6 +34,14 @@ public:
 	//Get the encapsulating widget
 	QWidget *widget();
 
+    void updateProgress(qint64 done, qint64 total);
+
+private slots:
+    void checkForUpdate();
+
+signals:
+    void ftpCheckForUpdate();
+
 private:
 	//Functions
 	void createWidgets();
@@ -47,6 +55,9 @@ private:
 	ArpmanetDC *pParent;
 
     QTextBrowser *browser;
+    QProgressBar *progress;
+    QLabel *updateLabel;
+    QPushButton *updateButton;
 };
 
 #endif

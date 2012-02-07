@@ -37,6 +37,7 @@
 #include "transfermanager.h"
 #include "bucketflushthread.h"
 #include "resourceextractor.h"
+#include "ftpupdate.h"
 #include "util.h"
 #include <sqlite/sqlite3.h>
 #include "protocoldef.h"
@@ -80,6 +81,10 @@ static const QMap<QString, char> PROTOCOL_MAP = initMapValues();
 #define MAX_STATUS_HISTORY_ENTRIES 20 //Tooltip of status label
 
 #define CONTAINER_DIRECTORY "/Containers/" //The directory in which the containers are stored
+
+#define FTP_UPDATE_HOST "ftp://fskbhe2.puk.ac.za"
+#define FTP_UPDATE_DIRECTORY "/pub/Windows/Network/DC/ArpmanetDC/"
+#define CHECK_FOR_NEW_VERSION_INTERVAL_MS 1800000 //Every 30min
 
 #define VERSION_STRING "0.1.5"
 
@@ -191,6 +196,11 @@ private slots:
 	void parsingDone(int msecs);
     void searchWordListReceived(QStandardItemModel *wordList);
 
+    //FTP Update slots
+    void ftpReturnUpdateResults(bool result, QString newVersion);
+    void ftpDownloadCompleted(bool error);
+    void ftpDataTransferProgress(qint64 done, qint64 total);
+
     //-----===== CUSTOM WIDGET SLOTS =====-----
 
     //Search widget slots
@@ -252,6 +262,10 @@ private slots:
 signals:
     //Private queued signal for cross-thread comms
 	void updateShares();
+
+    //Private signals for FTP updating
+    void ftpCheckForUpdate();
+    void ftpDownloadNewestVersion();
 
     //----------========== SHARESEARCH SIGNALS ==========----------
 
@@ -321,6 +335,7 @@ private:
 	ShareSearch *pShare;
     BucketFlushThread *pBucketFlushThread;
     ResourceExtractor *pTypeIconList;
+    FTPUpdate *pFtpUpdate;
 
     //Threads
     ExecThread *dispatcherThread;
@@ -341,6 +356,8 @@ private:
 
 	QTimer *updateSharesTimer;
     QTimer *updateTimer;
+
+    QTimer *checkForFTPUpdatesTimer;
 
     QDateTime uptime;
 
