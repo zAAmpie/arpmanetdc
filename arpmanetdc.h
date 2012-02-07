@@ -109,6 +109,10 @@ public:
     //Guess the computer's IP
     QHostAddress getIPGuess();
 
+    //Get the bootstrap node number
+    quint32 getBootstrapNodeNumber();
+    quint32 getBoostrapStatus();
+
     //Get access to the GUI's objects
     TransferManager *transferManagerObject() const;
     ShareSearch *shareSearchObject() const;

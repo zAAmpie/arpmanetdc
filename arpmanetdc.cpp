@@ -2352,6 +2352,23 @@ ResourceExtractor *ArpmanetDC::resourceExtractorObject() const
     return pTypeIconList;
 }
 
+//Get the bootstrap node number
+quint32 ArpmanetDC::getBootstrapNodeNumber()
+{
+    if (CIDHostsLabel->text().isEmpty())
+        return 0;
+    else
+        return CIDHostsLabel->text().toUInt();
+}
+
+quint32 ArpmanetDC::getBoostrapStatus()
+{
+    if (bootstrapStatusLabel->text().isEmpty())
+        return 0;
+    else
+        return bootstrapStatusLabel->text().toUInt();
+}
+
 QSize ArpmanetDC::sizeHint() const
 {
     //Check size of primary screen

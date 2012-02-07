@@ -40,9 +40,13 @@ private:
 	void placeWidgets();
 	void connectWidgets();
 
+    void addQA(QString question, QString answer);
+
 	//Objects
 	QWidget *pWidget;
 	ArpmanetDC *pParent;
+
+    QTextBrowser *browser;
 };
 
 #endif
