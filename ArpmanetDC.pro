@@ -48,7 +48,8 @@ SOURCES += main.cpp\
     fstptransfersegment.cpp \
     bucketflushthread.cpp \
     utptransfersegment.cpp \
-    containerthread.cpp
+    containerthread.cpp \
+    ftpupdate.cpp
 
 HEADERS  += arpmanetdc.h \
     hubconnection.h \
@@ -82,7 +83,8 @@ HEADERS  += arpmanetdc.h \
     fstptransfersegment.h \
     bucketflushthread.h \
     utptransfersegment.h \
-    containerthread.h
+    containerthread.h \
+    ftpupdate.h
 
 #FORMS    += arpmanetdc.ui
 
