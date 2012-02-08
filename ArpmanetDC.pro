@@ -6,6 +6,14 @@
 
 QT       += core gui network
 
+exists($$PWD/libutp/Makefile) {
+    libutp.target = libutp/libutp.a
+    libutp.commands = cd libutp && make
+    libutp.depends = libutp/Makefile
+    QMAKE_EXTRA_TARGETS += libutp
+    PRE_TARGETDEPS += libutp/libutp.a
+}
+
 LIBS += -lsqlite3 -lcryptopp -L$$PWD/libutp/ -lutp -lrt
 
 exists($$PWD/qt/Makefile) {
@@ -94,3 +102,5 @@ RESOURCES += \
 unix {
     include(unixconf.pri)
 }
+
+
