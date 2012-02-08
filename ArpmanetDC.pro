@@ -11,7 +11,7 @@ exists($$PWD/libutp/Makefile) {
     libutp.commands = cd libutp && make
     libutp.depends = libutp/Makefile
     QMAKE_EXTRA_TARGETS += libutp
-    PRE_TARGETDEPS += libutp/libutp.a
+    #PRE_TARGETDEPS += libutp/libutp.a
 }
 
 LIBS += -lsqlite3 -lcryptopp -L$$PWD/libutp/ -lutp -lrt

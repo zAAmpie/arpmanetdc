@@ -121,10 +121,12 @@ void DownloadTransfer::TTHTreeReply(QByteArray tree)
         QByteArray *bucketHash = new QByteArray(tree.left(tthLength));
         tree.remove(0, tthLength);
         if (!downloadBucketHashLookupTable.contains(bucketNumber))
+        {
             downloadBucketHashLookupTable.insert(bucketNumber, bucketHash);
-        iter++;
+            iter++;
+        }
     }
-    if (iter == 0)  // don't burn it if the buckets start showing up empty
+    if (iter == 0)  // don't burn it if the buckets start showing up empty or if we receive duplicates
         return;
 
     int prev = -1;
@@ -137,7 +139,7 @@ void DownloadTransfer::TTHTreeReply(QByteArray tree)
         else
             break;
     }
-    emit TTHTreeRequest(listOfPeers.first(), TTH, prev + 1, 46);
+    emit TTHTreeRequest(listOfPeers.first(), TTH, prev + 1, 184);
     qDebug() << "Request TTH tree " << prev + 1 << calculateBucketNumber(fileSize);
 }
 
@@ -263,7 +265,7 @@ void DownloadTransfer::transferTimerEvent()
         else
         {
             qDebug() << "Timer request TTH tree " << listOfPeers.first().toString() << lastHashBucketReceived + 1;
-            emit TTHTreeRequest(listOfPeers.first(), TTH, lastHashBucketReceived + 1, 46);
+            emit TTHTreeRequest(listOfPeers.first(), TTH, lastHashBucketReceived + 1, 184); // 8 datagrams
         }
     }
 }
