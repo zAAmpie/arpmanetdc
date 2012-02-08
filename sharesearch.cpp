@@ -62,6 +62,8 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
         this, SIGNAL(returnContainers(QHash<QString, ContainerContentsType>)), Qt::QueuedConnection);
     connect(pContainerThread, SIGNAL(requestTTHsFromPaths(QHash<QString, QStringList>, QString)),
         this, SLOT(requestTTHsFromPaths(QHash<QString, QStringList>, QString)), Qt::QueuedConnection);
+    connect(pContainerThread, SIGNAL(containersSaved()),
+        this, SLOT(updateShares()), Qt::QueuedConnection);
     connect(this, SIGNAL(getContainers(QString)), 
         pContainerThread, SLOT(requestContainers(QString)), Qt::QueuedConnection);
     connect(this, SIGNAL(saveContainers(QHash<QString, ContainerContentsType>, QString)),

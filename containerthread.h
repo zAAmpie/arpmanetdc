@@ -10,7 +10,10 @@
 
 #define CONTAINER_EXTENSION "adcc"
 
-#define HEADER_LENGTH 16
+#define CONTAINER_PREAMBLE "..::ArpmanetDCContainer::.."
+#define CONTAINER_PREAMBLE_SIZE 27
+
+#define HEADER_LENGTH 16+27
 
 typedef QPair<quint64, QHash<QString, quint64> > ContainerContentsType;
 
@@ -48,6 +51,9 @@ signals:
     //Return processed container information
     void returnProcessedContainer(QHostAddress host, ContainerContentsType index, QList<ContainerLookupReturnStruct> data, QString downloadPath);
 
+    //Containers saved
+    void containersSaved();
+
 private:
     //Process a file
     ContainerContentsType processContainerFileIndex(QFileInfo fileInfo);
@@ -55,6 +61,8 @@ private:
     bool writeContainerFileIndex(QString name, ContainerContentsType contents);
     //Clean container directory of all containers
     bool cleanContainers(QString containerDirectory);
+
+    int pContainerCount;
 };
 
 #endif

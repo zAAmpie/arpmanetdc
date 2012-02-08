@@ -38,6 +38,8 @@ void ContainerThread::requestContainers(QString containerDirectory)
 //Save the containers to files in the directory specified
 void ContainerThread::saveContainers(QHash<QString, ContainerContentsType> containerHash, QString containerDirectory)
 {
+    pContainerCount = containerHash.size();
+
     //Make container directory if it doesn't exist
     QDir contDir(containerDirectory);
     if (!containerHash.isEmpty() && !contDir.exists())
@@ -106,6 +108,9 @@ void ContainerThread::processContainer(QHostAddress host, QString containerPath,
 {
     //Get container index
     QFileInfo fileInfo(containerPath);
+    if (!fileInfo.exists())
+        return;
+
     ContainerContentsType c;
     c.first = 0;
 
@@ -124,9 +129,19 @@ void ContainerThread::processContainer(QHostAddress host, QString containerPath,
     //===================================
     //            HEADER LAYOUT
     //===================================
+    // preamble    - String (x bytes)
     // totalBytes  - quint64
     // indexSize   - quint64
 
+    if (header.left(CONTAINER_PREAMBLE_SIZE) == CONTAINER_PREAMBLE) //Check preamble
+        //If preamble matches, awesome
+        header.remove(0, CONTAINER_PREAMBLE_SIZE);
+    else
+    {
+        //If preamble doesn't match, exit
+        file.close();
+        return;
+    }
     quint64 totalBytes = getQuint64FromByteArray(&header);
     quint64 indexSize = getQuint64FromByteArray(&header);
 
@@ -178,11 +193,11 @@ void ContainerThread::processContainer(QHostAddress host, QString containerPath,
         ContainerLookupReturnStruct r;
         
         //Fill parameters
-        r.filePath = getStringFromByteArray(&header);
-        quint16 size = getQuint16FromByteArray(&header);
-        r.rootTTH = header.left(size);
-        header.remove(0, size);
-        r.fileSize = getQuint64FromByteArray(&header);
+        r.filePath = getStringFromByteArray(&buffer);
+        quint16 size = getQuint16FromByteArray(&buffer);
+        r.rootTTH = buffer.left(size);
+        buffer.remove(0, size);
+        r.fileSize = getQuint64FromByteArray(&buffer);
 
         //Insert into list
         containerData.append(r);
@@ -207,12 +222,25 @@ void ContainerThread::returnTTHsFromPaths(QHash<QString, QList<ContainerLookupRe
         i.next();
 
         QDir path(i.key());
+        bool folder = path.cdUp();
 
         //Iterate through all files inside shared path
         QListIterator<ContainerLookupReturnStruct> k(i.value());
         while (k.hasNext())
         {
-            QString relativePath = path.relativeFilePath(k.peekNext().filePath); //Save relative path
+            QString relativePath;
+            if (folder)
+                relativePath = path.relativeFilePath(k.peekNext().filePath); //Save relative path
+            else
+            {
+                relativePath = path.filePath(k.peekNext().filePath); //Save relative path
+                relativePath.replace(":/","/"); //Remove Windows type drive names and change to a folder
+
+                //TODO: I'm not 100% sure what happens when you share a root folder in Linux... But I'm guessing it'll just start with a /?
+                if (relativePath.startsWith("/"))
+                    relativePath.remove(0, 1); 
+            }
+
             quint64 fileSize = k.peekNext().fileSize;
             QByteArray fileTTH = k.next().rootTTH;
 
@@ -242,6 +270,10 @@ void ContainerThread::returnTTHsFromPaths(QHash<QString, QList<ContainerLookupRe
 
     //Close file
     file.close();
+
+    //Emit signal if necessary
+    if (--pContainerCount == 0)
+        emit containersSaved();
 }
 
 //Process a file index (for local display)
@@ -249,6 +281,9 @@ ContainerContentsType ContainerThread::processContainerFileIndex(QFileInfo fileI
 {
     ContainerContentsType c;
     c.first = 0;
+
+    if (!fileInfo.exists())
+        return c;
 
     QFile file(fileInfo.filePath());
     if (!file.open(QIODevice::ReadOnly))
@@ -265,9 +300,19 @@ ContainerContentsType ContainerThread::processContainerFileIndex(QFileInfo fileI
     //===================================
     //            HEADER LAYOUT
     //===================================
+    // preamble    - String (x bytes)
     // totalBytes  - quint64
     // indexSize   - quint64
 
+    if (header.left(CONTAINER_PREAMBLE_SIZE) == CONTAINER_PREAMBLE) //Check preamble
+        //If preamble matches, awesome
+        header.remove(0, CONTAINER_PREAMBLE_SIZE);
+    else
+    {
+        //If preamble doesn't match, exit
+        file.close();
+        return c;
+    }
     quint64 totalBytes = getQuint64FromByteArray(&header);
     quint64 indexSize = getQuint64FromByteArray(&header);
 
@@ -318,6 +363,7 @@ bool ContainerThread::writeContainerFileIndex(QString filePath, ContainerContent
 
     //Build header
     QByteArray header;
+    header.append(CONTAINER_PREAMBLE);
     header.append(quint64ToByteArray(contents.first)); //Container size
     header.append(quint64ToByteArray(index.size())); //Index size
 

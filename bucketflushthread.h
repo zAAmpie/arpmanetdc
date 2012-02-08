@@ -30,7 +30,7 @@ public:
     explicit BucketFlushThread(QObject *parent = 0);
 
 signals:
-
+    void fileAssemblyComplete(QString fileName);
 public slots:
     void flushBucket(QString filename, QByteArray *bucket);
     void assembleOutputFile(QString tmpfilebase, QString outfile, int startbucket, int lastbucket);

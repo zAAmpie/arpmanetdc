@@ -45,7 +45,7 @@ void HelpWidget::createWidgets()
     else if ((state == 2 || state == 3) && nodes < 20)
         addQA("Why can't I search?", tr("You're currently connected to %2 clients (the numbers at the bottom right of your screen is %1 | %2).<br/>Try using a more general search like "".avi"" to test the search function. However, you're not connected to a lot of clients. Please be patient and wait while the client searches for additional users.").arg(state).arg(nodes));
     else
-        addQA("Why can't I search?", tr("You're currently connected to %2 clients (the numbers at the bottom right of your screen is %1 | %2).<br/>You're connected to enough clients to utilise the search function fully. Try a more general search.").arg(state).arg(nodes));
+        addQA("Why can't I search?", tr("You're currently connected to %2 clients (the numbers at the bottom right of your screen is %1 | %2).<br/>You're connected to enough clients to utilise the search function fully. <br/>Some things to try:<br/>1) Try a more general search<br/>2) Ensure your firewall is turned off or an exception exists for the client<br/>3) Ensure that no other running applications is currently using port 4012 UDP<br/>4) Ensure the External IP in Advanced Settings is your LAN IP.").arg(state).arg(nodes));
     
     addQA("How do I share files with other users?","Click on the Share button and select the files you want to share. Afterwards, click on Save Shares to commit te changes.");
     

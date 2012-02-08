@@ -170,6 +170,9 @@ public slots:
     //Return the contents of a container downloaded
     void returnProcessedContainer(QHostAddress host, ContainerContentsType index, QList<ContainerLookupReturnStruct> data, QString downloadPath);
 
+    //Called when a file has been assembled correctly
+    void fileAssemblyComplete(QString fileName);
+
 private slots:
     //-----===== OBJECT SLOTS =====-----
 
@@ -351,7 +354,9 @@ private:
 
     //Containers
     QHash<QString, ContainerContentsType> pContainerHash;
+    QHash<QString, QueueStruct> pContainerProcessHash;
     QString pContainerDirectory;
+    bool saveSharesPressed;
 
     quint64 pFilesHashedSinceUpdate, pFileSizeHashedSinceUpdate;
     QTimer *hashRateTimer;

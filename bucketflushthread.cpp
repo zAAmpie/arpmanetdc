@@ -1,4 +1,5 @@
 #include "bucketflushthread.h"
+#include <QDir>
 
 BucketFlushThread::BucketFlushThread(QObject *parent) :
     QObject(parent)
@@ -24,6 +25,13 @@ void BucketFlushThread::assembleOutputFile(QString tmpfilebase, QString outfile,
     int bucket = startbucket;
     QFile inf;
     QString outfilepart = outfile + ".part";
+
+    //Go to directory
+    QString pathStr = outfile.left(outfile.lastIndexOf("/"));
+    QDir path(pathStr);
+    if (!path.exists())
+        path.mkpath(pathStr);
+
     QFile outf(outfilepart);
     if (!outf.open(QIODevice::ReadWrite))
     {
@@ -88,8 +96,14 @@ void BucketFlushThread::assembleOutputFile(QString tmpfilebase, QString outfile,
 
         }
         if (bucket == lastbucket)
-            outf.rename(outfile);
+        {
+            outf.close();
+            if (!outf.rename(outfile))
+                outf.remove();
+            emit fileAssemblyComplete(outfile);
+        }
         bucket++;
     }
-    outf.close();
+    if (outf.isOpen())
+        outf.close();
 }

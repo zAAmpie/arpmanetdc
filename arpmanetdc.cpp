@@ -327,6 +327,10 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(pTransferManager, SIGNAL(assembleOutputFile(QString,QString,int,int)),
             pBucketFlushThread, SLOT(assembleOutputFile(QString,QString,int,int)), Qt::QueuedConnection);
 
+    //Connect bucketFlushThread to GUI
+    connect(pBucketFlushThread, SIGNAL(fileAssemblyComplete(QString)),
+            this, SLOT(fileAssemblyComplete(QString)), Qt::QueuedConnection);
+
     //Construct the auto update object
     pFtpUpdate = new FTPUpdate(FTP_UPDATE_HOST, FTP_UPDATE_DIRECTORY, this);
 
@@ -388,6 +392,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     //transferWidget = 0;
 
     arpmanetDCUsers = 0;
+
+    saveSharesPressed = false;
 
     //Set window icon
     setWindowIcon(QIcon(QPixmap(":/ArpmanetDC/Resources/Logo128x128.png")));
@@ -468,7 +474,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
         QTimer::singleShot(1000, pHub, SLOT(connectHub()));
 
     createdGUI = true;
-
+    
 #ifdef Q_OS_WIN
     //Check for program updates
     emit ftpCheckForUpdate();
@@ -1377,6 +1383,8 @@ void ArpmanetDC::shareSaveButtonPressed()
 		hashingProgressBar->setRange(0,0);
         hashRateTimer->start();
 	}
+
+    saveSharesPressed = true;
 }
 
 void ArpmanetDC::settingsSaved()
@@ -1455,7 +1463,13 @@ void ArpmanetDC::hashingDone(int msecs, int numFiles)
 	hashingProgressBar->setRange(0,1);
 
     //Start processing containers if there are outstanding
-    emit saveContainers(pContainerHash, pContainerDirectory);
+    if (saveSharesPressed)
+    {
+        //Shares will be updated twice to account for the container being built after the first pass
+        saveSharesPressed = false;
+        emit saveContainers(pContainerHash, pContainerDirectory);
+    }
+
 }
 
 void ArpmanetDC::parsingDone(int msecs)
@@ -1482,7 +1496,7 @@ void ArpmanetDC::downloadCompleted(QByteArray tth)
         queueWidget->removeQueuedDownload(tth);
 
     //Add file to finished downloads list if it's not a container
-    if (file.fileName.endsWith("." + QString(CONTAINER_EXTENSION)))
+    if (!file.fileName.endsWith("." + QString(CONTAINER_EXTENSION)))
     {
         FinishedDownloadStruct item;
         item.fileName = file.fileName;
@@ -1495,15 +1509,13 @@ void ArpmanetDC::downloadCompleted(QByteArray tth)
     }
     else
     {
-        //Process container that downloaded successfully
-        QString containerPath = file.filePath;
-        QDir downloadToPath(containerPath);
-        downloadToPath.cdUp();
-        QString downloadPath = downloadToPath.path();
-
-        emit processContainer(file.fileHost, file.filePath, downloadPath);
+        //Insert the file into the hash for processing
+        QueueStruct s(file);
+        s.tthRoot = new QByteArray(*file.tthRoot);
+        pContainerProcessHash.insert(file.filePath + file.fileName, s);
     }
-
+    
+    //Delete from queue
     deleteFromQueue(tth);
 
     //Set status
@@ -2191,14 +2203,16 @@ void ArpmanetDC::queueSaveContainers(QHash<QString, ContainerContentsType> conta
 //Return the contents of a container downloaded
 void ArpmanetDC::returnProcessedContainer(QHostAddress host, ContainerContentsType index, QList<ContainerLookupReturnStruct> data, QString downloadPath)
 {
-    foreach (ContainerLookupReturnStruct c, data)
+    for (int i = 0; i < data.size(); ++i)
     {
+        ContainerLookupReturnStruct c = data.at(i);
+                
         //Construct queue item
         QFileInfo fi(c.filePath);
         QueueStruct q;
         q.fileHost = host;
         q.fileName = fi.fileName();
-        q.filePath = c.filePath;
+        q.filePath = downloadPath + c.filePath;
         q.fileSize = c.fileSize;
         q.priority = NormalQueuePriority;
         q.tthRoot = new QByteArray(c.rootTTH);
@@ -2207,9 +2221,26 @@ void ArpmanetDC::returnProcessedContainer(QHostAddress host, ContainerContentsTy
         addDownloadToQueue(q);
 
         //Add to transfer manager queue for download
-        QString finalPath = downloadPath + c.filePath;
-        emit queueDownload((int)q.priority, *q.tthRoot, finalPath, q.fileSize, q.fileHost);
+        emit queueDownload((int)q.priority, *q.tthRoot, q.filePath, q.fileSize, q.fileHost);
     }
+}
+
+//Called when a file has been assembled correctly
+void ArpmanetDC::fileAssemblyComplete(QString fileName)
+{
+    //Process containers
+    if (fileName.endsWith("." + QString(CONTAINER_EXTENSION)))
+    {
+        //A step to avoid containers within containers for now... mostly since a container doesn't include a host to download from.
+        //At least I don't think an infinite loop of containers can be built since the hashes for the container inside will differ from the one pointing to its own directory
+        //TODO: post information along with buckets to have access to the host so containers within containers can be built
+        if (pContainerProcessHash.contains(fileName))
+        {
+            QueueStruct file = pContainerProcessHash.value(fileName);
+            emit processContainer(file.fileHost, file.filePath + file.fileName, file.filePath);
+        }
+    }
+
 }
 
 //System tray was activated
