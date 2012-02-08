@@ -316,10 +316,7 @@ QByteArray quint8ToByteArray(quint8 num)
 {
 	//Convert quint8 to QByteArray
     quint8 numBS = num;
-#ifdef Q_LITTLE_ENDIAN
-    //Convert to BigEndian
-    numBS = qbswap(num);
-#endif
+    //No need to convert between Big Endian and Little Endian for an 8-bit register
     QByteArray numBA((const char *)&numBS, 1);
 
 	//QByteArray numBA;
@@ -456,10 +453,7 @@ quint16 getQuint16FromByteArray(QByteArray *data)
     //ds.setVersion(QDataStream::Qt_4_6);
     //ds >> num;
     memcpy(&num, data->constData(), 2);
-#ifdef Q_LITTLE_ENDIAN
-    //Convert to BigEndian
-    num = qbswap(num);
-#endif
+    //No need to convert between Big Endian and Little Endian for an 8-bit register
 	data->remove(0,2); // *** I BELIEVE THIS IS KILLING US *** there is no pop_front for a bytearray, although the stupid thing can push_front. I guess remove() copies the BA internally.
 	return num;
 }
@@ -472,10 +466,7 @@ quint8 getQuint8FromByteArray(QByteArray *data)
     //ds.setVersion(QDataStream::Qt_4_6);
     //ds >> num;
     memcpy(&num, data->constData(), 1);
-#ifdef Q_LITTLE_ENDIAN
-    //Convert to BigEndian
-    num = qbswap(num);
-#endif
+    //No need to convert between Big Endian and Little Endian for an 8-bit register
 	data->remove(0,1);
 	return num;
 }

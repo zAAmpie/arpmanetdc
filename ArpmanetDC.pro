@@ -6,6 +6,14 @@
 
 QT       += core gui network
 
+exists($$PWD/libutp/Makefile) {
+    libutp.target = libutp/libutp.a
+    libutp.commands = cd libutp && make
+    libutp.depends = libutp/Makefile
+    QMAKE_EXTRA_TARGETS += libutp
+    #PRE_TARGETDEPS += libutp/libutp.a
+}
+
 LIBS += -lsqlite3 -lcryptopp -L$$PWD/libutp/ -lutp -lrt
 
 exists($$PWD/qt/Makefile) {
@@ -48,7 +56,8 @@ SOURCES += main.cpp\
     fstptransfersegment.cpp \
     bucketflushthread.cpp \
     utptransfersegment.cpp \
-    containerthread.cpp
+    containerthread.cpp \
+    ftpupdate.cpp
 
 HEADERS  += arpmanetdc.h \
     hubconnection.h \
@@ -82,7 +91,8 @@ HEADERS  += arpmanetdc.h \
     fstptransfersegment.h \
     bucketflushthread.h \
     utptransfersegment.h \
-    containerthread.h
+    containerthread.h \
+    ftpupdate.h
 
 #FORMS    += arpmanetdc.ui
 
@@ -92,3 +102,5 @@ RESOURCES += \
 unix {
     include(unixconf.pri)
 }
+
+

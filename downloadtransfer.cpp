@@ -12,6 +12,7 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
     status = TRANSFER_STATE_INITIALIZING;
     remoteHost = QHostAddress("0.0.0.0");
     currentActiveSegments = 0;
+    hashTreeWindowEnd = 0;
 
     transferRateCalculationTimer = new QTimer();
     connect(transferRateCalculationTimer, SIGNAL(timeout()), this, SLOT(transferRateCalculation()));
@@ -121,24 +122,35 @@ void DownloadTransfer::TTHTreeReply(QByteArray tree)
         QByteArray *bucketHash = new QByteArray(tree.left(tthLength));
         tree.remove(0, tthLength);
         if (!downloadBucketHashLookupTable.contains(bucketNumber))
+        {
             downloadBucketHashLookupTable.insert(bucketNumber, bucketHash);
-        iter++;
+            iter++;
+        }
     }
-    if (iter == 0)  // don't burn it if the buckets start showing up empty
+    if (iter == 0)  // don't burn it if the buckets start showing up empty or if we receive duplicates
         return;
 
-    int prev = -1;
-    QMapIterator<int, QByteArray*> i(downloadBucketHashLookupTable);
-    while (i.hasNext())
+    //int prev = -1;
+    //QMapIterator<int, QByteArray*> i(downloadBucketHashLookupTable);
+    //while (i.hasNext())
+    //{
+    //    i.next();
+    //    if (i.key() == prev + 1)
+    //        prev++;
+    //    else
+    //        break;
+    //}
+    // Replacing above to use same method of checking for the highest index, seems like less work.
+    // BIG TODO: make sure that downloadBucketHashLookupTable gets populated with data from database if present.
+
+    int lastHashBucketReceived = getLastHashBucketNumberReceived();
+
+    if (lastHashBucketReceived == hashTreeWindowEnd)
     {
-        i.next();
-        if (i.key() == prev + 1)
-            prev++;
-        else
-            break;
+        emit TTHTreeRequest(listOfPeers.first(), TTH, lastHashBucketReceived + 1, HASH_TREE_WINDOW_LENGTH);
+        hashTreeWindowEnd = lastHashBucketReceived + HASH_TREE_WINDOW_LENGTH;
+        qDebug() << "Request TTH tree " << lastHashBucketReceived + 1 << calculateBucketNumber(fileSize);
     }
-    emit TTHTreeRequest(listOfPeers.first(), TTH, prev + 1, 46);
-    qDebug() << "Request TTH tree " << prev + 1 << calculateBucketNumber(fileSize);
 }
 
 int DownloadTransfer::getTransferType()
@@ -239,13 +251,7 @@ void DownloadTransfer::transferTimerEvent()
                 timerBrakes = 0;
             return;
         }
-        int lastHashBucketReceived = -1;
-        if (!downloadBucketHashLookupTable.isEmpty())
-        {
-            QMap<int, QByteArray*>::const_iterator i = downloadBucketHashLookupTable.constEnd();
-            --i;
-            lastHashBucketReceived = i.key();
-        }
+        int lastHashBucketReceived = getLastHashBucketNumberReceived();
 
         int lastBucket = calculateBucketNumber(fileSize);
         lastBucket = fileSize % HASH_BUCKET_SIZE == 0 ? lastBucket - 1 : lastBucket;
@@ -263,7 +269,8 @@ void DownloadTransfer::transferTimerEvent()
         else
         {
             qDebug() << "Timer request TTH tree " << listOfPeers.first().toString() << lastHashBucketReceived + 1;
-            emit TTHTreeRequest(listOfPeers.first(), TTH, lastHashBucketReceived + 1, 46);
+            emit TTHTreeRequest(listOfPeers.first(), TTH, lastHashBucketReceived + 1, HASH_TREE_WINDOW_LENGTH); // 8 datagrams
+            hashTreeWindowEnd = lastHashBucketReceived + HASH_TREE_WINDOW_LENGTH;
         }
     }
 }
@@ -480,4 +487,16 @@ int DownloadTransfer::getTransferProgress()
     int returnVal = bytesDone * 100 / fileSize;
     
     return returnVal > 100 ? 100 : returnVal;
+}
+
+int DownloadTransfer::getLastHashBucketNumberReceived()
+{
+    int lastHashBucketReceived = -1;
+    if (!downloadBucketHashLookupTable.isEmpty())
+    {
+        QMap<int, QByteArray*>::const_iterator i = downloadBucketHashLookupTable.constEnd();
+        --i;
+        lastHashBucketReceived = i.key();
+    }
+    return lastHashBucketReceived;
 }
