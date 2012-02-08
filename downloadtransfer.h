@@ -23,6 +23,8 @@
 
 #define MAXIMUM_SIMULTANEOUS_SEGMENTS 10
 
+#define HASH_TREE_WINDOW_LENGTH 184 // 8 datagrams
+
 enum transferSegmentState
 {
     SegmentNotDownloaded = 0x00,
@@ -94,6 +96,7 @@ private:
     void newPeer(QHostAddress peer, quint8 protocols);
     TransferSegment* createTransferSegment(QHostAddress peer);
     void downloadNextAvailableChunk(TransferSegment *download, int length = 1);
+    int getLastHashBucketNumberReceived();
 
     QHash<int, QByteArray*> *downloadBucketTable;
     QMap<int, QByteArray*> downloadBucketHashLookupTable;
@@ -107,6 +110,7 @@ private:
     int bytesWrittenSinceUpdate;
     int currentActiveSegments;
     int timerBrakes;
+    int hashTreeWindowEnd;
 
     QMap<quint64, TransferSegmentTableStruct> transferSegmentTable;
     QByteArray transferSegmentStateBitmap;
