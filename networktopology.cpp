@@ -261,7 +261,9 @@ void NetworkTopology::updateHostTimestamp(QByteArray &bucket, QHostAddress &host
     if (host.isInSubnet(QHostAddress("169.254.0.0"), 16))
         return;
 
-    qint64 time = QDateTime::currentMSecsSinceEpoch() - age;
+    qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
+    qint64 time = currentTime - age;
+    lastBucketUpdate = currentTime;
 
     if (buckets.contains(bucket))
     {
@@ -389,6 +391,10 @@ void NetworkTopology::setBootstrapStatus(int status)
 
 void NetworkTopology::collectBucketGarbage()
 {
+    // Do not forget about our entire bucket collection if the network is down (10 minutes)
+    if (QDateTime::currentMSecsSinceEpoch() - lastBucketUpdate > 600000)
+        return;
+
     QMutableHashIterator<QByteArray, HostIntPair*> ib(buckets);
 
     //Update: This is no longer necessary since we verify the hosts before we insert them into the buckets.

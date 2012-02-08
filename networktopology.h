@@ -111,6 +111,7 @@ private:
     int bootstrapStatus;
     QHash<QHostAddress, qint64> announceToHostTimestamps;
     QHash<QHostAddress, qint64> requestAllBucketsTimestamps;
+    qint64 lastBucketUpdate;
 };
 
 #endif // NETWORKTOPOLOGY_H
