@@ -295,6 +295,8 @@ QString TransferWidget::stateString(int state)
             return "Running";
         case TRANSFER_STATE_STALLED:
             return "Stalled";
+        case TRANSFER_STATE_IDLE:
+            return "Idle";
         case TRANSFER_STATE_ABORTING:
             return "Aborting";
         case TRANSFER_STATE_FINISHED:
