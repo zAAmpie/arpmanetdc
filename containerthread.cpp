@@ -215,6 +215,8 @@ void ContainerThread::returnTTHsFromPaths(QHash<QString, QList<ContainerLookupRe
     if (!file.open(QIODevice::Append))
         return;
 
+    quint64 totalSize = 0;
+
     //Iterate through all data in the container
     QHashIterator<QString, QList<ContainerLookupReturnStruct> > i(results);
     while (i.hasNext())
@@ -242,6 +244,7 @@ void ContainerThread::returnTTHsFromPaths(QHash<QString, QList<ContainerLookupRe
             }
 
             quint64 fileSize = k.peekNext().fileSize;
+            totalSize += fileSize;
             QByteArray fileTTH = k.next().rootTTH;
 
             //===================================
@@ -270,6 +273,14 @@ void ContainerThread::returnTTHsFromPaths(QHash<QString, QList<ContainerLookupRe
 
     //Close file
     file.close();
+
+    //Rename the file to include its size
+    QString name = containerPath.left(containerPath.lastIndexOf("." + QString(CONTAINER_EXTENSION)));
+    if (name.contains("   ["))
+        name = name.left(name.lastIndexOf("   ["));
+    name.append(tr("   [%1]").arg(bytesToSize(totalSize)));
+    name.append("." + QString(CONTAINER_EXTENSION));
+    file.rename(name);
 
     //Emit signal if necessary
     if (--pContainerCount == 0)
