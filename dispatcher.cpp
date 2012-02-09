@@ -122,10 +122,12 @@ void Dispatcher::receiveP2PData()
         quint16 senderPort; // ignoreer
         datagram.resize(receiverUdpSocket->pendingDatagramSize());
         receiverUdpSocket->readDatagram(datagram.data(), datagram.size(), &senderHost, &senderPort);
-        QByteArray datagramType(datagram.left(1));
-        QByteArray protocolInstruction(datagram.mid(1,1));
-        quint8 quint8DatagramType = datagramType.at(0); // hy wil graag mooi gevra wees om by die rou byte uit te kom...
-        quint8 quint8ProtocolInstruction = protocolInstruction.at(0);
+        //QByteArray datagramType(datagram.left(1));
+        //QByteArray protocolInstruction(datagram.mid(1,1));
+        //quint8 quint8DatagramType = datagramType.at(0); // hy wil graag mooi gevra wees om by die rou byte uit te kom...
+        //quint8 quint8ProtocolInstruction = protocolInstruction.at(0);
+        quint8 quint8DatagramType = datagram.at(0);
+        quint8 quint8ProtocolInstruction = datagram.at(1);
         switch(quint8DatagramType)
         {
         case DataPacket:
@@ -283,6 +285,7 @@ void Dispatcher::handleProtocolInstruction(quint8 &quint8DatagramType, quint8 &q
 void Dispatcher::sendMulticastAnnounce()
 {
     QByteArray datagram;
+    datagram.reserve(50);
     datagram.append(MulticastPacket);
     datagram.append(AnnouncePacket);
     datagram.append(CID);
@@ -293,6 +296,7 @@ void Dispatcher::sendMulticastAnnounce()
 void Dispatcher::sendBroadcastAnnounce()
 {
     QByteArray datagram;
+    datagram.reserve(50);
     datagram.append(BroadcastPacket);
     datagram.append(AnnouncePacket);
     datagram.append(CID);
@@ -304,6 +308,7 @@ void Dispatcher::sendUnicastAnnounce(QHostAddress dst)
 {
     // Unicast announces should be treated as forwarded, so that they do not confuse other bucket IDs elsewhere
     QByteArray *datagram = new QByteArray;
+    datagram->reserve(54);
     datagram->append(UnicastPacket);
     datagram->append(AnnounceForwardedPacket);
     datagram->append(quint32ToByteArray(dispatchIP.toIPv4Address()));
@@ -315,6 +320,7 @@ void Dispatcher::sendUnicastAnnounce(QHostAddress dst)
 void Dispatcher::sendMulticastAnnounceReply()
 {
     QByteArray datagram;
+    datagram.reserve(50);
     datagram.append(MulticastPacket);
     datagram.append(AnnounceReplyPacket);
     datagram.append(CID);
@@ -325,6 +331,7 @@ void Dispatcher::sendMulticastAnnounceReply()
 void Dispatcher::sendBroadcastAnnounceReply()
 {
     QByteArray datagram;
+    datagram.reserve(50);
     datagram.append(BroadcastPacket);
     datagram.append(AnnounceReplyPacket);
     datagram.append(CID);
@@ -348,6 +355,7 @@ void Dispatcher::sendUnicastAnnounceReply(QHostAddress &dstHost)
     announceForwardToHostTimestamps[dstHost] = currentTime;
     
     QByteArray *datagram = new QByteArray;
+    datagram->reserve(50);
     datagram->append(UnicastPacket);
     datagram->append(AnnounceReplyPacket);
     datagram->append(CID);
@@ -358,6 +366,7 @@ void Dispatcher::sendUnicastAnnounceReply(QHostAddress &dstHost)
 void Dispatcher::sendUnicastAnnounceForwardRequest(QHostAddress toAddr)
 {
     QByteArray *datagram = new QByteArray;
+    datagram->reserve(54);
     datagram->append(UnicastPacket);
     datagram->append(AnnounceForwardRequestPacket);
     datagram->append(toQByteArray(dispatchIP.toIPv4Address()));
@@ -374,6 +383,7 @@ void Dispatcher::handleReceivedAnnounceForwardRequest(QHostAddress &fromHost, QB
         return;
 
     QByteArray sendData;
+    sendData.reserve(54);
     switch (networkBootstrap->getBootstrapStatus())
     {
     case NETWORK_MCAST:
@@ -427,6 +437,7 @@ void Dispatcher::handleReceivedAnnounce(quint8 datagramType, QHostAddress &sende
 bool Dispatcher::initiateSearch(quint64 searchId, QByteArray searchData)
 {
     QByteArray datagram;
+    datagram.reserve(400);
     if (networkBootstrap->getBootstrapStatus() == NETWORK_MCAST)
         datagram.append(MulticastPacket);
     else if (networkBootstrap->getBootstrapStatus() == NETWORK_BCAST)
@@ -454,6 +465,7 @@ void Dispatcher::sendSearchResult(QHostAddress toHost, QByteArray senderCID, qui
 {
     // TODO: we can lose senderCID in the function call since it is our own CID we are sending here.
     QByteArray *datagram = new QByteArray;
+    datagram->reserve(300);
     datagram->append(UnicastPacket);
     datagram->append(SearchResultPacket);
     datagram->append(assembleSearchPacket(dispatchIP, searchID, searchResult, false));  // TODO: add bucket on first result per host
@@ -463,6 +475,7 @@ void Dispatcher::sendSearchResult(QHostAddress toHost, QByteArray senderCID, qui
 QByteArray Dispatcher::assembleSearchPacket(QHostAddress &searchingHost, quint64 &searchID, QByteArray &searchData, bool appendBucket)
 {
     QByteArray datagram;
+    datagram.reserve(300);
     datagram.append(toQByteArray(searchingHost.toIPv4Address()));
     datagram.append(toQByteArray(searchID));
     datagram.append(fixedCIDLength(CID));  // moet seker wees lengte is reg, anders bevark hy die indekse wat kom
@@ -502,6 +515,7 @@ void Dispatcher::parseArrivedSearchResult(QByteArray &datagram, QHostAddress sen
 void Dispatcher::sendSearchBroadcast(QByteArray &searchPacket)
 {
     QByteArray datagram;
+    datagram.reserve(300);
     datagram.append(BroadcastPacket);
     datagram.append(SearchRequestPacket);
     datagram.append(searchPacket);
@@ -511,6 +525,7 @@ void Dispatcher::sendSearchBroadcast(QByteArray &searchPacket)
 void Dispatcher::sendSearchMulticast(QByteArray &searchPacket)
 {
     QByteArray datagram;
+    datagram.reserve(300);
     datagram.append(MulticastPacket);
     datagram.append(SearchRequestPacket);
     datagram.append(searchPacket);
@@ -520,6 +535,7 @@ void Dispatcher::sendSearchMulticast(QByteArray &searchPacket)
 void Dispatcher::sendSearchForwardRequest(QHostAddress &forwardingNode, QByteArray &searchPacket)
 {
     QByteArray *datagram = new QByteArray;
+    datagram->reserve(300);
     datagram->append(UnicastPacket);
     datagram->append(SearchForwardRequestPacket);
     datagram->append(searchPacket);
@@ -534,6 +550,7 @@ void Dispatcher::handleReceivedSearchForwardRequest(QHostAddress &fromAddr, QByt
         return;
 
     QByteArray searchToForward;
+    searchToForward.reserve(200);
     if (networkBootstrap->getBootstrapStatus() == NETWORK_MCAST)
         searchToForward.append(MulticastPacket);
     else if (networkBootstrap->getBootstrapStatus() == NETWORK_BCAST)
@@ -580,6 +597,7 @@ void Dispatcher::handleReceivedSearchQuestion(QHostAddress &fromHost, QByteArray
 bool Dispatcher::initiateTTHSearch(QByteArray tth)
 {
     QByteArray datagram;
+    datagram.reserve(26);
     if (networkBootstrap->getBootstrapStatus() == NETWORK_MCAST)
         datagram.append(MulticastPacket);
     else if (networkBootstrap->getBootstrapStatus() == NETWORK_BCAST)
@@ -607,6 +625,7 @@ bool Dispatcher::initiateTTHSearch(QByteArray tth)
 void Dispatcher::sendTTHSearchResult(QHostAddress toHost, QByteArray tth)
 {
     QByteArray *datagram = new QByteArray;
+    datagram->reserve(30);
     datagram->append(UnicastPacket);
     datagram->append(TTHSearchResultPacket);
     datagram->append(toQByteArray(dispatchIP.toIPv4Address()));
@@ -617,6 +636,7 @@ void Dispatcher::sendTTHSearchResult(QHostAddress toHost, QByteArray tth)
 void Dispatcher::sendTTHSearchBroadcast(QByteArray &tth)
 {
     QByteArray datagram;
+    datagram.reserve(30);
     datagram.append(BroadcastPacket);
     datagram.append(TTHSearchRequestPacket);
     datagram.append(toQByteArray(dispatchIP.toIPv4Address()));
@@ -627,6 +647,7 @@ void Dispatcher::sendTTHSearchBroadcast(QByteArray &tth)
 void Dispatcher::sendTTHSearchMulticast(QByteArray &tth)
 {
     QByteArray datagram;
+    datagram.reserve(30);
     datagram.append(MulticastPacket);
     datagram.append(TTHSearchRequestPacket);
     datagram.append(toQByteArray(dispatchIP.toIPv4Address()));
@@ -637,6 +658,7 @@ void Dispatcher::sendTTHSearchMulticast(QByteArray &tth)
 void Dispatcher::sendTTHSearchForwardRequest(QHostAddress &forwardingNode, QByteArray &tth)
 {
     QByteArray *datagram = new QByteArray;
+    datagram->reserve(30);
     datagram->append(UnicastPacket);
     datagram->append(TTHSearchForwardRequestPacket);
     datagram->append(toQByteArray(dispatchIP.toIPv4Address()));
@@ -652,6 +674,7 @@ void Dispatcher::handleReceivedTTHSearchForwardRequest(QHostAddress &fromAddr, Q
         return;
 
     QByteArray searchToForward;
+    searchToForward.reserve(30);
     if (networkBootstrap->getBootstrapStatus() == NETWORK_MCAST)
         searchToForward.append(MulticastPacket);
     else if (networkBootstrap->getBootstrapStatus() == NETWORK_BCAST)
@@ -715,6 +738,7 @@ void Dispatcher::handleIncomingUploadRequest(QHostAddress &fromHost, QByteArray 
 void Dispatcher::sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length)
 {
     QByteArray *datagram = new QByteArray;
+    datagram->reserve(43);
     datagram->append(UnicastPacket);
     datagram->append(DownloadRequestPacket);
     datagram->append(protocol);
@@ -725,6 +749,7 @@ void Dispatcher::sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByt
     sendUnicastRawDatagram(dstHost, datagram);
 }
 
+// TODO: this isn't used, and is probably not very useful in its current form.
 void Dispatcher::sendTransferError(QHostAddress dstHost, quint8 error)
 {
     QByteArray *datagram = new QByteArray;
@@ -737,6 +762,7 @@ void Dispatcher::sendTransferError(QHostAddress dstHost, quint8 error)
 void Dispatcher::sendTTHTreeRequest(QHostAddress host, QByteArray tthRoot, quint32 startOffset, quint32 numberOfBuckets)
 {
     QByteArray *datagram = new QByteArray;
+    datagram->reserve(34);
     datagram->append(UnicastPacket);
     datagram->append(TTHTreeRequestPacket);
     datagram->append(tthRoot);
@@ -748,6 +774,7 @@ void Dispatcher::sendTTHTreeRequest(QHostAddress host, QByteArray tthRoot, quint
 void Dispatcher::sendTTHTreeReply(QHostAddress host, QByteArray tthTreePacket)
 {
     QByteArray *datagram = new QByteArray;
+    datagram->reserve(1400);
     datagram->append(UnicastPacket);
     datagram->append(TTHTreeReplyPacket);
     datagram->append(tthTreePacket);
@@ -774,6 +801,7 @@ void Dispatcher::handleReceivedTTHTree(QByteArray &datagram)
 void Dispatcher::handleReceivedProtocolCapabilityQuery(QHostAddress host)
 {
     QByteArray *datagram = new QByteArray;
+    datagram->reserve(3);
     datagram->append(UnicastPacket);
     datagram->append(ProtocolCapabilityResponsePacket);
     datagram->append(protocolCapabilityBitmask);
@@ -789,6 +817,7 @@ void Dispatcher::handleReceivedProtocolCapabilityResponse(QHostAddress fromHost,
 void Dispatcher::sendProtocolCapabilityQuery(QHostAddress dstHost)
 {
     QByteArray *datagram = new QByteArray;
+    datagram->reserve(2);
     datagram->append(UnicastPacket);
     datagram->append(ProtocolCapabilityQueryPacket);
     sendUnicastRawDatagram(dstHost, datagram);
@@ -818,6 +847,7 @@ void Dispatcher::dispatchCIDPing(QByteArray &cid)
 void Dispatcher::sendBroadcastCIDPing(QByteArray &cid)
 {
     QByteArray datagram;
+    datagram.reserve(26);
     datagram.append(BroadcastPacket);
     datagram.append(CIDPingPacket);
     datagram.append(cid);
@@ -827,6 +857,7 @@ void Dispatcher::sendBroadcastCIDPing(QByteArray &cid)
 void Dispatcher::sendMulticastCIDPing(QByteArray &cid)
 {
     QByteArray datagram;
+    datagram.reserve(26);
     datagram.append(MulticastPacket);
     datagram.append(CIDPingPacket);
     datagram.append(cid);
@@ -836,6 +867,7 @@ void Dispatcher::sendMulticastCIDPing(QByteArray &cid)
 void Dispatcher::sendCIDPingForwardRequest(QHostAddress &forwardingNode, QByteArray &cid)
 {
     QByteArray *datagram = new QByteArray;
+    datagram->reserve(30);
     datagram->append(UnicastPacket);
     datagram->append(CIDPingForwardRequestPacket);
     datagram->append(toQByteArray(dispatchIP.toIPv4Address()));
@@ -870,6 +902,7 @@ void Dispatcher::handleCIDPingReply(QByteArray &data, QHostAddress &dstHost)
     if (CID == data.mid(2))
     {
         QByteArray *datagram = new QByteArray;
+        datagram->reserve(26);
         datagram->append(UnicastPacket);
         datagram->append(CIDPingReplyPacket);
         datagram->append(CID);
@@ -886,6 +919,7 @@ void Dispatcher::handleReceivedCIDPingForwardRequest(QHostAddress &fromAddr, QBy
         return;
 
     QByteArray datagram;
+    datagram.reserve(30);
     switch(networkBootstrap->getBootstrapStatus())
     {
     case NETWORK_MCAST:
@@ -921,6 +955,7 @@ void Dispatcher::sendLocalBucket(QHostAddress &host)
         return;
 
     QByteArray *datagram = new QByteArray;
+    datagram->reserve(200);
     datagram->append(UnicastPacket);
     datagram->append(BucketExchangePacket);
     datagram->append(bucket);
@@ -934,6 +969,7 @@ void Dispatcher::sendAllBuckets(QHostAddress &host)
     while (it.hasNext())
     {
         QByteArray *datagram = new QByteArray;
+        datagram->reserve(200);
         datagram->append(UnicastPacket);
         datagram->append(BucketExchangePacket);
         datagram->append(it.next());
@@ -944,6 +980,7 @@ void Dispatcher::sendAllBuckets(QHostAddress &host)
 void Dispatcher::requestBucketContents(QHostAddress host)
 {
     QByteArray *datagram = new QByteArray;
+    datagram->reserve(2);
     datagram->append(UnicastPacket);
     datagram->append(RequestBucketPacket);
     sendUnicastRawDatagram(host, datagram);
@@ -952,6 +989,7 @@ void Dispatcher::requestBucketContents(QHostAddress host)
 void Dispatcher::requestAllBuckets(QHostAddress host)
 {
     QByteArray *datagram = new QByteArray;
+    datagram->reserve(2);
     datagram->append(UnicastPacket);
     datagram->append(RequestAllBucketsPacket);
     sendUnicastRawDatagram(host, datagram);

@@ -50,12 +50,14 @@ void FSTPTransferSegment::startUploading()
     const char * f = (char*)inputFile.map(segmentStart, segmentLength);
     quint64 wptr = 0;
     QByteArray header;
+    header.reserve(2);
     header.append(DataPacket);
     header.append(FailsafeTransferProtocol);
     QByteArray data(QByteArray::fromRawData(f, segmentLength));
     while (wptr < segmentLength)
     {
         QByteArray *packet = new QByteArray(header);
+        packet->reserve(1436);
         packet->append(toQByteArray((quint64)(segmentStart + wptr)));
         packet->append(TTH);
         //qDebug() << "Write data segmentStart " << segmentStart << " segmentLength " << segmentLength << " wptr " << wptr;
@@ -113,6 +115,7 @@ void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
     if (!pDownloadBucketTable->contains(bucketNumber))
     {
         QByteArray *bucket = new QByteArray();
+        bucket->reserve(1048576);
         pDownloadBucketTable->insert(bucketNumber, bucket);
     }
     if ((pDownloadBucketTable->value(bucketNumber)->length() + data.length()) > HASH_BUCKET_SIZE)
@@ -122,6 +125,7 @@ void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
         if (!pDownloadBucketTable->contains(bucketNumber + 1))
         {
             QByteArray *nextBucket = new QByteArray(data.mid(bucketRemaining));
+            nextBucket->reserve(1048576);
             pDownloadBucketTable->insert(bucketNumber + 1, nextBucket);
         }
         // there should be no else - if the next bucket exists and data is sticking over, there is an error,
