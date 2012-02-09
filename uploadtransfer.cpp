@@ -57,8 +57,10 @@ void UploadTransfer::createUploadObject(quint8 protocol)
     case FailsafeTransferProtocol:
         upload = new FSTPTransferSegment(this);
         break;
-    case BasicTransferProtocol:
     case uTPProtocol:
+        upload = new uTPTransferSegment(this);
+        break;
+    case BasicTransferProtocol:
     case ArpmanetFECProtocol:
         break;
     }
