@@ -407,6 +407,8 @@ void ShareWidget::addContainerButtonPressed()
         containerModel->removeRows(0, containerModel->rowCount());
 
         //Enable tree view if it was disabled
+        removeContainerButton->setEnabled(true);
+        renameContainerButton->setEnabled(true);
         containerTreeView->setEnabled(true);
         containerTreeView->setPlaceholderText(tr("Drag files/folders here to add..."));
     }
@@ -435,6 +437,8 @@ void ShareWidget::removeContainerButtonPressed()
         //Disable tree view if no containers exist
         if (containerCombo->count() == 0)
         {
+            removeContainerButton->setEnabled(false);
+            renameContainerButton->setEnabled(false);
             containerTreeView->setEnabled(false);
             containerTreeView->setPlaceholderText(tr("To start using containers, click Add..."));
         }
@@ -588,7 +592,8 @@ void ShareWidget::returnContainers(QHash<QString, ContainerContentsType> contain
     QHashIterator<QString, ContainerContentsType> i(pContainerHash);
     while (i.hasNext())
     {
-        containerCombo->addItem(QIcon(":/ArpmanetDC/Resources/ContainerIcon.png"), i.next().key());
+        QString name = i.next().key();
+        containerCombo->addItem(QIcon(":/ArpmanetDC/Resources/ContainerIcon.png"), name);
     }
 
     //Sort list of containers
@@ -597,11 +602,15 @@ void ShareWidget::returnContainers(QHash<QString, ContainerContentsType> contain
     //Disable tree view if no containers exist
     if (containerCombo->count() == 0)
     {
+        renameContainerButton->setEnabled(false);
+        removeContainerButton->setEnabled(false);
         containerTreeView->setEnabled(false);
         containerTreeView->setPlaceholderText(tr("To start using containers, click Add..."));
     }
     else
     {
+        renameContainerButton->setEnabled(true);
+        removeContainerButton->setEnabled(true);
         //Enable tree view if it was disabled
         containerTreeView->setEnabled(true);
         containerTreeView->setPlaceholderText(tr("Drag files/folders here to add..."));            
