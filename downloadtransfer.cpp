@@ -25,8 +25,9 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
 
     TTHSearchTimer = new QTimer();
     connect(TTHSearchTimer, SIGNAL(timeout()), this, SLOT(TTHSearchTimerEvent()));
-    transferTimer->setSingleShot(false);
-    transferTimer->start(300000);  // every 5 minutes
+    TTHSearchTimer->setSingleShot(true);
+    tthSearchInterval = 30000; // start out quick, work up to longer intervals in event func
+    TTHSearchTimer->start(tthSearchInterval);
 }
 
 DownloadTransfer::~DownloadTransfer()
@@ -312,6 +313,15 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
     currentActiveSegments--;
     // currently the object keeps sitting in remotePeerInfoTable and gets destroyed once the download completes.
     // this can be improved (TODO)
+    // UPDATE: see if this breaks anything.
+    //       : Rational: If a single host shares an object and becomes unavailable mid transfer, the transfer
+    //       : stalls indefinitely after the segment fails, even after the host comes back online again.
+    QHostAddress h = segment->getSegmentRemotePeer();
+    segment->deleteLater();
+    remotePeerInfoTable.remove(h);
+    int p = listOfPeers.indexOf(h);
+    if (p > -1)
+        listOfPeers.removeAt(p);
 }
 
 SegmentOffsetLengthStruct DownloadTransfer::getSegmentForDownloading(int segmentNumberOfBucketsHint)
@@ -416,8 +426,10 @@ TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol 
     case FailsafeTransferProtocol:
         download = new FSTPTransferSegment(this);
         break;
-    case BasicTransferProtocol:
     case uTPProtocol:
+        download = new uTPTransferSegment(this);
+        break;
+    case BasicTransferProtocol:
     case ArpmanetFECProtocol:
         break;
     }
@@ -453,6 +465,9 @@ void DownloadTransfer::TTHSearchTimerEvent()
 {
     if (currentActiveSegments < MAXIMUM_SIMULTANEOUS_SEGMENTS)
         emit searchTTHAlternateSources(TTH);
+    if (tthSearchInterval < 300000)  // 5 min max interval
+        tthSearchInterval += tthSearchInterval;
+    TTHSearchTimer->start(tthSearchInterval);
 }
 
 int DownloadTransfer::getTransferProgress()

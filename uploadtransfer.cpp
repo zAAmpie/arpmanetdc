@@ -57,8 +57,10 @@ void UploadTransfer::createUploadObject(quint8 protocol)
     case FailsafeTransferProtocol:
         upload = new FSTPTransferSegment(this);
         break;
-    case BasicTransferProtocol:
     case uTPProtocol:
+        upload = new uTPTransferSegment(this);
+        break;
+    case BasicTransferProtocol:
     case ArpmanetFECProtocol:
         break;
     }
@@ -94,8 +96,8 @@ void UploadTransfer::abortTransfer()
 void UploadTransfer::transferRateCalculation()
 {
     if ((status == TRANSFER_STATE_RUNNING) && (bytesWrittenSinceUpdate == 0))
-        status = TRANSFER_STATE_STALLED;
-    else if (status == TRANSFER_STATE_STALLED)
+        status = TRANSFER_STATE_IDLE;
+    else if ((status == TRANSFER_STATE_IDLE) && (bytesWrittenSinceUpdate > 0))
         status = TRANSFER_STATE_RUNNING;
 
     // snapshot the transfer rate as the amount of bytes written in the last second

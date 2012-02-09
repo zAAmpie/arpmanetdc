@@ -107,6 +107,7 @@ void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
 
     status = TRANSFER_STATE_RUNNING;
     packetsSinceUpdate++;
+    retransmitRetryCounter = 0;
 
     int bucketNumber = calculateBucketNumber(offset);
     if (!pDownloadBucketTable->contains(bucketNumber))
@@ -180,7 +181,7 @@ void FSTPTransferSegment::transferTimerEvent()
         retransmitRetryCounter++;
         //30 is only 3 seconds worth of stalling for every 1MB segment! WAY too low for poor connections -> they will go into endless loops
         //Setting this to 300 to test
-        if (retransmitRetryCounter == 3000)
+        if (retransmitRetryCounter == 300)
         {
             status = TRANSFER_STATE_FAILED;
             emit transferRequestFailed(this);

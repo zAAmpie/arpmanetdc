@@ -19,6 +19,7 @@
 #define UPLOADTRANSFER_H
 #include "transfer.h"
 #include "fstptransfersegment.h"
+#include "utptransfersegment.h"
 #include "protocoldef.h"
 
 #define TIMER_INACTIVITY_MSECS 60000 //Remove upload transfer if inactive for this period of time

@@ -20,6 +20,7 @@
 #include "transfer.h"
 #include "protocoldef.h"
 #include "fstptransfersegment.h"
+#include "utptransfersegment.h"
 
 #define MAXIMUM_SIMULTANEOUS_SEGMENTS 10
 
@@ -111,6 +112,7 @@ private:
     int currentActiveSegments;
     int timerBrakes;
     int hashTreeWindowEnd;
+    int tthSearchInterval;
 
     QMap<quint64, TransferSegmentTableStruct> transferSegmentTable;
     QByteArray transferSegmentStateBitmap;
