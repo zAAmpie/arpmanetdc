@@ -95,15 +95,57 @@ void BucketFlushThread::assembleOutputFile(QString tmpfilebase, QString outfile,
             //bool res = outf.unmap(f);
 
         }
-        if (bucket == lastbucket)
-        {
-            outf.close();
-            if (!outf.rename(outfile))
-                outf.remove();
-            emit fileAssemblyComplete(outfile);
-        }
+
+        // NOTE: this breaks the output file when downloading in segments
+        //if (bucket == lastbucket)
+        //{
+        //    outf.close();
+        //    if (!outf.rename(outfile))
+        //        outf.remove();
+        //    emit fileAssemblyComplete(outfile);
+        //}
+
         bucket++;
     }
     if (outf.isOpen())
         outf.close();
+}
+
+void BucketFlushThread::flushBucketDirect(QString filename, int bucketno, QByteArray *bucket)
+{
+    //Go to directory
+    QString pathStr = filename.left(filename.lastIndexOf("/"));
+    QDir path(pathStr);
+    if (!path.exists())
+        path.mkpath(pathStr);
+
+    QString incompleteFilename = filename + ".incomplete";
+    QFile outf(incompleteFilename);
+    if (!outf.open(QIODevice::ReadWrite))
+    {
+        //TODO: report error
+        return;
+    }
+
+    //Ensure enough space is available for the map
+    if (outf.size() < (quint64)bucketno * HASH_BUCKET_SIZE + bucket->size())
+        outf.resize((quint64)bucketno * HASH_BUCKET_SIZE + bucket->size());
+
+    //Disable MM files due to excessive memory consumption till we figure out how to force release modified memory to disk - to fix lockups
+    outf.seek((quint64)bucketno * HASH_BUCKET_SIZE);
+    outf.write(*bucket);
+
+    if (outf.isOpen())
+        outf.close();
+
+    delete bucket;
+}
+
+void BucketFlushThread::renameIncompleteFile(QString filename)
+{
+    QString incompleteFilename = filename + ".incomplete";
+    QFile f(incompleteFilename);
+    if (!f.rename(filename))
+        f.remove();
+    emit fileAssemblyComplete(filename);
 }

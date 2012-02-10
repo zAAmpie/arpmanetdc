@@ -326,6 +326,10 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
             pBucketFlushThread, SLOT(flushBucket(QString,QByteArray*)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(assembleOutputFile(QString,QString,int,int)),
             pBucketFlushThread, SLOT(assembleOutputFile(QString,QString,int,int)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(flushBucketDirect(QString,int,QByteArray*)),
+            pBucketFlushThread, SLOT(flushBucketDirect(QString,int,QByteArray*)));
+    connect(pTransferManager, SIGNAL(renameIncompleteFile(QString)),
+            pBucketFlushThread, SLOT(renameIncompleteFile(QString)));
 
     //Connect bucketFlushThread to GUI
     connect(pBucketFlushThread, SIGNAL(fileAssemblyComplete(QString)),

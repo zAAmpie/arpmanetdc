@@ -45,6 +45,8 @@ signals:
     void transferFinished(QByteArray tth);
     void flushBucket(QString filename, QByteArray *bucket);
     void assembleOutputFile(QString tmpfilebase, QString outfile, int startbucket, int lastbucket);
+    void flushBucketDirect(QString outfile, int bucketno, QByteArray *bucket);
+    void renameIncompleteFile(QString filename);
     void requestProtocolCapability(QHostAddress peer, Transfer *obj);
 
 public slots:

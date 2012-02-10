@@ -218,8 +218,9 @@ void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
     tempFileName.append(".");
     tempFileName.append(QString::number(bucketNumber));
 
-    emit flushBucket(tempFileName, downloadBucketTable->value(bucketNumber));
-    emit assembleOutputFile(TTHBase32, filePathName, bucketNumber, lastBucketNumber);
+    //emit flushBucket(tempFileName, downloadBucketTable->value(bucketNumber));
+    //emit assembleOutputFile(TTHBase32, filePathName, bucketNumber, lastBucketNumber);
+    emit flushBucketDirect(filePathName, bucketNumber, downloadBucketTable->value(bucketNumber));
 
     // just remove entry, bucket pointer gets deleted in BucketFlushThread
     downloadBucketTable->remove(bucketNumber);
@@ -236,6 +237,7 @@ void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
     if (segmentsDone ==  fileBuckets)
     {
         status = TRANSFER_STATE_FINISHED;
+        emit renameIncompleteFile(filePathName); // TODO: revisit this when fixing resumable downloads
         emit transferFinished(TTH);
         abortTransfer();
     }

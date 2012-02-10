@@ -71,6 +71,8 @@ signals:
     void sendDownloadRequest(quint8 protocolPreference, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length);
     void flushBucket(QString filename, QByteArray *bucket);
     void assembleOutputFile(QString tmpfilebase, QString outfile, int startbucket, int lastbucket);
+    void flushBucketDirect(QString outfile, int bucketno, QByteArray *bucket);
+    void renameIncompleteFile(QString filename);
 
     // Request hashing of a bucket that has finished downloading
     void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray bucket);

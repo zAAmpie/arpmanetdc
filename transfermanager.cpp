@@ -182,6 +182,8 @@ void TransferManager::startNextDownload()
             this, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)));
     connect(t, SIGNAL(flushBucket(QString,QByteArray*)), this, SIGNAL(flushBucket(QString,QByteArray*)));
     connect(t, SIGNAL(assembleOutputFile(QString,QString,int,int)), this, SIGNAL(assembleOutputFile(QString,QString,int,int)));
+    connect(t, SIGNAL(flushBucketDirect(QString,int,QByteArray*)), this, SIGNAL(flushBucketDirect(QString,int,QByteArray*)));
+    connect(t, SIGNAL(renameIncompleteFile(QString)), this, SIGNAL(renameIncompleteFile(QString)));
     connect(t, SIGNAL(transferFinished(QByteArray)), this, SLOT(transferDownloadCompleted(QByteArray)));
     t->setFileName(i.filePathName);
     t->setTTH(i.tth);

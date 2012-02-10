@@ -34,6 +34,8 @@ signals:
 public slots:
     void flushBucket(QString filename, QByteArray *bucket);
     void assembleOutputFile(QString tmpfilebase, QString outfile, int startbucket, int lastbucket);
+    void flushBucketDirect(QString filename, int bucketno, QByteArray *bucket);
+    void renameIncompleteFile(QString filename);
 };
 
 #endif // BUCKETFLUSHTHREAD_H
