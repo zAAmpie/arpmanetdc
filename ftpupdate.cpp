@@ -57,7 +57,7 @@ void FTPUpdate::listInfoReceived(const QUrlInfo &info)
             version.remove(".exe");
 
             //Check if newer version
-            if (firstVersionLarger(version, VERSION_STRING))
+            if (firstVersionLarger(version, VERSION_STRING) && version != VERSION_STRING)
             {
                 //If this is just a version check
                 if (ftpServer->currentId() == listIndex)
