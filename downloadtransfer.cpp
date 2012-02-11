@@ -409,6 +409,9 @@ TransferSegment* DownloadTransfer::createTransferSegment(QHostAddress peer)
             TransferProtocol p = (TransferProtocol)protocolOrderPreference.at(i);
             remotePeerInfoTable[peer].triedProtocols.append(p);
             download  = newConnectedTransferSegment(p);
+            if (!download)
+                return download;
+
             remotePeerInfoTable[peer].transferSegment = download;
             download->setDownloadBucketTablePointer(downloadBucketTable);
             download->setRemoteHost(peer);
@@ -433,7 +436,10 @@ TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol 
         break;
     case BasicTransferProtocol:
     case ArpmanetFECProtocol:
+        return download;
         break;
+    default:
+        return download;
     }
     connect(download, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)), this, SLOT(requestHashBucket(QByteArray,int,QByteArray*)));
     connect(download, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)),

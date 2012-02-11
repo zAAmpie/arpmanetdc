@@ -47,10 +47,9 @@ int UploadTransfer::getTransferType()
 void UploadTransfer::createUploadObject(quint8 protocol)
 {
     if (upload)
-    {
         delete upload;
-        upload = 0;
-    }
+
+    upload = 0;
 
     switch (protocol)
     {
@@ -65,6 +64,9 @@ void UploadTransfer::createUploadObject(quint8 protocol)
         break;
     }
 
+    if (!upload)
+        return;
+
     //Used to intercept the amount of data actually transmitted
     connect(upload, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)), this, SLOT(dataTransmitted(QHostAddress, QByteArray *)));
     connect(upload, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)), this, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)));
@@ -72,6 +74,9 @@ void UploadTransfer::createUploadObject(quint8 protocol)
 
 void UploadTransfer::startTransfer()
 {
+    if (!upload)
+        return;
+
     upload->setSegmentStart(fileOffset);
     upload->setSegmentEnd(fileOffset + segmentLength);
     upload->setRemoteHost(remoteHost);
