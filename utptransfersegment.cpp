@@ -10,7 +10,16 @@ uTPTransferSegment::uTPTransferSegment(Transfer *parent)
     // address and port do not really matter, packets get hijacked for dispatch anyway
     // for all I care libutp can think it connects to "itself"
     addr.sin_port = htons(4012);
-    inet_pton(AF_INET, "1.2.3.4", &addr.sin_addr);
+#ifdef Q_OS_WIN
+    //Load an unsigned long into the sockaddr
+    addr.sin_addr.S_un.S_addr = QHostAddress("127.0.0.1").toIPv4Address();
+#else
+    inet_pton(AF_INET, "127.0.0.1", &addr.sin_addr);
+#endif
+    //Test to ensure the ip is built correctly
+    QHostAddress test((const struct sockaddr*)&addr);
+    QString testStr = test.toString();
+
     utpSocket = UTP_Create(uTPTransferSegment::utp_sendto, this, (const struct sockaddr*)&addr, sizeof(addr));
 
     UTP_SetSockopt(utpSocket, SO_SNDBUF, 100*300);
