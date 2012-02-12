@@ -106,6 +106,15 @@ void ContainerThread::saveContainers(QHash<QString, ContainerContentsType> conta
 //Process downloaded container
 void ContainerThread::processContainer(QHostAddress host, QString containerPath, QString downloadPath)
 {
+    //Only process new container types with sizes in their names
+    if (!containerPath.contains("   ["))
+        return;
+
+    //Add container name to downloadPath to avoid downloading 100s of files directly to your download folder... At least this way they can be deleted by deleting a single folder
+    QString containerName = containerPath.left(containerPath.indexOf("   ["));
+    containerName.remove(downloadPath);
+    downloadPath.append(containerName + "/");
+
     //Get container index
     QFileInfo fileInfo(containerPath);
     if (!fileInfo.exists())
@@ -194,7 +203,7 @@ void ContainerThread::processContainer(QHostAddress host, QString containerPath,
         
         //Fill parameters
         r.filePath = getStringFromByteArray(&buffer);
-        quint16 size = getQuint16FromByteArray(&buffer);
+        qint16 size = getQint16FromByteArray(&buffer);
         r.rootTTH = buffer.left(size);
         buffer.remove(0, size);
         r.fileSize = getQuint64FromByteArray(&buffer);

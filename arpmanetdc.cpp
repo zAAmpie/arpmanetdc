@@ -1514,7 +1514,7 @@ void ArpmanetDC::downloadCompleted(QByteArray tth)
         item.fileName = file.fileName;
         item.filePath = file.filePath;
         item.fileSize = file.fileSize;
-        item.tthRoot = new QByteArray(*file.tthRoot);
+        item.tthRoot = file.tthRoot;
         item.downloadedDate = QDateTime::currentDateTime().toString("dd-MM-yyyy HH:mm:ss:zzz");
    
         addFinishedDownloadToList(item);
@@ -1523,7 +1523,7 @@ void ArpmanetDC::downloadCompleted(QByteArray tth)
     {
         //Insert the file into the hash for processing
         QueueStruct s(file);
-        s.tthRoot = new QByteArray(*file.tthRoot);
+        s.tthRoot = file.tthRoot;
         pContainerProcessHash.insert(file.filePath + file.fileName, s);
     }
     
@@ -2096,7 +2096,7 @@ void ArpmanetDC::returnQueueList(QHash<QByteArray, QueueStruct> *queue)
         if (item.priority == HighQueuePriority)
         {
             finalPath = item.filePath + item.fileName;
-            emit queueDownload((int)item.priority, *item.tthRoot, finalPath, item.fileSize, item.fileHost);
+            emit queueDownload((int)item.priority, item.tthRoot, finalPath, item.fileSize, item.fileHost);
         }
     }
     foreach (QueueStruct item, *pQueueList)
@@ -2104,7 +2104,7 @@ void ArpmanetDC::returnQueueList(QHash<QByteArray, QueueStruct> *queue)
         if (item.priority == NormalQueuePriority)
         {
             finalPath = item.filePath + item.fileName;
-            emit queueDownload((int)item.priority, *item.tthRoot, finalPath, item.fileSize, item.fileHost);
+            emit queueDownload((int)item.priority, item.tthRoot, finalPath, item.fileSize, item.fileHost);
         }
     }
     foreach (QueueStruct item, *pQueueList)
@@ -2112,7 +2112,7 @@ void ArpmanetDC::returnQueueList(QHash<QByteArray, QueueStruct> *queue)
         if (item.priority == LowQueuePriority)
         {
             finalPath = item.filePath + item.fileName;
-            emit queueDownload((int)item.priority, *item.tthRoot, finalPath, item.fileSize, item.fileHost);
+            emit queueDownload((int)item.priority, item.tthRoot, finalPath, item.fileSize, item.fileHost);
         }
     }
 
@@ -2122,10 +2122,10 @@ void ArpmanetDC::returnQueueList(QHash<QByteArray, QueueStruct> *queue)
 //Add a download to the queue
 void ArpmanetDC::addDownloadToQueue(QueueStruct item)
 {
-    if (!pQueueList->contains(*item.tthRoot))
+    if (!pQueueList->contains(item.tthRoot))
     {
         //Insert into global queue structure
-        pQueueList->insert(*item.tthRoot, item);
+        pQueueList->insert(item.tthRoot, item);
         
         //Insert into database
         emit saveQueuedDownload(item);
@@ -2148,9 +2148,6 @@ void ArpmanetDC::deleteFromQueue(QByteArray tth)
         //Remove from transfer manager queue
         emit removeQueuedDownload((int)pQueueList->value(tth).priority, tth);
 
-        //Delete tth from queue list
-        delete pQueueList->value(tth).tthRoot;
-            
         //Remove from queue
         pQueueList->remove(tth);
 
@@ -2170,7 +2167,7 @@ void ArpmanetDC::setQueuePriority(QByteArray tth, QueuePriority priority)
         QueueStruct s = pQueueList->take(tth);
 
         //Set transfer manager priority
-        emit changeQueuedDownloadPriority((int)s.priority, (int)priority, *s.tthRoot);
+        emit changeQueuedDownloadPriority((int)s.priority, (int)priority, s.tthRoot);
 
         //Set priority in queue
         s.priority = priority;
@@ -2184,10 +2181,10 @@ void ArpmanetDC::setQueuePriority(QByteArray tth, QueuePriority priority)
 //Add a finished download to the finished list
 void ArpmanetDC::addFinishedDownloadToList(FinishedDownloadStruct item)
 {
-    if (!pFinishedList->contains(*item.tthRoot))
+    if (!pFinishedList->contains(item.tthRoot))
     {
         //Insert into global queue structure
-        pFinishedList->insert(*item.tthRoot, item);
+        pFinishedList->insert(item.tthRoot, item);
         
         //Insert into database
         emit saveFinishedDownload(item);
@@ -2218,13 +2215,6 @@ void ArpmanetDC::deleteFinishedDownload(QByteArray tth)
 //Remove all downloads from the list
 void ArpmanetDC::clearFinishedDownloadList()
 {
-    //Delete list pointers
-    QList<QByteArray> keys = pFinishedList->keys();
-    for (int i = 0; i < keys.size(); i++)
-        if (pFinishedList->contains(keys.at(i)))
-            if (pFinishedList->value(keys.at(i)).tthRoot)
-                delete pFinishedList->value(keys.at(i)).tthRoot;
-
     //Clear list
     pFinishedList->clear();
 
@@ -2275,13 +2265,13 @@ void ArpmanetDC::returnProcessedContainer(QHostAddress host, ContainerContentsTy
         q.filePath = downloadPath + c.filePath;
         q.fileSize = c.fileSize;
         q.priority = NormalQueuePriority;
-        q.tthRoot = new QByteArray(c.rootTTH);
+        q.tthRoot = c.rootTTH;
 
         //Add to queue
         addDownloadToQueue(q);
 
         //Add to transfer manager queue for download
-        emit queueDownload((int)q.priority, *q.tthRoot, q.filePath, q.fileSize, q.fileHost);
+        emit queueDownload((int)q.priority, q.tthRoot, q.filePath, q.fileSize, q.fileHost);
     }
 }
 

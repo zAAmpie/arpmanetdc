@@ -212,7 +212,7 @@ void DownloadQueueWidget::loadQueueList()
         row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, q.fileName, pParent->resourceExtractorObject()->getIconFromName(suffix)));
         row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, q.filePath));
 
-        if (pParent->transferWidgetObject()->isBusy(*q.tthRoot))
+        if (pParent->transferWidgetObject()->isBusy(q.tthRoot))
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, "Busy", busyIcon));
         else
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, "Queued"));//, queuedIcon));
@@ -238,7 +238,7 @@ void DownloadQueueWidget::loadQueueList()
 		}
         row.append(new CStandardItem(CStandardItem::PriorityType, priorityStr, icon));
         
-        QByteArray tthBase32(q.tthRoot->data(), q.tthRoot->size());
+        QByteArray tthBase32(q.tthRoot.data(), q.tthRoot.size());
         base32Encode(tthBase32);
         row.append(new QStandardItem(tthBase32.data()));
         row.append(new QStandardItem(q.fileHost.toString()));
@@ -259,7 +259,7 @@ void DownloadQueueWidget::addQueuedDownload(QueueStruct file)
     row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.fileName, pParent->resourceExtractorObject()->getIconFromName(suffix)));
     row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.filePath));
 
-    if (pParent->transferWidgetObject()->isBusy(*file.tthRoot))
+    if (pParent->transferWidgetObject()->isBusy(file.tthRoot))
         row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, "Busy", busyIcon));
     else
         row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, "Queued"));//, queuedIcon));
@@ -285,7 +285,7 @@ void DownloadQueueWidget::addQueuedDownload(QueueStruct file)
 	}
     row.append(new CStandardItem(CStandardItem::PriorityType, priorityStr, icon));
 
-    QByteArray tthBase32(file.tthRoot->data(), file.tthRoot->size());
+    QByteArray tthBase32(file.tthRoot.data(), file.tthRoot.size());
     base32Encode(tthBase32);
     row.append(new QStandardItem(tthBase32.data()));
     row.append(new QStandardItem(file.fileHost.toString()));

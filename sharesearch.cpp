@@ -1661,7 +1661,7 @@ void ShareSearch::saveQueuedDownload(QueueStruct file)
 		res = res | sqlite3_bind_int64(statement, 3, file.fileSize);
 		QString priority = QString((char)file.priority);
 		res = res | sqlite3_bind_text16(statement, 4, priority.utf16(), priority.size()*2, SQLITE_STATIC);
-		QString tthRoot = QString(file.tthRoot->toBase64().data());
+		QString tthRoot = QString(file.tthRoot.toBase64().data());
 		res = res | sqlite3_bind_text16(statement, 5, tthRoot.utf16(), tthRoot.size()*2, SQLITE_STATIC);
         QString hostIP = file.fileHost.toString();
         res = res | sqlite3_bind_text16(statement, 6, hostIP.utf16(), hostIP.size()*2, SQLITE_STATIC);
@@ -1780,12 +1780,12 @@ void ShareSearch::requestQueueList()
 			s.filePath = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 1));
 			s.fileSize = sqlite3_column_int64(statement, 2);
 			s.priority = (QueuePriority)QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 3)).at(0).toAscii();
-			s.tthRoot = new QByteArray();
-			s.tthRoot->append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 4)));
-            (*s.tthRoot) = QByteArray::fromBase64(*s.tthRoot);
+			//s.tthRoot = new QByteArray();
+			s.tthRoot.append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 4)));
+            s.tthRoot = QByteArray::fromBase64(s.tthRoot);
             s.fileHost = QHostAddress(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 5)));
 
-            results->insert(*s.tthRoot, s);
+            results->insert(s.tthRoot, s);
 		}
 		sqlite3_finalize(statement);	
 	}
@@ -1820,7 +1820,7 @@ void ShareSearch::saveFinishedDownload(FinishedDownloadStruct file)
 		res = res | sqlite3_bind_text16(statement, 1, file.fileName.utf16(), file.fileName.size()*2, SQLITE_STATIC);
 		res = res | sqlite3_bind_text16(statement, 2, file.filePath.utf16(), file.filePath.size()*2, SQLITE_STATIC);
  		res = res | sqlite3_bind_int64(statement, 3, file.fileSize);
-		QString tthRoot = QString(file.tthRoot->toBase64().data());
+		QString tthRoot = QString(file.tthRoot.toBase64().data());
 		res = res | sqlite3_bind_text16(statement, 4, tthRoot.utf16(), tthRoot.size()*2, SQLITE_STATIC);
 		res = res | sqlite3_bind_text16(statement, 5, file.downloadedDate.utf16(), file.downloadedDate.size()*2, SQLITE_STATIC);
 
@@ -1924,12 +1924,11 @@ void ShareSearch::requestFinishedList()
 			s.fileName = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0));
 			s.filePath = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 1));
 			s.fileSize = sqlite3_column_int64(statement, 2);
-			s.tthRoot = new QByteArray();
-			s.tthRoot->append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 3)));
-            (*s.tthRoot) = QByteArray::fromBase64(*s.tthRoot);
+			s.tthRoot.append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 3)));
+            s.tthRoot = QByteArray::fromBase64(s.tthRoot);
 			s.downloadedDate = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 4));
 
-            results->insert(*s.tthRoot, s);
+            results->insert(s.tthRoot, s);
 		}
 		sqlite3_finalize(statement);	
 	}

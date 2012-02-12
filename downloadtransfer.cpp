@@ -145,12 +145,26 @@ void DownloadTransfer::TTHTreeReply(QByteArray tree)
     // BIG TODO: make sure that downloadBucketHashLookupTable gets populated with data from database if present.
 
     int lastHashBucketReceived = getLastHashBucketNumberReceived();
+    int lastBucket = calculateBucketNumber(fileSize);
+    lastBucket = fileSize % HASH_BUCKET_SIZE == 0 ? lastBucket - 1 : lastBucket;
 
     if (lastHashBucketReceived == hashTreeWindowEnd)
     {
         emit TTHTreeRequest(listOfPeers.first(), TTH, lastHashBucketReceived + 1, HASH_TREE_WINDOW_LENGTH);
         hashTreeWindowEnd = lastHashBucketReceived + HASH_TREE_WINDOW_LENGTH;
         qDebug() << "Request TTH tree " << lastHashBucketReceived + 1 << calculateBucketNumber(fileSize);
+    }
+    //Start downloading if total hash tree has been downloaded
+    else if (lastHashBucketReceived == lastBucket)
+    {
+        status = TRANSFER_STATE_RUNNING;
+        QHashIterator<QHostAddress, RemotePeerInfoStruct> i(remotePeerInfoTable);
+        while (i.hasNext())
+        {
+            i.next();
+            if (i.value().transferSegment)
+                i.value().transferSegment->startDownloading();
+        }
     }
 }
 
@@ -319,11 +333,16 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
     //       : Rational: If a single host shares an object and becomes unavailable mid transfer, the transfer
     //       : stalls indefinitely after the segment fails, even after the host comes back online again.
     QHostAddress h = segment->getSegmentRemotePeer();
-    segment->deleteLater();
+    //segment->deleteLater();
     remotePeerInfoTable.remove(h);
     int p = listOfPeers.indexOf(h);
     if (p > -1)
         listOfPeers.removeAt(p);
+    if (!listOfPeers.isEmpty())
+    {
+        segment->setRemoteHost(listOfPeers.first());
+        downloadNextAvailableChunk(segment);
+    }
 }
 
 SegmentOffsetLengthStruct DownloadTransfer::getSegmentForDownloading(int segmentNumberOfBucketsHint)

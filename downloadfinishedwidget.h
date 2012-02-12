@@ -27,7 +27,7 @@ struct FinishedDownloadStruct
 	QString fileName;
 	QString filePath;
 	qint64 fileSize;
-	QByteArray *tthRoot;
+	QByteArray tthRoot;
 	QString downloadedDate;
 };
 

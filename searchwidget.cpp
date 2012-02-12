@@ -219,7 +219,7 @@ void SearchWidget::downloadActionPressed()
         item.fileSize = fileSize;
         item.fileHost = senderIP;
         item.priority = NormalQueuePriority;
-        item.tthRoot = new QByteArray(tthRoot);
+        item.tthRoot = tthRoot;
         pParent->addDownloadToQueue(item);
 
         QString finalPath = path + fileName;
@@ -265,7 +265,7 @@ void SearchWidget::downloadToActionPressed()
         item.fileSize = fileSize;
         item.fileHost = senderIP;
         item.priority = NormalQueuePriority;
-        item.tthRoot = new QByteArray(tthRoot);
+        item.tthRoot = tthRoot;
         pParent->addDownloadToQueue(item);
 
         //I'm totally guessing the protocol here??? How should I distinguish?

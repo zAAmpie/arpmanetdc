@@ -155,7 +155,7 @@ void TransferWidget::returnGlobalTransferStatus(QList<TransferItemStatus> status
 
     for (int i = 0; i < status.size(); i++)
     {
-        TransferItemStatus s = status.at(i);  
+        TransferItemStatus s = status.at(i); 
 
         //Base32 encode the tth
         QByteArray base32TTH(s.TTH);

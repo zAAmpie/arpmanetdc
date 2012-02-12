@@ -98,7 +98,7 @@ void DownloadFinishedWidget::loadList()
         cell->setFormat("dd/MM/yyyy HH:mm:ss");
         row.append(cell);
 
-        QByteArray tth = *file.tthRoot;
+        QByteArray tth = file.tthRoot;
         base32Encode(tth);
 
         row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, tth.data()));
@@ -231,7 +231,7 @@ void DownloadFinishedWidget::addFinishedDownload(FinishedDownloadStruct file)
     cell->setFormat("dd/MM/yyyy HH:mm:ss");
     row.append(cell);
 
-    QByteArray tth = *file.tthRoot;
+    QByteArray tth = file.tthRoot;
     base32Encode(tth);
 
     row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, tth.data()));

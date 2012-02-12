@@ -32,7 +32,7 @@ struct QueueStruct
 	QString filePath;
 	qint64 fileSize;
 	QueuePriority priority;
-	QByteArray *tthRoot;
+	QByteArray tthRoot;
     QHostAddress fileHost;
     bool operator==(const QueueStruct &other) const { return tthRoot == other.tthRoot; }
 };
