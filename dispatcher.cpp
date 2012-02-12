@@ -1084,8 +1084,6 @@ void Dispatcher::sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *dat
     int res;
     //if ((res = senderUdpSocket->write(*datagram)) == -1)
     //    emit writeUdpUnicastFailed();
-    if (datagram->at(0) == DataPacket)
-        qDebug() << *datagram << dstAddress << datagram->length();
 
     if (res = senderUdpSocket->writeDatagram(*datagram, dstAddress, dispatchPort) == -1)
         emit writeUdpUnicastFailed();
