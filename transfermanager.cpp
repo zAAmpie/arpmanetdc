@@ -45,7 +45,7 @@ void TransferManager::destroyTransferObject(Transfer* transferObject)
 }
 
 // incoming data packets
-void TransferManager::incomingDataPacket(quint8 transferPacket, QByteArray datagram)
+void TransferManager::incomingDataPacket(quint8 transferPacket, QHostAddress fromHost, QByteArray datagram)
 {
     QByteArray tmp = datagram.mid(2, 8);
     quint64 offset = getQuint64FromByteArray(&tmp);
@@ -54,7 +54,17 @@ void TransferManager::incomingDataPacket(quint8 transferPacket, QByteArray datag
     if ((data.length() == datagram.length() - 34) && (transferObjectTable.contains(tth)))
     {
         Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_DOWNLOAD);
-        t->incomingDataPacket(transferPacket, offset, data);
+        if (t)
+            t->incomingDataPacket(transferPacket, offset, data);
+        else
+        {
+            t = getTransferObjectPointer(tth, TRANSFER_TYPE_UPLOAD, fromHost);
+            if (t)
+            {
+                qDebug() << "TransferManager::incomingDataPacket() for upload" << t->getFileName();
+                t->incomingDataPacket(transferPacket, offset, data);
+            }
+        }
     }
 }
 
@@ -185,6 +195,7 @@ void TransferManager::startNextDownload()
     connect(t, SIGNAL(flushBucketDirect(QString,int,QByteArray*)), this, SIGNAL(flushBucketDirect(QString,int,QByteArray*)));
     connect(t, SIGNAL(renameIncompleteFile(QString)), this, SIGNAL(renameIncompleteFile(QString)));
     connect(t, SIGNAL(transferFinished(QByteArray)), this, SLOT(transferDownloadCompleted(QByteArray)));
+    connect(t, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
     t->setFileName(i.filePathName);
     t->setTTH(i.tth);
     t->setFileSize(i.fileSize);

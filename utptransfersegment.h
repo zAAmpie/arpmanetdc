@@ -51,6 +51,8 @@ private:
     const unsigned char * fileMap;
     qint64 segmentOffset;
 
+    bool connect_called;
+
     // uTP callback functions
     void uTPRead(const byte *bytes, size_t count);
     void uTPWrite(byte *bytes, size_t count);

@@ -131,7 +131,7 @@ void Dispatcher::receiveP2PData()
         switch(quint8DatagramType)
         {
         case DataPacket:
-            emit incomingDataPacket(quint8ProtocolInstruction, datagram);
+            emit incomingDataPacket(quint8ProtocolInstruction, senderHost, datagram);
             break;
 
         case MulticastPacket:
@@ -1084,6 +1084,9 @@ void Dispatcher::sendUnicastRawDatagram(QHostAddress dstAddress, QByteArray *dat
     int res;
     //if ((res = senderUdpSocket->write(*datagram)) == -1)
     //    emit writeUdpUnicastFailed();
+    if (datagram->at(0) == DataPacket)
+        qDebug() << *datagram << dstAddress << datagram->length();
+
     if (res = senderUdpSocket->writeDatagram(*datagram, dstAddress, dispatchPort) == -1)
         emit writeUdpUnicastFailed();
 

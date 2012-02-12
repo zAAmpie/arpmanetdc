@@ -3,6 +3,7 @@
 uTPTransferSegment::uTPTransferSegment(Transfer *parent)
 {
     pParent = parent;
+    connect_called = false;
 
     // UTP_Create allocates memory for utpSocket struct, this must be called first
     memset(&addr, 0, sizeof(addr));
@@ -43,6 +44,7 @@ uTPTransferSegment::~uTPTransferSegment()
         inputFile.close();
     if (fileMap)
         inputFile.unmap((unsigned char *)fileMap);
+    qDebug() << "uTPTransferSegment destroyed";
 }
 
 void uTPTransferSegment::transferTimerEvent()
@@ -51,8 +53,9 @@ void uTPTransferSegment::transferTimerEvent()
 }
 
 // not interested in offset here, for uTP it only denotes the relevant segment start
-void uTPTransferSegment::incomingDataPacket(quint64, QByteArray data)
+void uTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
 {
+    qDebug() << "uTPTransferSegment::incomingDataPacket()" << offset;
     UTP_IsIncomingUTP(uTPTransferSegment::utp_incoming, uTPTransferSegment::utp_sendto, this,
                       (const unsigned char *)data.constData(), data.length(),
                       (const sockaddr *)&addr, sizeof(addr));
@@ -64,15 +67,18 @@ void uTPTransferSegment::setFileName(QString filename)
     inputFile.setFileName(filePathName);
     inputFile.open(QIODevice::ReadOnly);
     fileSize = inputFile.size();
+    qDebug() << "uTPTransferSegment::setFileName()" << filePathName << fileSize;
 }
 
 void uTPTransferSegment::setFileSize(quint64 size)
 {
+    qDebug() << "uTPTransferSegment::setFileSize()" << size;
     fileSize = size;
 }
 
 void uTPTransferSegment::startUploading()
 {
+    qDebug() << "uTPTransferSegment::startUploading()";
     if (segmentStart > fileSize)
         return;
     else if (segmentStart + segmentLength > fileSize)
@@ -87,9 +93,14 @@ void uTPTransferSegment::startUploading()
 
 void uTPTransferSegment::startDownloading()
 {
+    qDebug() << "uTPTransferSegment::startDownloading()";
     segmentOffset = 0;
-    UTP_Connect(utpSocket);
     checkSendDownloadRequest(uTPProtocol, remoteHost, TTH, segmentStart, segmentLength);
+    if (!connect_called)
+    {
+        UTP_Connect(utpSocket);
+        connect_called = true;
+    }
 }
 
 qint64 uTPTransferSegment::getBytesReceivedNotFlushed()
@@ -100,6 +111,7 @@ qint64 uTPTransferSegment::getBytesReceivedNotFlushed()
 // --------------============= uTP callback functions =============--------------
 void uTPTransferSegment::uTPRead(const byte *bytes, size_t count)
 {
+    qDebug() << "uTPTransferSegment::uTPRead()" << count;
     int bucketNumber = calculateBucketNumber(segmentOffset);
     if (!pDownloadBucketTable->contains(bucketNumber))
     {
@@ -143,6 +155,7 @@ void uTPTransferSegment::uTPRead(const byte *bytes, size_t count)
 
 void uTPTransferSegment::uTPWrite(byte *bytes, size_t count)
 {
+    qDebug() << "uTPTransferSegment::uTPWrite()" << count;
     if (segmentOffset + count > segmentLength)
         count = segmentLength - segmentOffset;  // TODO + check
     bytes = (unsigned char *)fileMap + segmentOffset;
@@ -152,23 +165,26 @@ void uTPTransferSegment::uTPWrite(byte *bytes, size_t count)
 
 size_t uTPTransferSegment::uTPGetRBSize()
 {
+    qDebug() << "uTPTransferSegment::uTPGetRBSize()";
     return 0;
 }
 
 void uTPTransferSegment::uTPState(int state)
 {
-    if (state == UTP_STATE_CONNECT || state == UTP_STATE_WRITABLE)
+    qDebug() << "uTPTransferSegment::uTPState()" << state;
+    /*if (state == UTP_STATE_CONNECT || state == UTP_STATE_WRITABLE)
     {
         if (UTP_Write(utpSocket, segmentLength))
         {
             // Testing only, this can really be improved, persistent connections will perform better.
             UTP_Close(utpSocket);
         }
-    }
+    }*/
 }
 
 void uTPTransferSegment::uTPError(int errcode)
 {
+    qDebug() << "uTPTransferSegment::uTPError()" << errcode;
     if (utpSocket)
     {
         UTP_Close(utpSocket);
@@ -178,7 +194,7 @@ void uTPTransferSegment::uTPError(int errcode)
 
 void uTPTransferSegment::uTPOverhead(bool send, size_t count, int type)
 {
-
+    qDebug() << "uTPTransferSegment::uTPOverhead()" << send << count << type;
 }
 
 // this thing gets called when the uTP layer wants to push a packet onto the "wire"
@@ -190,13 +206,16 @@ void uTPTransferSegment::uTPSendTo(const byte *p, size_t len, const struct socka
     packet->append(toQByteArray((quint64)segmentStart));
     packet->append(TTH);
     packet->append((const char *)p, len);
+    qDebug() << "uTPTransferSegment::uTPSendTo()" << len << packet->length() << remoteHost;
     emit transmitDatagram(remoteHost, packet);
 }
 
 // this thing gets called when a connection has been established and it's safe to start pushing packets onto the "wire"
 void uTPTransferSegment::uTPIncomingConnection(UTPSocket *s)
 {
+    qDebug() << "uTPTransferSegment::uTPIncomingConnection()";
     // TODO: Call UTP_Write to tell the socket to start filling the write buffer with x number of bytes through uTPWrite?
+    UTP_Write(utpSocket, segmentLength);
 }
 
 

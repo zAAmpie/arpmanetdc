@@ -90,7 +90,7 @@ signals:
     void requestProtocolCapability(QHostAddress peer);
 
 public slots:
-    void incomingDataPacket(quint8 transferProtocolVersion, QByteArray datagram);
+    void incomingDataPacket(quint8 transferProtocolVersion, QHostAddress fromHost, QByteArray datagram);
 
     // Request file name for given TTH from sharing engine, reply with empty string if not found.
     void filePathNameReply(QByteArray tth, QString filename, quint64 fileSize);

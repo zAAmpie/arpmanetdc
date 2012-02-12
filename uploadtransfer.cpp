@@ -26,6 +26,12 @@ UploadTransfer::~UploadTransfer()
     upload->deleteLater();
 }
 
+void UploadTransfer::incomingDataPacket(quint8 transferProtocolVersion, quint64 offset, QByteArray data)
+{
+    if (upload)
+        upload->incomingDataPacket(offset, data);
+}
+
 void UploadTransfer::setFileName(QString filename)
 {
     filePathName = filename;

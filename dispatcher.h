@@ -96,7 +96,7 @@ signals:
     // Transfers
     void incomingProtocolCapabilityResponse(QHostAddress fromHost, char capability);
     void incomingUploadRequest(quint8 protocol, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length);
-    void incomingDataPacket(quint8 protocolInstruction, QByteArray datagram);
+    void incomingDataPacket(quint8 protocolInstruction, QHostAddress senderHost, QByteArray datagram);
     //
     // Debug messages
     void appendChatLine(QString message);

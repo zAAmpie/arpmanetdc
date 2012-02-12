@@ -36,6 +36,7 @@ public:
 
 public slots:
     int getTransferProgress();
+    void incomingDataPacket(quint8 transferProtocolVersion, quint64 offset, QByteArray data);
 
 private slots:
     void dataTransmitted(QHostAddress host, QByteArray *data);

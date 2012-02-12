@@ -161,6 +161,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     // Tell Dispatcher what protocols we support from a nice and central place
     pDispatcher->setProtocolCapabilityBitmask(FailsafeTransferProtocol);
     //pDispatcher->setProtocolCapabilityBitmask(FailsafeTransferProtocol | uTPProtocol);
+    //pDispatcher->setProtocolCapabilityBitmask(uTPProtocol);
 
     //Connect Dispatcher to GUI - handle search replies from other clients
 	connect(pDispatcher, SIGNAL(bootstrapStatusChanged(int)), this, SLOT(bootstrapStatusChanged(int)), Qt::QueuedConnection);
@@ -179,8 +180,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     //Connect Dispatcher to TransferManager - handles upload/download requests and transfers
     connect(pDispatcher, SIGNAL(incomingUploadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)),
             pTransferManager, SLOT(incomingUploadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)), Qt::QueuedConnection);
-    connect(pDispatcher, SIGNAL(incomingDataPacket(quint8,QByteArray)),
-            pTransferManager, SLOT(incomingDataPacket(quint8,QByteArray)), Qt::QueuedConnection);
+    connect(pDispatcher, SIGNAL(incomingDataPacket(quint8,QHostAddress,QByteArray)),
+            pTransferManager, SLOT(incomingDataPacket(quint8,QHostAddress,QByteArray)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)),
             pDispatcher, SLOT(sendUnicastRawDatagram(QHostAddress,QByteArray*)), Qt::QueuedConnection);
     connect(pDispatcher, SIGNAL(receivedTTHTree(QByteArray,QByteArray)),
