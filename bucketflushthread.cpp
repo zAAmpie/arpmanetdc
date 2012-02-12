@@ -123,6 +123,7 @@ void BucketFlushThread::flushBucketDirect(QString filename, int bucketno, QByteA
     QFile outf(incompleteFilename);
     if (!outf.open(QIODevice::ReadWrite))
     {
+        delete bucket;
         //TODO: report error
         return;
     }

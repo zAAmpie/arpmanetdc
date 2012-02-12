@@ -227,10 +227,10 @@ void DownloadTransfer::transferRateCalculation()
 void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
 {
     // TODO: decide where to store these files
-    QString tempFileName;
-    tempFileName.append(TTHBase32);
-    tempFileName.append(".");
-    tempFileName.append(QString::number(bucketNumber));
+    //QString tempFileName;
+    //tempFileName.append(TTHBase32);
+    //tempFileName.append(".");
+    //tempFileName.append(QString::number(bucketNumber));
 
     //emit flushBucket(tempFileName, downloadBucketTable->value(bucketNumber));
     //emit assembleOutputFile(TTHBase32, filePathName, bucketNumber, lastBucketNumber);
