@@ -2095,7 +2095,7 @@ void ArpmanetDC::returnQueueList(QHash<QByteArray, QueueStruct> *queue)
     {
         if (item.priority == HighQueuePriority)
         {
-            finalPath = item.filePath + item.fileName;
+            finalPath = item.filePath;
             emit queueDownload((int)item.priority, item.tthRoot, finalPath, item.fileSize, item.fileHost);
         }
     }
@@ -2103,7 +2103,7 @@ void ArpmanetDC::returnQueueList(QHash<QByteArray, QueueStruct> *queue)
     {
         if (item.priority == NormalQueuePriority)
         {
-            finalPath = item.filePath + item.fileName;
+            finalPath = item.filePath;
             emit queueDownload((int)item.priority, item.tthRoot, finalPath, item.fileSize, item.fileHost);
         }
     }
@@ -2111,7 +2111,7 @@ void ArpmanetDC::returnQueueList(QHash<QByteArray, QueueStruct> *queue)
     {
         if (item.priority == LowQueuePriority)
         {
-            finalPath = item.filePath + item.fileName;
+            finalPath = item.filePath;
             emit queueDownload((int)item.priority, item.tthRoot, finalPath, item.fileSize, item.fileHost);
         }
     }
