@@ -334,14 +334,25 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
     //       : stalls indefinitely after the segment fails, even after the host comes back online again.
     QHostAddress h = segment->getSegmentRemotePeer();
     //segment->deleteLater();
+    
+    //Remove offending peer
     remotePeerInfoTable.remove(h);
     int p = listOfPeers.indexOf(h);
     if (p > -1)
         listOfPeers.removeAt(p);
+
+    //Try another peer
     if (!listOfPeers.isEmpty())
     {
         segment->setRemoteHost(listOfPeers.first());
         downloadNextAvailableChunk(segment);
+
+        //Update the alternates
+        emit searchTTHAlternateSources(TTH);
+    }    
+    else
+    {
+        //When this point is reached, it means no other peers are available - the transfer should go into idle mode
     }
 }
 
