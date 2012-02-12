@@ -815,9 +815,13 @@ void ArpmanetDC::createWidgets()
 	userListTable->verticalHeader()->hide();
 	userListTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     userListTable->setSelectionMode(QAbstractItemView::SingleSelection);
-    userListTable->setItemDelegate(new HTMLDelegate(userListTable));
+    //userListTable->setItemDelegate(new HTMLDelegate(userListTable));
     userListTable->setAutoScroll(false);
+    userListTable->setSortingEnabled(true);
+    userListTable->horizontalHeader()->setSortIndicator(0, Qt::AscendingOrder);
+    //userListTable->horizontalHeader()->setStretchLastSection(true);
 
+    //userListTable->hideColumn(1);
 	userListTable->hideColumn(2);
 	userListTable->hideColumn(3);
 	userListTable->hideColumn(4);
@@ -863,7 +867,7 @@ void ArpmanetDC::createWidgets()
 	helpAction = new QAction(QIcon(":/ArpmanetDC/Resources/HelpIcon.png"), tr("Help"), this);
 	privateMessageAction = new QAction(QIcon(":/ArpmanetDC/Resources/PMIcon.png"), tr("Send private message"), this);
 	reconnectAction = new QAction(QIcon(":/ArpmanetDC/Resources/ServerIcon.png"), tr("Reconnect"), this);
-        openDownloadDirAction = new QAction(QIcon(":/ArpmanetDC/Resources/FolderIcon.png"), tr("Download directory"), this);
+    openDownloadDirAction = new QAction(QIcon(":/ArpmanetDC/Resources/FolderIcon.png"), tr("Download directory"), this);
 
 
     //===== Menus =====
@@ -1259,6 +1263,9 @@ void ArpmanetDC::showUserListContextMenu(const QPoint &pos)
 //Userlist keypresses
 void ArpmanetDC::userListKeyPressed(Qt::Key key, QString keyStr)
 {
+    if (keyStr.isEmpty())
+        return;
+
     QList<QModelIndex> matchList = userSortProxy->match(userSortProxy->index(0,2), Qt::DisplayRole, QVariant(keyStr));
  
     if (matchList.size() > 0)
@@ -1266,7 +1273,7 @@ void ArpmanetDC::userListKeyPressed(Qt::Key key, QString keyStr)
         QModelIndex index = matchList.first();
         userListTable->selectRow(index.row());
 
-        QList<QModelIndex> selectedList = userListTable->selectionModel()->selectedRows();
+        //QList<QModelIndex> selectedList = userListTable->selectionModel()->selectedRows();
         userListTable->scrollTo(userSortProxy->index(index.row(), 0), QAbstractItemView::PositionAtCenter);
     }
 }
@@ -1723,7 +1730,7 @@ void ArpmanetDC::sortUserList()
 	//Sort user list when timer has expired and sorting is required
 	if (sortDue)
 	{
-		userSortProxy->sort(2, Qt::AscendingOrder);
+		userSortProxy->sort(userListTable->horizontalHeader()->sortIndicatorSection(), userListTable->horizontalHeader()->sortIndicatorOrder());
         resizeRowsToContents(userListTable);
 		sortDue = false;
 	}
@@ -1753,6 +1760,12 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
 	if (nick.isEmpty())
 		return;
 
+    //Build new descriptions
+    if (mode.compare("M") == 0 && desc.contains("$"))
+        desc = desc.left(desc.indexOf("$"));
+    else if (mode.compare("M") != 0)
+        desc = tr("%1 %2").arg(client).arg(version);
+
 	//Check if user is already present in the list
 	QList<QStandardItem *> foundItems = userListModel->findItems(nick, Qt::MatchExactly, 2);
 
@@ -1766,12 +1779,16 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
 		
 		//Use different formats for Active/Passive users
 		QStandardItem *item = new QStandardItem();
-		item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+        item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
 
 		if (mode.compare("P") == 0)
 		{
 			//Passive user
-			item->setText(tr("<font color=\"red\">%1</font>").arg(nick));
+            QBrush brush = item->foreground();
+            brush.setColor(Qt::red);
+            item->setForeground(brush);
+			//item->setText(tr("<font color=\"red\">%1</font>").arg(nick));
+            item->setText(0xA0 + nick);
 			item->setIcon(QIcon(*userFirewallIcon));
 		}
 		else if (client.compare("ArpmanetDC") == 0)
@@ -1779,7 +1796,11 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
             //Active user - ArpmanetDC
             arpmanetDCUsers++;
 
-			item->setText(tr("<font color=\"green\">%1</font>").arg(nick));
+            QBrush brush = item->foreground();
+            brush.setColor(Qt::darkGreen);
+            item->setForeground(brush);
+			//item->setText(tr("<font color=\"green\">%1</font>").arg(nick));
+            item->setText(0xA0 + nick);
 
             if (version == VERSION_STRING)
                 item->setIcon(QIcon(*arpmanetUserIcon));
@@ -1789,18 +1810,31 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
                 item->setIcon(QIcon(*newerVersionUserIcon));
             
 		}
-		else
+		else if (mode.compare("M") != 0)
 		{
 			//Active user - other client
-            item->setText(tr("<font color=\"black\">%1</font>").arg(nick));
+            QBrush brush = item->foreground();
+            brush.setColor(Qt::black);
+            item->setForeground(brush);
+            //item->setText(tr("<font color=\"black\">%1</font>").arg(nick));
+            item->setText(0xA0 + nick);
 			item->setIcon(QIcon(*userIcon));
 		}
-		
+        else
+        {
+			//Hub user
+            QBrush brush = item->foreground();
+            brush.setColor(Qt::darkGray);
+            item->setForeground(brush);
+            item->setText(" " + nick);
+			item->setIcon(QIcon(*userIcon));
+		}
+
 		//Add nick to model
 		userListModel->setItem(userListModel->rowCount()-1, 0, item);		
 
 		//Add description to model
-		QStandardItem *descItem = new QStandardItem(tr("<font size=\"2\">%1</font>").arg(desc));
+		QStandardItem *descItem = new QStandardItem(desc);
 		descItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
 		userListModel->setItem(userListModel->rowCount()-1, 1, descItem);
 
@@ -1853,13 +1887,21 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
 		if (mode.compare("P") == 0)
 		{
 			//Passive user
-            userListModel->item(foundIndex,0)->setText(tr("<font color=\"red\">%1</font>").arg(nick));
+            QBrush brush = userListModel->item(foundIndex,0)->foreground();
+            brush.setColor(Qt::red);
+            userListModel->item(foundIndex,0)->setForeground(brush);
+            //userListModel->item(foundIndex,0)->setText(tr("<font color=\"red\">%1</font>").arg(nick));
+            userListModel->item(foundIndex,0)->setText(0xA0 + nick);
 			userListModel->item(foundIndex, 0)->setIcon(QIcon(*userFirewallIcon));
 		}
 		else if (client.compare("ArpmanetDC") == 0)
 		{
 			//Active user - ArpmanetDC
-            userListModel->item(foundIndex,0)->setText(tr("<font color=\"green\">%1</font>").arg(nick));
+            //userListModel->item(foundIndex,0)->setText(tr("<font color=\"green\">%1</font>").arg(nick));
+            QBrush brush = userListModel->item(foundIndex,0)->foreground();
+            brush.setColor(Qt::darkGreen);
+            userListModel->item(foundIndex,0)->setForeground(brush);
+            userListModel->item(foundIndex,0)->setText(0xA0 + nick);
 			
             if (version == VERSION_STRING)
                 userListModel->item(foundIndex, 0)->setIcon(QIcon(*arpmanetUserIcon));
@@ -1868,17 +1910,30 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
             else
                 userListModel->item(foundIndex, 0)->setIcon(QIcon(*newerVersionUserIcon));            
 		}
-        else
+        else if (mode.compare("M") != 0)
         {
             //Active user
-            userListModel->item(foundIndex,0)->setText(tr("<font color=\"black\">%1</font>").arg(nick));
+            //userListModel->item(foundIndex,0)->setText(tr("<font color=\"black\">%1</font>").arg(nick));
+            QBrush brush = userListModel->item(foundIndex,0)->foreground();
+            brush.setColor(Qt::black);
+            userListModel->item(foundIndex,0)->setForeground(brush);
+            userListModel->item(foundIndex,0)->setText(0xA0 + nick);
+			userListModel->item(foundIndex, 0)->setIcon(QIcon(*userIcon));
+        }
+        else
+        {
+            //Hub user
+            QBrush brush = userListModel->item(foundIndex,0)->foreground();
+            brush.setColor(Qt::darkGray);
+            userListModel->item(foundIndex,0)->setForeground(brush);
+            userListModel->item(foundIndex,0)->setText(" " + nick);
 			userListModel->item(foundIndex, 0)->setIcon(QIcon(*userIcon));
         }
         
 		if (!desc.isEmpty())
 		{
 			//Edit description
-			userListModel->item(foundIndex, 1)->setText(tr("<font size=\"2\">%1</font>").arg(desc));
+			userListModel->item(foundIndex, 1)->setText(desc);
 			userListModel->item(foundIndex, 1)->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
 
 			//Edit non displaying field
