@@ -45,6 +45,7 @@ typedef struct
     int segmentBucketCount;
 } SegmentOffsetLengthStruct;
 
+// This looks like duplication, but it is for easy dispatch of incoming packets to segments.
 typedef struct
 {
     quint64 segmentEnd;
