@@ -181,6 +181,7 @@ private slots:
 	void userListInfoReceived(QString nick, QString desc, QString mode, QString client, QString version);
 	void userListUserLoggedOut(QString nick);
 	void userListNickListReceived(QStringList list);
+    void opListReceived(QStringList list);
 	void hubOnline();
 	void hubOffline();
 
@@ -356,6 +357,8 @@ private:
     QHash<QString, ContainerContentsType> pContainerHash;
     QHash<QString, QueueStruct> pContainerProcessHash;
     QString pContainerDirectory;
+
+    QStringList pOPList;
     bool saveSharesPressed;
 
     quint64 pFilesHashedSinceUpdate, pFileSizeHashedSinceUpdate;

@@ -197,20 +197,53 @@ void HubConnection::processHubMessage()
 				//===== MY INFO COMMAND =====
                 if (msg.mid(0, 7).compare("$MyINFO") == 0)
                 {
+                    //Different types of MyINFOs that the RegExp has to match
                     // $MyINFO $ALL nick description<ArpmanetDC V:0.1,M:A, etc
-                    int pos1 = msg.indexOf(" ", 13);
-                    QString nickname = msg.mid(13, pos1 - 13);
-                    int pos2 = msg.indexOf("<", pos1 + 1);
-                    QString description = msg.mid(pos1 + 1, pos2 - pos1 - 1);
+                    // $MyINFO $ALL Szalor35 <ArpmanetDC V:0.1.5,M:A,H:0/1/0,S:5>$ $100.00 KiB/s$$0$
+                    // $MyINFO $ALL Tumi <ApexDC++ V:1.3.9,M:A,H:1/0/0,S:20>$ $100$$0$
+                    // $MyINFO $ALL 94171-376 $ $0.005$$0$
+                    // $MyINFO $ALL -Trivia- As twak praat 'n bossie was.....$ $Hub$$0$
+                    // $MyINFO $ALL -OpChat- Operator chat - only for OPs$ $$$0$
+                    QString regex = "\\$MyINFO \\$ALL ([^ ]*) ([^\\$]*)\\$ \\$([^\\$]*)\\$\\$0\\$";
+	                QRegExp rx(regex, Qt::CaseInsensitive);
 
-					pos1 = msg.indexOf("V:", pos2 + 1);
-					QString client = msg.mid(pos2 + 1, pos1 - pos2 - 2);
-                    
-                    QString version = msg.mid(pos1 + 2, msg.indexOf("M:", pos2 + 1) - pos1 - 3);
+	                //Check for regex's
+	                if (rx.indexIn(msg) != -1)
+	                {
+		                //Extract normal information
+		                QString nick = rx.cap(1);
+		                QString desc = rx.cap(2);
+		                QString extra = rx.cap(3);
 
-                    pos1 = msg.indexOf("M:", pos2 + 1);
-                    QString mode = msg.mid(pos1 + 2, 1);
-                    emit receivedMyINFO(nickname, description, mode, client, version);
+                        //If a client information is embedded in the description, parse it
+                        if (!desc.isEmpty() && desc.contains("<"))
+                        {
+                            //Typical format of a client description
+                            //<ArpmanetDC V:0.1.5,M:A,H:0/1/0,S:5>
+                            QString clientRegex = "([^<]*)<(.*) V:([0-9\\.]*),M:([a-z0-9]{1}),H:([0-9\\/]*),S:([0-9]*)>";
+                            QRegExp rxc(clientRegex, Qt::CaseInsensitive);
+
+                            if (rxc.indexIn(desc) != -1)
+                            {
+                                //Extract additional client information
+                                QString description = rxc.cap(1); //The actual description without client info attached
+                                QString client = rxc.cap(2);
+                                QString version = rxc.cap(3);
+                                QString mode = rxc.cap(4);
+                                QString registerMode = rxc.cap(5); //Not used ATM, but can be implemented later
+                                QString openSlots = rxc.cap(6); //Not really used anymore
+
+                                //Client information parsed correctly, fill in all fields
+                                emit receivedMyINFO(nick, description, mode, client, version);
+                            }
+                        }
+                        else
+                        {
+                            //No client information is given, just use normal description and leave the rest of the fields blank
+                            emit receivedMyINFO(nick, desc, ""/*mode*/, extra/*client*/, ""/*version*/);
+                        }
+                            
+                    }
                 }
 
 				//===== USER LEFT =====
@@ -275,8 +308,9 @@ void HubConnection::processHubMessage()
 				//===== OP LIST =====
                 else if (msg.mid(0,7).compare("$OpList") == 0)
                 {
-                    msg = msg.mid(msg.indexOf("$$")+2);
-                    QStringList nicks = msg.split("$$");
+                    msg = msg.mid(msg.indexOf("$$")+2); //Remove first $$
+                    msg = msg.left(msg.lastIndexOf("$$")); //Remove last $$
+                    QStringList nicks = msg.split("$$"); //Split to get all ops
                     emit receivedOpList(nicks);
                 }
             }

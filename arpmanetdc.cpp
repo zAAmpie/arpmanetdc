@@ -137,6 +137,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 	connect(pHub, SIGNAL(receivedChatMessage(QString)), this, SLOT(appendChatLine(QString)));
 	connect(pHub, SIGNAL(receivedMyINFO(QString, QString, QString, QString, QString)), this, SLOT(userListInfoReceived(QString, QString, QString, QString, QString)));
 	connect(pHub, SIGNAL(receivedNickList(QStringList)), this, SLOT(userListNickListReceived(QStringList)));
+    connect(pHub, SIGNAL(receivedOpList(QStringList)), this, SLOT(opListReceived(QStringList)));
 	connect(pHub, SIGNAL(userLoggedOut(QString)), this, SLOT(userListUserLoggedOut(QString)));	
 	connect(pHub, SIGNAL(receivedPrivateMessage(QString, QString)), this, SLOT(receivedPrivateMessage(QString, QString)));
 	connect(pHub, SIGNAL(hubOnline()), this, SLOT(hubOnline()));
@@ -1761,9 +1762,7 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
 		return;
 
     //Build new descriptions
-    if (mode.compare("M") == 0 && desc.contains("$"))
-        desc = desc.left(desc.indexOf("$"));
-    else if (mode.compare("M") != 0)
+    if (!mode.isEmpty())
         desc = tr("%1 %2").arg(client).arg(version);
 
 	//Check if user is already present in the list
@@ -1781,54 +1780,52 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
 		QStandardItem *item = new QStandardItem();
         item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
 
-		if (mode.compare("P") == 0)
-		{
-			//Passive user
-            QBrush brush = item->foreground();
-            brush.setColor(Qt::red);
-            item->setForeground(brush);
-			//item->setText(tr("<font color=\"red\">%1</font>").arg(nick));
-            item->setText(0xA0 + nick);
-			item->setIcon(QIcon(*userFirewallIcon));
-		}
-		else if (client.compare("ArpmanetDC") == 0)
-		{
-            //Active user - ArpmanetDC
-            arpmanetDCUsers++;
+        QBrush brush = item->foreground();
 
-            QBrush brush = item->foreground();
+        //----- Set name colours and nick sorting -----
+        if (pOPList.contains(nick) || client.startsWith("Hub"))
+        {
+            //OP
+            brush.setColor(Qt::darkGray);
+            item->setText(" " + nick);
+        }
+        else if (client.compare("ArpmanetDC") == 0)
+        {
+            //ArpmanetDC user
+            arpmanetDCUsers++; //Increase user count
+
             brush.setColor(Qt::darkGreen);
-            item->setForeground(brush);
-			//item->setText(tr("<font color=\"green\">%1</font>").arg(nick));
             item->setText(0xA0 + nick);
-
-            if (version == VERSION_STRING)
-                item->setIcon(QIcon(*arpmanetUserIcon));
-            else if (firstVersionLarger(VERSION_STRING, version))
-                item->setIcon(QIcon(*oldVersionUserIcon));
-            else
-                item->setIcon(QIcon(*newerVersionUserIcon));
-            
-		}
-		else if (mode.compare("M") != 0)
-		{
-			//Active user - other client
-            QBrush brush = item->foreground();
-            brush.setColor(Qt::black);
-            item->setForeground(brush);
-            //item->setText(tr("<font color=\"black\">%1</font>").arg(nick));
-            item->setText(0xA0 + nick);
-			item->setIcon(QIcon(*userIcon));
-		}
+        }
         else
         {
-			//Hub user
-            QBrush brush = item->foreground();
-            brush.setColor(Qt::darkGray);
-            item->setForeground(brush);
-            item->setText(" " + nick);
-			item->setIcon(QIcon(*userIcon));
-		}
+            //Other client user
+            brush.setColor(Qt::black);
+            item->setText(0xA0 + nick);
+        }
+        item->setForeground(brush);
+
+        //----- Set icons -----
+        if (mode.compare("P") == 0)
+        {
+            //Passive user
+            item->setIcon(QIcon(*userFirewallIcon));
+        }
+        else if (client.compare("ArpmanetDC") == 0)
+        {
+            //ArpmanetDC user
+            if (version == VERSION_STRING)
+                item->setIcon(QIcon(*arpmanetUserIcon)); //User has same version as you - normal icon
+            else if (firstVersionLarger(VERSION_STRING, version))
+                item->setIcon(QIcon(*oldVersionUserIcon)); //User has older version than you - skull icon
+            else
+                item->setIcon(QIcon(*newerVersionUserIcon)); //User has newer version than you - cool icon
+        }
+        else
+        {
+            //Active user - another client
+            item->setIcon(QIcon(*userIcon));
+        }
 
 		//Add nick to model
 		userListModel->setItem(userListModel->rowCount()-1, 0, item);		
@@ -1882,54 +1879,55 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
 	{
 		//Get first match (there should be only one)
 		int foundIndex = foundItems.first()->index().row();
+        QStandardItem *item = userListModel->item(foundIndex, 0);
 
-		//Use different formats for Active/Passive users
-		if (mode.compare("P") == 0)
-		{
-			//Passive user
-            QBrush brush = userListModel->item(foundIndex,0)->foreground();
-            brush.setColor(Qt::red);
-            userListModel->item(foundIndex,0)->setForeground(brush);
-            //userListModel->item(foundIndex,0)->setText(tr("<font color=\"red\">%1</font>").arg(nick));
-            userListModel->item(foundIndex,0)->setText(0xA0 + nick);
-			userListModel->item(foundIndex, 0)->setIcon(QIcon(*userFirewallIcon));
-		}
-		else if (client.compare("ArpmanetDC") == 0)
-		{
-			//Active user - ArpmanetDC
-            //userListModel->item(foundIndex,0)->setText(tr("<font color=\"green\">%1</font>").arg(nick));
-            QBrush brush = userListModel->item(foundIndex,0)->foreground();
-            brush.setColor(Qt::darkGreen);
-            userListModel->item(foundIndex,0)->setForeground(brush);
-            userListModel->item(foundIndex,0)->setText(0xA0 + nick);
-			
-            if (version == VERSION_STRING)
-                userListModel->item(foundIndex, 0)->setIcon(QIcon(*arpmanetUserIcon));
-            else if (firstVersionLarger(VERSION_STRING, version))
-                userListModel->item(foundIndex, 0)->setIcon(QIcon(*oldVersionUserIcon));
-            else
-                userListModel->item(foundIndex, 0)->setIcon(QIcon(*newerVersionUserIcon));            
-		}
-        else if (mode.compare("M") != 0)
+        QBrush brush = userListModel->item(foundIndex,0)->foreground();
+
+        //----- Set name colours and nick sorting -----
+        if (pOPList.contains(nick))
         {
-            //Active user
-            //userListModel->item(foundIndex,0)->setText(tr("<font color=\"black\">%1</font>").arg(nick));
-            QBrush brush = userListModel->item(foundIndex,0)->foreground();
-            brush.setColor(Qt::black);
-            userListModel->item(foundIndex,0)->setForeground(brush);
-            userListModel->item(foundIndex,0)->setText(0xA0 + nick);
-			userListModel->item(foundIndex, 0)->setIcon(QIcon(*userIcon));
+            //OP
+            brush.setColor(Qt::darkGray);
+            item->setText(" " + nick);
+        }
+        else if (client.compare("ArpmanetDC") == 0)
+        {
+            //ArpmanetDC user
+            arpmanetDCUsers++; //Increase user count
+
+            brush.setColor(Qt::darkGreen);
+            item->setText(0xA0 + nick);
         }
         else
         {
-            //Hub user
-            QBrush brush = userListModel->item(foundIndex,0)->foreground();
-            brush.setColor(Qt::darkGray);
-            userListModel->item(foundIndex,0)->setForeground(brush);
-            userListModel->item(foundIndex,0)->setText(" " + nick);
-			userListModel->item(foundIndex, 0)->setIcon(QIcon(*userIcon));
+            //Other client user
+            brush.setColor(Qt::black);
+            item->setText(0xA0 + nick);
         }
-        
+        item->setForeground(brush);
+
+        //----- Set icons -----
+        if (mode.compare("P") == 0)
+        {
+            //Passive user
+            item->setIcon(QIcon(*userFirewallIcon));
+        }
+        else if (client.compare("ArpmanetDC") == 0)
+        {
+            //ArpmanetDC user
+            if (version == VERSION_STRING)
+                item->setIcon(QIcon(*arpmanetUserIcon)); //User has same version as you - normal icon
+            else if (firstVersionLarger(VERSION_STRING, version))
+                item->setIcon(QIcon(*oldVersionUserIcon)); //User has older version than you - skull icon
+            else
+                item->setIcon(QIcon(*newerVersionUserIcon)); //User has newer version than you - cool icon
+        }
+        else
+        {
+            //Active user - another client
+            item->setIcon(QIcon(*userIcon));
+        }
+		        
 		if (!desc.isEmpty())
 		{
 			//Edit description
@@ -1959,12 +1957,12 @@ void ArpmanetDC::userListUserLoggedOut(QString nick)
 	//Find the items matching the nickname in the model
 	QList<QStandardItem *> items = userListModel->findItems(nick, Qt::MatchFixedString, 2);
 	
+    if (items.isEmpty())
+		return;
+
     //Get type of client
     if (userListModel->item(items.first()->row(), 5)->text() == "ArpmanetDC")
         arpmanetDCUsers--;
-
-	if (items.size() == 0)
-		return;
 
 	//Remove the user from the list
 	if (userListModel->removeRows(items.first()->index().row(), 1))
@@ -2007,6 +2005,31 @@ void ArpmanetDC::userListNickListReceived(QStringList list)
 	//Add/update user list for every nick in nickList
 	foreach (QString nick, list)
 		userListInfoReceived(nick, "", "", "", "");
+}
+
+void ArpmanetDC::opListReceived(QStringList list)
+{
+    //Keep record of all the OPs in the hub to show them in another colour
+    pOPList = list;
+
+    foreach (QString nick, pOPList)
+    {
+        //Check if user is already present in the list - otherwise the myINFO section will deal with it
+	    QList<QStandardItem *> foundItems = userListModel->findItems(nick, Qt::MatchExactly, 2);
+        
+        if (foundItems.isEmpty())
+            continue;
+
+        //Get item in first column
+        int foundIndex = foundItems.first()->index().row();
+        QStandardItem *item = userListModel->item(foundIndex, 0);
+
+        //Set colour and nick sort type
+        QBrush brush = item->foreground();
+        brush.setColor(Qt::darkGray);
+        item->setForeground(brush);
+        item->setText(" " + nick);
+    }
 }
 
 void ArpmanetDC::hubOffline()
