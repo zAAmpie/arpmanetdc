@@ -26,14 +26,14 @@ class ArpmanetDC;
 //Displays help
 class TransferWidget : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	TransferWidget(TransferManager *transferManager, ArpmanetDC *parent);
-	~TransferWidget();
+    TransferWidget(TransferManager *transferManager, ArpmanetDC *parent);
+    ~TransferWidget();
 
-	//Get the encapsulating widget
-	QWidget *widget();
+    //Get the encapsulating widget
+    QWidget *widget();
 
     QHash<QByteArray, TransferItemStatus> *transferList() const;
     bool isBusy(QByteArray tth);
@@ -60,10 +60,10 @@ private slots:
     void updateStatus();
 
 private:
-	//Functions
-	void createWidgets();
-	void placeWidgets();
-	void connectWidgets();
+    //Functions
+    void createWidgets();
+    void placeWidgets();
+    void connectWidgets();
 
     //String conversion functions
     QString typeString(int type);
@@ -71,9 +71,9 @@ private:
     QString progressString(int state, int progress);
     int typeFromString(QString typeStr);
 
-	//Objects
-	QWidget *pWidget;
-	ArpmanetDC *pParent;
+    //Objects
+    QWidget *pWidget;
+    ArpmanetDC *pParent;
     TransferManager *pTransferManager;
 
     //List of transfers
@@ -89,9 +89,9 @@ private:
     QAction *deleteAction;
 
     //Tables and models
-	QTableView *transferListTable;
-	QStandardItemModel *transferListModel;
-	QSortFilterProxyModel *transferSortProxy;
+    QTableView *transferListTable;
+    QStandardItemModel *transferListModel;
+    QSortFilterProxyModel *transferSortProxy;
 };
 
 #endif

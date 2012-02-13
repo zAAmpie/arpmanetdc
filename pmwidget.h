@@ -24,50 +24,50 @@ class ArpmanetDC;
 //Class encapsulating all widgets/signals for search tab
 class PMWidget : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	PMWidget(QString otherNick, ArpmanetDC *parent);
-	~PMWidget();
+    PMWidget(QString otherNick, ArpmanetDC *parent);
+    ~PMWidget();
 
-	//Get the encapsulating widget
-	QWidget *widget();
+    //Get the encapsulating widget
+    QWidget *widget();
 
-	//Get functions
-	QString otherNick();
+    //Get functions
+    QString otherNick();
 
 public slots:
-	//Slots for incoming PM message
-	void receivePrivateMessage(QString message);
+    //Slots for incoming PM message
+    void receivePrivateMessage(QString message);
 
     //User login changed
     void userLoginChanged(bool loggedIn);
 
 private slots:
-	//Slot for when user presses return
-	void sendMessage();
+    //Slot for when user presses return
+    void sendMessage();
 
 signals:
-	//Signal for outgoing PM message
-	void sendPrivateMessage(QString nick, QString message, PMWidget *pmWidget);
+    //Signal for outgoing PM message
+    void sendPrivateMessage(QString nick, QString message, PMWidget *pmWidget);
 
 private:
-	//Functions
-	void createWidgets();
-	void placeWidgets();
-	void connectWidgets();
+    //Functions
+    void createWidgets();
+    void placeWidgets();
+    void connectWidgets();
 
-	//Objects
-	QWidget *pWidget;
-	ArpmanetDC *pParent;
+    //Objects
+    QWidget *pWidget;
+    ArpmanetDC *pParent;
 
-	//Parameters
-	QString pOtherNick;
+    //Parameters
+    QString pOtherNick;
     bool userOnline;
 
-	//GUI elements
-	QTextBrowser *chatBrowser;
-	QLineEdit *chatLineEdit;
+    //GUI elements
+    QTextBrowser *chatBrowser;
+    QLineEdit *chatLineEdit;
 };
 
 #endif

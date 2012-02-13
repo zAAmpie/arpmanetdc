@@ -28,14 +28,14 @@ class HubConnection : public QObject
     Q_OBJECT
 public:
     explicit HubConnection(QObject *parent = 0);
-	explicit HubConnection(QString address, quint16 port, QString nick, QString password, QString version, QObject *parent = 0);
-	~HubConnection();
+    explicit HubConnection(QString address, quint16 port, QString nick, QString password, QString version, QObject *parent = 0);
+    ~HubConnection();
 
     void setHubAddress(QString address);
     void setHubPort(quint16 port);
     void setNick(QString nick);
     void setPassword(QString pass);
-	void setVersion(QString version);
+    void setVersion(QString version);
     void sendPrivateMessage(QString otherNick, QString message);
     void sendChatMessage(QString message);
     QString getHubAddress();
@@ -52,12 +52,12 @@ signals:
     void receivedOpList(QStringList opList);
     void receivedMyINFO(QString nick, QString description, QString mode, QString client, QString version);
 
-	//Emitted once when hub goes offline
-	void hubOffline();
-	//Emitted once when hub goes online
-	void hubOnline();
-	//Socket error emitted every time
-	void hubError(QString error);
+    //Emitted once when hub goes offline
+    void hubOffline();
+    //Emitted once when hub goes online
+    void hubOnline();
+    //Socket error emitted every time
+    void hubError(QString error);
     // Debug messages
     void appendChatLine(QString message);
 
@@ -65,14 +65,14 @@ public slots:
     void connectHub();
 
 private slots:
-	//Received a message from the hub
+    //Received a message from the hub
     void processHubMessage();
 
-	//Hub socket produced an error
-	void socketError(QAbstractSocket::SocketError error);
+    //Hub socket produced an error
+    void socketError(QAbstractSocket::SocketError error);
 
-	//Reconnect timer expired
-	void reconnectTimeout();
+    //Reconnect timer expired
+    void reconnectTimeout();
 
     //Keepalive timer expired
     void keepaliveTimeout();
@@ -81,28 +81,28 @@ private slots:
     void socketConnected();
 
 private:
-	//Escaping functions
+    //Escaping functions
     QString escapeDCProtocol(QString);
     QString unescapeDCProtocol(QString);
     QString generateMyINFOString();
     QString escapeHTMLTags(QString);
 
-	//Objects
-	QTcpSocket *hubSocket;
-	QTimer *reconnectTimer;
+    //Objects
+    QTcpSocket *hubSocket;
+    QTimer *reconnectTimer;
     QTimer *keepaliveTimer;
 
-	//Parameters
+    //Parameters
     QString lastChatMessage;
     QString hubAddress;
     quint16 hubPort;
     QString nick;
     QString password;
-	QString version;
+    QString version;
     bool registeredUser;
     QByteArray dataReceived;
 
-	bool hubIsOnline;
+    bool hubIsOnline;
 };
 
 #endif // HUBCONNECTION_H

@@ -7,17 +7,17 @@ quint64 SearchWidget::staticID = 0;
 
 SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconList, TransferManager *transferManager, ArpmanetDC *parent)
 {
-	//Constructor
-	pParent = parent;
+    //Constructor
+    pParent = parent;
     pIconList = mappedIconList;
     pTransferManager = transferManager;
     pCompleter = completer;
 
-	createWidgets();
-	placeWidgets();
-	connectWidgets();
+    createWidgets();
+    placeWidgets();
+    connectWidgets();
 
-	pID = 0;
+    pID = 0;
     ownCID = parent->dispatcherObject()->getCID();
     
     sortDue = false;
@@ -32,17 +32,17 @@ SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconL
 
 SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconList, TransferManager *transferManager, QString startupSearchString, ArpmanetDC *parent)
 {
-	//Constructor
-	pParent = parent;
+    //Constructor
+    pParent = parent;
     pIconList = mappedIconList;
     pTransferManager = transferManager;
     pCompleter = completer;
 
-	createWidgets();
-	placeWidgets();
-	connectWidgets();
+    createWidgets();
+    placeWidgets();
+    connectWidgets();
 
-	pID = 0;
+    pID = 0;
     ownCID = parent->dispatcherObject()->getCID();
     
     sortDue = false;
@@ -60,7 +60,7 @@ SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconL
 
 SearchWidget::~SearchWidget()
 {
-	//Destructor
+    //Destructor
 }
 
 void SearchWidget::createWidgets()
@@ -69,7 +69,7 @@ void SearchWidget::createWidgets()
 
     resultNumberLabel = new QLabel("", pWidget);
 
-	searchLineEdit = new QLineEdit((QWidget *)pParent);
+    searchLineEdit = new QLineEdit((QWidget *)pParent);
     searchLineEdit->setCompleter(pCompleter);
     searchLineEdit->setPlaceholderText("Type here to search");
     searchLineEdit->setMinimumWidth(200);
@@ -82,33 +82,33 @@ void SearchWidget::createWidgets()
     minorVersionLineEdit->setMaximumWidth(40);
     minorVersionLineEdit->setValidator(new QIntValidator(0, 65535, 0));
 
-	searchButton = new QPushButton(QIcon(tr(":/ArpmanetDC/Resources/SearchIcon.png")),tr("&Search"), pWidget);
-	searchButton->setIconSize(QSize(16,16));
+    searchButton = new QPushButton(QIcon(tr(":/ArpmanetDC/Resources/SearchIcon.png")),tr("&Search"), pWidget);
+    searchButton->setIconSize(QSize(16,16));
 
-	searchProgress = new TextProgressBar(tr("Searching"), pWidget);
-	searchProgress->setStyle(new QPlastiqueStyle());
-	searchProgress->setValue(0);
-	searchProgress->setRange(0,0);
-	searchProgress->setVisible(false);
+    searchProgress = new TextProgressBar(tr("Searching"), pWidget);
+    searchProgress->setStyle(new QPlastiqueStyle());
+    searchProgress->setValue(0);
+    searchProgress->setRange(0,0);
+    searchProgress->setVisible(false);
 
-	resultsModel = new QStandardItemModel(0, 11, this);
-	//Display
-	resultsModel->setHeaderData(0, Qt::Horizontal, tr("Filename"));
-	resultsModel->setHeaderData(1, Qt::Horizontal, tr("Hits"));
-	resultsModel->setHeaderData(2, Qt::Horizontal, tr("Size"));
-	resultsModel->setHeaderData(3, Qt::Horizontal, tr("Type"));
+    resultsModel = new QStandardItemModel(0, 11, this);
+    //Display
+    resultsModel->setHeaderData(0, Qt::Horizontal, tr("Filename"));
+    resultsModel->setHeaderData(1, Qt::Horizontal, tr("Hits"));
+    resultsModel->setHeaderData(2, Qt::Horizontal, tr("Size"));
+    resultsModel->setHeaderData(3, Qt::Horizontal, tr("Type"));
     resultsModel->setHeaderData(4, Qt::Horizontal, tr("Path"));
-	
-	//Used for connection
-	resultsModel->setHeaderData(5, Qt::Horizontal, tr("Exact size"));
-	resultsModel->setHeaderData(6, Qt::Horizontal, tr("MajorVersion"));
+    
+    //Used for connection
+    resultsModel->setHeaderData(5, Qt::Horizontal, tr("Exact size"));
+    resultsModel->setHeaderData(6, Qt::Horizontal, tr("MajorVersion"));
     resultsModel->setHeaderData(7, Qt::Horizontal, tr("MinorVersion"));
-	resultsModel->setHeaderData(8, Qt::Horizontal, tr("TTH root"));
+    resultsModel->setHeaderData(8, Qt::Horizontal, tr("TTH root"));
     resultsModel->setHeaderData(9, Qt::Horizontal, tr("Sender IP"));
     resultsModel->setHeaderData(10, Qt::Horizontal, tr("Sender CID"));
 
-	resultsTable = new QTreeView(pWidget);
-	resultsTable->setModel(resultsModel);
+    resultsTable = new QTreeView(pWidget);
+    resultsTable->setModel(resultsModel);
     resultsTable->setSortingEnabled(true);
     resultsTable->setUniformRowHeights(true);
     resultsTable->setColumnWidth(0, 500);
@@ -119,15 +119,15 @@ void SearchWidget::createWidgets()
     resultsTable->setSelectionMode(QAbstractItemView::ExtendedSelection);
     parentItem = resultsModel->invisibleRootItem();
 
-	//resultsTable->setShowGrid(true);
-	//resultsTable->setGridStyle(Qt::DotLine);
-	//resultsTable->verticalHeader()->hide();
-	//resultsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-	//resultsTable->setItemDelegate(new HTMLDelegate(resultsTable));
+    //resultsTable->setShowGrid(true);
+    //resultsTable->setGridStyle(Qt::DotLine);
+    //resultsTable->verticalHeader()->hide();
+    //resultsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    //resultsTable->setItemDelegate(new HTMLDelegate(resultsTable));
 
-	//resultsTable->hideColumn(5);
-	resultsTable->hideColumn(6);
-	resultsTable->hideColumn(7);
+    //resultsTable->hideColumn(5);
+    resultsTable->hideColumn(6);
+    resultsTable->hideColumn(7);
     //resultsTable->hideColumn(8);
     resultsTable->hideColumn(9);
     //resultsTable->hideColumn(10);
@@ -137,47 +137,47 @@ void SearchWidget::createWidgets()
     calculateMagnetAction = new QAction(QIcon(":/ArpmanetDC/Resources/MagnetIcon.png"), tr("Copy magnet link"), this);
 
     resultsMenu = new QMenu(pWidget);
-	resultsMenu->addAction(downloadAction);
+    resultsMenu->addAction(downloadAction);
     resultsMenu->addAction(downloadToAction);
-    resultsMenu->addAction(calculateMagnetAction);	
+    resultsMenu->addAction(calculateMagnetAction);    
 }
 
 void SearchWidget::placeWidgets()
 {
-	//TODO: Place all widgets
-	QHBoxLayout *hlayout = new QHBoxLayout;
-	hlayout->addSpacing(5);
-	hlayout->addWidget(new QLabel(tr("Search for")));
-	hlayout->addWidget(searchLineEdit);
+    //TODO: Place all widgets
+    QHBoxLayout *hlayout = new QHBoxLayout;
+    hlayout->addSpacing(5);
+    hlayout->addWidget(new QLabel(tr("Search for")));
+    hlayout->addWidget(searchLineEdit);
     hlayout->addSpacing(20);
     hlayout->addWidget(new QLabel(tr("Season")));
     hlayout->addWidget(majorVersionLineEdit);
     hlayout->addWidget(new QLabel(tr("Episode")));
     hlayout->addWidget(minorVersionLineEdit);
-	hlayout->addWidget(searchButton);
+    hlayout->addWidget(searchButton);
     hlayout->addWidget(resultNumberLabel);
-	hlayout->addStretch(1);
-	hlayout->addWidget(searchProgress);
+    hlayout->addStretch(1);
+    hlayout->addWidget(searchProgress);
 
-	QVBoxLayout *vlayout = new QVBoxLayout;
-	vlayout->addLayout(hlayout);
-	vlayout->addWidget(resultsTable);
-	vlayout->setContentsMargins(0,5,0,0);
+    QVBoxLayout *vlayout = new QVBoxLayout;
+    vlayout->addLayout(hlayout);
+    vlayout->addWidget(resultsTable);
+    vlayout->setContentsMargins(0,5,0,0);
 
-	pWidget->setLayout(vlayout);
+    pWidget->setLayout(vlayout);
 }
 
 void SearchWidget::connectWidgets()
 {
-	connect(resultsTable, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showContextMenu(const QPoint&)));
+    connect(resultsTable, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showContextMenu(const QPoint&)));
     connect(resultsTable, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(resultDoubleClicked(QModelIndex)));
 
     connect(downloadAction, SIGNAL(triggered()), this, SLOT(downloadActionPressed()));
     connect(downloadToAction, SIGNAL(triggered()), this, SLOT(downloadToActionPressed()));
     connect(calculateMagnetAction, SIGNAL(triggered()), this, SLOT(calculateMagnetActionPressed()));
 
-	connect(searchButton, SIGNAL(clicked()), this, SLOT(searchPressed()));
-	connect(searchLineEdit, SIGNAL(returnPressed()), this, SLOT(searchPressed()));
+    connect(searchButton, SIGNAL(clicked()), this, SLOT(searchPressed()));
+    connect(searchLineEdit, SIGNAL(returnPressed()), this, SLOT(searchPressed()));
     connect(majorVersionLineEdit, SIGNAL(returnPressed()), this, SLOT(searchPressed()));
     connect(minorVersionLineEdit, SIGNAL(returnPressed()), this, SLOT(searchPressed()));
 }
@@ -192,7 +192,7 @@ void SearchWidget::downloadActionPressed()
     for (int i = 0; i < resultsTable->selectionModel()->selectedRows().size(); i++)
     {
         //Get a result
-	    QModelIndex selectedIndex = resultsTable->selectionModel()->selectedRows().at(i);
+        QModelIndex selectedIndex = resultsTable->selectionModel()->selectedRows().at(i);
                 
         //Get the selected item in column 0 and its parent
         QStandardItem *selItem = resultsModel->itemFromIndex(selectedIndex);
@@ -201,8 +201,8 @@ void SearchWidget::downloadActionPressed()
         if (parent)
             selectedIndex = parent->index();
 
-	    //Get TTH and filename of the result
-	    QString tthBase32 = resultsModel->data(resultsModel->index(selectedIndex.row(), 8)).toString();
+        //Get TTH and filename of the result
+        QString tthBase32 = resultsModel->data(resultsModel->index(selectedIndex.row(), 8)).toString();
         QString fileName = resultsModel->data(resultsModel->index(selectedIndex.row(), 0)).toString();
         quint64 fileSize = resultsModel->data(resultsModel->index(selectedIndex.row(), 5)).toULongLong();
         QHostAddress senderIP = QHostAddress(resultsModel->data(resultsModel->index(selectedIndex.row(), 9)).toString());
@@ -238,7 +238,7 @@ void SearchWidget::downloadToActionPressed()
     for (int i = 0; i < resultsTable->selectionModel()->selectedRows().size(); i++)
     {
         //Get the selected row index
-	    QModelIndex selectedIndex = resultsTable->selectionModel()->selectedRows().at(i);
+        QModelIndex selectedIndex = resultsTable->selectionModel()->selectedRows().at(i);
 
         //Get the selected item in column 0 and its parent
         QStandardItem *selItem = resultsModel->itemFromIndex(selectedIndex);
@@ -247,8 +247,8 @@ void SearchWidget::downloadToActionPressed()
         if (parent)
             selectedIndex = parent->index();
 
-	    //Get TTH and filename of the result
-	    QString tthBase32 = resultsModel->data(resultsModel->index(selectedIndex.row(), 8)).toString();
+        //Get TTH and filename of the result
+        QString tthBase32 = resultsModel->data(resultsModel->index(selectedIndex.row(), 8)).toString();
         QString fileName = resultsModel->data(resultsModel->index(selectedIndex.row(), 0)).toString();
         quint64 fileSize = resultsModel->data(resultsModel->index(selectedIndex.row(), 5)).toULongLong();
         QHostAddress senderIP = QHostAddress(resultsModel->data(resultsModel->index(selectedIndex.row(), 9)).toString());
@@ -277,7 +277,7 @@ void SearchWidget::downloadToActionPressed()
 void SearchWidget::calculateMagnetActionPressed()
 {
     //Get a result
-	QModelIndex selectedIndex = resultsTable->selectionModel()->selectedRows().first();
+    QModelIndex selectedIndex = resultsTable->selectionModel()->selectedRows().first();
                 
     //Get the selected item in column 0 and its parent
     QStandardItem *selItem = resultsModel->itemFromIndex(selectedIndex);
@@ -286,8 +286,8 @@ void SearchWidget::calculateMagnetActionPressed()
     if (parent)
         selectedIndex = parent->index();
 
-	//Get TTH and filename of the result
-	QString tthBase32 = resultsModel->data(resultsModel->index(selectedIndex.row(), 8)).toString();
+    //Get TTH and filename of the result
+    QString tthBase32 = resultsModel->data(resultsModel->index(selectedIndex.row(), 8)).toString();
     QString fileName = resultsModel->data(resultsModel->index(selectedIndex.row(), 0)).toString();
     quint64 fileSize = resultsModel->data(resultsModel->index(selectedIndex.row(), 5)).toULongLong();
 
@@ -299,13 +299,13 @@ void SearchWidget::calculateMagnetActionPressed()
 
 QByteArray SearchWidget::idGenerator()
 {
-	//Generate hash from nick/password/time
-	QByteArray hash = QByteArray().append(pParent->nick() + pParent->password() + QDateTime::currentDateTime().toString("dd/MM/yyyy hh:mm:ss:zzz"));
+    //Generate hash from nick/password/time
+    QByteArray hash = QByteArray().append(pParent->nick() + pParent->password() + QDateTime::currentDateTime().toString("dd/MM/yyyy hh:mm:ss:zzz"));
 
-	QCryptographicHash *cryptHash = new QCryptographicHash(QCryptographicHash::Sha1);
-	cryptHash->addData(hash);
+    QCryptographicHash *cryptHash = new QCryptographicHash(QCryptographicHash::Sha1);
+    cryptHash->addData(hash);
 
-	return cryptHash->result();
+    return cryptHash->result();
 }
 
 void SearchWidget::addSearchResult(QHostAddress sender, QByteArray cid, QByteArray result)
@@ -441,7 +441,7 @@ void SearchWidget::processSearchResult()
 void SearchWidget::searchPressed()
 {
     //Clear model
-	resultsModel->removeRows(0, resultsModel->rowCount());
+    resultsModel->removeRows(0, resultsModel->rowCount());
     totalResultCount = 0;
     uniqueResultCount = 0;
     cidHash.clear();
@@ -458,8 +458,8 @@ void SearchWidget::searchPressed()
     QByteArray resID = QCryptographicHash::hash(hash, QCryptographicHash::Md5);
     pID = getQuint64FromByteArray(&resID);
 
-	if (!searchLineEdit->text().isEmpty())
-	{
+    if (!searchLineEdit->text().isEmpty())
+    {
         qint16 majorVersion = -1;
         qint16 minorVersion = -1;
 
@@ -487,10 +487,10 @@ void SearchWidget::searchPressed()
         packet.append(stringToByteArray(searchLineEdit->text()));
 
         emit search(pID, searchLineEdit->text(), packet, this);
-		searchProgress->setVisible(true);
+        searchProgress->setVisible(true);
 
         QTimer::singleShot(10000, this, SLOT(stopProgress()));
-	}
+    }
 }
 
 void SearchWidget::sortTimeout()
@@ -521,9 +521,9 @@ void SearchWidget::showContextMenu(const QPoint &pos)
     else
         calculateMagnetAction->setVisible(false);
 
-	QPoint globalPos = resultsTable->viewport()->mapToGlobal(pos);
+    QPoint globalPos = resultsTable->viewport()->mapToGlobal(pos);
 
-	resultsMenu->popup(globalPos);
+    resultsMenu->popup(globalPos);
 }
 
 void SearchWidget::resultDoubleClicked(QModelIndex index)
@@ -536,10 +536,10 @@ void SearchWidget::resultDoubleClicked(QModelIndex index)
 
 quint64 SearchWidget::id()
 {
-	return pID;
+    return pID;
 }
 
 QWidget *SearchWidget::widget()
 {
-	return pWidget;
+    return pWidget;
 }

@@ -8,9 +8,9 @@
 
 HTMLDelegate::HTMLDelegate(QTableView *tableView)
 {
-	int gridHint = tableView->style()->styleHint(QStyle::SH_Table_GridLineColor, new QStyleOptionViewItemV4());
-	QColor gridColor = static_cast<QRgb>(gridHint);
-	pGridPen = QPen(gridColor, 0, tableView->gridStyle());
+    int gridHint = tableView->style()->styleHint(QStyle::SH_Table_GridLineColor, new QStyleOptionViewItemV4());
+    QColor gridColor = static_cast<QRgb>(gridHint);
+    pGridPen = QPen(gridColor, 0, tableView->gridStyle());
 }
 
 //Determines the custom delegate's size
@@ -23,9 +23,9 @@ QSize HTMLDelegate::sizeHint ( const QStyleOptionViewItem & option, const QModel
     doc.setHtml(options.text);
     doc.setTextWidth(options.rect.width());
 
-	QSize iconSize = options.icon.actualSize(options.rect.size());
+    QSize iconSize = options.icon.actualSize(options.rect.size());
     quint16 iconWidth = iconSize.width() < 0 ? 0 : iconSize.width();
-	int iconExtra = 10;
+    int iconExtra = 10;
 
     //return QSize(doc.idealWidth() + iconSize.width() + iconExtra, doc.size().height());
     return QSize(doc.idealWidth() + iconWidth + iconExtra, options.rect.height());
@@ -39,12 +39,12 @@ void HTMLDelegate::paint(QPainter* painter, const QStyleOptionViewItem & option,
 
     painter->save();
 
-	//Draw grid lines
-	QPen oldPen = painter->pen();
-	painter->setPen(pGridPen);
-	//painter->drawLine(option.rect.topRight(), option.rect.bottomRight()); //vertical line
-	//painter->drawLine(option.rect.bottomLeft(), option.rect.bottomRight()); //horizontal line
-	painter->setPen(oldPen);
+    //Draw grid lines
+    QPen oldPen = painter->pen();
+    painter->setPen(pGridPen);
+    //painter->drawLine(option.rect.topRight(), option.rect.bottomRight()); //vertical line
+    //painter->drawLine(option.rect.bottomLeft(), option.rect.bottomRight()); //horizontal line
+    painter->setPen(oldPen);
 
     QTextDocument doc;
     doc.setHtml(options.text);
@@ -55,7 +55,7 @@ void HTMLDelegate::paint(QPainter* painter, const QStyleOptionViewItem & option,
     // shift text right to make icon visible
     QSize iconSize = options.icon.actualSize(options.rect.size());
     quint16 iconWidth = iconSize.width() < 0 ? 0 : iconSize.width();
-	int iconExtra = 10;
+    int iconExtra = 10;
     painter->translate(options.rect.left()+ iconWidth + iconExtra, options.rect.top());
     //QRect clip(0, 0, options.rect.width()+ iconSize.width() + iconExtra, options.rect.height());
     QRect clip(0, 0, options.rect.width() - iconExtra - iconWidth, options.rect.height());

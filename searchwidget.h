@@ -40,21 +40,21 @@ struct ResultStruct
 //Class encapsulating all widgets/signals for search tab
 class SearchWidget : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconList, TransferManager *transferManager, ArpmanetDC *parent);
+    SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconList, TransferManager *transferManager, ArpmanetDC *parent);
     //Overloaded constructor to automatically search for a string
     SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconList, TransferManager *transferManager, QString startupSearchString, ArpmanetDC *parent);
-	~SearchWidget();
+    ~SearchWidget();
 
-	//Get the encapsulating widget
-	QWidget *widget();
-	quint64 id();
+    //Get the encapsulating widget
+    QWidget *widget();
+    quint64 id();
 
 public slots:
-	//Populate search results
-	void addSearchResult(QHostAddress sender, QByteArray cid, QByteArray result);
+    //Populate search results
+    void addSearchResult(QHostAddress sender, QByteArray cid, QByteArray result);
 
     //Search button pressed
     void searchPressed();
@@ -80,23 +80,23 @@ private slots:
     void processSearchResult();
 
 signals:
-	//Search for string
-	void search(quint64 id, QString searchStr, QByteArray searchPacket, SearchWidget *sWidget);
+    //Search for string
+    void search(quint64 id, QString searchStr, QByteArray searchPacket, SearchWidget *sWidget);
 
     //Queue download
     void queueDownload(int priority, QByteArray tth, QString finalPath, quint64 fileSize, QHostAddress senderIP);
 
 private:
-	//Functions
-	void createWidgets();
-	void placeWidgets();
-	void connectWidgets();
+    //Functions
+    void createWidgets();
+    void placeWidgets();
+    void connectWidgets();
 
-	QByteArray idGenerator();
+    QByteArray idGenerator();
 
-	//Objects
-	QWidget *pWidget;
-	ArpmanetDC *pParent;
+    //Objects
+    QWidget *pWidget;
+    ArpmanetDC *pParent;
     ResourceExtractor *pIconList;
     TransferManager *pTransferManager;
 
@@ -107,15 +107,15 @@ private:
 
     QTimer *processResultTimer;
 
-	//Parameters
-	quint64 pID;
-	static quint64 staticID;
+    //Parameters
+    quint64 pID;
+    static quint64 staticID;
     QByteArray ownCID;
 
     quint32 totalResultCount;
     quint32 uniqueResultCount;
 
-	//===== Main GUI elements =====
+    //===== Main GUI elements =====
 
     //Menu
     QMenu *resultsMenu;
@@ -123,20 +123,20 @@ private:
     //Actions
     QAction *downloadAction, *downloadToAction, *calculateMagnetAction;
 
-	//Search
-	QLineEdit *searchLineEdit;
+    //Search
+    QLineEdit *searchLineEdit;
     QLineEdit *majorVersionLineEdit, *minorVersionLineEdit;
 
-	QPushButton *searchButton;
-	QProgressBar *searchProgress;
+    QPushButton *searchButton;
+    QProgressBar *searchProgress;
 
     //Results queue
     QQueue<ResultStruct> resultsQueue;
 
     //Results
     QLabel *resultNumberLabel;
-	QTreeView *resultsTable;
-	QStandardItemModel *resultsModel;
+    QTreeView *resultsTable;
+    QStandardItemModel *resultsModel;
     QStandardItem *parentItem;
 
     QHash<QString, QStandardItem *> itemHash;

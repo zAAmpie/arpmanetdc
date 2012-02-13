@@ -35,15 +35,15 @@ enum ReturnEncoding {BinaryEncoded=1, Base32Encoded=2, Base64Encoded=4};
 
 class HashFileThread : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 public:
-	//Constructor
-	HashFileThread(ReturnEncoding encoding = Base64Encoded, QObject *parent = 0);
-	~HashFileThread();
+    //Constructor
+    HashFileThread(ReturnEncoding encoding = Base64Encoded, QObject *parent = 0);
+    ~HashFileThread();
 
 public slots:
-	//Hashes a particular file
-	void processFile(QString filePath, QString rootDir);
+    //Hashes a particular file
+    void processFile(QString filePath, QString rootDir);
     //Hashes a bucket
     void processBucket(QByteArray rootTTH, int bucketNumber, QByteArray bucket, ReturnEncoding encoding = BinaryEncoded);
     //Hashes a file and return just the root TTH
@@ -53,9 +53,9 @@ public slots:
     void stopHashing();
 
 signals:
-	//Done hashing the file - return the data
-	void done(QString filePath, QString fileName, qint64 fileSize, QString tthRoot, QString rootDir, QString modifiedDate, QList<QString> *oneMBList, HashFileThread *hashObj);
-	void failed(QString filePath, HashFileThread *hashObj);
+    //Done hashing the file - return the data
+    void done(QString filePath, QString fileName, qint64 fileSize, QString tthRoot, QString rootDir, QString modifiedDate, QList<QString> *oneMBList, HashFileThread *hashObj);
+    void failed(QString filePath, HashFileThread *hashObj);
 
     //Done calculating hash
     void doneFile(QString filePath, QByteArray tthRoot, quint64 fileSize);
@@ -68,7 +68,7 @@ private:
 
     bool pStopHashing;
 
-	ReturnEncoding pEncoding;
+    ReturnEncoding pEncoding;
 };
 
 #endif

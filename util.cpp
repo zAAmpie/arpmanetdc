@@ -83,25 +83,25 @@ QString bytesToSize(quint64 bytes)
     QString unit = "bytes";
     double d = bytes;
     if (d >= 1024.0)
-	{
-		d /= 1024.0;
-		unit = "KiB";
-		if (d >= 1024.0)
-		{
-			d /= 1024.0;
-			unit = "MiB";
-			if (d >= 1024.0)
-			{
-				d /= 1024.0;
-				unit = "GiB";
-				if (d >= 1024.0)
-				{
-					d /= 1024.0;
-					unit = "TiB";
-				}
-			}
-		}
-	}
+    {
+        d /= 1024.0;
+        unit = "KiB";
+        if (d >= 1024.0)
+        {
+            d /= 1024.0;
+            unit = "MiB";
+            if (d >= 1024.0)
+            {
+                d /= 1024.0;
+                unit = "GiB";
+                if (d >= 1024.0)
+                {
+                    d /= 1024.0;
+                    unit = "TiB";
+                }
+            }
+        }
+    }
 
     return QObject::tr("%1 %2").arg(d, 0, 'f', 2).arg(unit);
 }
@@ -242,7 +242,7 @@ void resizeRowsToContents(QTableView *tableView)
     if (!tableView)
         return;
 
-	tableView->setRowHeight(0, 10);
+    tableView->setRowHeight(0, 10);
     tableView->resizeRowToContents(0);
     for (int i = 1; i < tableView->model()->rowCount(); i++)
         tableView->setRowHeight(i, tableView->rowHeight(0));
@@ -297,7 +297,7 @@ QByteArray toQByteArray(quint64 n)
 
 QByteArray quint16ToByteArray(quint16 num)
 {
-	//Convert quint16 to QByteArray
+    //Convert quint16 to QByteArray
     quint16 numBS = num;
 #ifdef Q_LITTLE_ENDIAN
     //Convert to BigEndian
@@ -305,30 +305,30 @@ QByteArray quint16ToByteArray(quint16 num)
 #endif
     QByteArray numBA((const char *)&numBS, 2);
 
-	//QByteArray numBA;
-	//QDataStream ds(&numBA,QIODevice::WriteOnly);
-	//ds.setVersion(QDataStream::Qt_4_6);
-	//ds << (quint16)num;
-	return numBA;
+    //QByteArray numBA;
+    //QDataStream ds(&numBA,QIODevice::WriteOnly);
+    //ds.setVersion(QDataStream::Qt_4_6);
+    //ds << (quint16)num;
+    return numBA;
 }
 
 QByteArray quint8ToByteArray(quint8 num)
 {
-	//Convert quint8 to QByteArray
+    //Convert quint8 to QByteArray
     quint8 numBS = num;
     //No need to convert between Big Endian and Little Endian for an 8-bit register
     QByteArray numBA((const char *)&numBS, 1);
 
-	//QByteArray numBA;
-	//QDataStream ds(&numBA,QIODevice::WriteOnly);
-	//ds.setVersion(QDataStream::Qt_4_6);
-	//ds << (quint8)num;
-	return numBA;
+    //QByteArray numBA;
+    //QDataStream ds(&numBA,QIODevice::WriteOnly);
+    //ds.setVersion(QDataStream::Qt_4_6);
+    //ds << (quint8)num;
+    return numBA;
 }
 
 QByteArray qint16ToByteArray(qint16 num)
 {
-	//Convert qint16 to QByteArray
+    //Convert qint16 to QByteArray
     qint16 numBS = num;
 #ifdef Q_LITTLE_ENDIAN
     //Convert to BigEndian
@@ -336,16 +336,16 @@ QByteArray qint16ToByteArray(qint16 num)
 #endif
     QByteArray numBA((const char *)&numBS, 2);
 
-	//QByteArray numBA;
-	//QDataStream ds(&numBA,QIODevice::WriteOnly);
-	//ds.setVersion(QDataStream::Qt_4_6);
-	//ds << (qint16)num;
-	return numBA;
+    //QByteArray numBA;
+    //QDataStream ds(&numBA,QIODevice::WriteOnly);
+    //ds.setVersion(QDataStream::Qt_4_6);
+    //ds << (qint16)num;
+    return numBA;
 }
 
 QByteArray quint32ToByteArray(quint32 num)
 {
-	//Convert quint32 to QByteArray
+    //Convert quint32 to QByteArray
     quint32 numBS = num;
 #ifdef Q_LITTLE_ENDIAN
     //Convert to BigEndian
@@ -355,33 +355,33 @@ QByteArray quint32ToByteArray(quint32 num)
     
     //QByteArray numBA;
     //QDataStream ds(&numBA,QIODevice::WriteOnly);
-	//ds.setVersion(QDataStream::Qt_4_6);
-	//ds << (quint32)num;
+    //ds.setVersion(QDataStream::Qt_4_6);
+    //ds << (quint32)num;
 
-	return numBA;
+    return numBA;
 }
 
 QByteArray quint64ToByteArray(quint64 num)
 {
-	//Convert quint64 to QByteArray
+    //Convert quint64 to QByteArray
     quint64 numBS = num;
 #ifdef Q_LITTLE_ENDIAN
     //Convert to BigEndian
     numBS = qbswap(num);
 #endif
     QByteArray numBA((const char *)&numBS, 8);
-	
+    
     //QByteArray numBA;
-	//QDataStream ds(&numBA,QIODevice::WriteOnly);
-	//ds.setVersion(QDataStream::Qt_4_6);
-	//ds << (quint64)num;
-	return numBA;
+    //QDataStream ds(&numBA,QIODevice::WriteOnly);
+    //ds.setVersion(QDataStream::Qt_4_6);
+    //ds << (quint64)num;
+    return numBA;
 }
 
 QByteArray stringToByteArray(QString str)
 {
-	//Return a n byte QByteArray with str and its size
-	
+    //Return a n byte QByteArray with str and its size
+    
     quint16 size = str.size();
 #ifdef Q_LITTLE_ENDIAN
     //Convert to BigEndian
@@ -390,18 +390,18 @@ QByteArray stringToByteArray(QString str)
     QByteArray numBA((const char *)&size, 2);
     numBA.append(str);
 
-	//QDataStream ds(&strBA,QIODevice::WriteOnly);
-	//ds.setVersion(QDataStream::Qt_4_6);
-	//ds << (quint16)str8bitBA.size();
+    //QDataStream ds(&strBA,QIODevice::WriteOnly);
+    //ds.setVersion(QDataStream::Qt_4_6);
+    //ds << (quint16)str8bitBA.size();
     //strBA.append(str8bitBA);
 
-	return numBA;
+    return numBA;
 }
 
 QByteArray sizeOfByteArray(QByteArray *data)
 {
-	//Return a 2 byte QByteArray with data's size
-	qint16 numBS = data->size();
+    //Return a 2 byte QByteArray with data's size
+    qint16 numBS = data->size();
 #ifdef Q_LITTLE_ENDIAN
     //Convert to BigEndian
     numBS = qbswap(numBS);
@@ -409,66 +409,66 @@ QByteArray sizeOfByteArray(QByteArray *data)
     QByteArray numBA((const char *)&numBS, 2);
     
     //QByteArray sizeBA;
-	//QDataStream ds(&sizeBA,QIODevice::WriteOnly);
-	//ds.setVersion(QDataStream::Qt_4_6);
-	//quint16 size = data->size();
-	//ds << (quint16)size;
-	//QMessageBox::information(this,tr("sizeOfByteArray"), tr("Size of ByteArray: %1\nsize: %2").arg(sizeBA.size()).arg(size));
-	//return sizeBA;
+    //QDataStream ds(&sizeBA,QIODevice::WriteOnly);
+    //ds.setVersion(QDataStream::Qt_4_6);
+    //quint16 size = data->size();
+    //ds << (quint16)size;
+    //QMessageBox::information(this,tr("sizeOfByteArray"), tr("Size of ByteArray: %1\nsize: %2").arg(sizeBA.size()).arg(size));
+    //return sizeBA;
     return numBA;
 }
 
 QString getStringFromByteArray(QByteArray *data)
 {
-	//Remove a string from a QByteArray
+    //Remove a string from a QByteArray
 
     quint16 num;
-	memcpy(&num, data->constData(), 2);
+    memcpy(&num, data->constData(), 2);
 #ifdef Q_LITTLE_ENDIAN
     //Convert to BigEndian
     num = qbswap(num);
 #endif
-	data->remove(0,2);
+    data->remove(0,2);
 
     QString str = data->left(num).constData();
 
     data->remove(0, num);
     return str;
 
-	//quint16 size;
-	//QDataStream ds(data,QIODevice::ReadOnly);
-	//ds.setVersion(QDataStream::Qt_4_6);
-	//ds >> size;
-	//data->remove(0,2);
-	//QString str = data->left(size).data();
-	//data->remove(0,size);
-	//return str;
+    //quint16 size;
+    //QDataStream ds(data,QIODevice::ReadOnly);
+    //ds.setVersion(QDataStream::Qt_4_6);
+    //ds >> size;
+    //data->remove(0,2);
+    //QString str = data->left(size).data();
+    //data->remove(0,size);
+    //return str;
 }
 
 quint16 getQuint16FromByteArray(QByteArray *data)
 {
-	//Remove a quint16 from a QByteArray
-	quint16 num;
-	//QDataStream ds(data,QIODevice::ReadOnly);
+    //Remove a quint16 from a QByteArray
+    quint16 num;
+    //QDataStream ds(data,QIODevice::ReadOnly);
     //ds.setVersion(QDataStream::Qt_4_6);
     //ds >> num;
     memcpy(&num, data->constData(), 2);
     //No need to convert between Big Endian and Little Endian for an 8-bit register
-	data->remove(0,2); // *** I BELIEVE THIS IS KILLING US *** there is no pop_front for a bytearray, although the stupid thing can push_front. I guess remove() copies the BA internally.
-	return num;
+    data->remove(0,2); // *** I BELIEVE THIS IS KILLING US *** there is no pop_front for a bytearray, although the stupid thing can push_front. I guess remove() copies the BA internally.
+    return num;
 }
 
 quint8 getQuint8FromByteArray(QByteArray *data)
 {
-	//Remove a quint8 from a QByteArray
-	quint8 num;
-	//QDataStream ds(data,QIODevice::ReadOnly);
+    //Remove a quint8 from a QByteArray
+    quint8 num;
+    //QDataStream ds(data,QIODevice::ReadOnly);
     //ds.setVersion(QDataStream::Qt_4_6);
     //ds >> num;
     memcpy(&num, data->constData(), 1);
     //No need to convert between Big Endian and Little Endian for an 8-bit register
-	data->remove(0,1);
-	return num;
+    data->remove(0,1);
+    return num;
 }
 
 quint32 getQuint32FromByteArray(QByteArray *data)
@@ -490,25 +490,25 @@ quint32 getQuint32FromByteArray(QByteArray *data)
 
 quint64 getQuint64FromByteArray(QByteArray *data)
 {
-	//Remove a quint64 from a QByteArray
-	quint64 num;
-	//QDataStream ds(data,QIODevice::ReadOnly);
-	//ds.setVersion(QDataStream::Qt_4_6);
-	//ds >> num;
+    //Remove a quint64 from a QByteArray
+    quint64 num;
+    //QDataStream ds(data,QIODevice::ReadOnly);
+    //ds.setVersion(QDataStream::Qt_4_6);
+    //ds >> num;
     memcpy(&num, data->constData(), 8);
 #ifdef Q_LITTLE_ENDIAN
     //Convert to BigEndian
     num = qbswap(num);
 #endif
-	data->remove(0,8);
-	return num;
+    data->remove(0,8);
+    return num;
 }
 
 qint16 getQint16FromByteArray(QByteArray *data)
 {
-	//Remove a qint16 from a QByteArray
-	qint16 num;
-	//QDataStream ds(data,QIODevice::ReadOnly);
+    //Remove a qint16 from a QByteArray
+    qint16 num;
+    //QDataStream ds(data,QIODevice::ReadOnly);
     //ds.setVersion(QDataStream::Qt_4_6);
     //ds >> num;
     memcpy(&num, data->constData(), 2);
@@ -516,6 +516,6 @@ qint16 getQint16FromByteArray(QByteArray *data)
     //Convert to BigEndian
     num = qbswap(num);
 #endif
-	data->remove(0,2);
-	return num;
+    data->remove(0,2);
+    return num;
 }

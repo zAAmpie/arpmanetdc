@@ -28,11 +28,11 @@ enum QueuePriority {LowQueuePriority=3, NormalQueuePriority=2, HighQueuePriority
 
 struct QueueStruct
 {
-	QString fileName;
-	QString filePath;
-	qint64 fileSize;
-	QueuePriority priority;
-	QByteArray tthRoot;
+    QString fileName;
+    QString filePath;
+    qint64 fileSize;
+    QueuePriority priority;
+    QByteArray tthRoot;
     QHostAddress fileHost;
     bool operator==(const QueueStruct &other) const { return tthRoot == other.tthRoot; }
 };
@@ -40,20 +40,20 @@ struct QueueStruct
 //Class encapsulating all widgets/signals for search tab
 class DownloadQueueWidget : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	DownloadQueueWidget(QHash<QByteArray, QueueStruct> *queueList, ShareSearch *share, ArpmanetDC *parent);
-	~DownloadQueueWidget();
+    DownloadQueueWidget(QHash<QByteArray, QueueStruct> *queueList, ShareSearch *share, ArpmanetDC *parent);
+    ~DownloadQueueWidget();
 
-	//Get the encapsulating widget
-	QWidget *widget();
+    //Get the encapsulating widget
+    QWidget *widget();
 
 public slots:
     //Public slots
     
     //Add a new queued download
-	void addQueuedDownload(QueueStruct file);
+    void addQueuedDownload(QueueStruct file);
 
     //Remove from queue
     void removeQueuedDownload(QByteArray tth);
@@ -62,49 +62,49 @@ public slots:
     void setQueuedDownloadBusy(QByteArray tth);
 
 private slots:
-	//Slots
-	void showQueueTableContextMenu(const QPoint &);
+    //Slots
+    void showQueueTableContextMenu(const QPoint &);
 
-	//Actions
-	void setPriorityLowActionPressed();
-	void setPriorityNormalActionPressed();
-	void setPriorityHighActionPressed();
-	void deleteActionPressed();
+    //Actions
+    void setPriorityLowActionPressed();
+    void setPriorityNormalActionPressed();
+    void setPriorityHighActionPressed();
+    void deleteActionPressed();
 
 signals:
-	//Signals
-	void setPriority(QByteArray tthRoot, QueuePriority priority);
-	void deleteFromQueue(QByteArray tthRoot);
+    //Signals
+    void setPriority(QByteArray tthRoot, QueuePriority priority);
+    void deleteFromQueue(QByteArray tthRoot);
 
-	//Signals for the queue list from the database
-	void requestQueueList();
+    //Signals for the queue list from the database
+    void requestQueueList();
 
 private:
-	//Functions
-	void createWidgets();
-	void placeWidgets();
-	void connectWidgets();
+    //Functions
+    void createWidgets();
+    void placeWidgets();
+    void connectWidgets();
 
     //Queue list has been received
-	void loadQueueList();
+    void loadQueueList();
 
-	//Objects
-	QWidget *pWidget;
-	ArpmanetDC *pParent;
+    //Objects
+    QWidget *pWidget;
+    ArpmanetDC *pParent;
     ShareSearch *pShare;
 
-	QHash<QByteArray, QueueStruct> *pQueueList; //Link to main GUIs queue
+    QHash<QByteArray, QueueStruct> *pQueueList; //Link to main GUIs queue
 
     //Icons
     QIcon lowPriorityIcon, normalPriorityIcon, highPriorityIcon, queuedIcon, busyIcon;
-	//GUI
-	QTableView *queueTable;
-	QStandardItemModel *queueModel;
+    //GUI
+    QTableView *queueTable;
+    QStandardItemModel *queueModel;
 
     QMenu *queueMenu, *setPriorityMenu;
 
-	QAction *setPriorityLowAction, *setPriorityNormalAction, *setPriorityHighAction;
-	QAction *deleteAction;
+    QAction *setPriorityLowAction, *setPriorityNormalAction, *setPriorityHighAction;
+    QAction *deleteAction;
 };
 
 #endif

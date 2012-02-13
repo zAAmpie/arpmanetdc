@@ -1,7 +1,7 @@
 #include "arpmanetdc.h"
 
 ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
-	: QMainWindow(parent, flags)
+    : QMainWindow(parent, flags)
 {
     createdGUI = false;
     pArguments = arguments;
@@ -62,7 +62,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     qRegisterMetaType<QList<TransferItemStatus> >("QList<TransferItemStatus>");
 
     //Set database pointer to zero at start
-	db = 0;
+    db = 0;
 
     //Get database path
     //TODO: Check command line arguments for specified database path
@@ -78,7 +78,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 
     //Load settings from database or initialize settings from defaults
     QString ipString = getIPGuess().toString();
-   	loadSettings();
+       loadSettings();
     if (!pSettings->contains("nick"))
         pSettings->insert("nick", DEFAULT_NICK);
     if (!pSettings->contains("password"))
@@ -97,8 +97,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
         pSettings->insert("showAdvanced", DEFAULT_SHOW_ADVANCED);
     if (!pSettings->contains("lastSeenIP"))
         pSettings->insert("lastSeenIP", ipString);
-	if (!pSettings->contains("autoUpdateShareInterval"))
-		pSettings->insert("autoUpdateShareInterval", DEFAULT_SHARE_UPDATE_INTERVAL);
+    if (!pSettings->contains("autoUpdateShareInterval"))
+        pSettings->insert("autoUpdateShareInterval", DEFAULT_SHARE_UPDATE_INTERVAL);
     if (!pSettings->contains("protocolHint"))
     {
         QByteArray protocolHint;
@@ -123,31 +123,31 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     //Save new IP
     pSettings->insert("lastSeenIP", ipString);
     
-	mainChatBlocks = 0;
+    mainChatBlocks = 0;
     pFilesHashedSinceUpdate = 0;
     pFileSizeHashedSinceUpdate = 0;
 
-	//Set window title
-	setWindowTitle(tr("ArpmanetDC v%1").arg(VERSION_STRING));
+    //Set window title
+    setWindowTitle(tr("ArpmanetDC v%1").arg(VERSION_STRING));
 
-	//Create Hub Connection
-	pHub = new HubConnection(pSettings->value("hubAddress"), pSettings->value("hubPort").toShort(), pSettings->value("nick"), pSettings->value("password"), VERSION_STRING, this);
+    //Create Hub Connection
+    pHub = new HubConnection(pSettings->value("hubAddress"), pSettings->value("hubPort").toShort(), pSettings->value("nick"), pSettings->value("password"), VERSION_STRING, this);
 
     //Connect HubConnection to GUI
-	connect(pHub, SIGNAL(receivedChatMessage(QString)), this, SLOT(appendChatLine(QString)));
-	connect(pHub, SIGNAL(receivedMyINFO(QString, QString, QString, QString, QString)), this, SLOT(userListInfoReceived(QString, QString, QString, QString, QString)));
-	connect(pHub, SIGNAL(receivedNickList(QStringList)), this, SLOT(userListNickListReceived(QStringList)));
+    connect(pHub, SIGNAL(receivedChatMessage(QString)), this, SLOT(appendChatLine(QString)));
+    connect(pHub, SIGNAL(receivedMyINFO(QString, QString, QString, QString, QString)), this, SLOT(userListInfoReceived(QString, QString, QString, QString, QString)));
+    connect(pHub, SIGNAL(receivedNickList(QStringList)), this, SLOT(userListNickListReceived(QStringList)));
     connect(pHub, SIGNAL(receivedOpList(QStringList)), this, SLOT(opListReceived(QStringList)));
-	connect(pHub, SIGNAL(userLoggedOut(QString)), this, SLOT(userListUserLoggedOut(QString)));	
-	connect(pHub, SIGNAL(receivedPrivateMessage(QString, QString)), this, SLOT(receivedPrivateMessage(QString, QString)));
-	connect(pHub, SIGNAL(hubOnline()), this, SLOT(hubOnline()));
-	connect(pHub, SIGNAL(hubOffline()), this, SLOT(hubOffline()));
+    connect(pHub, SIGNAL(userLoggedOut(QString)), this, SLOT(userListUserLoggedOut(QString)));    
+    connect(pHub, SIGNAL(receivedPrivateMessage(QString, QString)), this, SLOT(receivedPrivateMessage(QString, QString)));
+    connect(pHub, SIGNAL(hubOnline()), this, SLOT(hubOnline()));
+    connect(pHub, SIGNAL(hubOffline()), this, SLOT(hubOffline()));
 
     //pHub->connectHub();
 
     //Create Dispatcher connection
     dispatcherThread = new ExecThread();
-	pDispatcher = new Dispatcher(QHostAddress(pSettings->value("externalIP")), pSettings->value("externalPort").toShort());
+    pDispatcher = new Dispatcher(QHostAddress(pSettings->value("externalIP")), pSettings->value("externalPort").toShort());
 
     // conjure up something unique here and save it for every subsequent client invocation
     //Maybe make a SHA1 hash of the Nick + Password - unique and consistent? Except if you have two clients open with the same login details? Meh
@@ -165,10 +165,10 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     //pDispatcher->setProtocolCapabilityBitmask(uTPProtocol);
 
     //Connect Dispatcher to GUI - handle search replies from other clients
-	connect(pDispatcher, SIGNAL(bootstrapStatusChanged(int)), this, SLOT(bootstrapStatusChanged(int)), Qt::QueuedConnection);
+    connect(pDispatcher, SIGNAL(bootstrapStatusChanged(int)), this, SLOT(bootstrapStatusChanged(int)), Qt::QueuedConnection);
     connect(pDispatcher, SIGNAL(searchResultsReceived(QHostAddress, QByteArray, quint64, QByteArray)),
             this, SLOT(searchResultReceived(QHostAddress, QByteArray, quint64, QByteArray)), Qt::QueuedConnection);
-	connect(pDispatcher, SIGNAL(appendChatLine(QString)), this, SLOT(appendChatLine(QString)), Qt::QueuedConnection);
+    connect(pDispatcher, SIGNAL(appendChatLine(QString)), this, SLOT(appendChatLine(QString)), Qt::QueuedConnection);
     connect(this, SIGNAL(getHostCount()), pDispatcher, SLOT(getHostCount()), Qt::QueuedConnection);
     connect(pDispatcher, SIGNAL(returnHostCount(int)), this, SLOT(returnHostCount(int)), Qt::QueuedConnection);
     connect(this, SIGNAL(initiateSearch(quint64, QByteArray)), pDispatcher, SLOT(initiateSearch(quint64, QByteArray)), Qt::QueuedConnection);
@@ -246,16 +246,16 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     pDispatcher->addNetworkScanRange(QHostAddress("172.31.187.1").toIPv4Address(), QHostAddress("172.31.189.254").toIPv4Address());
     pDispatcher->addNetworkScanRange(QHostAddress("172.31.191.1").toIPv4Address(), QHostAddress("172.31.191.254").toIPv4Address());
 
-	//Set up thread for database / ShareSearch
-	dbThread = new ExecThread();
-	pShare = new ShareSearch(MAX_SEARCH_RESULTS, this);
+    //Set up thread for database / ShareSearch
+    dbThread = new ExecThread();
+    pShare = new ShareSearch(MAX_SEARCH_RESULTS, this);
 
     //Connect ShareSearch to GUI - share files on this computer and hash them
-	connect(pShare, SIGNAL(fileHashed(QString, quint64)), this, SLOT(fileHashed(QString, quint64)), Qt::QueuedConnection);
-	connect(pShare, SIGNAL(directoryParsed(QString)), this, SLOT(directoryParsed(QString)), Qt::QueuedConnection);
-	connect(pShare, SIGNAL(hashingDone(int, int)), this, SLOT(hashingDone(int, int)), Qt::QueuedConnection);
-	connect(pShare, SIGNAL(parsingDone(int)), this, SLOT(parsingDone(int)), Qt::QueuedConnection);
-	connect(pShare, SIGNAL(returnQueueList(QHash<QByteArray, QueueStruct> *)), this, SLOT(returnQueueList(QHash<QByteArray, QueueStruct> *)), Qt::QueuedConnection);
+    connect(pShare, SIGNAL(fileHashed(QString, quint64)), this, SLOT(fileHashed(QString, quint64)), Qt::QueuedConnection);
+    connect(pShare, SIGNAL(directoryParsed(QString)), this, SLOT(directoryParsed(QString)), Qt::QueuedConnection);
+    connect(pShare, SIGNAL(hashingDone(int, int)), this, SLOT(hashingDone(int, int)), Qt::QueuedConnection);
+    connect(pShare, SIGNAL(parsingDone(int)), this, SLOT(parsingDone(int)), Qt::QueuedConnection);
+    connect(pShare, SIGNAL(returnQueueList(QHash<QByteArray, QueueStruct> *)), this, SLOT(returnQueueList(QHash<QByteArray, QueueStruct> *)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(returnFinishedList(QHash<QByteArray, FinishedDownloadStruct> *)), this, SLOT(returnFinishedList(QHash<QByteArray, FinishedDownloadStruct> *)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(searchWordListReceived(QStandardItemModel *)), this, SLOT(searchWordListReceived(QStandardItemModel *)), Qt::QueuedConnection);
     connect(this, SIGNAL(updateShares()), pShare, SLOT(updateShares()), Qt::QueuedConnection);
@@ -354,8 +354,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     pDispatcher->moveToThread(dispatcherThread);
     dispatcherThread->start();
 
-	pShare->moveToThread(dbThread);
-	dbThread->start();
+    pShare->moveToThread(dbThread);
+    dbThread->start();
 
     pBucketFlushThread->moveToThread(bucketFlushThread);
     bucketFlushThread->start();
@@ -363,10 +363,10 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     pTransferManager->moveToThread(transferThread);
     transferThread->start();
 
-	//GUI setup
-	createWidgets();
-	placeWidgets();
-	connectWidgets();	
+    //GUI setup
+    createWidgets();
+    placeWidgets();
+    connectWidgets();    
 
     pStatusHistoryList = new QList<QString>();
     pQueueList = new QHash<QByteArray, QueueStruct>();
@@ -385,15 +385,15 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     emit requestAutoCompleteWordList(searchWordList);
 
     //Update shares
-	setStatus(tr("Share update procedure started. Parsing directories/paths..."));
+    setStatus(tr("Share update procedure started. Parsing directories/paths..."));
     hashingProgressBar->setTopText("Parsing");
     emit updateShares();    
 
-	downloadQueueWidget = 0;
-	shareWidget = 0;
-	queueWidget = 0;
-	finishedWidget = 0;
-	settingsWidget = 0;
+    downloadQueueWidget = 0;
+    shareWidget = 0;
+    queueWidget = 0;
+    finishedWidget = 0;
+    settingsWidget = 0;
     helpWidget = 0;
     //transferWidget = 0;
 
@@ -404,13 +404,13 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     //Set window icon
     setWindowIcon(QIcon(QPixmap(":/ArpmanetDC/Resources/Logo128x128.png")));
 
-	//Icon generation
-	userIcon = new QPixmap();
-	*userIcon = QPixmap(":/ArpmanetDC/Resources/UserIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    //Icon generation
+    userIcon = new QPixmap();
+    *userIcon = QPixmap(":/ArpmanetDC/Resources/UserIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     arpmanetUserIcon = new QPixmap();
-	*arpmanetUserIcon = QPixmap(":/ArpmanetDC/Resources/ArpmanetUserIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-	userFirewallIcon = new QPixmap();
-	*userFirewallIcon = QPixmap(":/ArpmanetDC/Resources/FirewallIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    *arpmanetUserIcon = QPixmap(":/ArpmanetDC/Resources/ArpmanetUserIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    userFirewallIcon = new QPixmap();
+    *userFirewallIcon = QPixmap(":/ArpmanetDC/Resources/FirewallIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     oldVersionUserIcon = new QPixmap();
     *oldVersionUserIcon = QPixmap(":/ArpmanetDC/Resources/SkullUserIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     newerVersionUserIcon = new QPixmap();
@@ -418,11 +418,11 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 
 
     fullyBootstrappedIcon = new QPixmap();
-	*fullyBootstrappedIcon = QPixmap(":/ArpmanetDC/Resources/ServerOnlineIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-	bootstrappedIcon = new QPixmap();
-	*bootstrappedIcon = QPixmap(":/ArpmanetDC/Resources/ServerIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-	unbootstrappedIcon = new QPixmap();
-	*unbootstrappedIcon = QPixmap(":/ArpmanetDC/Resources/ServerOfflineIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    *fullyBootstrappedIcon = QPixmap(":/ArpmanetDC/Resources/ServerOnlineIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    bootstrappedIcon = new QPixmap();
+    *bootstrappedIcon = QPixmap(":/ArpmanetDC/Resources/ServerIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    unbootstrappedIcon = new QPixmap();
+    *unbootstrappedIcon = QPixmap(":/ArpmanetDC/Resources/ServerOfflineIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
     //Init type icon list with resource extractor class
     pTypeIconList = new ResourceExtractor();
@@ -432,11 +432,11 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(sharedMemoryTimer, SIGNAL(timeout()), this, SLOT(checkSharedMemory()));
     sharedMemoryTimer->start(500);
 
-	//Set up timer to ensure each and every update doesn't signal a complete list sort!
-	sortDue = false;
-	QTimer *sortTimer = new QTimer(this);
-	connect(sortTimer, SIGNAL(timeout()), this, SLOT(sortUserList()));
-	sortTimer->start(1000); //Meh, every second ought to do it
+    //Set up timer to ensure each and every update doesn't signal a complete list sort!
+    sortDue = false;
+    QTimer *sortTimer = new QTimer(this);
+    connect(sortTimer, SIGNAL(timeout()), this, SLOT(sortUserList()));
+    sortTimer->start(1000); //Meh, every second ought to do it
 
     //Set up rate timer
     hashRateTimer = new QTimer(this);
@@ -448,12 +448,12 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(updateTimer, SIGNAL(timeout()), this, SLOT(updateGUIEverySecond()));
     updateTimer->start(5000);
 
-	//Set up timer to auto update shares
-	updateSharesTimer = new QTimer(this);
-	connect(updateSharesTimer, SIGNAL(timeout()), this, SIGNAL(updateShares()));
-	int interval = pSettings->value("autoUpdateShareInterval").toInt();
-	if (interval > 0)
-		updateSharesTimer->start(interval);
+    //Set up timer to auto update shares
+    updateSharesTimer = new QTimer(this);
+    connect(updateSharesTimer, SIGNAL(timeout()), this, SIGNAL(updateShares()));
+    int interval = pSettings->value("autoUpdateShareInterval").toInt();
+    if (interval > 0)
+        updateSharesTimer->start(interval);
 
 #ifdef Q_OS_WIN
     //Set up timer to check for client updates
@@ -491,10 +491,10 @@ ArpmanetDC::~ArpmanetDC()
 {
     if (createdGUI)
     {
-	    //Destructor
+        //Destructor
         systemTrayIcon->hide(); //Icon isn't automatically hidden after program exit
 
-	    pHub->deleteLater();
+        pHub->deleteLater();
         pTransferManager->deleteLater();
         pDispatcher->deleteLater();
         pBucketFlushThread->deleteLater();
@@ -523,8 +523,8 @@ ArpmanetDC::~ArpmanetDC()
         }
 
         dbThread->quit();
-	    if (dbThread->wait(5000))
-		    delete dbThread;
+        if (dbThread->wait(5000))
+            delete dbThread;
         else
         {
             dbThread->terminate();
@@ -540,7 +540,7 @@ ArpmanetDC::~ArpmanetDC()
             delete dispatcherThread;
         }
 
-	    sqlite3_close(db);
+        sqlite3_close(db);
     }
 
     //Destroy and detach the shared memory sector
@@ -553,53 +553,53 @@ ArpmanetDC::~ArpmanetDC()
 
 bool ArpmanetDC::setupDatabase()
 {
-	//Create database/open existing database
-	if (sqlite3_open(shareDatabasePath.toUtf8().data(), &db))
-	{
-		QString error("Can't open database");
-		sqlite3_close(db);
-		return false;
-	}
+    //Create database/open existing database
+    if (sqlite3_open(shareDatabasePath.toUtf8().data(), &db))
+    {
+        QString error("Can't open database");
+        sqlite3_close(db);
+        return false;
+    }
 
-	//Check if tables exist and create them otherwise
-	sqlite3_stmt *statement;
+    //Check if tables exist and create them otherwise
+    sqlite3_stmt *statement;
 
-	QList<QString> queries;
+    QList<QString> queries;
 
-	//Set full synchronicity
-	queries.append("PRAGMA synchronous = NORMAL;");
+    //Set full synchronicity
+    queries.append("PRAGMA synchronous = NORMAL;");
 
     //Commit any outstanding queries
     queries.append("COMMIT;");
 
-	//Create FileShares table - list of all files hashed
-	queries.append("CREATE TABLE FileShares (rowID INTEGER PRIMARY KEY, tth TEXT, fileName TEXT, fileSize INTEGER, filePath TEXT, lastModified TEXT, shareDirID INTEGER, active INTEGER, majorVersion INTEGER, minorVersion INTEGER, relativePath TEXT, FOREIGN KEY(shareDirID) REFERENCES SharePaths(rowID), UNIQUE(filePath));");
-	queries.append("CREATE INDEX IDX_FILESHARES_FILENAME on FileShares(fileName);");
+    //Create FileShares table - list of all files hashed
+    queries.append("CREATE TABLE FileShares (rowID INTEGER PRIMARY KEY, tth TEXT, fileName TEXT, fileSize INTEGER, filePath TEXT, lastModified TEXT, shareDirID INTEGER, active INTEGER, majorVersion INTEGER, minorVersion INTEGER, relativePath TEXT, FOREIGN KEY(shareDirID) REFERENCES SharePaths(rowID), UNIQUE(filePath));");
+    queries.append("CREATE INDEX IDX_FILESHARES_FILENAME on FileShares(fileName);");
     queries.append("CREATE INDEX IDX_FILESHARES_FILEPATH on FileShares(filePath);");
     queries.append("CREATE INDEX IDX_FILESHARES_FILESIZE on FileShares(fileSize);");
     queries.append("CREATE INDEX IDX_FILESHARES_ACTIVE on FileShares(active);");
 
-	//Create 1MB TTH table - list of the 1MB bucket TTHs for every fileshare
-	queries.append("CREATE TABLE OneMBTTH (rowID INTEGER PRIMARY KEY, oneMBtth TEXT, tth TEXT, offset INTEGER, fileShareID INTEGER, FOREIGN KEY(fileShareID) REFERENCES FileShares(rowID));");
-	queries.append("CREATE INDEX IDX_TTH on OneMBTTH(tth);");
+    //Create 1MB TTH table - list of the 1MB bucket TTHs for every fileshare
+    queries.append("CREATE TABLE OneMBTTH (rowID INTEGER PRIMARY KEY, oneMBtth TEXT, tth TEXT, offset INTEGER, fileShareID INTEGER, FOREIGN KEY(fileShareID) REFERENCES FileShares(rowID));");
+    queries.append("CREATE INDEX IDX_TTH on OneMBTTH(tth);");
 
-	//Create SharePaths table - list of all the folders/files chosen in ShareWidget
-	queries.append("CREATE TABLE SharePaths (rowID INTEGER PRIMARY KEY, path TEXT, UNIQUE(path));");
+    //Create SharePaths table - list of all the folders/files chosen in ShareWidget
+    queries.append("CREATE TABLE SharePaths (rowID INTEGER PRIMARY KEY, path TEXT, UNIQUE(path));");
     queries.append("CREATE INDEX IDX_SHAREPATHS_PATH on SharePaths(path);");
 
-	//Create TTHSources table - list of all sources for a transfer
-	queries.append("CREATE TABLE TTHSources (rowID INTEGER PRIMARY KEY, tthRoot TEXT, source TEXT, UNIQUE(tthRoot, source));");
+    //Create TTHSources table - list of all sources for a transfer
+    queries.append("CREATE TABLE TTHSources (rowID INTEGER PRIMARY KEY, tthRoot TEXT, source TEXT, UNIQUE(tthRoot, source));");
     queries.append("CREATE INDEX IDX_TTHSOURCES_TTHROOT on TTHSources(tthRoot);");
 
     //Create LastKnownPeers table - list of the last known peers for bootstrap
     queries.append("CREATE TABLE LastKnownPeers (rowID INTEGER PRIMARY KEY, ip TEXT, UNIQUE(ip));");
-	
-	//Create QueuedDownloads table - saves all queued downloads to restart transfers after restart
-	queries.append("CREATE TABLE QueuedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, fileSize INTEGER, priority INTEGER, tthRoot TEXT, hostIP TEXT, UNIQUE(tthRoot));");
+    
+    //Create QueuedDownloads table - saves all queued downloads to restart transfers after restart
+    queries.append("CREATE TABLE QueuedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, fileSize INTEGER, priority INTEGER, tthRoot TEXT, hostIP TEXT, UNIQUE(tthRoot));");
     queries.append("CREATE INDEX IDX_QUEUED_FILEPATH on QueuedDownloads(filePath);");
 
-	//Create FinishedDownloads table - saves download paths that were downloaded for list
-	queries.append("CREATE TABLE FinishedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, fileSize INTEGER, tthRoot TEXT, downloadedDate TEXT);");
+    //Create FinishedDownloads table - saves download paths that were downloaded for list
+    queries.append("CREATE TABLE FinishedDownloads (rowID INTEGER PRIMARY KEY, fileName TEXT, filePath TEXT, fileSize INTEGER, tthRoot TEXT, downloadedDate TEXT);");
     queries.append("CREATE INDEX IDX_FINISHED_FILEPATH on FinishedDownloads(filePath);");
 
     //Create Settings table - saves settings (doh)
@@ -608,29 +608,29 @@ bool ArpmanetDC::setupDatabase()
     //Create AutoCompleteWords table - saves searches
     queries.append("CREATE TABLE AutoCompleteWords (rowID INTEGER PRIMARY KEY, word TEXT, count INTEGER);");
 
-	QList<QString> queryErrors(queries);
+    QList<QString> queryErrors(queries);
 
-	//Loop through all queries
-	for (int i = 0; i < queries.size(); i++)
-	{
-		//Prepare a query
-		QByteArray query;
-		query.append(queries.at(i).toUtf8());
-		if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-		{
-			int cols = sqlite3_column_count(statement);
-			int result = 0;
-			while (sqlite3_step(statement) == SQLITE_ROW);
-			sqlite3_finalize(statement);	
-		}
+    //Loop through all queries
+    for (int i = 0; i < queries.size(); i++)
+    {
+        //Prepare a query
+        QByteArray query;
+        query.append(queries.at(i).toUtf8());
+        if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+        {
+            int cols = sqlite3_column_count(statement);
+            int result = 0;
+            while (sqlite3_step(statement) == SQLITE_ROW);
+            sqlite3_finalize(statement);    
+        }
 
-		//Catch all error messages
-		QString error = sqlite3_errmsg(db);
-		if (error != "not an error")
-			queryErrors[i] = error;
-	}
+        //Catch all error messages
+        QString error = sqlite3_errmsg(db);
+        if (error != "not an error")
+            queryErrors[i] = error;
+    }
 
-	return true;
+    return true;
 }
 
 bool ArpmanetDC::loadSettings()
@@ -642,19 +642,19 @@ bool ArpmanetDC::loadSettings()
     queries.append("SELECT [parameter], [value]  FROM Settings;");
 
     sqlite3_stmt *statement;
-	QList<QString> queryErrors(queries);
+    QList<QString> queryErrors(queries);
 
-	//Loop through all queries
-	for (int i = 0; i < queries.size(); i++)
-	{
-		//Prepare a query
-		QByteArray query;
-		query.append(queries.at(i).toUtf8());
-		if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-		{
-			int cols = sqlite3_column_count(statement);
-			int result = 0;
-			while (sqlite3_step(statement) == SQLITE_ROW)
+    //Loop through all queries
+    for (int i = 0; i < queries.size(); i++)
+    {
+        //Prepare a query
+        QByteArray query;
+        query.append(queries.at(i).toUtf8());
+        if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+        {
+            int cols = sqlite3_column_count(statement);
+            int result = 0;
+            while (sqlite3_step(statement) == SQLITE_ROW)
             {
                 //Load settings
                 if (cols == 2)
@@ -665,16 +665,16 @@ bool ArpmanetDC::loadSettings()
                         pSettings->insert(parameter, value);
                 }
             };
-			sqlite3_finalize(statement);	
-		}
+            sqlite3_finalize(statement);    
+        }
 
-		//Catch all error messages
-		QString error = sqlite3_errmsg(db);
-		if (error != "not an error")
-			queryErrors[i] = error;
-	}
+        //Catch all error messages
+        QString error = sqlite3_errmsg(db);
+        if (error != "not an error")
+            queryErrors[i] = error;
+    }
 
-	return !pSettings->isEmpty();
+    return !pSettings->isEmpty();
 }
 
 bool ArpmanetDC::saveSettings()
@@ -691,41 +691,41 @@ bool ArpmanetDC::saveSettings()
     queries.append("BEGIN;");
 
     bool result = true;
-	QList<QString> queryErrors(queries);
+    QList<QString> queryErrors(queries);
     sqlite3_stmt *statement;
 
-	//Loop through all queries
-	for (int i = 0; i < queries.size(); i++)
-	{
-		//Prepare a query
-		QByteArray query;
-		query.append(queries.at(i).toUtf8());
-		if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-		{
+    //Loop through all queries
+    for (int i = 0; i < queries.size(); i++)
+    {
+        //Prepare a query
+        QByteArray query;
+        query.append(queries.at(i).toUtf8());
+        if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+        {
             if (query.contains("INSERT INTO Settings") && !parameters.isEmpty())
             {
                 int res = 0;
                 QString parameter = parameters.takeFirst();
                 QString value = pSettings->value(parameter);
-		        res = res | sqlite3_bind_text16(statement, 1, parameter.utf16(), parameter.size()*2, SQLITE_STATIC);
+                res = res | sqlite3_bind_text16(statement, 1, parameter.utf16(), parameter.size()*2, SQLITE_STATIC);
                 res = res | sqlite3_bind_text16(statement, 2, value.utf16(), value.size()*2, SQLITE_STATIC);
                 if (res != SQLITE_OK)
                     result = false;
             }
 
-			int cols = sqlite3_column_count(statement);
-			int result = 0;
-			while (sqlite3_step(statement) == SQLITE_ROW);
-			sqlite3_finalize(statement);	
-		}
+            int cols = sqlite3_column_count(statement);
+            int result = 0;
+            while (sqlite3_step(statement) == SQLITE_ROW);
+            sqlite3_finalize(statement);    
+        }
 
-		//Catch all error messages
-		QString error = sqlite3_errmsg(db);
-		if (error != "not an error")
-			queryErrors[i] = error;
-	}
+        //Catch all error messages
+        QString error = sqlite3_errmsg(db);
+        if (error != "not an error")
+            queryErrors[i] = error;
+    }
 
-	return result;
+    return result;
 }
 
 void ArpmanetDC::createWidgets()
@@ -736,85 +736,85 @@ void ArpmanetDC::createWidgets()
     searchCompleter->setCaseSensitivity(Qt::CaseInsensitive);
     searchCompleter->setModelSorting(QCompleter::CaseInsensitivelySortedModel);
 
-	//Labels
+    //Labels
     userHubCountLabel = new QLabel(tr("Hub Users: 0"));
-	additionalInfoLabel = new QLabel(tr(""));
+    additionalInfoLabel = new QLabel(tr(""));
 
-	statusLabel = new QLabel(tr("Status"));
-	shareSizeLabel = new QLabel(tr("Share: 0 bytes"));
+    statusLabel = new QLabel(tr("Status"));
+    shareSizeLabel = new QLabel(tr("Share: 0 bytes"));
 
-	bootstrapStatusLabel = new QLabel();
-	//connectionIconLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-	connectionIconLabel = new QLabel();
-	//connectionIconLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    bootstrapStatusLabel = new QLabel();
+    //connectionIconLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    connectionIconLabel = new QLabel();
+    //connectionIconLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
     CIDHostsLabel = new QLabel("0");
     CIDHostsLabel->setToolTip(tr("Number of hosts bootstrapped"));
 
-	//Progress bar
-	hashingProgressBar = new TextProgressBar(tr("Hashing"), this);
-	hashingProgressBar->setRange(0,0);
-	hashingProgressBar->setStyle(new QPlastiqueStyle());
-	hashingProgressBar->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Ignored);
+    //Progress bar
+    hashingProgressBar = new TextProgressBar(tr("Hashing"), this);
+    hashingProgressBar->setRange(0,0);
+    hashingProgressBar->setStyle(new QPlastiqueStyle());
+    hashingProgressBar->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Ignored);
     hashingProgressBar->setFormat(tr("H"));
     hashingProgressBar->setTextVisible(true);
 
-	//Splitters
-	splitterVertical = new QSplitter(this);
-	splitterHorizontal = new QSplitter(Qt::Vertical, this);
-	
-	//Tab widget
-	tabs = new CTabWidget(this);
-	tabs->setIconSize(QSize(16,16));
-	tabs->setTabsClosable(true);
-	tabTextColorNotify = QColor(Qt::red);
+    //Splitters
+    splitterVertical = new QSplitter(this);
+    splitterHorizontal = new QSplitter(Qt::Vertical, this);
+    
+    //Tab widget
+    tabs = new CTabWidget(this);
+    tabs->setIconSize(QSize(16,16));
+    tabs->setTabsClosable(true);
+    tabTextColorNotify = QColor(Qt::red);
     tabTextColorOffline = QColor(Qt::gray);
-	
-	//Chat
-	mainChatTextEdit = new QTextBrowser(this);
-	mainChatTextEdit->setOpenExternalLinks(false);
+    
+    //Chat
+    mainChatTextEdit = new QTextBrowser(this);
+    mainChatTextEdit->setOpenExternalLinks(false);
     mainChatTextEdit->setOpenLinks(false);
-	
-	chatLineEdit = new QLineEdit(this);
+    
+    chatLineEdit = new QLineEdit(this);
     chatLineEdit->setPlaceholderText(tr("Type here to chat"));
 
     quickSearchLineEdit = new QLineEdit(this);
     quickSearchLineEdit->setPlaceholderText("Type here to search");
     quickSearchLineEdit->setCompleter(searchCompleter);
-	
-	//===== User list =====
-	//Model
-	userListModel = new QStandardItemModel(0,7);
-	userListModel->setHeaderData(0, Qt::Horizontal, tr("Nickname"));
-	userListModel->setHeaderData(1, Qt::Horizontal, tr("Description"));
-	userListModel->setHeaderData(2, Qt::Horizontal, tr("Nickname"));
-	userListModel->setHeaderData(3, Qt::Horizontal, tr("Description"));
-	userListModel->setHeaderData(4, Qt::Horizontal, tr("Mode"));
+    
+    //===== User list =====
+    //Model
+    userListModel = new QStandardItemModel(0,7);
+    userListModel->setHeaderData(0, Qt::Horizontal, tr("Nickname"));
+    userListModel->setHeaderData(1, Qt::Horizontal, tr("Description"));
+    userListModel->setHeaderData(2, Qt::Horizontal, tr("Nickname"));
+    userListModel->setHeaderData(3, Qt::Horizontal, tr("Description"));
+    userListModel->setHeaderData(4, Qt::Horizontal, tr("Mode"));
     userListModel->setHeaderData(5, Qt::Horizontal, tr("Client"));
     userListModel->setHeaderData(6, Qt::Horizontal, tr("Version"));
 
-	userSortProxy = new QSortFilterProxyModel(this);
-	userSortProxy->setSortCaseSensitivity(Qt::CaseInsensitive);
-	userSortProxy->setSourceModel(userListModel);
-	
-	//Table
-	userListTable = new CKeyTableView(this);
-	userListTable->setContextMenuPolicy(Qt::CustomContextMenu);
-	
-	//Link table and model
-	userListTable->setModel(userSortProxy);
+    userSortProxy = new QSortFilterProxyModel(this);
+    userSortProxy->setSortCaseSensitivity(Qt::CaseInsensitive);
+    userSortProxy->setSourceModel(userListModel);
+    
+    //Table
+    userListTable = new CKeyTableView(this);
+    userListTable->setContextMenuPolicy(Qt::CustomContextMenu);
+    
+    //Link table and model
+    userListTable->setModel(userSortProxy);
 
-	//Sizing
-	userListTable->horizontalHeader()->setResizeMode(QHeaderView::Interactive);
-	userListTable->setColumnWidth(0,150);
-	userListTable->setColumnWidth(1,250);
-	userListTable->horizontalHeader()->setMinimumSectionSize(150);
-	
-	//Style
-	userListTable->setShowGrid(true);
-	userListTable->setGridStyle(Qt::DotLine);
-	userListTable->verticalHeader()->hide();
-	userListTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    //Sizing
+    userListTable->horizontalHeader()->setResizeMode(QHeaderView::Interactive);
+    userListTable->setColumnWidth(0,150);
+    userListTable->setColumnWidth(1,250);
+    userListTable->horizontalHeader()->setMinimumSectionSize(150);
+    
+    //Style
+    userListTable->setShowGrid(true);
+    userListTable->setGridStyle(Qt::DotLine);
+    userListTable->verticalHeader()->hide();
+    userListTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     userListTable->setSelectionMode(QAbstractItemView::SingleSelection);
     //userListTable->setItemDelegate(new HTMLDelegate(userListTable));
     userListTable->setAutoScroll(false);
@@ -823,57 +823,57 @@ void ArpmanetDC::createWidgets()
     //userListTable->horizontalHeader()->setStretchLastSection(true);
 
     //userListTable->hideColumn(1);
-	userListTable->hideColumn(2);
-	userListTable->hideColumn(3);
-	userListTable->hideColumn(4);
+    userListTable->hideColumn(2);
+    userListTable->hideColumn(3);
+    userListTable->hideColumn(4);
     userListTable->hideColumn(5);
     userListTable->hideColumn(6);
 
     //TransferWidget
     transferWidget = new TransferWidget(pTransferManager, this);
 
-	//===== Bars =====
-	//Toolbar
-	toolBar = new QToolBar(tr("Actions"), this);
-	//toolBar->setToolButtonStyle(Qt::ToolButtonFollowStyle);
-	toolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-	//toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-	toolBar->setMovable(false);
+    //===== Bars =====
+    //Toolbar
+    toolBar = new QToolBar(tr("Actions"), this);
+    //toolBar->setToolButtonStyle(Qt::ToolButtonFollowStyle);
+    toolBar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+    //toolBar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    toolBar->setMovable(false);
     toolBar->setContextMenuPolicy(Qt::CustomContextMenu);
 
-	//Menu bar
-	menuBar = new QMenuBar(this);
+    //Menu bar
+    menuBar = new QMenuBar(this);
 
-	//Status bars
-	statusBar = new QStatusBar(this);
-	statusBar->addPermanentWidget(statusLabel,1);
-	statusBar->addPermanentWidget(connectionIconLabel);
-	statusBar->addPermanentWidget(bootstrapStatusLabel);
+    //Status bars
+    statusBar = new QStatusBar(this);
+    statusBar->addPermanentWidget(statusLabel,1);
+    statusBar->addPermanentWidget(connectionIconLabel);
+    statusBar->addPermanentWidget(bootstrapStatusLabel);
     statusBar->addPermanentWidget(CIDHostsLabel);
-	statusBar->addPermanentWidget(hashingProgressBar);
-	statusBar->addPermanentWidget(shareSizeLabel);
+    statusBar->addPermanentWidget(hashingProgressBar);
+    statusBar->addPermanentWidget(shareSizeLabel);
 
-	infoStatusBar = new QStatusBar(this);
-	infoStatusBar->addPermanentWidget(additionalInfoLabel,1);
-	infoStatusBar->addPermanentWidget(userHubCountLabel);
-	infoStatusBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
-	infoStatusBar->setSizeGripEnabled(false);
-	
-	//===== Actions =====
-	queueAction = new QAction(QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Download queue"), this);
-	downloadFinishedAction = new QAction(QIcon(":/ArpmanetDC/Resources/DownloadFinishedIcon.png"), tr("Finished downloads"), this);
-	searchAction = new QAction(QIcon(":/ArpmanetDC/Resources/SearchIcon.png"), tr("Search"), this);
-	shareAction = new QAction(QIcon(":/ArpmanetDC/Resources/ShareIcon.png"), tr("Share"), this);
-	settingsAction = new QAction(QIcon(":/ArpmanetDC/Resources/SettingsIcon.png"), tr("Settings"), this);
-	helpAction = new QAction(QIcon(":/ArpmanetDC/Resources/HelpIcon.png"), tr("Help"), this);
-	privateMessageAction = new QAction(QIcon(":/ArpmanetDC/Resources/PMIcon.png"), tr("Send private message"), this);
-	reconnectAction = new QAction(QIcon(":/ArpmanetDC/Resources/ServerIcon.png"), tr("Reconnect"), this);
+    infoStatusBar = new QStatusBar(this);
+    infoStatusBar->addPermanentWidget(additionalInfoLabel,1);
+    infoStatusBar->addPermanentWidget(userHubCountLabel);
+    infoStatusBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
+    infoStatusBar->setSizeGripEnabled(false);
+    
+    //===== Actions =====
+    queueAction = new QAction(QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Download queue"), this);
+    downloadFinishedAction = new QAction(QIcon(":/ArpmanetDC/Resources/DownloadFinishedIcon.png"), tr("Finished downloads"), this);
+    searchAction = new QAction(QIcon(":/ArpmanetDC/Resources/SearchIcon.png"), tr("Search"), this);
+    shareAction = new QAction(QIcon(":/ArpmanetDC/Resources/ShareIcon.png"), tr("Share"), this);
+    settingsAction = new QAction(QIcon(":/ArpmanetDC/Resources/SettingsIcon.png"), tr("Settings"), this);
+    helpAction = new QAction(QIcon(":/ArpmanetDC/Resources/HelpIcon.png"), tr("Help"), this);
+    privateMessageAction = new QAction(QIcon(":/ArpmanetDC/Resources/PMIcon.png"), tr("Send private message"), this);
+    reconnectAction = new QAction(QIcon(":/ArpmanetDC/Resources/ServerIcon.png"), tr("Reconnect"), this);
     openDownloadDirAction = new QAction(QIcon(":/ArpmanetDC/Resources/FolderIcon.png"), tr("Download directory"), this);
 
 
     //===== Menus =====
     userListMenu = new QMenu(this);
-	userListMenu->addAction(privateMessageAction);
+    userListMenu->addAction(privateMessageAction);
 
     //========== System tray ==========
     systemTrayIcon = new QSystemTrayIcon(this);
@@ -895,79 +895,79 @@ void ArpmanetDC::createWidgets()
 
 void ArpmanetDC::placeWidgets()
 {
-	//Add actions to toolbar
-	toolBar->addAction(searchAction);
-	toolBar->addAction(shareAction);
-	toolBar->addAction(reconnectAction);
-	toolBar->addSeparator();
-	toolBar->addAction(queueAction);
-	toolBar->addAction(downloadFinishedAction);
+    //Add actions to toolbar
+    toolBar->addAction(searchAction);
+    toolBar->addAction(shareAction);
+    toolBar->addAction(reconnectAction);
+    toolBar->addSeparator();
+    toolBar->addAction(queueAction);
+    toolBar->addAction(downloadFinishedAction);
         toolBar->addAction(openDownloadDirAction);
-	toolBar->addSeparator();
-	toolBar->addAction(settingsAction);
-	toolBar->addAction(helpAction);
-	toolBar->addSeparator();
+    toolBar->addSeparator();
+    toolBar->addAction(settingsAction);
+    toolBar->addAction(helpAction);
+    toolBar->addSeparator();
 
-	//Add search widget on toolbar
-	QWidget *quickSearchWidget = new QWidget();
-	QHBoxLayout *searchLayout = new QHBoxLayout;
-	searchLayout->addStretch(1);
+    //Add search widget on toolbar
+    QWidget *quickSearchWidget = new QWidget();
+    QHBoxLayout *searchLayout = new QHBoxLayout;
+    searchLayout->addStretch(1);
 
-	QVBoxLayout *searchVertLayout = new QVBoxLayout;
-	searchVertLayout->addStretch(1);
-	searchVertLayout->addWidget(quickSearchLineEdit);
-	searchVertLayout->addStretch(1);
-	searchLayout->addLayout(searchVertLayout);
-	searchLayout->setContentsMargins(0,0,0,0);
-	quickSearchWidget->setLayout(searchLayout);
+    QVBoxLayout *searchVertLayout = new QVBoxLayout;
+    searchVertLayout->addStretch(1);
+    searchVertLayout->addWidget(quickSearchLineEdit);
+    searchVertLayout->addStretch(1);
+    searchLayout->addLayout(searchVertLayout);
+    searchLayout->setContentsMargins(0,0,0,0);
+    quickSearchWidget->setLayout(searchLayout);
 
-	toolBar->addWidget(quickSearchWidget);
+    toolBar->addWidget(quickSearchWidget);
 
-	//Place splitter
-	splitterVertical->addWidget(mainChatTextEdit);
-	splitterVertical->addWidget(userListTable);
+    //Place splitter
+    splitterVertical->addWidget(mainChatTextEdit);
+    splitterVertical->addWidget(userListTable);
 
-	QList<int> sizes;
-	sizes << 600 << 200;
-	splitterVertical->setSizes(sizes);
-	
-	//Place vertical widgets
-	QGridLayout *layout = new QGridLayout;
-	layout->addWidget(splitterVertical,0,0);
-	layout->addWidget(chatLineEdit,1,0);
-	layout->addWidget(infoStatusBar,2,0);
-	layout->setContentsMargins(0,0,0,0);
+    QList<int> sizes;
+    sizes << 600 << 200;
+    splitterVertical->setSizes(sizes);
+    
+    //Place vertical widgets
+    QGridLayout *layout = new QGridLayout;
+    layout->addWidget(splitterVertical,0,0);
+    layout->addWidget(chatLineEdit,1,0);
+    layout->addWidget(infoStatusBar,2,0);
+    layout->setContentsMargins(0,0,0,0);
 
-	QWidget *layoutWidget = new QWidget(this);
-	layoutWidget->setLayout(layout);
+    QWidget *layoutWidget = new QWidget(this);
+    layoutWidget->setLayout(layout);
 
-	//Place main tab widget
-	QWidget *tabWidget = new QWidget();
-	QVBoxLayout *tabLayout = new QVBoxLayout();
-	tabLayout->setContentsMargins(0,0,0,0);
-	tabLayout->setSpacing(0);
-	tabLayout->addWidget(layoutWidget);
-	tabWidget->setLayout(tabLayout);
-	
-	tabs->addTab(tabWidget, QIcon(":/ArpmanetDC/Resources/ServerOfflineIcon.png"), tr("Arpmanet Chat"));
-	tabs->setTabPosition(QTabWidget::North);
-	tabTextColorNormal = tabs->tabBar()->tabTextColor(tabs->indexOf(tabWidget));
+    //Place main tab widget
+    QWidget *tabWidget = new QWidget();
+    QVBoxLayout *tabLayout = new QVBoxLayout();
+    tabLayout->setContentsMargins(0,0,0,0);
+    tabLayout->setSpacing(0);
+    tabLayout->addWidget(layoutWidget);
+    tabWidget->setLayout(tabLayout);
+    
+    tabs->addTab(tabWidget, QIcon(":/ArpmanetDC/Resources/ServerOfflineIcon.png"), tr("Arpmanet Chat"));
+    tabs->setTabPosition(QTabWidget::North);
+    tabTextColorNormal = tabs->tabBar()->tabTextColor(tabs->indexOf(tabWidget));
     tabs->tabBar()->tabButton(0,QTabBar::RightSide)->hide();
 
-	//Place horizontal widgets
-	splitterHorizontal->addWidget(tabs);
-	splitterHorizontal->addWidget(transferWidget->widget());
-	
-	sizes.clear();
-	sizes << 400 << 200;
-	splitterHorizontal->setSizes(sizes);
+    //Place horizontal widgets
+    splitterHorizontal->addWidget(tabs);
+    splitterHorizontal->addWidget(transferWidget->widget());
+    
+    sizes.clear();
+    sizes << 400 << 200;
+    splitterHorizontal->setSizes(sizes);
 
-	//Set MainWindow paramters
-	setMenuBar(menuBar);
-	addToolBar(toolBar);
-	setStatusBar(statusBar);
-	setIconSize(QSize(64,64));	
-	setCentralWidget(splitterHorizontal);
+    //Set MainWindow paramters
+    setMenuBar(menuBar);
+    addToolBar(toolBar);
+    setStatusBar(statusBar);
+    setIconSize(QSize(64,64));    
+    setCentralWidget(splitterHorizontal);
     
     //Set the window in the center of the screen
     QSize appSize = sizeHint();
@@ -978,27 +978,27 @@ void ArpmanetDC::placeWidgets()
 
 void ArpmanetDC::connectWidgets()
 {
-	//Context menu
-	connect(userListTable, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showUserListContextMenu(const QPoint&)));
+    //Context menu
+    connect(userListTable, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showUserListContextMenu(const QPoint&)));
     connect(userListTable, SIGNAL(keyPressed(Qt::Key, QString)), this, SLOT(userListKeyPressed(Qt::Key, QString)));
 
-	//Send chat message when enter is pressed
+    //Send chat message when enter is pressed
     connect(chatLineEdit, SIGNAL(returnPressed()), this, SLOT(chatLineEditReturnPressed()));
 
     //Quick search
     connect(quickSearchLineEdit, SIGNAL(returnPressed()), this, SLOT(quickSearchPressed()));
 
     connect(mainChatTextEdit, SIGNAL(anchorClicked(const QUrl &)), this, SLOT(mainChatLinkClicked(const QUrl &)));
-	
-	//Connect actions
-	connect(queueAction, SIGNAL(triggered()), this, SLOT(queueActionPressed()));
-	connect(shareAction, SIGNAL(triggered()), this, SLOT(shareActionPressed()));
-	connect(searchAction, SIGNAL(triggered()), this, SLOT(searchActionPressed()));
-	connect(downloadFinishedAction, SIGNAL(triggered()), this, SLOT(downloadFinishedActionPressed()));
-	connect(settingsAction, SIGNAL(triggered()), this, SLOT(settingsActionPressed()));
-	connect(helpAction, SIGNAL(triggered()), this, SLOT(helpActionPressed()));
-	connect(privateMessageAction, SIGNAL(triggered()), this, SLOT(privateMessageActionPressed()));
-	connect(reconnectAction, SIGNAL(triggered()), this, SLOT(reconnectActionPressed()));
+    
+    //Connect actions
+    connect(queueAction, SIGNAL(triggered()), this, SLOT(queueActionPressed()));
+    connect(shareAction, SIGNAL(triggered()), this, SLOT(shareActionPressed()));
+    connect(searchAction, SIGNAL(triggered()), this, SLOT(searchActionPressed()));
+    connect(downloadFinishedAction, SIGNAL(triggered()), this, SLOT(downloadFinishedActionPressed()));
+    connect(settingsAction, SIGNAL(triggered()), this, SLOT(settingsActionPressed()));
+    connect(helpAction, SIGNAL(triggered()), this, SLOT(helpActionPressed()));
+    connect(privateMessageAction, SIGNAL(triggered()), this, SLOT(privateMessageActionPressed()));
+    connect(reconnectAction, SIGNAL(triggered()), this, SLOT(reconnectActionPressed()));
         connect(openDownloadDirAction, SIGNAL(triggered()), this, SLOT(openDownloadDirActionPressed()));
 
     connect(restoreAction, SIGNAL(triggered()), this, SLOT(showNormal()));
@@ -1007,9 +1007,9 @@ void ArpmanetDC::connectWidgets()
     //Connect system tray
     connect(systemTrayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(systemTrayActivated(QSystemTrayIcon::ActivationReason)));
 
-	//Tab widget
-	connect(tabs, SIGNAL(tabCloseRequested(int)), this, SLOT(tabDeleted(int)));
-	connect(tabs, SIGNAL(currentChanged(int)), this, SLOT(tabChanged(int)));
+    //Tab widget
+    connect(tabs, SIGNAL(tabCloseRequested(int)), this, SLOT(tabDeleted(int)));
+    connect(tabs, SIGNAL(currentChanged(int)), this, SLOT(tabChanged(int)));
 }
 
 void ArpmanetDC::chatLineEditReturnPressed()
@@ -1044,12 +1044,12 @@ void ArpmanetDC::chatLineEditReturnPressed()
 
 void ArpmanetDC::sendChatMessage()
 {
-	//Send the chat message in the line
-	if (!chatLineEdit->text().isEmpty())
-	{
-		pHub->sendChatMessage(chatLineEdit->text());
-		chatLineEdit->setText("");
-	}
+    //Send the chat message in the line
+    if (!chatLineEdit->text().isEmpty())
+    {
+        pHub->sendChatMessage(chatLineEdit->text());
+        chatLineEdit->setText("");
+    }
 }
 
 void ArpmanetDC::quickSearchPressed()
@@ -1061,12 +1061,12 @@ void ArpmanetDC::quickSearchPressed()
     connect(sWidget, SIGNAL(search(quint64, QString, QByteArray, SearchWidget *)), this, SLOT(searchButtonPressed(quint64, QString, QByteArray, SearchWidget *)));
     connect(sWidget, SIGNAL(queueDownload(int, QByteArray, QString, quint64, QHostAddress)), pTransferManager, SLOT(queueDownload(int, QByteArray, QString, quint64, QHostAddress)));
 
-	searchWidgetHash.insert(sWidget->widget(), sWidget);
+    searchWidgetHash.insert(sWidget->widget(), sWidget);
     searchWidgetIDHash.insert(sWidget->id(), sWidget);
 
-	tabs->addTab(sWidget->widget(), QIcon(":/ArpmanetDC/Resources/SearchIcon.png"), tr("Search"));
+    tabs->addTab(sWidget->widget(), QIcon(":/ArpmanetDC/Resources/SearchIcon.png"), tr("Search"));
 
-	tabs->setCurrentIndex(tabs->indexOf(sWidget->widget()));
+    tabs->setCurrentIndex(tabs->indexOf(sWidget->widget()));
 
     //Wait for widget to open
     QApplication::processEvents();
@@ -1077,91 +1077,91 @@ void ArpmanetDC::quickSearchPressed()
 
 void ArpmanetDC::searchActionPressed()
 {
-	SearchWidget *sWidget = new SearchWidget(searchCompleter, pTypeIconList, pTransferManager, this);
-	
+    SearchWidget *sWidget = new SearchWidget(searchCompleter, pTypeIconList, pTransferManager, this);
+    
     connect(sWidget, SIGNAL(search(quint64, QString, QByteArray, SearchWidget *)), this, SLOT(searchButtonPressed(quint64, QString, QByteArray, SearchWidget *)));
     connect(sWidget, SIGNAL(queueDownload(int, QByteArray, QString, quint64, QHostAddress)), pTransferManager, SLOT(queueDownload(int, QByteArray, QString, quint64, QHostAddress)));
 
-	searchWidgetHash.insert(sWidget->widget(), sWidget);
+    searchWidgetHash.insert(sWidget->widget(), sWidget);
     searchWidgetIDHash.insert(sWidget->id(), sWidget);
 
-	tabs->addTab(sWidget->widget(), QIcon(":/ArpmanetDC/Resources/SearchIcon.png"), tr("Search"));
+    tabs->addTab(sWidget->widget(), QIcon(":/ArpmanetDC/Resources/SearchIcon.png"), tr("Search"));
 
-	tabs->setCurrentIndex(tabs->indexOf(sWidget->widget()));
+    tabs->setCurrentIndex(tabs->indexOf(sWidget->widget()));
 }
 
 void ArpmanetDC::queueActionPressed()
 {
-	//Check if queue widget exists already
-	if (queueWidget)
-	{
-		//If it does, select it and return
-		if (tabs->indexOf(queueWidget->widget()) != -1)
-		{
-			tabs->setCurrentIndex(tabs->indexOf(queueWidget->widget()));
-			return;
-		}
-	}
+    //Check if queue widget exists already
+    if (queueWidget)
+    {
+        //If it does, select it and return
+        if (tabs->indexOf(queueWidget->widget()) != -1)
+        {
+            tabs->setCurrentIndex(tabs->indexOf(queueWidget->widget()));
+            return;
+        }
+    }
 
-	//Otherwise, create it
-	queueWidget = new DownloadQueueWidget(pQueueList, pShare, this);
-	
-	tabs->addTab(queueWidget->widget(), QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Download Queue"));
+    //Otherwise, create it
+    queueWidget = new DownloadQueueWidget(pQueueList, pShare, this);
+    
+    tabs->addTab(queueWidget->widget(), QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Download Queue"));
 
-	tabs->setCurrentIndex(tabs->indexOf(queueWidget->widget()));
+    tabs->setCurrentIndex(tabs->indexOf(queueWidget->widget()));
 }
 
 void ArpmanetDC::downloadFinishedActionPressed()
 {
-	//Check if widget exists already
-	if (finishedWidget)
-	{
-		//If it does, select it and return
-		if (tabs->indexOf(finishedWidget->widget()) != -1)
-		{
-			tabs->setCurrentIndex(tabs->indexOf(finishedWidget->widget()));
-			return;
-		}
-	}
+    //Check if widget exists already
+    if (finishedWidget)
+    {
+        //If it does, select it and return
+        if (tabs->indexOf(finishedWidget->widget()) != -1)
+        {
+            tabs->setCurrentIndex(tabs->indexOf(finishedWidget->widget()));
+            return;
+        }
+    }
 
-	//Otherwise, create it
-	finishedWidget = new DownloadFinishedWidget(pFinishedList, this);
-		
-	tabs->addTab(finishedWidget->widget(), QIcon(":/ArpmanetDC/Resources/DownloadFinishedIcon.png"), tr("Finished Downloads"));
+    //Otherwise, create it
+    finishedWidget = new DownloadFinishedWidget(pFinishedList, this);
+        
+    tabs->addTab(finishedWidget->widget(), QIcon(":/ArpmanetDC/Resources/DownloadFinishedIcon.png"), tr("Finished Downloads"));
 
-	tabs->setCurrentIndex(tabs->indexOf(finishedWidget->widget()));
+    tabs->setCurrentIndex(tabs->indexOf(finishedWidget->widget()));
 }
 
 void ArpmanetDC::shareActionPressed()
 {
-	//Check if share widget exists already
-	if (shareWidget)
-	{
-		//If it does, select it and return
-		if (tabs->indexOf(shareWidget->widget()) != -1)
-		{
-			tabs->setCurrentIndex(tabs->indexOf(shareWidget->widget()));
-			return;
-		}
-	}
+    //Check if share widget exists already
+    if (shareWidget)
+    {
+        //If it does, select it and return
+        if (tabs->indexOf(shareWidget->widget()) != -1)
+        {
+            tabs->setCurrentIndex(tabs->indexOf(shareWidget->widget()));
+            return;
+        }
+    }
 
-	//Otherwise, create it
-	shareWidget = new ShareWidget(pShare, this);
-	connect(shareWidget, SIGNAL(saveButtonPressed()), this, SLOT(shareSaveButtonPressed()));
-	
-	tabs->addTab(shareWidget->widget(), QIcon(":/ArpmanetDC/Resources/ShareIcon.png"), tr("Share"));
+    //Otherwise, create it
+    shareWidget = new ShareWidget(pShare, this);
+    connect(shareWidget, SIGNAL(saveButtonPressed()), this, SLOT(shareSaveButtonPressed()));
+    
+    tabs->addTab(shareWidget->widget(), QIcon(":/ArpmanetDC/Resources/ShareIcon.png"), tr("Share"));
 
-	tabs->setCurrentIndex(tabs->indexOf(shareWidget->widget()));
+    tabs->setCurrentIndex(tabs->indexOf(shareWidget->widget()));
 }
 
 void ArpmanetDC::reconnectActionPressed()
 {
-	//TODO: Reconnect was pressed
-	pHub->setHubAddress(pSettings->value("hubAddress"));
-	pHub->setHubPort(pSettings->value("hubPort").toShort());
+    //TODO: Reconnect was pressed
+    pHub->setHubAddress(pSettings->value("hubAddress"));
+    pHub->setHubPort(pSettings->value("hubPort").toShort());
     pHub->setNick(pSettings->value("nick"));
     pHub->setPassword(pSettings->value("password"));
-	pHub->connectHub();
+    pHub->connectHub();
 }
 
 void ArpmanetDC::openDownloadDirActionPressed()
@@ -1172,82 +1172,82 @@ void ArpmanetDC::openDownloadDirActionPressed()
 
 void ArpmanetDC::settingsActionPressed()
 {
-	//Check if share widget exists already
-	if (settingsWidget)
-	{
-		//If it does, select it and return
-		if (tabs->indexOf(settingsWidget->widget()) != -1)
-		{
-			tabs->setCurrentIndex(tabs->indexOf(settingsWidget->widget()));
-			return;
-		}
-	}
+    //Check if share widget exists already
+    if (settingsWidget)
+    {
+        //If it does, select it and return
+        if (tabs->indexOf(settingsWidget->widget()) != -1)
+        {
+            tabs->setCurrentIndex(tabs->indexOf(settingsWidget->widget()));
+            return;
+        }
+    }
 
-	//Otherwise, create it
-	settingsWidget = new SettingsWidget(pSettings, this);
-	connect(settingsWidget, SIGNAL(settingsSaved()), this, SLOT(settingsSaved()));
-	
-	tabs->addTab(settingsWidget->widget(), QIcon(":/ArpmanetDC/Resources/SettingsIcon.png"), tr("Settings"));
+    //Otherwise, create it
+    settingsWidget = new SettingsWidget(pSettings, this);
+    connect(settingsWidget, SIGNAL(settingsSaved()), this, SLOT(settingsSaved()));
+    
+    tabs->addTab(settingsWidget->widget(), QIcon(":/ArpmanetDC/Resources/SettingsIcon.png"), tr("Settings"));
 
-	tabs->setCurrentIndex(tabs->indexOf(settingsWidget->widget()));
+    tabs->setCurrentIndex(tabs->indexOf(settingsWidget->widget()));
 }
 
 void ArpmanetDC::helpActionPressed()
 {
-	//Check if help widget exists already
-	if (helpWidget)
-	{
-		//If it does, select it and return
-		if (tabs->indexOf(helpWidget->widget()) != -1)
-		{
-			tabs->setCurrentIndex(tabs->indexOf(helpWidget->widget()));
-			return;
-		}
-	}
+    //Check if help widget exists already
+    if (helpWidget)
+    {
+        //If it does, select it and return
+        if (tabs->indexOf(helpWidget->widget()) != -1)
+        {
+            tabs->setCurrentIndex(tabs->indexOf(helpWidget->widget()));
+            return;
+        }
+    }
 
-	//Otherwise, create it
-	helpWidget = new HelpWidget(this);
-	
-	tabs->addTab(helpWidget->widget(), QIcon(":/ArpmanetDC/Resources/HelpIcon.png"), tr("Help"));
+    //Otherwise, create it
+    helpWidget = new HelpWidget(this);
+    
+    tabs->addTab(helpWidget->widget(), QIcon(":/ArpmanetDC/Resources/HelpIcon.png"), tr("Help"));
 
-	tabs->setCurrentIndex(tabs->indexOf(helpWidget->widget()));
+    tabs->setCurrentIndex(tabs->indexOf(helpWidget->widget()));
 }
 
 void ArpmanetDC::privateMessageActionPressed()
 {
-	//Get selected users
-	QModelIndex selectedIndex = userListTable->selectionModel()->selectedRows().first();//userListTable->selectionModel()->selection().indexes().first();
-	//Get nick of first user
-	QString nick = userSortProxy->data(userSortProxy->index(selectedIndex.row(), 2)).toString();
+    //Get selected users
+    QModelIndex selectedIndex = userListTable->selectionModel()->selectedRows().first();//userListTable->selectionModel()->selection().indexes().first();
+    //Get nick of first user
+    QString nick = userSortProxy->data(userSortProxy->index(selectedIndex.row(), 2)).toString();
 
-	//Check if a tab exists with a PM for this nick
-	QWidget *foundWidget = 0;
-	QHashIterator<QWidget *, PMWidget *> i(pmWidgetHash);
-	while (i.hasNext())
-	{
-		if (i.peekNext().value()->otherNick().compare(nick) == 0)
-		{
-			foundWidget = i.value()->widget();
-			break;
-		}
-		i.next();
-	}
+    //Check if a tab exists with a PM for this nick
+    QWidget *foundWidget = 0;
+    QHashIterator<QWidget *, PMWidget *> i(pmWidgetHash);
+    while (i.hasNext())
+    {
+        if (i.peekNext().value()->otherNick().compare(nick) == 0)
+        {
+            foundWidget = i.value()->widget();
+            break;
+        }
+        i.next();
+    }
 
-	//If no existing tab is found - create new one
-	if (!foundWidget)
-	{
-		PMWidget *pmWidget = new PMWidget(nick, this);
-		connect(pmWidget, SIGNAL(sendPrivateMessage(QString, QString, PMWidget *)), this, SLOT(pmSent(QString, QString, PMWidget *)));
-		pmWidgetHash.insert(pmWidget->widget(), pmWidget);
+    //If no existing tab is found - create new one
+    if (!foundWidget)
+    {
+        PMWidget *pmWidget = new PMWidget(nick, this);
+        connect(pmWidget, SIGNAL(sendPrivateMessage(QString, QString, PMWidget *)), this, SLOT(pmSent(QString, QString, PMWidget *)));
+        pmWidgetHash.insert(pmWidget->widget(), pmWidget);
 
-		tabs->addTab(pmWidget->widget(), QIcon(":/ArpmanetDC/Resources/UserIcon.png"), tr("PM - %1").arg(nick));
-		tabs->setCurrentIndex(tabs->indexOf(pmWidget->widget()));
-	}
-	//Else switch to existing tab
-	else
-	{
-		tabs->setCurrentIndex(tabs->indexOf(foundWidget));
-	}
+        tabs->addTab(pmWidget->widget(), QIcon(":/ArpmanetDC/Resources/UserIcon.png"), tr("PM - %1").arg(nick));
+        tabs->setCurrentIndex(tabs->indexOf(pmWidget->widget()));
+    }
+    //Else switch to existing tab
+    else
+    {
+        tabs->setCurrentIndex(tabs->indexOf(foundWidget));
+    }
 }
 
 //Show right-click menu on user list
@@ -1256,9 +1256,9 @@ void ArpmanetDC::showUserListContextMenu(const QPoint &pos)
     if (userListTable->selectionModel()->selectedRows().size() == 0)
         return;
 
-	QPoint globalPos = userListTable->viewport()->mapToGlobal(pos);
+    QPoint globalPos = userListTable->viewport()->mapToGlobal(pos);
 
-	userListMenu->popup(globalPos);
+    userListMenu->popup(globalPos);
 }
 
 //Userlist keypresses
@@ -1282,67 +1282,67 @@ void ArpmanetDC::userListKeyPressed(Qt::Key key, QString keyStr)
 //When a tab is deleted - free from memory
 void ArpmanetDC::tabDeleted(int index)
 {
-	//Don't delete arpmanetDC tab
-	if (index == 0)
-		return;
+    //Don't delete arpmanetDC tab
+    if (index == 0)
+        return;
 
-	//Delete search tab
-	if (searchWidgetHash.contains(tabs->widget(index)))
-	{
+    //Delete search tab
+    if (searchWidgetHash.contains(tabs->widget(index)))
+    {
         SearchWidget *widget = searchWidgetHash.value(tabs->widget(index));
         searchWidgetIDHash.remove(widget->id());
-		widget->deleteLater();
-		searchWidgetHash.remove(tabs->widget(index));
-	}
+        widget->deleteLater();
+        searchWidgetHash.remove(tabs->widget(index));
+    }
 
-	//Delete PM tab
-	if (pmWidgetHash.contains(tabs->widget(index)))
-	{
-		pmWidgetHash.value(tabs->widget(index))->deleteLater();
-		pmWidgetHash.remove(tabs->widget(index));
-	}
-	//Delete share tab
-	if (shareWidget)
-	{
-		if (shareWidget->widget() == tabs->widget(index))
-		{
-			shareWidget->deleteLater();
-			shareWidget = 0;
-		}
-	}
-	//Delete share tab
-	if (queueWidget)
-	{
-		if (queueWidget->widget() == tabs->widget(index))
-		{
-			queueWidget->deleteLater();
-			queueWidget = 0;
-		}
-	}
-	//Delete share tab
-	if (settingsWidget)
-	{
-		if (settingsWidget->widget() == tabs->widget(index))
-		{
-			settingsWidget->deleteLater();
-			settingsWidget = 0;
-		}
-	}
+    //Delete PM tab
+    if (pmWidgetHash.contains(tabs->widget(index)))
+    {
+        pmWidgetHash.value(tabs->widget(index))->deleteLater();
+        pmWidgetHash.remove(tabs->widget(index));
+    }
+    //Delete share tab
+    if (shareWidget)
+    {
+        if (shareWidget->widget() == tabs->widget(index))
+        {
+            shareWidget->deleteLater();
+            shareWidget = 0;
+        }
+    }
+    //Delete share tab
+    if (queueWidget)
+    {
+        if (queueWidget->widget() == tabs->widget(index))
+        {
+            queueWidget->deleteLater();
+            queueWidget = 0;
+        }
+    }
+    //Delete share tab
+    if (settingsWidget)
+    {
+        if (settingsWidget->widget() == tabs->widget(index))
+        {
+            settingsWidget->deleteLater();
+            settingsWidget = 0;
+        }
+    }
 
-	tabs->removeTab(index);
+    tabs->removeTab(index);
 }
 
 //Delete notifications when switching to that tab
 void ArpmanetDC::tabChanged(int index)
 {
-	if (tabs->tabBar()->tabTextColor(index) == tabTextColorNotify)
-		tabs->tabBar()->setTabTextColor(index, tabTextColorNormal);
+    if (tabs->tabBar()->tabTextColor(index) == tabTextColorNotify)
+        tabs->tabBar()->setTabTextColor(index, tabTextColorNormal);
 }
 
 void ArpmanetDC::searchButtonPressed(quint64 id, QString searchStr, QByteArray searchPacket, SearchWidget *sWidget)
 {
-	//Search button was pressed on a search tab
-	emit initiateSearch(id, searchPacket);
+    //Search button was pressed on a search tab
+    emit initiateSearch(id, searchPacket);
 
     //Replace the id
     searchWidgetIDHash.remove(searchWidgetIDHash.key(sWidget));
@@ -1350,7 +1350,7 @@ void ArpmanetDC::searchButtonPressed(quint64 id, QString searchStr, QByteArray s
 
     pShare->querySearchString(QHostAddress("127.0.0.1"), QByteArray("ME!"), id, searchPacket);
 
-	tabs->setTabText(tabs->indexOf(sWidget->widget()), tr("Search - %1").arg(searchStr.left(20)));
+    tabs->setTabText(tabs->indexOf(sWidget->widget()), tr("Search - %1").arg(searchStr.left(20)));
 
     //Add word to database and to searchWordList
     if (searchWordList->findItems(searchStr).isEmpty())
@@ -1384,18 +1384,18 @@ void ArpmanetDC::returnHostCount(int count)
 
 void ArpmanetDC::shareSaveButtonPressed()
 {
-	//Delete share tab
-	if (shareWidget)
-	{
-		setStatus(tr("Share update procedure started. Parsing directories/paths..."));
-		tabs->removeTab(tabs->indexOf(shareWidget->widget()));
-		shareWidget->deleteLater();
-		shareWidget = 0;
-		//Show hashing progress
+    //Delete share tab
+    if (shareWidget)
+    {
+        setStatus(tr("Share update procedure started. Parsing directories/paths..."));
+        tabs->removeTab(tabs->indexOf(shareWidget->widget()));
+        shareWidget->deleteLater();
+        shareWidget = 0;
+        //Show hashing progress
         hashingProgressBar->setTopText("Parsing");
-		hashingProgressBar->setRange(0,0);
+        hashingProgressBar->setRange(0,0);
         hashRateTimer->start();
-	}
+    }
 
     saveSharesPressed = true;
 }
@@ -1423,57 +1423,57 @@ void ArpmanetDC::settingsSaved()
     QByteArray cid = hash.result();
     pDispatcher->setCID(cid);
 
-	//Reset the auto update timer if necessary
-	int interval = pSettings->value("autoUpdateShareInterval").toInt();
-	if (interval == 0) //Disabled
-		updateSharesTimer->stop();
-	else if (interval != updateSharesTimer->interval())
-		updateSharesTimer->start(interval);
+    //Reset the auto update timer if necessary
+    int interval = pSettings->value("autoUpdateShareInterval").toInt();
+    if (interval == 0) //Disabled
+        updateSharesTimer->stop();
+    else if (interval != updateSharesTimer->interval())
+        updateSharesTimer->start(interval);
 
-	//Delete settings tab
-	if (settingsWidget)
-	{
-		setStatus(tr("Settings saved"));
-		tabs->removeTab(tabs->indexOf(settingsWidget->widget()));
-		settingsWidget->deleteLater();
-		settingsWidget = 0;
-	}
+    //Delete settings tab
+    if (settingsWidget)
+    {
+        setStatus(tr("Settings saved"));
+        tabs->removeTab(tabs->indexOf(settingsWidget->widget()));
+        settingsWidget->deleteLater();
+        settingsWidget = 0;
+    }
 }
 
 void ArpmanetDC::pmSent(QString otherNick, QString msg, PMWidget *pmWidget)
 {
-	//PM was sent in a tab
-	pHub->sendPrivateMessage(otherNick, msg);
+    //PM was sent in a tab
+    pHub->sendPrivateMessage(otherNick, msg);
 }
 
 void ArpmanetDC::fileHashed(QString fileName, quint64 fileSize)
 {
-	//Show on GUI when file has finished hashing
-	setStatus(tr("Finished hashing file: %1").arg(fileName));
-	shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr()));
+    //Show on GUI when file has finished hashing
+    setStatus(tr("Finished hashing file: %1").arg(fileName));
+    shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr()));
     
     pFilesHashedSinceUpdate++;
     pFileSizeHashedSinceUpdate += fileSize;
-	//QApplication::processEvents();
+    //QApplication::processEvents();
 }
 
 void ArpmanetDC::directoryParsed(QString path)
 {
-	//Show on GUI when directory has been parsed
-	setStatus(tr("Finished parsing directory/path: %1").arg(path));
-	//QApplication::processEvents();
+    //Show on GUI when directory has been parsed
+    setStatus(tr("Finished parsing directory/path: %1").arg(path));
+    //QApplication::processEvents();
 }
 
 void ArpmanetDC::hashingDone(int msecs, int numFiles)
 {
-	QString timeStr = tr("%1 seconds").arg((double)msecs / 1000.0, 0, 'f', 2);
+    QString timeStr = tr("%1 seconds").arg((double)msecs / 1000.0, 0, 'f', 2);
 
-	//Show on GUI when hashing is completed
+    //Show on GUI when hashing is completed
     hashRateTimer->stop();
-	setStatus(tr("Shares updated in %1").arg(timeStr));
-	shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr(true)));
+    setStatus(tr("Shares updated in %1").arg(timeStr));
+    shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr(true)));
     shareSizeLabel->setToolTip(tr("Share size: %1\nFiles shared: %2").arg(pShare->totalShareStr(false)).arg(numFiles));
-	hashingProgressBar->setRange(0,1);
+    hashingProgressBar->setRange(0,1);
 
     //Start processing containers if there are outstanding
     if (saveSharesPressed)
@@ -1489,8 +1489,8 @@ void ArpmanetDC::parsingDone(int msecs)
 {
     QString timeStr = tr("%1 seconds").arg((double)msecs / 1000.0, 0, 'f', 2);
 
-	//Show on GUI when directory parsing is completed
-	setStatus(tr("Finished directory/path parsing in %1. Checking for new/modified files...").arg(timeStr));
+    //Show on GUI when directory parsing is completed
+    setStatus(tr("Finished directory/path parsing in %1. Checking for new/modified files...").arg(timeStr));
     hashingProgressBar->setTopText("Hashing");
 }
 
@@ -1546,71 +1546,71 @@ void ArpmanetDC::downloadStarted(QByteArray tth)
 
 void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)
 {
-	//Check if a tab exists with a PM for this nick
-	QWidget *foundWidget = 0;
-	QHashIterator<QWidget *, PMWidget *> i(pmWidgetHash);
-	while (i.hasNext())
-	{
-		if (i.peekNext().value())
-		{
-			if (i.peekNext().value()->otherNick() == otherNick)
-			{
-				foundWidget = i.peekNext().key();
-				break;
-			}
-		}
-		i.next();
-	}
+    //Check if a tab exists with a PM for this nick
+    QWidget *foundWidget = 0;
+    QHashIterator<QWidget *, PMWidget *> i(pmWidgetHash);
+    while (i.hasNext())
+    {
+        if (i.peekNext().value())
+        {
+            if (i.peekNext().value()->otherNick() == otherNick)
+            {
+                foundWidget = i.peekNext().key();
+                break;
+            }
+        }
+        i.next();
+    }
 
-	//If no existing tab is found - create new one
-	if (!foundWidget)
-	{
-		PMWidget *pmWidget = new PMWidget(otherNick, this);
-		connect(pmWidget, SIGNAL(sendPrivateMessage(QString, QString, PMWidget *)), this, SLOT(pmSent(QString, QString, PMWidget *)));
-		pmWidgetHash.insert(pmWidget->widget(), pmWidget);
+    //If no existing tab is found - create new one
+    if (!foundWidget)
+    {
+        PMWidget *pmWidget = new PMWidget(otherNick, this);
+        connect(pmWidget, SIGNAL(sendPrivateMessage(QString, QString, PMWidget *)), this, SLOT(pmSent(QString, QString, PMWidget *)));
+        pmWidgetHash.insert(pmWidget->widget(), pmWidget);
 
-		tabs->addTab(pmWidget->widget(), QIcon(":/ArpmanetDC/Resources/UserIcon.png"), tr("PM - %1").arg(otherNick));
-		
-		//If on mainchat and not typing, switch to PM
-		if (tabs->currentIndex() == 0 && chatLineEdit->text().isEmpty())
-		{
-			tabs->setCurrentIndex(tabs->indexOf(pmWidget->widget()));
-		}
-		//Else notify tab
-		else
-		{
-			//Don't notify if already in that tab
-			if (tabs->currentIndex() != tabs->indexOf(pmWidget->widget()))
-			{
-				//Notify tab
-				tabs->tabBar()->setTabTextColor(tabs->indexOf(pmWidget->widget()), tabTextColorNotify);
-			}
-		}
-		//tabs->setCurrentIndex(tabs->indexOf(pmWidget->widget()));
+        tabs->addTab(pmWidget->widget(), QIcon(":/ArpmanetDC/Resources/UserIcon.png"), tr("PM - %1").arg(otherNick));
+        
+        //If on mainchat and not typing, switch to PM
+        if (tabs->currentIndex() == 0 && chatLineEdit->text().isEmpty())
+        {
+            tabs->setCurrentIndex(tabs->indexOf(pmWidget->widget()));
+        }
+        //Else notify tab
+        else
+        {
+            //Don't notify if already in that tab
+            if (tabs->currentIndex() != tabs->indexOf(pmWidget->widget()))
+            {
+                //Notify tab
+                tabs->tabBar()->setTabTextColor(tabs->indexOf(pmWidget->widget()), tabTextColorNotify);
+            }
+        }
+        //tabs->setCurrentIndex(tabs->indexOf(pmWidget->widget()));
 
-		pmWidget->receivePrivateMessage(msg);
-	}
-	//Else notify existing tab
-	else
-	{
-		//If on mainchat, switch to PM
-		if (tabs->currentIndex() == 0 && chatLineEdit->text().isEmpty())
-		{
-			tabs->setCurrentIndex(tabs->indexOf(foundWidget));
-		}
-		//Else notify tab
-		else
-		{
-			//Don't notify if already in that tab
-			if (tabs->currentIndex() != tabs->indexOf(foundWidget))
-			{
-				//Notify tab
-				tabs->tabBar()->setTabTextColor(tabs->indexOf(foundWidget), tabTextColorNotify);
-			}
-		}
-		//Process message
-		pmWidgetHash.value(foundWidget)->receivePrivateMessage(msg);
-	}
+        pmWidget->receivePrivateMessage(msg);
+    }
+    //Else notify existing tab
+    else
+    {
+        //If on mainchat, switch to PM
+        if (tabs->currentIndex() == 0 && chatLineEdit->text().isEmpty())
+        {
+            tabs->setCurrentIndex(tabs->indexOf(foundWidget));
+        }
+        //Else notify tab
+        else
+        {
+            //Don't notify if already in that tab
+            if (tabs->currentIndex() != tabs->indexOf(foundWidget))
+            {
+                //Notify tab
+                tabs->tabBar()->setTabTextColor(tabs->indexOf(foundWidget), tabTextColorNotify);
+            }
+        }
+        //Process message
+        pmWidgetHash.value(foundWidget)->receivePrivateMessage(msg);
+    }
 }
 
 //FTP Update slots
@@ -1664,11 +1664,11 @@ void ArpmanetDC::ftpDataTransferProgress(qint64 done, qint64 total)
 //Received a main chat message from the hub
 void ArpmanetDC::appendChatLine(QString msg)
 {
-	//Change mainchat user nick format
-	if (msg.left(4).compare("&lt;") == 0)
-	{
-		QString nick = msg.mid(4,msg.indexOf("&gt;")-4);
-		msg.remove(0,msg.indexOf("&gt;")+4);
+    //Change mainchat user nick format
+    if (msg.left(4).compare("&lt;") == 0)
+    {
+        QString nick = msg.mid(4,msg.indexOf("&gt;")-4);
+        msg.remove(0,msg.indexOf("&gt;")+4);
 
         //If using the /me command
         if (msg.left(5).compare(" /me ") == 0)
@@ -1679,62 +1679,62 @@ void ArpmanetDC::appendChatLine(QString msg)
         }
         else
         {
-		    if (nick == "::error")
-			    msg = tr("<font color=\"red\"><b>%1</b></font>").arg(msg);
-		    else if (nick == "::info")
-			    msg = tr("<font color=\"green\"><b>%1</b></font>").arg(msg);
-		    else
-			    msg.prepend(tr("<b>%1</b>").arg(nick));
+            if (nick == "::error")
+                msg = tr("<font color=\"red\"><b>%1</b></font>").arg(msg);
+            else if (nick == "::info")
+                msg = tr("<font color=\"green\"><b>%1</b></font>").arg(msg);
+            else
+                msg.prepend(tr("<b>%1</b>").arg(nick));
         }
-	}
+    }
 
-	//Replace new lines with <br/>
-	msg.replace("\n"," <br/>");
-	msg.replace("\r","");
+    //Replace new lines with <br/>
+    msg.replace("\n"," <br/>");
+    msg.replace("\r","");
 
-	//Replace nick with red text
-	msg.replace(pSettings->value("nick"), tr("<font color=\"red\">%1</font>").arg(pSettings->value("nick")));
+    //Replace nick with red text
+    msg.replace(pSettings->value("nick"), tr("<font color=\"red\">%1</font>").arg(pSettings->value("nick")));
     
-	//Convert plain text links to HTML links
-	convertHTMLLinks(msg);
+    //Convert plain text links to HTML links
+    convertHTMLLinks(msg);
 
-	//Convert plain text magnet links
-	convertMagnetLinks(msg);
+    //Convert plain text magnet links
+    convertMagnetLinks(msg);
 
-	//Delete the first line if buffer is full
+    //Delete the first line if buffer is full
     while (mainChatBlocks > MAX_MAINCHAT_BLOCKS)
-	{
-		QTextCursor tcOriginal = mainChatTextEdit->textCursor();
-		QTextCursor tc = mainChatTextEdit->textCursor();
-		tc.movePosition(QTextCursor::Start, QTextCursor::MoveAnchor);
-		tc.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor);
-		tc.removeSelectedText();
-		tc.movePosition(QTextCursor::End, QTextCursor::MoveAnchor);
-				
-		mainChatTextEdit->setTextCursor(tc);
-		mainChatBlocks--;
-	}
+    {
+        QTextCursor tcOriginal = mainChatTextEdit->textCursor();
+        QTextCursor tc = mainChatTextEdit->textCursor();
+        tc.movePosition(QTextCursor::Start, QTextCursor::MoveAnchor);
+        tc.movePosition(QTextCursor::NextBlock, QTextCursor::KeepAnchor);
+        tc.removeSelectedText();
+        tc.movePosition(QTextCursor::End, QTextCursor::MoveAnchor);
+                
+        mainChatTextEdit->setTextCursor(tc);
+        mainChatBlocks--;
+    }
 
-	//Output chat line with current time
-	mainChatTextEdit->append(tr("<b>[%1]</b> %2").arg(QTime::currentTime().toString()).arg(msg));
-	mainChatBlocks++;
+    //Output chat line with current time
+    mainChatTextEdit->append(tr("<b>[%1]</b> %2").arg(QTime::currentTime().toString()).arg(msg));
+    mainChatBlocks++;
 
-	//If not on mainchat, notify tab
-	if (tabs->currentIndex() != 0)
-	{
-		tabs->tabBar()->setTabTextColor(0, tabTextColorNotify);
-	}
+    //If not on mainchat, notify tab
+    if (tabs->currentIndex() != 0)
+    {
+        tabs->tabBar()->setTabTextColor(0, tabTextColorNotify);
+    }
 }
 
 void ArpmanetDC::sortUserList()
 {
-	//Sort user list when timer has expired and sorting is required
-	if (sortDue)
-	{
-		userSortProxy->sort(userListTable->horizontalHeader()->sortIndicatorSection(), userListTable->horizontalHeader()->sortIndicatorOrder());
+    //Sort user list when timer has expired and sorting is required
+    if (sortDue)
+    {
+        userSortProxy->sort(userListTable->horizontalHeader()->sortIndicatorSection(), userListTable->horizontalHeader()->sortIndicatorOrder());
         resizeRowsToContents(userListTable);
-		sortDue = false;
-	}
+        sortDue = false;
+    }
 }
 
 void ArpmanetDC::updateGUIEverySecond()
@@ -1757,27 +1757,27 @@ void ArpmanetDC::calculateHashRate()
 
 void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, QString client, QString version)
 {
-	//Don't add empty nicknames
-	if (nick.isEmpty())
-		return;
+    //Don't add empty nicknames
+    if (nick.isEmpty())
+        return;
 
     //Build new descriptions
     if (!mode.isEmpty())
         desc = tr("%1 %2").arg(client).arg(version);
 
-	//Check if user is already present in the list
-	QList<QStandardItem *> foundItems = userListModel->findItems(nick, Qt::MatchExactly, 2);
+    //Check if user is already present in the list
+    QList<QStandardItem *> foundItems = userListModel->findItems(nick, Qt::MatchExactly, 2);
 
-	//Not present - create new
-	if (foundItems.isEmpty())
-	{
+    //Not present - create new
+    if (foundItems.isEmpty())
+    {
         additionalInfoLabel->setText(tr("User logged in: %1").arg(nick));
 
-		//Add new row into table
-		userListModel->appendRow(new QStandardItem());
-		
-		//Use different formats for Active/Passive users
-		QStandardItem *item = new QStandardItem();
+        //Add new row into table
+        userListModel->appendRow(new QStandardItem());
+        
+        //Use different formats for Active/Passive users
+        QStandardItem *item = new QStandardItem();
         item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
 
         QBrush brush = item->foreground();
@@ -1827,58 +1827,58 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
             item->setIcon(QIcon(*userIcon));
         }
 
-		//Add nick to model
-		userListModel->setItem(userListModel->rowCount()-1, 0, item);		
+        //Add nick to model
+        userListModel->setItem(userListModel->rowCount()-1, 0, item);        
 
-		//Add description to model
-		QStandardItem *descItem = new QStandardItem(desc);
-		descItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-		userListModel->setItem(userListModel->rowCount()-1, 1, descItem);
+        //Add description to model
+        QStandardItem *descItem = new QStandardItem(desc);
+        descItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+        userListModel->setItem(userListModel->rowCount()-1, 1, descItem);
 
-		//Add non displaying fields
-		userListModel->setItem(userListModel->rowCount()-1, 2, new QStandardItem(nick));
-		userListModel->setItem(userListModel->rowCount()-1, 3, new QStandardItem(desc));
-		userListModel->setItem(userListModel->rowCount()-1, 4, new QStandardItem(mode));
+        //Add non displaying fields
+        userListModel->setItem(userListModel->rowCount()-1, 2, new QStandardItem(nick));
+        userListModel->setItem(userListModel->rowCount()-1, 3, new QStandardItem(desc));
+        userListModel->setItem(userListModel->rowCount()-1, 4, new QStandardItem(mode));
         userListModel->setItem(userListModel->rowCount()-1, 5, new QStandardItem(client));
         userListModel->setItem(userListModel->rowCount()-1, 6, new QStandardItem(version));
-		
-		//Signal for sorting
-		sortDue = true;
+        
+        //Signal for sorting
+        sortDue = true;
 
-		//Update user count
-		userHubCountLabel->setText(tr("Hub Users: %1/%2").arg(arpmanetDCUsers).arg(userListModel->rowCount()));		
+        //Update user count
+        userHubCountLabel->setText(tr("Hub Users: %1/%2").arg(arpmanetDCUsers).arg(userListModel->rowCount()));        
 
         //Check if PM windows are open for this user - notify
-	    QWidget *foundWidget = 0;
-	    QHashIterator<QWidget *, PMWidget *> i(pmWidgetHash);
-	    while (i.hasNext())
-	    {
-		    if (i.peekNext().value())
-		    {
-			    if (i.peekNext().value()->otherNick() == nick)
-			    {
-				    foundWidget = i.peekNext().key();
-				    break;
-			    }
-		    }
-		    i.next();
-	    }
+        QWidget *foundWidget = 0;
+        QHashIterator<QWidget *, PMWidget *> i(pmWidgetHash);
+        while (i.hasNext())
+        {
+            if (i.peekNext().value())
+            {
+                if (i.peekNext().value()->otherNick() == nick)
+                {
+                    foundWidget = i.peekNext().key();
+                    break;
+                }
+            }
+            i.next();
+        }
 
         //Notify existing tab
-	    if (foundWidget)
-	    {
-		    //Notify tab
+        if (foundWidget)
+        {
+            //Notify tab
             tabs->tabBar()->setTabTextColor(tabs->indexOf(foundWidget), tabTextColorNormal);
 
             //Set online status
             pmWidgetHash.value(foundWidget)->userLoginChanged(true);
-	    }
-	}
-	//Present - edit existing
-	else
-	{
-		//Get first match (there should be only one)
-		int foundIndex = foundItems.first()->index().row();
+        }
+    }
+    //Present - edit existing
+    else
+    {
+        //Get first match (there should be only one)
+        int foundIndex = foundItems.first()->index().row();
         QStandardItem *item = userListModel->item(foundIndex, 0);
 
         QBrush brush = userListModel->item(foundIndex,0)->foreground();
@@ -1927,84 +1927,84 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
             //Active user - another client
             item->setIcon(QIcon(*userIcon));
         }
-		        
-		if (!desc.isEmpty())
-		{
-			//Edit description
-			userListModel->item(foundIndex, 1)->setText(desc);
-			userListModel->item(foundIndex, 1)->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+                
+        if (!desc.isEmpty())
+        {
+            //Edit description
+            userListModel->item(foundIndex, 1)->setText(desc);
+            userListModel->item(foundIndex, 1)->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
 
-			//Edit non displaying field
-			userListModel->item(foundIndex, 3)->setText(desc);
-		}
+            //Edit non displaying field
+            userListModel->item(foundIndex, 3)->setText(desc);
+        }
 
-		if (!mode.isEmpty())
-			userListModel->item(foundIndex, 4)->setText(mode);
+        if (!mode.isEmpty())
+            userListModel->item(foundIndex, 4)->setText(mode);
 
         if (!client.isEmpty())
             userListModel->item(foundIndex, 5)->setText(client);
 
         if (!version.isEmpty())
             userListModel->item(foundIndex, 6)->setText(version);
-		
-		//Signal for sorting
-		sortDue = true;
-	}
+        
+        //Signal for sorting
+        sortDue = true;
+    }
 }
 
 void ArpmanetDC::userListUserLoggedOut(QString nick)
 {
-	//Find the items matching the nickname in the model
-	QList<QStandardItem *> items = userListModel->findItems(nick, Qt::MatchFixedString, 2);
-	
+    //Find the items matching the nickname in the model
+    QList<QStandardItem *> items = userListModel->findItems(nick, Qt::MatchFixedString, 2);
+    
     if (items.isEmpty())
-		return;
+        return;
 
     //Get type of client
     if (userListModel->item(items.first()->row(), 5)->text() == "ArpmanetDC")
         arpmanetDCUsers--;
 
-	//Remove the user from the list
-	if (userListModel->removeRows(items.first()->index().row(), 1))
-		additionalInfoLabel->setText(tr("User logged out: %1").arg(nick));
-	else
-		additionalInfoLabel->setText(tr("User not in list: %1").arg(nick));
+    //Remove the user from the list
+    if (userListModel->removeRows(items.first()->index().row(), 1))
+        additionalInfoLabel->setText(tr("User logged out: %1").arg(nick));
+    else
+        additionalInfoLabel->setText(tr("User not in list: %1").arg(nick));
 
-	//Update user count
-	userHubCountLabel->setText(tr("Hub Users: %1/%2").arg(arpmanetDCUsers).arg(userListModel->rowCount()));
+    //Update user count
+    userHubCountLabel->setText(tr("Hub Users: %1/%2").arg(arpmanetDCUsers).arg(userListModel->rowCount()));
 
     //Check if a tab exists with a PM for this nick
-	QWidget *foundWidget = 0;
-	QHashIterator<QWidget *, PMWidget *> i(pmWidgetHash);
-	while (i.hasNext())
-	{
-		if (i.peekNext().value())
-		{
-			if (i.peekNext().value()->otherNick() == nick)
-			{
-				foundWidget = i.peekNext().key();
-				break;
-			}
-		}
-		i.next();
-	}
+    QWidget *foundWidget = 0;
+    QHashIterator<QWidget *, PMWidget *> i(pmWidgetHash);
+    while (i.hasNext())
+    {
+        if (i.peekNext().value())
+        {
+            if (i.peekNext().value()->otherNick() == nick)
+            {
+                foundWidget = i.peekNext().key();
+                break;
+            }
+        }
+        i.next();
+    }
 
     //Notify existing tab
-	if (foundWidget)
-	{
-		//Notify tab
+    if (foundWidget)
+    {
+        //Notify tab
         tabs->tabBar()->setTabTextColor(tabs->indexOf(foundWidget), tabTextColorOffline);
 
         //Set offline status
         pmWidgetHash.value(foundWidget)->userLoginChanged(false);
-	}
+    }
 }
 
 void ArpmanetDC::userListNickListReceived(QStringList list)
 {
-	//Add/update user list for every nick in nickList
-	foreach (QString nick, list)
-		userListInfoReceived(nick, "", "", "", "");
+    //Add/update user list for every nick in nickList
+    foreach (QString nick, list)
+        userListInfoReceived(nick, "", "", "", "");
 }
 
 void ArpmanetDC::opListReceived(QStringList list)
@@ -2015,7 +2015,7 @@ void ArpmanetDC::opListReceived(QStringList list)
     foreach (QString nick, pOPList)
     {
         //Check if user is already present in the list - otherwise the myINFO section will deal with it
-	    QList<QStandardItem *> foundItems = userListModel->findItems(nick, Qt::MatchExactly, 2);
+        QList<QStandardItem *> foundItems = userListModel->findItems(nick, Qt::MatchExactly, 2);
         
         if (foundItems.isEmpty())
             continue;
@@ -2034,14 +2034,14 @@ void ArpmanetDC::opListReceived(QStringList list)
 
 void ArpmanetDC::hubOffline()
 {
-	tabs->setTabIcon(0, QIcon(":/ArpmanetDC/Resources/ServerOfflineIcon.png"));
-	setStatus("ArpmanetDC hub went offline");
+    tabs->setTabIcon(0, QIcon(":/ArpmanetDC/Resources/ServerOfflineIcon.png"));
+    setStatus("ArpmanetDC hub went offline");
 }
 
 void ArpmanetDC::hubOnline()
 {
-	tabs->setTabIcon(0, QIcon(":/ArpmanetDC/Resources/ServerIcon.png"));
-	setStatus("ArpmanetDC hub online");
+    tabs->setTabIcon(0, QIcon(":/ArpmanetDC/Resources/ServerIcon.png"));
+    setStatus("ArpmanetDC hub online");
 }
 
 void ArpmanetDC::bootstrapStatusChanged(int status)
@@ -2054,18 +2054,18 @@ void ArpmanetDC::bootstrapStatusChanged(int status)
     //  2: Suksesvol gebootstrap op broadcast
     //  3: Suksesvol gebootstrap op multicast
 
-	bootstrapStatusLabel->setText(tr("%1").arg(status));
-	
-	//If not bootstrapped yet
-	if (status <= 0)
+    bootstrapStatusLabel->setText(tr("%1").arg(status));
+    
+    //If not bootstrapped yet
+    if (status <= 0)
     {
-		connectionIconLabel->setPixmap(*unbootstrappedIcon);
+        connectionIconLabel->setPixmap(*unbootstrappedIcon);
         connectionIconLabel->setToolTip(tr("Bootstrapping..."));
     }
-	//No other nodes nearby, waiting
-	else if (status == 1)
+    //No other nodes nearby, waiting
+    else if (status == 1)
     {
-		connectionIconLabel->setPixmap(*bootstrappedIcon);
+        connectionIconLabel->setPixmap(*bootstrappedIcon);
         connectionIconLabel->setToolTip(tr("Waiting for nodes"));
     }
     //If bootstrapped in either broadcast/multicast
@@ -2351,12 +2351,12 @@ void ArpmanetDC::mainChatLinkClicked(const QUrl &link)
         connect(sWidget, SIGNAL(search(quint64, QString, QByteArray, SearchWidget *)), this, SLOT(searchButtonPressed(quint64, QString, QByteArray, SearchWidget *)));
         connect(sWidget, SIGNAL(queueDownload(int, QByteArray, QString, quint64, QHostAddress)), pTransferManager, SLOT(queueDownload(int, QByteArray, QString, quint64, QHostAddress)));
 
-	    searchWidgetHash.insert(sWidget->widget(), sWidget);
+        searchWidgetHash.insert(sWidget->widget(), sWidget);
         searchWidgetIDHash.insert(sWidget->id(), sWidget);
 
-	    tabs->addTab(sWidget->widget(), QIcon(":/ArpmanetDC/Resources/SearchIcon.png"), tr("Search"));
+        tabs->addTab(sWidget->widget(), QIcon(":/ArpmanetDC/Resources/SearchIcon.png"), tr("Search"));
 
-	    tabs->setCurrentIndex(tabs->indexOf(sWidget->widget()));
+        tabs->setCurrentIndex(tabs->indexOf(sWidget->widget()));
 
         //Wait for widget to open
         QApplication::processEvents();
@@ -2370,122 +2370,122 @@ void ArpmanetDC::mainChatLinkClicked(const QUrl &link)
 
 void ArpmanetDC::convertHTMLLinks(QString &msg)
 {
-	//Replace html links with hrefs
-	int currentIndex = 0;
-	QString regex = "(href\\s*=\\s*['\"]?)?((www\\.|(http|https|ftp|news|file)+\\:\\/\\/)[&#95;._a-z0-9\\-]+\\.[a-z0-9\\/&#95;:@=.+?,##%&~\\-_]*[^.|\\'|\\# |!|\\(|?|,| |>|<|;|\\)])";
-	QRegExp rx(regex, Qt::CaseInsensitive);
-	
-	int pos = 0;
-	//Check for regex's and replace
-	while ((pos = rx.indexIn(msg, pos)) != -1)
-	{
-		//Extract link
-		QString link = msg.mid(pos, rx.matchedLength());
-		if (link.left(5).compare("href=") == 0)
-		{
-			//Skip if already an href
-			pos += 2*link.size();
-			continue;
-		}
+    //Replace html links with hrefs
+    int currentIndex = 0;
+    QString regex = "(href\\s*=\\s*['\"]?)?((www\\.|(http|https|ftp|news|file)+\\:\\/\\/)[&#95;._a-z0-9\\-]+\\.[a-z0-9\\/&#95;:@=.+?,##%&~\\-_]*[^.|\\'|\\# |!|\\(|?|,| |>|<|;|\\)])";
+    QRegExp rx(regex, Qt::CaseInsensitive);
+    
+    int pos = 0;
+    //Check for regex's and replace
+    while ((pos = rx.indexIn(msg, pos)) != -1)
+    {
+        //Extract link
+        QString link = msg.mid(pos, rx.matchedLength());
+        if (link.left(5).compare("href=") == 0)
+        {
+            //Skip if already an href
+            pos += 2*link.size();
+            continue;
+        }
 
-		//Construct href
-		QString hrefLink = tr("<a href=\"%1\">%1</a>").arg(link);
+        //Construct href
+        QString hrefLink = tr("<a href=\"%1\">%1</a>").arg(link);
 
-		//Replace link
-		msg.remove(pos, link.size());
-		msg.insert(pos, hrefLink);
+        //Replace link
+        msg.remove(pos, link.size());
+        msg.insert(pos, hrefLink);
 
-		//Replace www. links with http://www
-		msg.replace("href=\"www", "href=\"http://www");
-		pos += hrefLink.size();
-	}
+        //Replace www. links with http://www
+        msg.replace("href=\"www", "href=\"http://www");
+        pos += hrefLink.size();
+    }
 }
 
 void ArpmanetDC::convertMagnetLinks(QString &msg)
 {
-	//Replace magnet links with hrefs
-	int currentIndex = 0;
-	QString regex = "(magnet:\\?xt\\=urn:(?:tree:tiger|sha1):([a-z0-9]{32,39})([a-z0-9\\/&#95;:@=.+?,##%&~\\-_()'\\[\\]]*))";
-	QRegExp rx(regex, Qt::CaseInsensitive);
+    //Replace magnet links with hrefs
+    int currentIndex = 0;
+    QString regex = "(magnet:\\?xt\\=urn:(?:tree:tiger|sha1):([a-z0-9]{32,39})([a-z0-9\\/&#95;:@=.+?,##%&~\\-_()'\\[\\]]*))";
+    QRegExp rx(regex, Qt::CaseInsensitive);
 
-	int pos = 0;
-	//Check for regex's and replace
-	while ((pos = rx.indexIn(msg, pos)) != -1)
-	{
-		//Extract link
-		QString link = rx.cap(1);
-		QString hash = rx.cap(2);
-		QString extra = rx.cap(3);
+    int pos = 0;
+    //Check for regex's and replace
+    while ((pos = rx.indexIn(msg, pos)) != -1)
+    {
+        //Extract link
+        QString link = rx.cap(1);
+        QString hash = rx.cap(2);
+        QString extra = rx.cap(3);
 
-		QString size, fileName;
-		QString sizeStr;
+        QString size, fileName;
+        QString sizeStr;
 
-		//Parse filename and size
-		if (!extra.isEmpty())
-		{
-			//Parse size
-			QString sizeRegEx = "&xl=([\\d]+)";
-			QRegExp sRx(sizeRegEx, Qt::CaseInsensitive);
+        //Parse filename and size
+        if (!extra.isEmpty())
+        {
+            //Parse size
+            QString sizeRegEx = "&xl=([\\d]+)";
+            QRegExp sRx(sizeRegEx, Qt::CaseInsensitive);
 
-			int posS = 0;
-			if ((posS = sRx.indexIn(extra, posS)) != -1)
-				size = sRx.cap(1);
+            int posS = 0;
+            if ((posS = sRx.indexIn(extra, posS)) != -1)
+                size = sRx.cap(1);
 
-			//Convert to correct unit
-			double sizeInt = size.toDouble();
+            //Convert to correct unit
+            double sizeInt = size.toDouble();
             sizeStr = bytesToSize(size.toULongLong());
 
-			//Parse filename
-			QString fileNameRegEx = "&dn=([a-z0-9+\\-_.\\[\\]()']*(?:[\\.]+[a-z0-9+\\-_\\[\\]]*))";
-			QRegExp fRx(fileNameRegEx, Qt::CaseInsensitive);
+            //Parse filename
+            QString fileNameRegEx = "&dn=([a-z0-9+\\-_.\\[\\]()']*(?:[\\.]+[a-z0-9+\\-_\\[\\]]*))";
+            QRegExp fRx(fileNameRegEx, Qt::CaseInsensitive);
 
-			//Replace +'s with spaces
-			if ((posS = fRx.indexIn(extra, posS)) != -1)
-				fileName = fRx.cap(1).replace("+", " ");
-		}
+            //Replace +'s with spaces
+            if ((posS = fRx.indexIn(extra, posS)) != -1)
+                fileName = fRx.cap(1).replace("+", " ");
+        }
 
-		if (link.left(5).compare("href=") == 0)
-		{
-			//Skip if already an href
-			pos += 2*link.size();
-			continue;
-		}
+        if (link.left(5).compare("href=") == 0)
+        {
+            //Skip if already an href
+            pos += 2*link.size();
+            continue;
+        }
 
-		//Construct href
-		QString hrefLink = tr("<a href=\"%1\">%2 (%3)</a>").arg(link).arg(fileName).arg(sizeStr);
+        //Construct href
+        QString hrefLink = tr("<a href=\"%1\">%2 (%3)</a>").arg(link).arg(fileName).arg(sizeStr);
 
-		//Replace link
-		msg.remove(pos, link.size());
-		msg.insert(pos, hrefLink);
+        //Replace link
+        msg.remove(pos, link.size());
+        msg.insert(pos, hrefLink);
 
-		pos += hrefLink.size();
-	}
+        pos += hrefLink.size();
+    }
 }
 
 QHostAddress ArpmanetDC::getIPGuess()
 {
     //For jokes, get the actual IP of the computer and use the first one for the dispatcher
-	//QList<QHostAddress> ips;
-	//QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
-	foreach (QNetworkInterface interf, QNetworkInterface::allInterfaces())
-	{
-		//Only check the online interfaces capable of broadcasting that's not the local loopback
-		if (interf.flags().testFlag(QNetworkInterface::IsRunning) 
-			&& interf.flags().testFlag(QNetworkInterface::CanBroadcast) 
-			&& !interf.flags().testFlag(QNetworkInterface::IsLoopBack)
-			&& interf.flags().testFlag(QNetworkInterface::IsUp))
-		{
-			foreach (QNetworkAddressEntry entry, interf.addressEntries())
-			{
-				//Only add IPv4 addresses
-				if (entry.ip().protocol() == QAbstractSocket::IPv4Protocol)
-				{
-					//ips.append(entry.ip());
+    //QList<QHostAddress> ips;
+    //QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
+    foreach (QNetworkInterface interf, QNetworkInterface::allInterfaces())
+    {
+        //Only check the online interfaces capable of broadcasting that's not the local loopback
+        if (interf.flags().testFlag(QNetworkInterface::IsRunning) 
+            && interf.flags().testFlag(QNetworkInterface::CanBroadcast) 
+            && !interf.flags().testFlag(QNetworkInterface::IsLoopBack)
+            && interf.flags().testFlag(QNetworkInterface::IsUp))
+        {
+            foreach (QNetworkAddressEntry entry, interf.addressEntries())
+            {
+                //Only add IPv4 addresses
+                if (entry.ip().protocol() == QAbstractSocket::IPv4Protocol)
+                {
+                    //ips.append(entry.ip());
                     return entry.ip();
-				}
-			}
-		}
-	}
+                }
+            }
+        }
+    }
 
     return QHostAddress();
 }
@@ -2502,17 +2502,17 @@ QString ArpmanetDC::downloadPath()
 
 QString ArpmanetDC::nick()
 {
-	return pSettings->value("nick");
+    return pSettings->value("nick");
 }
 
 QString ArpmanetDC::password()
 {
-	return pSettings->value("password");
+    return pSettings->value("password");
 }
 
 sqlite3 *ArpmanetDC::database() const
 {
-	return db;
+    return db;
 }
 
 QueueStruct ArpmanetDC::queueEntry(QByteArray tth)

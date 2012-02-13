@@ -4,12 +4,12 @@
 
 int main(int argc, char *argv[])
 {
-	QApplication a(argc, argv);
-	ArpmanetDC w(a.arguments());
+    QApplication a(argc, argv);
+    ArpmanetDC w(a.arguments());
     if (w.createdGUI)
     {
         w.show();
-	    return a.exec();
+        return a.exec();
     }
     else
         return 0;

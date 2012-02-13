@@ -399,7 +399,7 @@ void HubConnection::socketError(QAbstractSocket::SocketError error)
             errorString += tr(" Retrying in %1 second%2...").arg(interval / 1000).arg((interval / 1000) != 1 ? "s" : "");
             reconnectTimer->start(interval);
         }
-    }	
+    }    
 
     //If hub was online, change status to offline
     if (hubIsOnline)

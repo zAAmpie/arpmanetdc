@@ -24,64 +24,64 @@ class ArpmanetDC;
 
 struct FinishedDownloadStruct
 {
-	QString fileName;
-	QString filePath;
-	qint64 fileSize;
-	QByteArray tthRoot;
-	QString downloadedDate;
+    QString fileName;
+    QString filePath;
+    qint64 fileSize;
+    QByteArray tthRoot;
+    QString downloadedDate;
 };
 
 //Class encapsulating all widgets/signals for search tab
 class DownloadFinishedWidget : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	DownloadFinishedWidget(QHash<QByteArray, FinishedDownloadStruct> *finishedList, ArpmanetDC *parent);
-	~DownloadFinishedWidget();
+    DownloadFinishedWidget(QHash<QByteArray, FinishedDownloadStruct> *finishedList, ArpmanetDC *parent);
+    ~DownloadFinishedWidget();
 
-	//Get the encapsulating widget
-	QWidget *widget();
+    //Get the encapsulating widget
+    QWidget *widget();
 
 public slots:
-	//Add an entry
-	void addFinishedDownload(FinishedDownloadStruct file);
+    //Add an entry
+    void addFinishedDownload(FinishedDownloadStruct file);
 
 private slots:
-	//Slots
-	void showFinishedTableContextMenu(const QPoint &);
+    //Slots
+    void showFinishedTableContextMenu(const QPoint &);
     void downloadDoubleClicked(QModelIndex index);
 
-	//Actions
-	void clearActionPressed();
-	void openActionPressed();
+    //Actions
+    void clearActionPressed();
+    void openActionPressed();
     void deleteActionPressed();
 
 signals:
-	//Signals to clear the database list
-	//void clearFinishedList();
-	
+    //Signals to clear the database list
+    //void clearFinishedList();
+    
 private:
-	//Functions
-	void createWidgets();
-	void placeWidgets();
-	void connectWidgets();
+    //Functions
+    void createWidgets();
+    void placeWidgets();
+    void connectWidgets();
 
     //Return requested list
-	void loadList();
+    void loadList();
 
-	//Objects
-	QWidget *pWidget;
-	ArpmanetDC *pParent;
+    //Objects
+    QWidget *pWidget;
+    ArpmanetDC *pParent;
 
-	QHash<QByteArray, FinishedDownloadStruct> *pFinishedList;
+    QHash<QByteArray, FinishedDownloadStruct> *pFinishedList;
 
-	//GUI
-	QTableView *finishedTable;
-	QStandardItemModel *finishedModel;
+    //GUI
+    QTableView *finishedTable;
+    QStandardItemModel *finishedModel;
 
     QMenu *finishedMenu;
-	QAction *openAction, *clearAction, *deleteAction;
+    QAction *openAction, *clearAction, *deleteAction;
 };
 
 #endif

@@ -25,14 +25,14 @@ class ArpmanetDC;
 //Displays help
 class HelpWidget : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	HelpWidget(ArpmanetDC *parent);
-	~HelpWidget();
+    HelpWidget(ArpmanetDC *parent);
+    ~HelpWidget();
 
-	//Get the encapsulating widget
-	QWidget *widget();
+    //Get the encapsulating widget
+    QWidget *widget();
 
     void updateProgress(qint64 done, qint64 total);
 
@@ -43,16 +43,16 @@ signals:
     void ftpCheckForUpdate();
 
 private:
-	//Functions
-	void createWidgets();
-	void placeWidgets();
-	void connectWidgets();
+    //Functions
+    void createWidgets();
+    void placeWidgets();
+    void connectWidgets();
 
     void addQA(QString question, QString answer);
 
-	//Objects
-	QWidget *pWidget;
-	ArpmanetDC *pParent;
+    //Objects
+    QWidget *pWidget;
+    ArpmanetDC *pParent;
 
     QTextBrowser *browser;
     QProgressBar *progress;

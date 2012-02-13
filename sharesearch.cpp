@@ -4,55 +4,55 @@
 
 ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
 {
-	//Constructor
+    //Constructor
     qRegisterMetaType<ReturnEncoding>("ReturnEncoding");
 
-	pParent = parent;
-	pMaxResults = maxSearchResults;
+    pParent = parent;
+    pMaxResults = maxSearchResults;
 
-	pFileList = new QList<FileListStruct>();
-	pTotalShare = 0;
+    pFileList = new QList<FileListStruct>();
+    pTotalShare = 0;
 
     pStopHashing = false;
     pStopParsing = false;
 
-	//Commit transactions every minute
-	commitTimer = new QTimer(this);
-	connect(commitTimer, SIGNAL(timeout()), this, SLOT(commitTransaction()));
-	commitTimer->setInterval(60000);
+    //Commit transactions every minute
+    commitTimer = new QTimer(this);
+    connect(commitTimer, SIGNAL(timeout()), this, SLOT(commitTransaction()));
+    commitTimer->setInterval(60000);
 
     searchHistoryTimer = new QTimer(this);
     connect(searchHistoryTimer, SIGNAL(timeout()), this, SLOT(garbageCollectSearchHistory()));
     searchHistoryTimer->start(120000); //Every 2min
 
-	updateTime = new QTime();
+    updateTime = new QTime();
 
-	//Create a new thread
-	hashThread = new ExecThread();
-	
-	pHashFileThread = new HashFileThread();
-	connect(pHashFileThread, SIGNAL(done(QString, QString, qint64, QString, QString, QString, QList<QString> *, HashFileThread *)),
-		this, SLOT(hashFileThreadDone(QString, QString, qint64, QString, QString, QString, QList<QString> *, HashFileThread *)), Qt::QueuedConnection);
-	connect(pHashFileThread, SIGNAL(failed(QString, HashFileThread *)), this, SLOT(hashFileFailed(QString, HashFileThread *)), Qt::QueuedConnection);
+    //Create a new thread
+    hashThread = new ExecThread();
+    
+    pHashFileThread = new HashFileThread();
+    connect(pHashFileThread, SIGNAL(done(QString, QString, qint64, QString, QString, QString, QList<QString> *, HashFileThread *)),
+        this, SLOT(hashFileThreadDone(QString, QString, qint64, QString, QString, QString, QList<QString> *, HashFileThread *)), Qt::QueuedConnection);
+    connect(pHashFileThread, SIGNAL(failed(QString, HashFileThread *)), this, SLOT(hashFileFailed(QString, HashFileThread *)), Qt::QueuedConnection);
     connect(pHashFileThread, SIGNAL(doneBucket(QByteArray, int, QByteArray)), this, SLOT(hashBucketDone(QByteArray, int, QByteArray)), Qt::QueuedConnection);
     connect(pHashFileThread, SIGNAL(doneFile(QString, QByteArray, quint64)), this, SIGNAL(returnTTHFromPath(QString, QByteArray, quint64)), Qt::QueuedConnection);
-	connect(this, SIGNAL(runHashThread(QString, QString)), pHashFileThread, SLOT(processFile(QString, QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(runHashThread(QString, QString)), pHashFileThread, SLOT(processFile(QString, QString)), Qt::QueuedConnection);
     connect(this, SIGNAL(runHashBucket(QByteArray, int, QByteArray, ReturnEncoding)), pHashFileThread, SLOT(processBucket(QByteArray, int, QByteArray, ReturnEncoding)), Qt::QueuedConnection);
     connect(this, SIGNAL(stopHashingThread()), pHashFileThread, SLOT(stopHashing()));
     connect(this, SIGNAL(calculateTTHFromPath(QString)), pHashFileThread, SLOT(hashFile(QString)), Qt::QueuedConnection);
 
-	pHashFileThread->moveToThread(hashThread);
+    pHashFileThread->moveToThread(hashThread);
 
-	pParseDirectoryThread = new ParseDirectoryThread();
-	connect(pParseDirectoryThread, SIGNAL(done(QString, QList<FileListStruct> *, ParseDirectoryThread *)), 
-		this, SLOT(parseDirectoryThreadDone(QString, QList<FileListStruct> *, ParseDirectoryThread *)), Qt::QueuedConnection);
-	connect(pParseDirectoryThread, SIGNAL(failed(QString, ParseDirectoryThread *)), this, SLOT(parseDirectoryThreadFailed(QString, ParseDirectoryThread *)), Qt::QueuedConnection);
-	connect(this, SIGNAL(runParseThread(QString)), pParseDirectoryThread, SLOT(parseDirectory(QString)), Qt::QueuedConnection);
+    pParseDirectoryThread = new ParseDirectoryThread();
+    connect(pParseDirectoryThread, SIGNAL(done(QString, QList<FileListStruct> *, ParseDirectoryThread *)), 
+        this, SLOT(parseDirectoryThreadDone(QString, QList<FileListStruct> *, ParseDirectoryThread *)), Qt::QueuedConnection);
+    connect(pParseDirectoryThread, SIGNAL(failed(QString, ParseDirectoryThread *)), this, SLOT(parseDirectoryThreadFailed(QString, ParseDirectoryThread *)), Qt::QueuedConnection);
+    connect(this, SIGNAL(runParseThread(QString)), pParseDirectoryThread, SLOT(parseDirectory(QString)), Qt::QueuedConnection);
     connect(this, SIGNAL(stopParsingThread()), pParseDirectoryThread, SLOT(stopParsing()));
 
-	pParseDirectoryThread->moveToThread(hashThread);
+    pParseDirectoryThread->moveToThread(hashThread);
 
-	hashThread->start();
+    hashThread->start();
 
     //Create container thead
     containerThread = new ExecThread();
@@ -83,25 +83,25 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
 
 ShareSearch::~ShareSearch()
 {
-	//Destructor
-	delete pDirList;
-	delete pFileList;
+    //Destructor
+    delete pDirList;
+    delete pFileList;
 
     pHashFileThread->deleteLater();
     pParseDirectoryThread->deleteLater();
     pContainerThread->deleteLater();
 
-	hashThread->quit();
-	if (hashThread->wait(5000))
-		delete hashThread;
+    hashThread->quit();
+    if (hashThread->wait(5000))
+        delete hashThread;
     else
     {
         hashThread->terminate();
         delete hashThread;
     }
     containerThread->quit();
-	if (containerThread->wait(5000))
-		delete containerThread;
+    if (containerThread->wait(5000))
+        delete containerThread;
     else
     {
         containerThread->terminate();
@@ -113,112 +113,112 @@ ShareSearch::~ShareSearch()
 
 void ShareSearch::startHashFileThread(QString filePath, QString rootDir)
 {
-	if (hashThread->isRunning())
-		emit runHashThread(filePath, rootDir);
-	else
-		QString error = "hash thread closed?";
+    if (hashThread->isRunning())
+        emit runHashThread(filePath, rootDir);
+    else
+        QString error = "hash thread closed?";
 }
 
 void ShareSearch::startParseDirectoryThread(QDir directory)
 {
-	if (hashThread->isRunning())
-		emit runParseThread(directory.absolutePath());
-	else
-		QString error = "hash thread closed?";
-	
+    if (hashThread->isRunning())
+        emit runParseThread(directory.absolutePath());
+    else
+        QString error = "hash thread closed?";
+    
 }
 
 //------------------------------============================== UPDATE SHARES (GUI) ==============================------------------------------
 
 void ShareSearch::updateShares(QList<QDir> *dirList) //500 msecs to update SharePaths!
 {
-	updateTime->start();
-	pDirList = dirList;
+    updateTime->start();
+    pDirList = dirList;
 
-	//Construct a directory list insert query
-	QList<QByteArray> queries;
+    //Construct a directory list insert query
+    QList<QByteArray> queries;
 
-	queries.append("BEGIN;");
-	transactionInProgress = true;
-	commitTimer->start();
+    queries.append("BEGIN;");
+    transactionInProgress = true;
+    commitTimer->start();
 
-	//Set all files as inactive
-	setAllFilesInactive();
+    //Set all files as inactive
+    setAllFilesInactive();
 
     if (!dirList->isEmpty())
     {
-	    //Delete everything from the sharePath table
-	    QByteArray removeQuery;
-	    removeQuery.append(tr("DELETE FROM SharePaths WHERE [path] NOT IN ("));	
+        //Delete everything from the sharePath table
+        QByteArray removeQuery;
+        removeQuery.append(tr("DELETE FROM SharePaths WHERE [path] NOT IN ("));    
 
-	    //Insert the directory and file listing
-	    for (int k = 0; k < dirList->size(); k++)
-	    {
-		    if (k != 0)
-			    removeQuery.append(",");
+        //Insert the directory and file listing
+        for (int k = 0; k < dirList->size(); k++)
+        {
+            if (k != 0)
+                removeQuery.append(",");
             removeQuery.append(tr("?"));
 
-		    QByteArray query;
+            QByteArray query;
             query.append(tr("INSERT INTO SharePaths ([path]) SELECT ?;"));
-		    queries.append(query);
+            queries.append(query);
 
-	    }
-	    removeQuery.append(");");
-	    queries.append(removeQuery);
+        }
+        removeQuery.append(");");
+        queries.append(removeQuery);
     }
     else
     {
         //Delete everything from the sharePath table
-	    QByteArray removeQuery;
-	    removeQuery.append(tr("DELETE FROM SharePaths;"));	
+        QByteArray removeQuery;
+        removeQuery.append(tr("DELETE FROM SharePaths;"));    
         queries.append(removeQuery);
     }
 
-	//Write list to database
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
-	
-	int count = 0;
-	for (int i = 0; i < queries.size(); i++)
-	{
-		if (sqlite3_prepare_v2(db, queries.at(i).data(), -1, &statement, 0) == SQLITE_OK)
-		{
-			if (queries.at(i).contains("DELETE FROM SharePaths WHERE"))
-			{
-				int res = 0;
-				for (int k = 0; k < dirList->size(); k++)
-				{
-					QString path = dirList->at(k).absolutePath();
-					res = res | sqlite3_bind_text16(statement, k+1, path.utf16(), path.size()*2, SQLITE_STATIC);
-				}
-				if (res != SQLITE_OK)
-					QString error = "error";
-			}
+    //Write list to database
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
+    
+    int count = 0;
+    for (int i = 0; i < queries.size(); i++)
+    {
+        if (sqlite3_prepare_v2(db, queries.at(i).data(), -1, &statement, 0) == SQLITE_OK)
+        {
+            if (queries.at(i).contains("DELETE FROM SharePaths WHERE"))
+            {
+                int res = 0;
+                for (int k = 0; k < dirList->size(); k++)
+                {
+                    QString path = dirList->at(k).absolutePath();
+                    res = res | sqlite3_bind_text16(statement, k+1, path.utf16(), path.size()*2, SQLITE_STATIC);
+                }
+                if (res != SQLITE_OK)
+                    QString error = "error";
+            }
 
-			if (queries.at(i).contains("INSERT INTO SharePaths"))
-			{
-				int res = 0;
-				QString path = dirList->at(count++).absolutePath();
-				res = res | sqlite3_bind_text16(statement, 1, path.utf16(), path.size()*2, SQLITE_STATIC);
-				
-				if (res != SQLITE_OK)
-					QString error = "error";
-			}
+            if (queries.at(i).contains("INSERT INTO SharePaths"))
+            {
+                int res = 0;
+                QString path = dirList->at(count++).absolutePath();
+                res = res | sqlite3_bind_text16(statement, 1, path.utf16(), path.size()*2, SQLITE_STATIC);
+                
+                if (res != SQLITE_OK)
+                    QString error = "error";
+            }
 
-			int cols = sqlite3_column_count(statement);
-			while (sqlite3_step(statement) == SQLITE_ROW);
-			sqlite3_finalize(statement);	
-		}
+            int cols = sqlite3_column_count(statement);
+            while (sqlite3_step(statement) == SQLITE_ROW);
+            sqlite3_finalize(statement);    
+        }
 
-		//Catch error message
-		QString error = sqlite3_errmsg(db);
-		if (error != "not an error")
-			QString errorStr = "Error";
-	}
+        //Catch error message
+        QString error = sqlite3_errmsg(db);
+        if (error != "not an error")
+            QString errorStr = "Error";
+    }
 
     if (!dirList->isEmpty())
         //Start parsing
-	    startDirectoryParsing();
+        startDirectoryParsing();
     else
     {
         //Flag all files as inactive when everything is unshared
@@ -229,157 +229,157 @@ void ShareSearch::updateShares(QList<QDir> *dirList) //500 msecs to update Share
 
 QList<QDir> *ShareSearch::getShares()
 {
-	//Query whether a file has been modified - returns results if it has
-	QString queryStr = tr("SELECT [path] FROM SharePaths;");
+    //Query whether a file has been modified - returns results if it has
+    QString queryStr = tr("SELECT [path] FROM SharePaths;");
 
-	QList<QString> results;
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    QList<QString> results;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
-		int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (true)
-		{
-			//Step through query results
-			result = sqlite3_step(statement);
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (true)
+        {
+            //Step through query results
+            result = sqlite3_step(statement);
 
-			//If result is a row, add to results
-			if (result == SQLITE_ROW)
-			{
-				for (int col = 0; col < cols; col++)
-				{
-					results.append(QString::fromUtf16((const unsigned short *)sqlite3_column_text16(statement, col)));
-				}				
-			}
-			//Otherwise, break - usually means SQLITE_DONE
-			else
-			{
-				break;
-			}
-		}
-		sqlite3_finalize(statement);	
-	}
+            //If result is a row, add to results
+            if (result == SQLITE_ROW)
+            {
+                for (int col = 0; col < cols; col++)
+                {
+                    results.append(QString::fromUtf16((const unsigned short *)sqlite3_column_text16(statement, col)));
+                }                
+            }
+            //Otherwise, break - usually means SQLITE_DONE
+            else
+            {
+                break;
+            }
+        }
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 
-	//Report results
-	QList<QDir> *shares = new QList<QDir>();
-	while (!results.isEmpty())
-		shares->append(QDir(results.takeFirst()));
+    //Report results
+    QList<QDir> *shares = new QList<QDir>();
+    while (!results.isEmpty())
+        shares->append(QDir(results.takeFirst()));
 
-	return shares;
+    return shares;
 }
 
 void ShareSearch::updateShares()
 {
-	//Convenience function to update existing shares
-	updateShares(getShares());
+    //Convenience function to update existing shares
+    updateShares(getShares());
 }
 
 //------------------------------============================== GENERIC DATABASE COMMANDS ==============================------------------------------
 
 //Database commands
 void ShareSearch::commitTransaction(bool startNewTransaction)
-{	
-	QList<QString> queries;
+{    
+    QList<QString> queries;
 
-	//Add query to list
-	queries.append("COMMIT;");
-	if (startNewTransaction)
-		queries.append("BEGIN;"); //Start another transaction by default
+    //Add query to list
+    queries.append("COMMIT;");
+    if (startNewTransaction)
+        queries.append("BEGIN;"); //Start another transaction by default
 
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Loop through all queries
-	for (int i = 0; i < queries.size(); i++)
-	{
-		//Prepare a query
-		QByteArray query;
-		query.append(queries.at(i));
-		if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-		{
-			int cols = sqlite3_column_count(statement);
-			while (sqlite3_step(statement) == SQLITE_ROW);
-			sqlite3_finalize(statement);	
-		}
+    //Loop through all queries
+    for (int i = 0; i < queries.size(); i++)
+    {
+        //Prepare a query
+        QByteArray query;
+        query.append(queries.at(i));
+        if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+        {
+            int cols = sqlite3_column_count(statement);
+            while (sqlite3_step(statement) == SQLITE_ROW);
+            sqlite3_finalize(statement);    
+        }
 
-		//Catch all error messages
-		QString error = sqlite3_errmsg(db);
-		if (error != "not an error")
-			QString errorStr = "Error";
-	}	
+        //Catch all error messages
+        QString error = sqlite3_errmsg(db);
+        if (error != "not an error")
+            QString errorStr = "Error";
+    }    
 
-	//Stop commit if transaction in progress
-	if (!transactionInProgress)
-	{
-		commitTimer->stop();
-		return;
-	}
+    //Stop commit if transaction in progress
+    if (!transactionInProgress)
+    {
+        commitTimer->stop();
+        return;
+    }
 }
 
 void ShareSearch::setAllFilesInactive() //WARNING: Blocking! 500 msecs per 10k files
 {
-	QString queryStr;
+    QString queryStr;
 
-	//Add query to list
-	queryStr.append("UPDATE FileShares SET [active] = 0;");
+    //Add query to list
+    queryStr.append("UPDATE FileShares SET [active] = 0;");
 
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
-		int cols = sqlite3_column_count(statement);
-		while (sqlite3_step(statement) == SQLITE_ROW);
-		sqlite3_finalize(statement);	
-	}
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        int cols = sqlite3_column_count(statement);
+        while (sqlite3_step(statement) == SQLITE_ROW);
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString errorStr = "Error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString errorStr = "Error";
 }
 
 qint64 ShareSearch::getTotalShareFromDB() //WARNING: Blocking! 10 msecs per 10k files
 {
-	QString queryStr;
+    QString queryStr;
 
-	//Add query to list
-	queryStr.append("SELECT SUM(fileSize) FROM FileShares WHERE [active] = 1;");
+    //Add query to list
+    queryStr.append("SELECT SUM(fileSize) FROM FileShares WHERE [active] = 1;");
 
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
-		int cols = sqlite3_column_count(statement);
-		while (sqlite3_step(statement) == SQLITE_ROW)
-			pTotalShare = sqlite3_column_int64(statement, 0);
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        int cols = sqlite3_column_count(statement);
+        while (sqlite3_step(statement) == SQLITE_ROW)
+            pTotalShare = sqlite3_column_int64(statement, 0);
 
-		sqlite3_finalize(statement);	
-	}
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString errorStr = "Error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString errorStr = "Error";
 
-	return pTotalShare;
+    return pTotalShare;
 }
 
 //------------------------------============================== HASHING ==============================------------------------------
@@ -387,160 +387,160 @@ qint64 ShareSearch::getTotalShareFromDB() //WARNING: Blocking! 10 msecs per 10k 
 //Hash file thread completed
 void ShareSearch::hashFileThreadDone(QString filePath, QString fileName, qint64 fileSize, QString tthRoot, QString rootDir, QString lastModified, QList<QString> *oneMBList, HashFileThread *hashObj)
 {
-	QString done = "done";
-	QList<QString> queries;
+    QString done = "done";
+    QList<QString> queries;
 
-	//Generate fileShare query to insert data into database
-	QString fileShareQuery = tr("INSERT INTO FileShares ([tth], [fileName], [fileSize], [filePath], [lastModified], [shareDirID], [active], [majorVersion], [minorVersion], [relativePath]) VALUES (?, ?, ?, ?, ?, (SELECT [rowID] FROM SharePaths WHERE path = ?), 1, ?, ?, ?);");
+    //Generate fileShare query to insert data into database
+    QString fileShareQuery = tr("INSERT INTO FileShares ([tth], [fileName], [fileSize], [filePath], [lastModified], [shareDirID], [active], [majorVersion], [minorVersion], [relativePath]) VALUES (?, ?, ?, ?, ?, (SELECT [rowID] FROM SharePaths WHERE path = ?), 1, ?, ?, ?);");
 
-	//Add query to list
-	queries.append(fileShareQuery);
+    //Add query to list
+    queries.append(fileShareQuery);
 
-	//Generate 1MB tth query - max blocks of 50 selects
-	int count = 0;
-	qint64 offset = -1048576;
-	while (!oneMBList->isEmpty())
-	{
-		offset += 1048576;
+    //Generate 1MB tth query - max blocks of 50 selects
+    int count = 0;
+    qint64 offset = -1048576;
+    while (!oneMBList->isEmpty())
+    {
+        offset += 1048576;
 
         QByteArray query;
-		query.append(tr("INSERT INTO OneMBTTH ([oneMBtth], [tth], [offset], [fileShareID]) SELECT '%1', '%2', %3, (SELECT rowID FROM FileShares WHERE filePath = ?001) ")
-			.arg(oneMBList->takeFirst())
-			.arg(tthRoot)
-			.arg(offset));     
+        query.append(tr("INSERT INTO OneMBTTH ([oneMBtth], [tth], [offset], [fileShareID]) SELECT '%1', '%2', %3, (SELECT rowID FROM FileShares WHERE filePath = ?001) ")
+            .arg(oneMBList->takeFirst())
+            .arg(tthRoot)
+            .arg(offset));     
 
-		while ((count < 50) && (!oneMBList->isEmpty()))
-		{
+        while ((count < 50) && (!oneMBList->isEmpty()))
+        {
             offset += 1048576;
 
-			query.append(tr("UNION SELECT '%1', '%2', %3, (SELECT rowID FROM FileShares WHERE filePath = ?001) ")
-				.arg(oneMBList->takeFirst())
-				.arg(tthRoot)
-				.arg(offset));
-			
-			count++;
-		}
-		query.append(";");	
-		count = 0;
+            query.append(tr("UNION SELECT '%1', '%2', %3, (SELECT rowID FROM FileShares WHERE filePath = ?001) ")
+                .arg(oneMBList->takeFirst())
+                .arg(tthRoot)
+                .arg(offset));
+            
+            count++;
+        }
+        query.append(";");    
+        count = 0;
 
-		//Add query to list
-		queries.append(query);
-	}	
+        //Add query to list
+        queries.append(query);
+    }    
 
-	//Generate totalFileShares query
-	QString totalFileShares = tr("SELECT SUM(fileSize) FROM FileShares WHERE [active] = 1;");
-	//queries.append(totalFileShares);
+    //Generate totalFileShares query
+    QString totalFileShares = tr("SELECT SUM(fileSize) FROM FileShares WHERE [active] = 1;");
+    //queries.append(totalFileShares);
 
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	qint64 totalShare;
+    qint64 totalShare;
    
     //Get version numbers
     VersionStruct v = getMajorMinorVersions(fileName);   
     QString relativePath = getRelativePath(rootDir, filePath);
 
-	//Loop through all queries
-	for (int i = 0; i < queries.size(); i++)
-	{
-		//Prepare a query
-		QByteArray query;
-		query.append(queries.at(i));
-		if (sqlite3_prepare_v2(db, query.data(), query.size(), &statement, 0) == SQLITE_OK)
-		{
+    //Loop through all queries
+    for (int i = 0; i < queries.size(); i++)
+    {
+        //Prepare a query
+        QByteArray query;
+        query.append(queries.at(i));
+        if (sqlite3_prepare_v2(db, query.data(), query.size(), &statement, 0) == SQLITE_OK)
+        {
             int res = 0;
-			if (query.contains("INSERT INTO FileShares")) 
-			{
-				/*TTH*/         res = res | sqlite3_bind_text16(statement, 1, tthRoot.utf16(), tthRoot.size()*2, SQLITE_STATIC);
-				/*FileName*/    res = res | sqlite3_bind_text16(statement, 2, fileName.utf16(), fileName.size()*2, SQLITE_STATIC);
-				/*FileSize*/    res = res | sqlite3_bind_int64(statement, 3, fileSize);
-				/*FilePath*/    res = res | sqlite3_bind_text16(statement, 4, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
-				/*LastModified*/res = res | sqlite3_bind_text16(statement, 5, lastModified.utf16(), lastModified.size()*2, SQLITE_STATIC);
-				/*SharePath*/   res = res | sqlite3_bind_text16(statement, 6, rootDir.utf16(), rootDir.size()*2, SQLITE_STATIC);
+            if (query.contains("INSERT INTO FileShares")) 
+            {
+                /*TTH*/         res = res | sqlite3_bind_text16(statement, 1, tthRoot.utf16(), tthRoot.size()*2, SQLITE_STATIC);
+                /*FileName*/    res = res | sqlite3_bind_text16(statement, 2, fileName.utf16(), fileName.size()*2, SQLITE_STATIC);
+                /*FileSize*/    res = res | sqlite3_bind_int64(statement, 3, fileSize);
+                /*FilePath*/    res = res | sqlite3_bind_text16(statement, 4, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
+                /*LastModified*/res = res | sqlite3_bind_text16(statement, 5, lastModified.utf16(), lastModified.size()*2, SQLITE_STATIC);
+                /*SharePath*/   res = res | sqlite3_bind_text16(statement, 6, rootDir.utf16(), rootDir.size()*2, SQLITE_STATIC);
                 /*MajorVersion*/res = res | sqlite3_bind_int64(statement, 7, v.majorVersion);
                 /*MinorVersion*/res = res | sqlite3_bind_int64(statement, 8, v.minorVersion);
                 /*RelativePath*/res = res | sqlite3_bind_text16(statement, 9, relativePath.utf16(), relativePath.size()*2, SQLITE_STATIC);
-			}
-			else if (query.contains("INSERT INTO OneMBTTH")) 
-			{
-				res = sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
-			}
+            }
+            else if (query.contains("INSERT INTO OneMBTTH")) 
+            {
+                res = sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
+            }
 
             if (res != SQLITE_OK)
-				QString error = "Meh";
+                QString error = "Meh";
 
-			int cols = sqlite3_column_count(statement);
-			while (sqlite3_step(statement) == SQLITE_ROW)
-			{
-				totalShare = sqlite3_column_int64(statement, 0);	
-			};
-			sqlite3_finalize(statement);	
-		}
+            int cols = sqlite3_column_count(statement);
+            while (sqlite3_step(statement) == SQLITE_ROW)
+            {
+                totalShare = sqlite3_column_int64(statement, 0);    
+            };
+            sqlite3_finalize(statement);    
+        }
 
-		//Catch all error messages
-		QString error = sqlite3_errmsg(db);
-		if (error != "not an error")
-			QString errorStr = "Error";
-	}
+        //Catch all error messages
+        QString error = sqlite3_errmsg(db);
+        if (error != "not an error")
+            QString errorStr = "Error";
+    }
 
-	//Clean up
-	delete oneMBList;
+    //Clean up
+    delete oneMBList;
 
-	//Update share size
-	pTotalShare += fileSize;
+    //Update share size
+    pTotalShare += fileSize;
 
-	//Emit signal for status
-	emit fileHashed(filePath, fileSize);
-	
-	//Continue with next file in the list
-	startFileHashing();
+    //Emit signal for status
+    emit fileHashed(filePath, fileSize);
+    
+    //Continue with next file in the list
+    startFileHashing();
 }
 
 //Hash file thread failed
 void ShareSearch::hashFileFailed(QString filePath, HashFileThread *hashObj)
 {
-	QString done = "failed";
+    QString done = "failed";
 
-	//Continue with next file in the list
-	startFileHashing();
+    //Continue with next file in the list
+    startFileHashing();
 }
 
 void ShareSearch::startFileHashing()
 {
     //Start file hashing and start new thread
-	FileListStruct f;
-	bool notModified;
+    FileListStruct f;
+    bool notModified;
 
-	do
-	{
-		if (!pFileList->isEmpty())
-		{
+    do
+    {
+        if (!pFileList->isEmpty())
+        {
             //QApplication::processEvents();
 
-			f = pFileList->takeFirst();
-			//Check if modified
-			notModified = fileNotModified(f.fileName, f.rootDir);
-			if (notModified)
-				QString res = "File TTH in DB is still valid";
-			else
-				break;
-		}
-		else
-		{
-			notModified = true;
-			break;
-		}
-	} while (notModified);
+            f = pFileList->takeFirst();
+            //Check if modified
+            notModified = fileNotModified(f.fileName, f.rootDir);
+            if (notModified)
+                QString res = "File TTH in DB is still valid";
+            else
+                break;
+        }
+        else
+        {
+            notModified = true;
+            break;
+        }
+    } while (notModified);
 
-	if (!notModified)
-		startHashFileThread(f.fileName, f.rootDir);
-	else
-	{
-		commitTimer->stop();
-		commitTransaction(false);
-		int totalUpdateTime = updateTime->elapsed();
-		emit hashingDone(totalUpdateTime, numberOfFilesShared);
-	}
+    if (!notModified)
+        startHashFileThread(f.fileName, f.rootDir);
+    else
+    {
+        commitTimer->stop();
+        commitTransaction(false);
+        int totalUpdateTime = updateTime->elapsed();
+        emit hashingDone(totalUpdateTime, numberOfFilesShared);
+    }
 }
 
 
@@ -554,51 +554,51 @@ void ShareSearch::stopHashing()
 
 void ShareSearch::parseDirectoryThreadDone(QString rootDir, QList<FileListStruct> *fileList, ParseDirectoryThread *parseObj)
 {
-	QString done = "done";
-	//Add filelist to local variable for hashing
-	/*foreach (QString file, *fileList)
-	{
-		FileListStruct fStruct;
-		fStruct.fileName = file;
-		fStruct.rootDir = rootDir;
-		pFileList->append(fStruct);
-	}*/
+    QString done = "done";
+    //Add filelist to local variable for hashing
+    /*foreach (QString file, *fileList)
+    {
+        FileListStruct fStruct;
+        fStruct.fileName = file;
+        fStruct.rootDir = rootDir;
+        pFileList->append(fStruct);
+    }*/
     pFileList->append(*fileList);
-	
-	//Clean up
-	delete fileList;
+    
+    //Clean up
+    delete fileList;
 
-	//Emit directory parsed signal for status
-	emit directoryParsed(rootDir);	
+    //Emit directory parsed signal for status
+    emit directoryParsed(rootDir);    
 
-	//Continue with next directory
-	startDirectoryParsing();
+    //Continue with next directory
+    startDirectoryParsing();
 }
 
 void ShareSearch::parseDirectoryThreadFailed(QString rootDir, ParseDirectoryThread *parseObj)
 {
-	QString done = "done";
+    QString done = "done";
 
-	//Continue with next directory
-	startDirectoryParsing();
+    //Continue with next directory
+    startDirectoryParsing();
 }
 
 void ShareSearch::startDirectoryParsing()
 {
-	//Start directory parsing and start new thread
-	if (!pDirList->isEmpty())
+    //Start directory parsing and start new thread
+    if (!pDirList->isEmpty())
     {
         startParseDirectoryThread(pDirList->takeFirst());
     }
-	else
-	{		
-		emit parsingDone(updateTime->elapsed());
+    else
+    {        
+        emit parsingDone(updateTime->elapsed());
 
         numberOfFilesShared = pFileList->size();
 
-		//Start file hashing on file list
-		startFileHashing();
-	}
+        //Start file hashing on file list
+        startFileHashing();
+    }
 }
 
 //Stop parsing
@@ -611,89 +611,89 @@ void ShareSearch::stopParsing()
 
 bool ShareSearch::fileNotModified(QString filePath, QString rootDir)
 {
-	//Get current modified date of file
-	QFileInfo fileInfo(filePath);
-	QString lastModifiedFile;
-	bool fileExists = fileInfo.exists();
+    //Get current modified date of file
+    QFileInfo fileInfo(filePath);
+    QString lastModifiedFile;
+    bool fileExists = fileInfo.exists();
 
-	QList<QString> queries;
+    QList<QString> queries;
 
     //Query whether a file has been modified - returns results if it has
-	QString queryStr = tr("SELECT [lastModified] FROM FileShares WHERE filePath = ?;");
+    QString queryStr = tr("SELECT [lastModified] FROM FileShares WHERE filePath = ?;");
 
     //Update the file share entry - change the sharepath owner of the entry if needed
-	QString updateStr = tr("UPDATE fileShares SET [shareDirID] = (SELECT rowID FROM SharePaths WHERE path = ?) WHERE filePath = ?;");
+    QString updateStr = tr("UPDATE fileShares SET [shareDirID] = (SELECT rowID FROM SharePaths WHERE path = ?) WHERE filePath = ?;");
 
     //Set the file share active (if readding an existing share)
-	QString setActiveStr = tr("UPDATE fileShares SET [active] = 1 WHERE filePath = ?;");
+    QString setActiveStr = tr("UPDATE fileShares SET [active] = 1 WHERE filePath = ?;");
 
     //Delete all 1MB TTHs for a particular file share - should be called before deleteStr!
     QString deleteOneMBStr = tr("DELETE FROM OneMBTTH WHERE [fileShareID] = (SELECT [rowID] FROM FileShares WHERE filePath = ?);");
 
     //Delete the hash entry from the database if it exists
-	QString deleteStr = tr("DELETE FROM FileShares WHERE filePath = ?;");  
+    QString deleteStr = tr("DELETE FROM FileShares WHERE filePath = ?;");  
 
     bool result = true; //By default, DO NOT hash file
 
-	//Check if file exists
-	if (fileExists)
-	{
-		lastModifiedFile = fileInfo.lastModified().toString("dd-MM-yyyy HH:mm:ss:zzz");
-		queries.append(queryStr);
-	}
-	else
-	{
+    //Check if file exists
+    if (fileExists)
+    {
+        lastModifiedFile = fileInfo.lastModified().toString("dd-MM-yyyy HH:mm:ss:zzz");
+        queries.append(queryStr);
+    }
+    else
+    {
         queries.append(deleteOneMBStr);
-		queries.append(deleteStr);
-	}
+        queries.append(deleteStr);
+    }
 
     QString lastModifiedDB;
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	while (!queries.isEmpty())
-	{
+    //Prepare a query
+    while (!queries.isEmpty())
+    {
         QByteArray query;
         query.append(queries.takeFirst());
-		if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-		{
+        if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+        {
             //Bind parameters for each query
             int res = 0;
-			if (query.contains("SELECT [lastModified]"))
-			{
-				res = res | sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
-			}
+            if (query.contains("SELECT [lastModified]"))
+            {
+                res = res | sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
+            }
             else if (query.contains("UPDATE fileShares SET [shareDirID]"))
-			{
-				res = res | sqlite3_bind_text16(statement, 1, rootDir.utf16(), rootDir.size()*2, SQLITE_STATIC);
-				//res = res | sqlite3_bind_text16(statement, 2, lastModifiedFile.utf16(), lastModifiedFile.size()*2, SQLITE_STATIC);
-				res = res | sqlite3_bind_text16(statement, 2, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
-			}
-			else if (query.contains("UPDATE fileShares SET [active]"))
-			{
-				res = res | sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
-			}
-			else if (query.contains("DELETE FROM FileShares"))
-			{
-				res = res | sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
-			}
+            {
+                res = res | sqlite3_bind_text16(statement, 1, rootDir.utf16(), rootDir.size()*2, SQLITE_STATIC);
+                //res = res | sqlite3_bind_text16(statement, 2, lastModifiedFile.utf16(), lastModifiedFile.size()*2, SQLITE_STATIC);
+                res = res | sqlite3_bind_text16(statement, 2, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
+            }
+            else if (query.contains("UPDATE fileShares SET [active]"))
+            {
+                res = res | sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
+            }
+            else if (query.contains("DELETE FROM FileShares"))
+            {
+                res = res | sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
+            }
             else if (query.contains("DELETE FROM OneMBTTH"))
-			{
-				res = res | sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
-			}
+            {
+                res = res | sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
+            }
 
             if (res != SQLITE_OK)
-			    QString error = "error";
+                QString error = "error";
 
             //Get results
-			int cols = sqlite3_column_count(statement);
-			while (sqlite3_step(statement) == SQLITE_ROW)
-			{
+            int cols = sqlite3_column_count(statement);
+            while (sqlite3_step(statement) == SQLITE_ROW)
+            {
                 if (cols == 1 && query.contains("SELECT [lastModified]"))
-					lastModifiedDB = QString::fromUtf16((const unsigned short *)sqlite3_column_text16(statement, 0));
-			}	
-			sqlite3_finalize(statement);
+                    lastModifiedDB = QString::fromUtf16((const unsigned short *)sqlite3_column_text16(statement, 0));
+            }    
+            sqlite3_finalize(statement);
 
             //This should give a result if the filepath exists in the db
             if (query.contains("SELECT [lastModified]"))
@@ -717,15 +717,15 @@ bool ShareSearch::fileNotModified(QString filePath, QString rootDir)
                     queries.append(setActiveStr);
                 }
             }
-		}
+        }
 
-		//Catch all error messages
-		QString error = sqlite3_errmsg(db);
-		if (error != "not an error")
-			QString error = "error";
-	}
+        //Catch all error messages
+        QString error = sqlite3_errmsg(db);
+        if (error != "not an error")
+            QString error = "error";
+    }
 
-	return result;
+    return result;
 }
 
 //------------------------------============================== SHARE QUERIES (DISPATCHER) ==============================------------------------------
@@ -772,11 +772,11 @@ void ShareSearch::querySearchString(QHostAddress senderHost, QByteArray cid, qui
         }
     }
 
-	//Split string into words
-	QStringList wordList = searchStr.split(" ");
+    //Split string into words
+    QStringList wordList = searchStr.split(" ");
 
-	//Query the database with the search string
-	QString queryStr = tr("SELECT [tth], [fileName], [fileSize], [majorVersion], [minorVersion], [relativePath] FROM FileShares WHERE [active] = 1 AND (");
+    //Query the database with the search string
+    QString queryStr = tr("SELECT [tth], [fileName], [fileSize], [majorVersion], [minorVersion], [relativePath] FROM FileShares WHERE [active] = 1 AND (");
 
     bool first = true;
 
@@ -798,7 +798,7 @@ void ShareSearch::querySearchString(QHostAddress senderHost, QByteArray cid, qui
 
     //Check for Base32 TTH's in the searchStr
     QString regex = "([a-z2-7]{39})";
-	QRegExp rxTTH(regex, Qt::CaseInsensitive);
+    QRegExp rxTTH(regex, Qt::CaseInsensitive);
     QStringList tthList;
 
     //Iterate through all words
@@ -809,14 +809,14 @@ void ShareSearch::querySearchString(QHostAddress senderHost, QByteArray cid, qui
         QString word = wordList.at(count++);
 
         int pos = 0;
-	    while ((pos = rxTTH.indexIn(word, pos)) != -1)
+        while ((pos = rxTTH.indexIn(word, pos)) != -1)
         {
             found = true;
             QByteArray tth;
             tth.append(rxTTH.cap(1).toUpper());
             int size = tth.size();
             base32Decode(tth);
-    	    tthList.append(tth.toBase64());
+            tthList.append(tth.toBase64());
             pos++;
 
             //Only add max 10 TTH's per word
@@ -832,62 +832,62 @@ void ShareSearch::querySearchString(QHostAddress senderHost, QByteArray cid, qui
     }
 
     //Add word queries
-	for (int i = 0; i < wordList.size(); i++)
-	{
-		if (wordList.at(i).isEmpty())
-			continue;
-		if (!first)
-			queryStr.append(" AND ");
+    for (int i = 0; i < wordList.size(); i++)
+    {
+        if (wordList.at(i).isEmpty())
+            continue;
+        if (!first)
+            queryStr.append(" AND ");
         else
             queryStr.append("(");
         queryStr.append(tr("[fileName] || [relativePath] LIKE '%' || ? || '%'"));
-		first = false;
-	}
+        first = false;
+    }
     if (!first)
         queryStr.append(")");
 
     //Add tth queries
-	for (int i = 0; i < tthList.size(); i++)
-	{
-		if (tthList.at(i).isEmpty())
-			continue;
-		if (!first)
-			queryStr.append(" OR ");
-		queryStr.append(tr("[tth] = '%1'").arg(tthList.at(i)));
-		first = false;
-	}
+    for (int i = 0; i < tthList.size(); i++)
+    {
+        if (tthList.at(i).isEmpty())
+            continue;
+        if (!first)
+            queryStr.append(" OR ");
+        queryStr.append(tr("[tth] = '%1'").arg(tthList.at(i)));
+        first = false;
+    }
 
-	queryStr.append(tr(") LIMIT %1;").arg(pMaxResults));
+    queryStr.append(tr(") LIMIT %1;").arg(pMaxResults));
 
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
-		for (int i = 0; i < wordList.size(); i++)
-		{
-			int res = 0;
-			res = res | sqlite3_bind_text16(statement, i+1, wordList.at(i).utf16(), wordList.at(i).size()*2, SQLITE_STATIC);
-			
-			if (res != SQLITE_OK)
-				QString error = "error";
-		}
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        for (int i = 0; i < wordList.size(); i++)
+        {
+            int res = 0;
+            res = res | sqlite3_bind_text16(statement, i+1, wordList.at(i).utf16(), wordList.at(i).size()*2, SQLITE_STATIC);
+            
+            if (res != SQLITE_OK)
+                QString error = "error";
+        }
 
 
-		int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (sqlite3_step(statement) == SQLITE_ROW)
-		{
-			if (cols = 6)
-			{
-				SearchStruct s;
-				QByteArray tthRoot = QByteArray().append((char*)sqlite3_column_text(statement, 0));
-				s.tthRoot = QByteArray::fromBase64(tthRoot);
-				s.fileName = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 1));
-				s.fileSize = sqlite3_column_int64(statement, 2);
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW)
+        {
+            if (cols = 6)
+            {
+                SearchStruct s;
+                QByteArray tthRoot = QByteArray().append((char*)sqlite3_column_text(statement, 0));
+                s.tthRoot = QByteArray::fromBase64(tthRoot);
+                s.fileName = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 1));
+                s.fileSize = sqlite3_column_int64(statement, 2);
                 s.majorVersion = sqlite3_column_int64(statement, 3);
                 s.minorVersion = sqlite3_column_int64(statement, 4);
                 s.relativePath = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 5));
@@ -910,92 +910,92 @@ void ShareSearch::querySearchString(QHostAddress senderHost, QByteArray cid, qui
                 packet.append(qint16ToByteArray(s.majorVersion));
                 packet.append(qint16ToByteArray(s.minorVersion));
                 packet.append(s.tthRoot);
-				
+                
                 //Report results
-	            emit returnSearchResult(senderHost, cid, id, packet);	
-			}				
-		}
-		sqlite3_finalize(statement);	
-	}
+                emit returnSearchResult(senderHost, cid, id, packet);    
+            }                
+        }
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 }
 
 //Return a struct of a file for a given TTH root
 void ShareSearch::queryTTH(QByteArray tthRoot)
 {
-	//Query the database with the search string
-	QString queryStr = tr("SELECT DISTINCT [tth], [fileName], [fileSize] FROM FileShares WHERE [active] = 1 AND tth = '%1';").arg(QString(tthRoot.toBase64()));
+    //Query the database with the search string
+    QString queryStr = tr("SELECT DISTINCT [tth], [fileName], [fileSize] FROM FileShares WHERE [active] = 1 AND tth = '%1';").arg(QString(tthRoot.toBase64()));
 
-	SearchStruct results;
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    SearchStruct results;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
-		int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (sqlite3_step(statement) == SQLITE_ROW)
-		{
-			if (cols = 3)
-			{
-				QByteArray tthRoot = QByteArray().append((char*)sqlite3_column_text(statement, 0));
-				results.tthRoot = QByteArray::fromBase64(tthRoot);
-				results.fileName = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 1));
-				results.fileSize = sqlite3_column_int64(statement, 2);
-			}					
-		}
-		sqlite3_finalize(statement);	
-	}
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW)
+        {
+            if (cols = 3)
+            {
+                QByteArray tthRoot = QByteArray().append((char*)sqlite3_column_text(statement, 0));
+                results.tthRoot = QByteArray::fromBase64(tthRoot);
+                results.fileName = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 1));
+                results.fileSize = sqlite3_column_int64(statement, 2);
+            }                    
+        }
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 
-	//Report results
-	emit returnTTHResult(results);
-	
+    //Report results
+    emit returnTTHResult(results);
+    
 }
 
 //Return the 1MB TTH given a TTH root and file offset
 void ShareSearch::query1MBTTH(QByteArray tthRoot, qint64 offset)
 {
-	//Return the 1MB TTH when the tth match and the offset is within the 1MB bucket
-	QString queryStr = tr("SELECT [oneMBtth] FROM OneMBTTH WHERE [tth] = '%1' AND ([offset] > %2 AND [offset] <= %3);").arg(QString(tthRoot.toBase64())).arg(offset-1048576).arg(offset);
+    //Return the 1MB TTH when the tth match and the offset is within the 1MB bucket
+    QString queryStr = tr("SELECT [oneMBtth] FROM OneMBTTH WHERE [tth] = '%1' AND ([offset] > %2 AND [offset] <= %3);").arg(QString(tthRoot.toBase64())).arg(offset-1048576).arg(offset);
 
-	QByteArray results;
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    QByteArray results;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
-		int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (sqlite3_step(statement) == SQLITE_ROW)
-		{
-			QByteArray tthRoot = QByteArray().append((char*)sqlite3_column_text(statement, 0));
-			results = QByteArray::fromBase64(tthRoot);
-		}
-		sqlite3_finalize(statement);	
-	}
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW)
+        {
+            QByteArray tthRoot = QByteArray().append((char*)sqlite3_column_text(statement, 0));
+            results = QByteArray::fromBase64(tthRoot);
+        }
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 
-	//Report results
-	emit return1MBTTH(results);
+    //Report results
+    emit return1MBTTH(results);
 }
 
 
@@ -1015,34 +1015,34 @@ void ShareSearch::saveLastKnownPeers(QList<QHostAddress> peers)
         queryStr.append(tr("INSERT INTO LastKnownPeers ([ip]) VALUES (?);"));
     }
 
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
     for (int i = 0; i < queryStr.size(); i++)
     {
-	    //Prepare a query
-	    QByteArray query;
-	    query.append(queryStr.at(i));
-	    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	    {
-		    //Bind parameters
-		    int res = 0;
+        //Prepare a query
+        QByteArray query;
+        query.append(queryStr.at(i));
+        if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+        {
+            //Bind parameters
+            int res = 0;
             if (query.contains("INSERT INTO"))
             {
                 QString ip = peers.at(i-1).toString();
-		        res = res | sqlite3_bind_text16(statement, 1, ip.utf16(), ip.size()*2, SQLITE_STATIC);
+                res = res | sqlite3_bind_text16(statement, 1, ip.utf16(), ip.size()*2, SQLITE_STATIC);
             }
 
-		    int cols = sqlite3_column_count(statement);
-		    int result = 0;
-		    while (sqlite3_step(statement) == SQLITE_ROW);
-		    sqlite3_finalize(statement);	
-	    }
+            int cols = sqlite3_column_count(statement);
+            int result = 0;
+            while (sqlite3_step(statement) == SQLITE_ROW);
+            sqlite3_finalize(statement);    
+        }
 
-	    //Catch all error messages
-	    QString error = sqlite3_errmsg(db);
-	    if (error != "not an error")
-		    QString error = "error";
+        //Catch all error messages
+        QString error = sqlite3_errmsg(db);
+        if (error != "not an error")
+            QString error = "error";
     }
 
     //Commit to ensure access to database hasn't blocked hashing process
@@ -1053,30 +1053,30 @@ void ShareSearch::saveLastKnownPeers(QList<QHostAddress> peers)
 void ShareSearch::requestLastKnownPeers()
 {
     //Query the database with the search string
-	QString queryStr = tr("SELECT DISTINCT [ip] FROM LastKnownPeers;");
+    QString queryStr = tr("SELECT DISTINCT [ip] FROM LastKnownPeers;");
 
-	QList<QHostAddress> peers;
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    QList<QHostAddress> peers;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
         int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (sqlite3_step(statement) == SQLITE_ROW)
-		{
-			peers.append(QHostAddress(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0))));
-		}
-		sqlite3_finalize(statement);	
-	}
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW)
+        {
+            peers.append(QHostAddress(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0))));
+        }
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 
     //Signal to return last known peers
     emit sendLastKnownPeers(peers);
@@ -1089,42 +1089,42 @@ void ShareSearch::requestLastKnownPeers()
 void ShareSearch::requestTTHFromPath(QString filePath)
 {
     //Query the database with the search string
-	QString queryStr = tr("SELECT DISTINCT [tth], [fileSize] FROM FileShares WHERE [active] = 1 AND [filePath] = ?;");
+    QString queryStr = tr("SELECT DISTINCT [tth], [fileSize] FROM FileShares WHERE [active] = 1 AND [filePath] = ?;");
 
-	QByteArray tthResult;
+    QByteArray tthResult;
     quint64 fileSize;
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
         //Bind parameters
-		int res = 0;
-		res = res | sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
+        int res = 0;
+        res = res | sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
 
-		int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (sqlite3_step(statement) == SQLITE_ROW)
-		{
-			QByteArray tthRoot = QByteArray().append((char*)sqlite3_column_text(statement, 0));
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW)
+        {
+            QByteArray tthRoot = QByteArray().append((char*)sqlite3_column_text(statement, 0));
             tthResult = QByteArray::fromBase64(tthRoot);
             fileSize = sqlite3_column_int64(statement, 1);
-		}
-		sqlite3_finalize(statement);	
-	}
+        }
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 
     if (!tthResult.isEmpty())
     {
-	    //Report results
-	    emit returnTTHFromPath(filePath, tthResult, fileSize);
+        //Report results
+        emit returnTTHFromPath(filePath, tthResult, fileSize);
     }
     else
     {
@@ -1141,8 +1141,8 @@ void ShareSearch::requestTTHsFromPaths(QHash<QString, QStringList> filePaths, QS
     //Query the database with the search string
     QString queryStr;
     
-    sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
     QHash<QString, QList<ContainerLookupReturnStruct> > result;
 
@@ -1161,33 +1161,33 @@ void ShareSearch::requestTTHsFromPaths(QHash<QString, QStringList> filePaths, QS
             QString filePath = k.next();
             queryStr = tr("SELECT [tth], [fileSize] FROM FileShares WHERE [filePath] = ?;");
 
-	        QByteArray tthResult;
+            QByteArray tthResult;
             quint64 fileSize;
-	
-	        //Prepare a query
-	        QByteArray query;
-	        query.append(queryStr);
-	        if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	        {
+    
+            //Prepare a query
+            QByteArray query;
+            query.append(queryStr);
+            if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+            {
                 //Bind parameters
-		        int res = 0;
-		        res = res | sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
+                int res = 0;
+                res = res | sqlite3_bind_text16(statement, 1, filePath.utf16(), filePath.size()*2, SQLITE_STATIC);
 
-		        int cols = sqlite3_column_count(statement);
-		        int result = 0;
-		        while (sqlite3_step(statement) == SQLITE_ROW)
-		        {
-			        QByteArray tthRoot = QByteArray().append((char*)sqlite3_column_text(statement, 0));
+                int cols = sqlite3_column_count(statement);
+                int result = 0;
+                while (sqlite3_step(statement) == SQLITE_ROW)
+                {
+                    QByteArray tthRoot = QByteArray().append((char*)sqlite3_column_text(statement, 0));
                     tthResult = QByteArray::fromBase64(tthRoot);
                     fileSize = sqlite3_column_int64(statement, 1);
-		        }
-		        sqlite3_finalize(statement);	
-	        }
+                }
+                sqlite3_finalize(statement);    
+            }
 
-	        //Catch all error messages
-	        QString error = sqlite3_errmsg(db);
-	        if (error != "not an error")
-		        QString error = "error";
+            //Catch all error messages
+            QString error = sqlite3_errmsg(db);
+            if (error != "not an error")
+                QString error = "error";
 
             //Construct struct
             ContainerLookupReturnStruct c;
@@ -1247,34 +1247,34 @@ void ShareSearch::hashBucketDone(QByteArray rootTTH, int bucketNumber, QByteArra
 //Save a source for a particular TTH
 void ShareSearch::saveTTHSource(QByteArray tthRoot, QHostAddress peerAddress)
 {
-	//Insert a source for a particular TTH value
-	QString queryStr = tr("INSERT INTO TTHSources ([tthRoot], [source]) VALUES (?, ?);");
+    //Insert a source for a particular TTH value
+    QString queryStr = tr("INSERT INTO TTHSources ([tthRoot], [source]) VALUES (?, ?);");
 
-	QByteArray results;
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    QByteArray results;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
-		//Bind parameters
-		int res = 0;
-		QString tthRootStr = QString(tthRoot.toBase64().data());
-		res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size()*2, SQLITE_STATIC);
-		res = res | sqlite3_bind_text16(statement, 2, peerAddress.toString().utf16(), peerAddress.toString().size()*2, SQLITE_STATIC);
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        //Bind parameters
+        int res = 0;
+        QString tthRootStr = QString(tthRoot.toBase64().data());
+        res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size()*2, SQLITE_STATIC);
+        res = res | sqlite3_bind_text16(statement, 2, peerAddress.toString().utf16(), peerAddress.toString().size()*2, SQLITE_STATIC);
 
-		int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (sqlite3_step(statement) == SQLITE_ROW);
-		sqlite3_finalize(statement);	
-	}
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW);
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 
     //Commit to ensure access to database hasn't blocked hashing process
     commitTransaction();
@@ -1283,112 +1283,112 @@ void ShareSearch::saveTTHSource(QByteArray tthRoot, QHostAddress peerAddress)
 //Load a source from a TTH
 void ShareSearch::loadTTHSource(QByteArray tthRoot)
 {
-	//Return the source IP for a specified TTH
-	QString queryStr = tr("SELECT [source] FROM TTHSources WHERE [tthRoot] = ?;");
+    //Return the source IP for a specified TTH
+    QString queryStr = tr("SELECT [source] FROM TTHSources WHERE [tthRoot] = ?;");
 
-	QString results;
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    QString results;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
-		//Bind parameters
-		int res = 0;
-		QString tthRootStr = QString(tthRoot.toBase64().data());
-		res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size(), SQLITE_STATIC);
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        //Bind parameters
+        int res = 0;
+        QString tthRootStr = QString(tthRoot.toBase64().data());
+        res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size(), SQLITE_STATIC);
 
-		int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (sqlite3_step(statement) == SQLITE_ROW)
-		{
-			results = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0));
-		}
-		sqlite3_finalize(statement);	
-	}
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW)
+        {
+            results = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0));
+        }
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 
-	QHostAddress ip(results);
-	emit tthSourceLoaded(tthRoot, ip);
+    QHostAddress ip(results);
+    emit tthSourceLoaded(tthRoot, ip);
 }
 
 //Request filepath from a TTH
 void ShareSearch::requestFilePath(QByteArray tthRoot)
 {
-	//Return the source IP for a specified TTH
-	QString queryStr = tr("SELECT [filePath], [fileSize] FROM FileShares WHERE [tth] = ?;");
+    //Return the source IP for a specified TTH
+    QString queryStr = tr("SELECT [filePath], [fileSize] FROM FileShares WHERE [tth] = ?;");
 
-	QString filePath;
+    QString filePath;
     quint64 fileSize;
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
-		//Bind parameters
-		int res = 0;
-		QString tthRootStr = QString(tthRoot.toBase64().data());
-		res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size()*2, SQLITE_STATIC);
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        //Bind parameters
+        int res = 0;
+        QString tthRootStr = QString(tthRoot.toBase64().data());
+        res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size()*2, SQLITE_STATIC);
 
-		int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (sqlite3_step(statement) == SQLITE_ROW)
-		{
-			filePath = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0));
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW)
+        {
+            filePath = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0));
             fileSize = sqlite3_column_int64(statement, 1);
-		}
-		sqlite3_finalize(statement);	
-	}
+        }
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 
     // temporary short-circuit to continue debugging transfers
     //results = "/mnt/data/iso/tinycore_2.5.iso";
-	emit filePathReply(tthRoot, filePath, fileSize);
+    emit filePathReply(tthRoot, filePath, fileSize);
 }
 
 //Release all sources for a particular TTH
 void ShareSearch::deleteTTHSources(QByteArray tthRoot)
 {
-	//Delete all sources for a TTH
-	QString queryStr = tr("DELETE FROM TTHSources WHERE [tthRoot] = ?;");
+    //Delete all sources for a TTH
+    QString queryStr = tr("DELETE FROM TTHSources WHERE [tthRoot] = ?;");
 
-	QByteArray results;
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    QByteArray results;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
-		//Bind parameters
-		int res = 0;
-		QString tthRootStr = QString(tthRoot.toBase64().data());
-		res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size(), SQLITE_STATIC);
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        //Bind parameters
+        int res = 0;
+        QString tthRootStr = QString(tthRoot.toBase64().data());
+        res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size(), SQLITE_STATIC);
 
-		int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (sqlite3_step(statement) == SQLITE_ROW);
-		sqlite3_finalize(statement);	
-	}
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW);
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 
     //Commit to ensure access to database hasn't blocked hashing process
     commitTransaction();
@@ -1400,37 +1400,37 @@ void ShareSearch::deleteTTHSources(QByteArray tthRoot)
 void ShareSearch::TTHSearchQuestionReceived(QByteArray tth, QHostAddress host)
 {
     //Request a small parameter from an active share entry corresponding to the given TTH
-	QString queryStr = tr("SELECT [active] FROM FileShares WHERE tth = ? AND [active] = 1;");
+    QString queryStr = tr("SELECT [active] FROM FileShares WHERE tth = ? AND [active] = 1;");
 
-	SearchStruct results;
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    SearchStruct results;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
         //Bind the TTH parameter
         QString tthStr = tth.toBase64();
         int res = sqlite3_bind_text16(statement, 1, tthStr.utf16(), tthStr.size()*2, SQLITE_STATIC);
 
-		int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (sqlite3_step(statement) == SQLITE_ROW)
-		{
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW)
+        {
             //Don't care about the parameter, the fact that a row is returned shows the record exists
             //If this signal is emitted, it means the tth is shared!
             emit sendTTHSearchResult(host, tth);
             break; //Only emit once
-		}
-		sqlite3_finalize(statement);	
-	}
+        }
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 }
 
 //------------------------------============================== TTH TREE REQUEST FOR TRANSFERS ==============================------------------------------
@@ -1444,24 +1444,24 @@ void ShareSearch::incomingTTHTreeRequest(QHostAddress host, QByteArray tth, quin
     //Return all 1MB TTHs for a root TTH
     QString queryStr = tr("SELECT [oneMBtth], [offset] FROM OneMBTTH WHERE [tth] = ? AND [offset] >= ? ORDER BY [offset] ASC LIMIT ?;");
 
-	QByteArray results;
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    QByteArray results;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
         QString tthStr = tth.toBase64();
         int res = sqlite3_bind_text16(statement, 1, tthStr.utf16(), tthStr.size()*2, SQLITE_STATIC);
         res = res | sqlite3_bind_int64(statement, 2, (quint64)startBucket * (1<<20));
         res = res | sqlite3_bind_int(statement, 3, bucketCount);
 
-		int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (sqlite3_step(statement) == SQLITE_ROW)
-		{
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW)
+        {
             //Get 1MB TTH and its offset
             QByteArray oneMBTTH;
             oneMBTTH.append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0)));
@@ -1490,18 +1490,18 @@ void ShareSearch::incomingTTHTreeRequest(QHostAddress host, QByteArray tth, quin
                 tthTreePacket.clear();
                 tthTreePacket.append(tth);
             }
-		}
-		sqlite3_finalize(statement);	
-	}
+        }
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 
     //Send the data in the packet if everything is not sent already
     if (!tthTreePacket.isEmpty())
-    {	
+    {    
         emit sendTTHTreeReply(host, tthTreePacket);
     }
 }
@@ -1512,39 +1512,39 @@ void ShareSearch::incomingTTHTreeRequest(QHostAddress host, QByteArray tth, quin
 void ShareSearch::requestAutoCompleteWordList(QStandardItemModel *wordList)
 {
     //Return the list of words from database
-	QString queryStr = tr("SELECT [word] FROM AutoCompleteWords;");
+    QString queryStr = tr("SELECT [word] FROM AutoCompleteWords;");
 
     //Clear model first
-	wordList->removeRows(0, wordList->rowCount());
+    wordList->removeRows(0, wordList->rowCount());
 
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
-		int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (sqlite3_step(statement) == SQLITE_ROW)
-		{
-			QString word = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0));
-			
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW)
+        {
+            QString word = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0));
+            
             //Add result to model
             QStandardItem *item = new QStandardItem(word);
             wordList->appendRow(item);
-		}
-		sqlite3_finalize(statement);	
-	}
+        }
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 
     wordList->sort(0);
-	emit searchWordListReceived(wordList);
+    emit searchWordListReceived(wordList);
 }
 
 //Save a word to the database
@@ -1559,7 +1559,7 @@ void ShareSearch::saveAutoCompleteWordList(QString searchWord)
     queries.append(queryStr);
 
     //Save a word
-	QString insertStr = tr("INSERT INTO AutoCompleteWords ([word], [count]) VALUES (?, ?);");
+    QString insertStr = tr("INSERT INTO AutoCompleteWords ([word], [count]) VALUES (?, ?);");
 
     //Update a word count
     QString updateStr = tr("UPDATE AutoCompleteWords SET [count] = ? WHERE [word] = ?;");
@@ -1570,17 +1570,17 @@ void ShareSearch::saveAutoCompleteWordList(QString searchWord)
     //Delete the last entry
     QString deleteStr = tr("DELETE FROM AutoCompleteWords WHERE [rowID] = (SELECT MIN(rowID) FROM AutoCompleteWords);");
 
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
     while (!queries.isEmpty())
     {
-	    //Prepare a query
-	    QByteArray query;
-	    query.append(queries.takeFirst());
-	    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	    {
-		    //Bind parameters to select query
+        //Prepare a query
+        QByteArray query;
+        query.append(queries.takeFirst());
+        if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+        {
+            //Bind parameters to select query
             if (query.contains("SELECT [count]"))
             {
                 int res = sqlite3_bind_text16(statement, 1, searchWord.utf16(), searchWord.size()*2, SQLITE_STATIC);
@@ -1600,8 +1600,8 @@ void ShareSearch::saveAutoCompleteWordList(QString searchWord)
                 res = res | sqlite3_bind_text16(statement, 2, searchWord.utf16(), searchWord.size()*2, SQLITE_STATIC);
             }
             
-		    int cols = sqlite3_column_count(statement);
-		    while (sqlite3_step(statement) == SQLITE_ROW)
+            int cols = sqlite3_column_count(statement);
+            while (sqlite3_step(statement) == SQLITE_ROW)
             {
                 //If already in database, increase count value
                 if (cols == 1 && query.contains("SELECT [count]"))
@@ -1624,16 +1624,16 @@ void ShareSearch::saveAutoCompleteWordList(QString searchWord)
                 if (totalCount > MAX_AUTOCOMPLETE_ENTRIES)
                     queries.append(deleteStr);
             }             
-		    sqlite3_finalize(statement);	
-	    }
+            sqlite3_finalize(statement);    
+        }
 
         //Commit to ensure access to database hasn't blocked hashing process
         commitTransaction();
 
         //Catch all error messages
-	    QString error = sqlite3_errmsg(db);
-	    if (error != "not an error")
-		    QString error = "error";
+        QString error = sqlite3_errmsg(db);
+        if (error != "not an error")
+            QString error = "error";
     }
 }
 
@@ -1642,77 +1642,77 @@ void ShareSearch::saveAutoCompleteWordList(QString searchWord)
 //Save a new entry
 void ShareSearch::saveQueuedDownload(QueueStruct file)
 {
-	//Save a queued download
-	QString queryStr = tr("INSERT INTO QueuedDownloads ([fileName], [filePath], [fileSize], [priority], [tthRoot], [hostIP]) VALUES (?, ?, ?, ?, ?, ?);");
+    //Save a queued download
+    QString queryStr = tr("INSERT INTO QueuedDownloads ([fileName], [filePath], [fileSize], [priority], [tthRoot], [hostIP]) VALUES (?, ?, ?, ?, ?, ?);");
 
-	QByteArray results;
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    QByteArray results;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
-		//Bind parameters
-		int res = 0;
-		res = res | sqlite3_bind_text16(statement, 1, file.fileName.utf16(), file.fileName.size()*2, SQLITE_STATIC);
-		res = res | sqlite3_bind_text16(statement, 2, file.filePath.utf16(), file.filePath.size()*2, SQLITE_STATIC);
-		res = res | sqlite3_bind_int64(statement, 3, file.fileSize);
-		QString priority = QString((char)file.priority);
-		res = res | sqlite3_bind_text16(statement, 4, priority.utf16(), priority.size()*2, SQLITE_STATIC);
-		QString tthRoot = QString(file.tthRoot.toBase64().data());
-		res = res | sqlite3_bind_text16(statement, 5, tthRoot.utf16(), tthRoot.size()*2, SQLITE_STATIC);
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        //Bind parameters
+        int res = 0;
+        res = res | sqlite3_bind_text16(statement, 1, file.fileName.utf16(), file.fileName.size()*2, SQLITE_STATIC);
+        res = res | sqlite3_bind_text16(statement, 2, file.filePath.utf16(), file.filePath.size()*2, SQLITE_STATIC);
+        res = res | sqlite3_bind_int64(statement, 3, file.fileSize);
+        QString priority = QString((char)file.priority);
+        res = res | sqlite3_bind_text16(statement, 4, priority.utf16(), priority.size()*2, SQLITE_STATIC);
+        QString tthRoot = QString(file.tthRoot.toBase64().data());
+        res = res | sqlite3_bind_text16(statement, 5, tthRoot.utf16(), tthRoot.size()*2, SQLITE_STATIC);
         QString hostIP = file.fileHost.toString();
         res = res | sqlite3_bind_text16(statement, 6, hostIP.utf16(), hostIP.size()*2, SQLITE_STATIC);
         
-		int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (sqlite3_step(statement) == SQLITE_ROW);
-		sqlite3_finalize(statement);	
-	}
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW);
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 
     //Commit to ensure access to database hasn't blocked hashing process
     commitTransaction();
 
-	emit queuedDownloadAdded(file);
+    emit queuedDownloadAdded(file);
 }
 
 //Remove an entry
 void ShareSearch::removeQueuedDownload(QByteArray tthRoot)
 {
-	//Delete an entry from the queued downloads list
-	QString queryStr = tr("DELETE FROM QueuedDownloads WHERE [tthRoot] = ?;");
+    //Delete an entry from the queued downloads list
+    QString queryStr = tr("DELETE FROM QueuedDownloads WHERE [tthRoot] = ?;");
 
-	QByteArray results;
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    QByteArray results;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
-		//Bind parameters
-		int res = 0;
-		QString tthRootStr = QString(tthRoot.toBase64().data());
-		res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size()*2, SQLITE_STATIC);
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        //Bind parameters
+        int res = 0;
+        QString tthRootStr = QString(tthRoot.toBase64().data());
+        res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size()*2, SQLITE_STATIC);
 
-		int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (sqlite3_step(statement) == SQLITE_ROW);
-		sqlite3_finalize(statement);	
-	}
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW);
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 
     //Commit to ensure access to database hasn't blocked hashing process
     commitTransaction();
@@ -1721,36 +1721,36 @@ void ShareSearch::removeQueuedDownload(QByteArray tthRoot)
 //Sets the priority of a queued download
 void ShareSearch::setQueuedDownloadPriority(QByteArray tthRoot, QueuePriority priority)
 {
-	//Updates an entry in the queued downloads list
-	QString queryStr = tr("UPDATE QueuedDownloads SET [priority] = ? WHERE [tthRoot] = ?;");
+    //Updates an entry in the queued downloads list
+    QString queryStr = tr("UPDATE QueuedDownloads SET [priority] = ? WHERE [tthRoot] = ?;");
 
-	QByteArray results;
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    QByteArray results;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
-		//Bind parameters
-		int res = 0;
-		QString priorityStr = QString((char)priority);
-		res = res | sqlite3_bind_text16(statement, 1, priorityStr.utf16(), priorityStr.size()*2, SQLITE_STATIC);
-	
-		QString tthRootStr = QString(tthRoot.toBase64().data());
-		res = res | sqlite3_bind_text16(statement, 2, tthRootStr.utf16(), tthRootStr.size()*2, SQLITE_STATIC);
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        //Bind parameters
+        int res = 0;
+        QString priorityStr = QString((char)priority);
+        res = res | sqlite3_bind_text16(statement, 1, priorityStr.utf16(), priorityStr.size()*2, SQLITE_STATIC);
+    
+        QString tthRootStr = QString(tthRoot.toBase64().data());
+        res = res | sqlite3_bind_text16(statement, 2, tthRootStr.utf16(), tthRootStr.size()*2, SQLITE_STATIC);
 
-		int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (sqlite3_step(statement) == SQLITE_ROW);
-		sqlite3_finalize(statement);	
-	}
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW);
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 
     //Commit to ensure access to database hasn't blocked hashing process
     commitTransaction();
@@ -1759,81 +1759,81 @@ void ShareSearch::setQueuedDownloadPriority(QByteArray tthRoot, QueuePriority pr
 //Request queued download list
 void ShareSearch::requestQueueList()
 {
-	//Return the list of queued downloads
-	QString queryStr = tr("SELECT [fileName], [filePath], [fileSize], [priority], [tthRoot], [hostIP] FROM QueuedDownloads;");
+    //Return the list of queued downloads
+    QString queryStr = tr("SELECT [fileName], [filePath], [fileSize], [priority], [tthRoot], [hostIP] FROM QueuedDownloads;");
 
-	QHash<QByteArray, QueueStruct> *results = new QHash<QByteArray, QueueStruct>();
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    QHash<QByteArray, QueueStruct> *results = new QHash<QByteArray, QueueStruct>();
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
-		int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (sqlite3_step(statement) == SQLITE_ROW)
-		{
-			QueueStruct s;
-			s.fileName = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0));
-			s.filePath = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 1));
-			s.fileSize = sqlite3_column_int64(statement, 2);
-			s.priority = (QueuePriority)QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 3)).at(0).toAscii();
-			//s.tthRoot = new QByteArray();
-			s.tthRoot.append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 4)));
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW)
+        {
+            QueueStruct s;
+            s.fileName = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0));
+            s.filePath = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 1));
+            s.fileSize = sqlite3_column_int64(statement, 2);
+            s.priority = (QueuePriority)QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 3)).at(0).toAscii();
+            //s.tthRoot = new QByteArray();
+            s.tthRoot.append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 4)));
             s.tthRoot = QByteArray::fromBase64(s.tthRoot);
             s.fileHost = QHostAddress(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 5)));
 
             results->insert(s.tthRoot, s);
-		}
-		sqlite3_finalize(statement);	
-	}
+        }
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 
-	emit returnQueueList(results);
+    emit returnQueueList(results);
 }
 
 //------------------------------============================== FINISHED DOWNLOADS (FINISHED DOWNLOADS WIDGET) ==============================------------------------------
-	
+    
 //Save an entry
 void ShareSearch::saveFinishedDownload(FinishedDownloadStruct file)
 {
-	//Inserts a finished download into the database
-	QString queryStr = tr("INSERT INTO FinishedDownloads ([fileName], [filePath], [fileSize], [tthRoot], [downloadedDate]) VALUES (?, ?, ?, ?, ?);");
+    //Inserts a finished download into the database
+    QString queryStr = tr("INSERT INTO FinishedDownloads ([fileName], [filePath], [fileSize], [tthRoot], [downloadedDate]) VALUES (?, ?, ?, ?, ?);");
 
-	QByteArray results;
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    QByteArray results;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
-		//Bind parameters
-		int res = 0;
-		res = res | sqlite3_bind_text16(statement, 1, file.fileName.utf16(), file.fileName.size()*2, SQLITE_STATIC);
-		res = res | sqlite3_bind_text16(statement, 2, file.filePath.utf16(), file.filePath.size()*2, SQLITE_STATIC);
- 		res = res | sqlite3_bind_int64(statement, 3, file.fileSize);
-		QString tthRoot = QString(file.tthRoot.toBase64().data());
-		res = res | sqlite3_bind_text16(statement, 4, tthRoot.utf16(), tthRoot.size()*2, SQLITE_STATIC);
-		res = res | sqlite3_bind_text16(statement, 5, file.downloadedDate.utf16(), file.downloadedDate.size()*2, SQLITE_STATIC);
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        //Bind parameters
+        int res = 0;
+        res = res | sqlite3_bind_text16(statement, 1, file.fileName.utf16(), file.fileName.size()*2, SQLITE_STATIC);
+        res = res | sqlite3_bind_text16(statement, 2, file.filePath.utf16(), file.filePath.size()*2, SQLITE_STATIC);
+         res = res | sqlite3_bind_int64(statement, 3, file.fileSize);
+        QString tthRoot = QString(file.tthRoot.toBase64().data());
+        res = res | sqlite3_bind_text16(statement, 4, tthRoot.utf16(), tthRoot.size()*2, SQLITE_STATIC);
+        res = res | sqlite3_bind_text16(statement, 5, file.downloadedDate.utf16(), file.downloadedDate.size()*2, SQLITE_STATIC);
 
-		int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (sqlite3_step(statement) == SQLITE_ROW);
-		sqlite3_finalize(statement);	
-	}
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW);
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 
     //Commit to ensure access to database hasn't blocked hashing process
     commitTransaction();
@@ -1843,30 +1843,30 @@ void ShareSearch::saveFinishedDownload(FinishedDownloadStruct file)
 void ShareSearch::removeFinishedDownload(QByteArray tth)
 {
     //Delete an entry from finished downloads
-	QString queryStr = tr("DELETE FROM FinishedDownloads WHERE [tthRoot] = ?;");
+    QString queryStr = tr("DELETE FROM FinishedDownloads WHERE [tthRoot] = ?;");
 
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
         //Bind parameter
         QString tthStr(tth.toBase64().data());
         int res = sqlite3_bind_text16(statement, 1, tthStr.utf16(), tthStr.size()*2, SQLITE_STATIC);
 
-		int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (sqlite3_step(statement) == SQLITE_ROW);
-		sqlite3_finalize(statement);	
-	}
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW);
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 
     //Commit to ensure access to database hasn't blocked hashing process
     commitTransaction();
@@ -1875,27 +1875,27 @@ void ShareSearch::removeFinishedDownload(QByteArray tth)
 //Clear all entries
 void ShareSearch::clearFinishedDownloads()
 {
-	//Clear finished downloads
-	QString queryStr = tr("DELETE FROM FinishedDownloads;");
+    //Clear finished downloads
+    QString queryStr = tr("DELETE FROM FinishedDownloads;");
 
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
-		int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (sqlite3_step(statement) == SQLITE_ROW);
-		sqlite3_finalize(statement);	
-	}
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW);
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 
     //Commit to ensure access to database hasn't blocked hashing process
     commitTransaction();
@@ -1904,41 +1904,41 @@ void ShareSearch::clearFinishedDownloads()
 //Request list
 void ShareSearch::requestFinishedList()
 {
-	//Return the list of finished downloads
-	QString queryStr = tr("SELECT [fileName], [filePath], [fileSize], [tthRoot], [downloadedDate] FROM FinishedDownloads;");
+    //Return the list of finished downloads
+    QString queryStr = tr("SELECT [fileName], [filePath], [fileSize], [tthRoot], [downloadedDate] FROM FinishedDownloads;");
 
-	QHash<QByteArray, FinishedDownloadStruct> *results = new QHash<QByteArray, FinishedDownloadStruct>();
-	sqlite3 *db = pParent->database();	
-	sqlite3_stmt *statement;
+    QHash<QByteArray, FinishedDownloadStruct> *results = new QHash<QByteArray, FinishedDownloadStruct>();
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
 
-	//Prepare a query
-	QByteArray query;
-	query.append(queryStr);
-	if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-	{
-		int cols = sqlite3_column_count(statement);
-		int result = 0;
-		while (sqlite3_step(statement) == SQLITE_ROW)
-		{
-			FinishedDownloadStruct s;
-			s.fileName = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0));
-			s.filePath = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 1));
-			s.fileSize = sqlite3_column_int64(statement, 2);
-			s.tthRoot.append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 3)));
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW)
+        {
+            FinishedDownloadStruct s;
+            s.fileName = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0));
+            s.filePath = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 1));
+            s.fileSize = sqlite3_column_int64(statement, 2);
+            s.tthRoot.append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 3)));
             s.tthRoot = QByteArray::fromBase64(s.tthRoot);
-			s.downloadedDate = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 4));
+            s.downloadedDate = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 4));
 
             results->insert(s.tthRoot, s);
-		}
-		sqlite3_finalize(statement);	
-	}
+        }
+        sqlite3_finalize(statement);    
+    }
 
-	//Catch all error messages
-	QString error = sqlite3_errmsg(db);
-	if (error != "not an error")
-		QString error = "error";
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
 
-	emit returnFinishedList(results);
+    emit returnFinishedList(results);
 }
 
 //------------------------------=============================== MISC. OTHER UTILITY FUNCTIONS ===============================------------------------------
@@ -2033,21 +2033,21 @@ QString ShareSearch::getRelativePath(QString absoluteRootDir, QString absoluteFi
 
 quint64 ShareSearch::totalShare(bool fromDB)
 {
-	if (fromDB)
-		pTotalShare = getTotalShareFromDB();
+    if (fromDB)
+        pTotalShare = getTotalShareFromDB();
 
-	return pTotalShare;
+    return pTotalShare;
 }
 
 QString ShareSearch::totalShareStr(bool fromDB)
 {
-	if (fromDB)
-		pTotalShare = getTotalShareFromDB();
-		
-	return bytesToSize(pTotalShare);
+    if (fromDB)
+        pTotalShare = getTotalShareFromDB();
+        
+    return bytesToSize(pTotalShare);
 }
 
 void ShareSearch::setTotalShare(quint64 size)
 {
-	pTotalShare = size;
+    pTotalShare = size;
 }

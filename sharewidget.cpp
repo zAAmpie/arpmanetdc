@@ -4,13 +4,13 @@
 
 ShareWidget::ShareWidget(ShareSearch *share, ArpmanetDC *parent)
 {
-	//Constructor
-	pParent = parent;
-	pShare = share;
+    //Constructor
+    pParent = parent;
+    pShare = share;
 
     //Shares signals/slots
     connect(this, SIGNAL(updateShares(QList<QDir> *)), pShare, SLOT(updateShares(QList<QDir> *)), Qt::QueuedConnection);
-	connect(this, SIGNAL(updateShares()), pShare, SLOT(updateShares()), Qt::QueuedConnection);
+    connect(this, SIGNAL(updateShares()), pShare, SLOT(updateShares()), Qt::QueuedConnection);
 
     //Magnet links signals/slots
     connect(this, SIGNAL(requestTTHFromPath(QString)), pShare, SLOT(requestTTHFromPath(QString)), Qt::QueuedConnection);
@@ -26,9 +26,9 @@ ShareWidget::ShareWidget(ShareSearch *share, ArpmanetDC *parent)
     connect(pShare, SIGNAL(returnContainers(QHash<QString, ContainerContentsType>)),
         this, SLOT(returnContainers(QHash<QString, ContainerContentsType>)), Qt::QueuedConnection);
     
-	createWidgets();
-	placeWidgets();
-	connectWidgets();
+    createWidgets();
+    placeWidgets();
+    connectWidgets();
 
     pContainerDirectory = QDir::currentPath();
     if (pContainerDirectory.endsWith("/"))
@@ -38,36 +38,36 @@ ShareWidget::ShareWidget(ShareSearch *share, ArpmanetDC *parent)
     //Populate container list
     emit requestContainers(pContainerDirectory);
 
-	//Populate share list
-	QList<QDir> *shares = pShare->getShares();
-	while (!shares->isEmpty())
-	{
-		QDir currentPath = shares->takeFirst();
-		pSharesList.append(currentPath.absolutePath());
+    //Populate share list
+    QList<QDir> *shares = pShare->getShares();
+    while (!shares->isEmpty())
+    {
+        QDir currentPath = shares->takeFirst();
+        pSharesList.append(currentPath.absolutePath());
         changeRoot(currentPath.absolutePath());
-		while (currentPath.cdUp())
-			changeRoot(currentPath.absolutePath());
+        while (currentPath.cdUp())
+            changeRoot(currentPath.absolutePath());
 
-		//QModelIndex index = fileModel->index(currentPath.absolutePath(), 0);
-		//bool res = checkProxyModel->setSourceIndexCheckedState(index, true);
-	}
+        //QModelIndex index = fileModel->index(currentPath.absolutePath(), 0);
+        //bool res = checkProxyModel->setSourceIndexCheckedState(index, true);
+    }
     finishedLoading = true;
 }
 
 ShareWidget::~ShareWidget()
 {
-	//Destructor
-	fileTree->deleteLater();
-	fileModel->deleteLater();
-	checkProxyModel->deleteLater();
+    //Destructor
+    fileTree->deleteLater();
+    fileModel->deleteLater();
+    checkProxyModel->deleteLater();
 }
 
 void ShareWidget::createWidgets()
 {
     pWidget = new QWidget((QWidget *)pParent);
 
-	saveButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Save shares"), pWidget);
-	refreshButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/RefreshIcon.png"), tr("Refresh shares"), pWidget);
+    saveButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Save shares"), pWidget);
+    refreshButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/RefreshIcon.png"), tr("Refresh shares"), pWidget);
     containerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/ContainerIcon.png"), tr("Show Containers"), pWidget);
 
     //========== DEBUG ==========
@@ -116,29 +116,29 @@ void ShareWidget::createWidgets()
     containerTreeView->setColumnWidth(1, 100);
     containerTreeView->hideColumn(3);
             
-	fileModel = new QFileSystemModel(this);
-	//fileModel->setFilter(QDir::Dirs | QDir::Drives | QDir::NoDotAndDotDot);
-	fileModel->setRootPath("c:/");
-	fileModel->setResolveSymlinks(false);
+    fileModel = new QFileSystemModel(this);
+    //fileModel->setFilter(QDir::Dirs | QDir::Drives | QDir::NoDotAndDotDot);
+    fileModel->setRootPath("c:/");
+    fileModel->setResolveSymlinks(false);
 
-	checkProxyModel = new CheckableProxyModel(this);
-	checkProxyModel->setSourceModel(fileModel);
-	checkProxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
-		
-	fileTree = new CDragTreeView(tr("Drag files/folders here to add"), pWidget);
-	fileTree->setModel(checkProxyModel);
-	//fileTree->sortByColumn(0, Qt::AscendingOrder);
-	fileTree->setColumnWidth(0, 500);
-	fileTree->setUniformRowHeights(true);
-	fileTree->setSortingEnabled(false);
+    checkProxyModel = new CheckableProxyModel(this);
+    checkProxyModel->setSourceModel(fileModel);
+    checkProxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
+        
+    fileTree = new CDragTreeView(tr("Drag files/folders here to add"), pWidget);
+    fileTree->setModel(checkProxyModel);
+    //fileTree->sortByColumn(0, Qt::AscendingOrder);
+    fileTree->setColumnWidth(0, 500);
+    fileTree->setUniformRowHeights(true);
+    fileTree->setSortingEnabled(false);
     fileTree->setSelectionMode(QAbstractItemView::ExtendedSelection);
     fileTree->header()->setHighlightSections(false);
     fileTree->setContextMenuPolicy(Qt::CustomContextMenu);
     //fileTree->setDragDropMode(QAbstractItemView::DragOnly);
     fileTree->setDragEnabled(true);
 
-	checkProxyModel->setDefaultCheckState(Qt::Unchecked);	
-	//checkProxyModel->sort(0, Qt::AscendingOrder);
+    checkProxyModel->setDefaultCheckState(Qt::Unchecked);    
+    //checkProxyModel->sort(0, Qt::AscendingOrder);
 
     busyLabel = new QLabel(tr("<font color=\"red\">Busy loading directory structure. Please wait...</font>"), pWidget);
 
@@ -154,13 +154,13 @@ void ShareWidget::createWidgets()
 
 void ShareWidget::placeWidgets()
 {
-	QHBoxLayout *hlayout = new QHBoxLayout;
-	hlayout->addWidget(refreshButton);
+    QHBoxLayout *hlayout = new QHBoxLayout;
+    hlayout->addWidget(refreshButton);
     hlayout->addWidget(containerButton);
-	hlayout->addSpacing(10);
+    hlayout->addSpacing(10);
     hlayout->addWidget(busyLabel);
-	hlayout->addStretch(1);
-	hlayout->addWidget(saveButton);
+    hlayout->addStretch(1);
+    hlayout->addWidget(saveButton);
 
     QGridLayout *topContainerLayout = new QGridLayout;
     topContainerLayout->addWidget(containerCombo, 0, 0);
@@ -181,17 +181,17 @@ void ShareWidget::placeWidgets()
     splitter->addWidget(fileTree);
     splitter->addWidget(containerWidget);
 
-	QVBoxLayout *vlayout = new QVBoxLayout;
-	//vlayout->addLayout(hTreeLayout);
+    QVBoxLayout *vlayout = new QVBoxLayout;
+    //vlayout->addLayout(hTreeLayout);
     vlayout->addWidget(splitter);
-	vlayout->addLayout(hlayout);
-	vlayout->setContentsMargins(0,0,0,0);
+    vlayout->addLayout(hlayout);
+    vlayout->setContentsMargins(0,0,0,0);
 
     splitter->widget(1)->hide();
     splitter->setCollapsible(0,false);
     splitter->setCollapsible(1, false);
        
-	pWidget->setLayout(vlayout);
+    pWidget->setLayout(vlayout);
 
     QList<int> sizeList;
     int halfWidth = ((QWidget *)pParent)->size().width()/2;
@@ -212,13 +212,13 @@ void ShareWidget::connectWidgets()
     //Combo box
     connect(containerCombo, SIGNAL(currentIndexChanged(const QString &)), this, SLOT(switchedContainer(const QString &)));
 
-	//Models
-	connect(checkProxyModel, SIGNAL(checkedNodesChanged()), this, SLOT(selectedItemsChanged()));
-	connect(fileModel, SIGNAL(directoryLoaded(QString)), this, SLOT(pathLoaded(QString)));
+    //Models
+    connect(checkProxyModel, SIGNAL(checkedNodesChanged()), this, SLOT(selectedItemsChanged()));
+    connect(fileModel, SIGNAL(directoryLoaded(QString)), this, SLOT(pathLoaded(QString)));
 
     //Buttons
     connect(saveButton, SIGNAL(clicked()), this, SLOT(saveSharePressed()));
-	connect(refreshButton, SIGNAL(clicked()), this, SLOT(refreshButtonPressed()));
+    connect(refreshButton, SIGNAL(clicked()), this, SLOT(refreshButtonPressed()));
     connect(containerButton, SIGNAL(clicked()), this, SLOT(containerButtonPressed()));
     connect(addContainerButton, SIGNAL(clicked()), this, SLOT(addContainerButtonPressed()));
     connect(removeContainerButton, SIGNAL(clicked()), this, SLOT(removeContainerButtonPressed()));
@@ -235,13 +235,13 @@ void ShareWidget::changeRoot(QString path)
     if (fi.isDir())
         pLoadingPaths.append(path);
 
-	fileModel->setRootPath(path);
-	//QModelIndex index = checkProxyModel->index(0,0, fileModel->index(path,0));
-	//QModelIndex index2 = checkProxyModel->mapFromSource(fileModel->index(path));
-	
-	if (pSharesList.contains(path))
-		checkProxyModel->setSourceIndexCheckedState(fileModel->index(path,0), true);
-	//fileTree->setRootIndex(index);
+    fileModel->setRootPath(path);
+    //QModelIndex index = checkProxyModel->index(0,0, fileModel->index(path,0));
+    //QModelIndex index2 = checkProxyModel->mapFromSource(fileModel->index(path));
+    
+    if (pSharesList.contains(path))
+        checkProxyModel->setSourceIndexCheckedState(fileModel->index(path,0), true);
+    //fileTree->setRootIndex(index);
 }
 
 void ShareWidget::pathLoaded(QString path)
@@ -258,30 +258,30 @@ void ShareWidget::pathLoaded(QString path)
 
 void ShareWidget::selectedItemsChanged()
 {
-	//Selection changed in the checked proxy model
+    //Selection changed in the checked proxy model
 }
 
 void ShareWidget::saveSharePressed()
 {
-	QModelIndexList selectedFiles;
+    QModelIndexList selectedFiles;
     QModelIndexList selectedDirectories;
 
-	//Extract selected files and directories
+    //Extract selected files and directories
     CheckableProxyModelState *state = checkProxyModel->checkedState();
-	state->checkedLeafSourceModelIndexes(selectedFiles);
-	state->checkedBranchSourceModelIndexes(selectedDirectories);
-	delete state;
+    state->checkedLeafSourceModelIndexes(selectedFiles);
+    state->checkedBranchSourceModelIndexes(selectedDirectories);
+    delete state;
 
-	//Construct list of selected directory paths
-	QList<QDir> *dirList = new QList<QDir>();
+    //Construct list of selected directory paths
+    QList<QDir> *dirList = new QList<QDir>();
     QList<QString> strList;
-	foreach (const QModelIndex index, selectedDirectories)
+    foreach (const QModelIndex index, selectedDirectories)
     {
         strList.append(index.data(QFileSystemModel::FilePathRole).toString());
         if (!strList.last().endsWith("/"))
             strList.last().append("/");
     }
-	foreach (const QModelIndex index, selectedFiles)
+    foreach (const QModelIndex index, selectedFiles)
     {
         strList.append(index.data(QFileSystemModel::FilePathRole).toString());
     }
@@ -292,7 +292,7 @@ void ShareWidget::saveSharePressed()
     //Add container directory to share automatically
     containerList.append(pContainerDirectory);
 
-	//Massively complex system to ensure that only parent directories are shared across sharing selections and ALL containers
+    //Massively complex system to ensure that only parent directories are shared across sharing selections and ALL containers
 
     //Pass 1 : Remove all subdirectories between containers
     foreach (ContainerContentsType c, pContainerHash)
@@ -357,20 +357,20 @@ void ShareWidget::saveSharePressed()
     foreach (QString str, finalList)
         dirList->append(QDir(str));
 
-   	pShare->stopParsing();
+       pShare->stopParsing();
     pShare->stopHashing();
     //Update shares
     emit updateShares(dirList);
     //Save containers
     emit saveContainers(pContainerHash, pContainerDirectory);
     //Let GUI know
-	emit saveButtonPressed();
+    emit saveButtonPressed();
 }
 
 void ShareWidget::refreshButtonPressed()
 {
-	emit updateShares();
-	emit saveButtonPressed();
+    emit updateShares();
+    emit saveButtonPressed();
 }
 
 void ShareWidget::containerButtonPressed()
@@ -743,6 +743,6 @@ void ShareWidget::droppedURLList(QList<QUrl> list)
 
 QWidget *ShareWidget::widget()
 {
-	//TODO: Return widget containing all search widgets
-	return pWidget;
+    //TODO: Return widget containing all search widgets
+    return pWidget;
 }

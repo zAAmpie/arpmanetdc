@@ -4,89 +4,89 @@
 
 DownloadFinishedWidget::DownloadFinishedWidget(QHash<QByteArray, FinishedDownloadStruct> *finishedList, ArpmanetDC *parent)
 {
-	//Constructor
-	pParent = parent;
+    //Constructor
+    pParent = parent;
     pFinishedList = finishedList;
 
-	createWidgets();
-	placeWidgets();
-	connectWidgets();
+    createWidgets();
+    placeWidgets();
+    connectWidgets();
 
     loadList();
 }
 
 DownloadFinishedWidget::~DownloadFinishedWidget()
 {
-	//Destructor
+    //Destructor
 }
 
 void DownloadFinishedWidget::createWidgets()
 {
-	//Table View
-	finishedTable = new QTableView((QWidget *)pParent);
-	finishedTable->setShowGrid(false);
-	finishedTable->setGridStyle(Qt::DotLine);
+    //Table View
+    finishedTable = new QTableView((QWidget *)pParent);
+    finishedTable->setShowGrid(false);
+    finishedTable->setGridStyle(Qt::DotLine);
     finishedTable->setWordWrap(false);
-	finishedTable->verticalHeader()->hide();
-	finishedTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    finishedTable->verticalHeader()->hide();
+    finishedTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     //finishedTable->setItemDelegate(new HTMLDelegate(finishedTable));
-	finishedTable->setContextMenuPolicy(Qt::CustomContextMenu);
+    finishedTable->setContextMenuPolicy(Qt::CustomContextMenu);
     finishedTable->horizontalHeader()->setHighlightSections(false);
     finishedTable->horizontalHeader()->setStretchLastSection(true);
     finishedTable->setTextElideMode(Qt::ElideRight);
 
-	//Model
-	finishedModel = new QStandardItemModel(0, 5, finishedTable);
-	finishedModel->setHeaderData(0, Qt::Horizontal, tr("Filename"));
-	finishedModel->setHeaderData(1, Qt::Horizontal, tr("Path"));
-	finishedModel->setHeaderData(2, Qt::Horizontal, tr("Size"));
+    //Model
+    finishedModel = new QStandardItemModel(0, 5, finishedTable);
+    finishedModel->setHeaderData(0, Qt::Horizontal, tr("Filename"));
+    finishedModel->setHeaderData(1, Qt::Horizontal, tr("Path"));
+    finishedModel->setHeaderData(2, Qt::Horizontal, tr("Size"));
     finishedModel->setHeaderData(3, Qt::Horizontal, tr("Downloaded date"));
-	finishedModel->setHeaderData(4, Qt::Horizontal, tr("TTH"));
-	
-	//Set model
-	finishedTable->setModel(finishedModel);
-	//queueTable->hideColumn(3);
-	finishedTable->setSortingEnabled(true);
+    finishedModel->setHeaderData(4, Qt::Horizontal, tr("TTH"));
+    
+    //Set model
+    finishedTable->setModel(finishedModel);
+    //queueTable->hideColumn(3);
+    finishedTable->setSortingEnabled(true);
     finishedTable->setColumnWidth(0, 300);
     finishedTable->setColumnWidth(1, 200);
     finishedTable->setColumnWidth(2, 75);
     finishedTable->setColumnWidth(3, 150);
 
-	//===== Actions =====
-	openAction = new QAction(QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Open file"), this);
-	clearAction = new QAction(QIcon(":/ArpmanetDC/Resources/RemoveIcon.png"), tr("Clear list"), this);
+    //===== Actions =====
+    openAction = new QAction(QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Open file"), this);
+    clearAction = new QAction(QIcon(":/ArpmanetDC/Resources/RemoveIcon.png"), tr("Clear list"), this);
     deleteAction = new QAction(QIcon(":/ArpmanetDC/Resources/RemoveIcon.png"), tr("Delete entry"), this);
 
     finishedMenu = new QMenu(finishedTable);
-	finishedMenu->addAction(openAction);
+    finishedMenu->addAction(openAction);
     finishedMenu->addAction(deleteAction);
     finishedMenu->addSeparator();
-	finishedMenu->addAction(clearAction);
+    finishedMenu->addAction(clearAction);
 }
 
 void DownloadFinishedWidget::placeWidgets()
 {
-	pWidget = finishedTable;
+    pWidget = finishedTable;
 }
 
 void DownloadFinishedWidget::connectWidgets()
 {
-	connect(finishedTable, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showFinishedTableContextMenu(const QPoint&)));
+    connect(finishedTable, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showFinishedTableContextMenu(const QPoint&)));
     connect(finishedTable, SIGNAL(doubleClicked(QModelIndex)), this, SLOT(downloadDoubleClicked(QModelIndex)));
 
-	connect(openAction, SIGNAL(triggered()), this, SLOT(openActionPressed()));
-	connect(clearAction, SIGNAL(triggered()), this, SLOT(clearActionPressed()));
+    connect(openAction, SIGNAL(triggered()), this, SLOT(openActionPressed()));
+    connect(clearAction, SIGNAL(triggered()), this, SLOT(clearActionPressed()));
     connect(deleteAction, SIGNAL(triggered()), this, SLOT(deleteActionPressed()));
 }
 
 void DownloadFinishedWidget::loadList()
 {
-	//Remove all rows
-	finishedModel->removeRows(0, finishedModel->rowCount());
+    //Remove all rows
+    finishedModel->removeRows(0, finishedModel->rowCount());
 
-	//Populate model
-	foreach (FinishedDownloadStruct file, *pFinishedList)
-	{
+    //Populate model
+    foreach (FinishedDownloadStruct file, *pFinishedList)
+    {
         QList<QStandardItem *> row;
         QFileInfo fi(file.fileName);
         QString suffix = fi.suffix();
@@ -103,32 +103,32 @@ void DownloadFinishedWidget::loadList()
 
         row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, tth.data()));
         finishedModel->appendRow(row);
-	}
+    }
 
     resizeRowsToContents(finishedTable);
 }
 
 void DownloadFinishedWidget::showFinishedTableContextMenu(const QPoint &point)
-{	
-	//Show menu on right-click
-	openAction->setVisible(!finishedTable->selectionModel()->selectedRows().isEmpty());
+{    
+    //Show menu on right-click
+    openAction->setVisible(!finishedTable->selectionModel()->selectedRows().isEmpty());
     deleteAction->setVisible(!finishedTable->selectionModel()->selectedRows().isEmpty());
 
     //Disable clear action when no items are in the model
     clearAction->setEnabled(finishedModel->rowCount() != 0);
 
-	QPoint globalPos = finishedTable->viewport()->mapToGlobal(point);
+    QPoint globalPos = finishedTable->viewport()->mapToGlobal(point);
 
-	finishedMenu->popup(globalPos);
+    finishedMenu->popup(globalPos);
 }
 
 //Actions
 void DownloadFinishedWidget::clearActionPressed()
 {
-	finishedModel->removeRows(0, finishedModel->rowCount());
+    finishedModel->removeRows(0, finishedModel->rowCount());
 
     pParent->clearFinishedDownloadList();
-	//emit clearFinishedList();
+    //emit clearFinishedList();
 }
 
 void DownloadFinishedWidget::openActionPressed()
@@ -136,9 +136,9 @@ void DownloadFinishedWidget::openActionPressed()
     while (!finishedTable->selectionModel()->selectedRows().isEmpty())
     {
         QModelIndex selectedIndex = finishedTable->selectionModel()->selectedRows().first();
-	    
+        
         //Get path of first file in the list
-	    QString filePath = finishedModel->itemFromIndex(finishedModel->index(selectedIndex.row(), 1))->text();
+        QString filePath = finishedModel->itemFromIndex(finishedModel->index(selectedIndex.row(), 1))->text();
         
         //Get filename
         QString fileName = finishedModel->itemFromIndex(finishedModel->index(selectedIndex.row(), 0))->text();
@@ -146,7 +146,7 @@ void DownloadFinishedWidget::openActionPressed()
         QFileInfo fi(filePath + fileName);
         if (fi.exists() && fi.isFile())
         {
-	        //"Start" the file
+            //"Start" the file
             QDesktopServices::openUrl(QUrl(filePath + fileName));
 
             //Deselect to avoid infinite loop
@@ -169,7 +169,7 @@ void DownloadFinishedWidget::openActionPressed()
             if (msgBox.clickedButton() == deleteButton)
             {
                 //Delete entry
-	            QString tth = finishedModel->itemFromIndex(finishedModel->index(selectedIndex.row(), 4))->text();
+                QString tth = finishedModel->itemFromIndex(finishedModel->index(selectedIndex.row(), 4))->text();
 
                 QByteArray base32TTH;
                 base32TTH.append(tth);
@@ -201,9 +201,9 @@ void DownloadFinishedWidget::deleteActionPressed()
     while (!finishedTable->selectionModel()->selectedRows().isEmpty())
     {
         QModelIndex selectedIndex = finishedTable->selectionModel()->selectedRows().first();
-	    
+        
         //Get tth of first file in the list
-	    QString tth = finishedModel->itemFromIndex(finishedModel->index(selectedIndex.row(), 4))->text();
+        QString tth = finishedModel->itemFromIndex(finishedModel->index(selectedIndex.row(), 4))->text();
 
         QByteArray base32TTH;
         base32TTH.append(tth);
@@ -220,7 +220,7 @@ void DownloadFinishedWidget::deleteActionPressed()
 //Add an entry
 void DownloadFinishedWidget::addFinishedDownload(FinishedDownloadStruct file)
 {
-	QList<QStandardItem *> row;
+    QList<QStandardItem *> row;
     QFileInfo fi(file.fileName);
     QString suffix = fi.suffix();
     row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, file.fileName, pParent->resourceExtractorObject()->getIconFromName(suffix)));
@@ -249,6 +249,6 @@ void DownloadFinishedWidget::downloadDoubleClicked(QModelIndex index)
 
 QWidget *DownloadFinishedWidget::widget()
 {
-	//TODO: Return widget containing all search widgets
-	return pWidget;
+    //TODO: Return widget containing all search widgets
+    return pWidget;
 }

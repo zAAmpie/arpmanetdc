@@ -4,17 +4,17 @@
 
 TransferWidget::TransferWidget(TransferManager *transferManager, ArpmanetDC *parent)
 {
-	//Constructor
-	pParent = parent;
+    //Constructor
+    pParent = parent;
     pTransferManager = transferManager;
     pTransferList = new QHash<QByteArray, TransferItemStatus>();
 
     connect(this, SIGNAL(requestGlobalTransferStatus()), pTransferManager, SLOT(requestGlobalTransferStatus()), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(returnGlobalTransferStatus(QList<TransferItemStatus>)), this, SLOT(returnGlobalTransferStatus(QList<TransferItemStatus>)), Qt::QueuedConnection);
 
-	createWidgets();
-	placeWidgets();
-	connectWidgets();
+    createWidgets();
+    placeWidgets();
+    connectWidgets();
 
     //Update status every second
     updateStatusTimer = new QTimer();
@@ -24,15 +24,15 @@ TransferWidget::TransferWidget(TransferManager *transferManager, ArpmanetDC *par
 
 TransferWidget::~TransferWidget()
 {
-	//Destructor
+    //Destructor
 }
 
 void TransferWidget::createWidgets()
 {
-	//===== Transfer list =====
-	//Model
-	transferListModel = new QStandardItemModel(0,9);
-	transferListModel->setHeaderData(0, Qt::Horizontal, tr("Type"));
+    //===== Transfer list =====
+    //Model
+    transferListModel = new QStandardItemModel(0,9);
+    transferListModel->setHeaderData(0, Qt::Horizontal, tr("Type"));
     transferListModel->setHeaderData(1, Qt::Horizontal, tr("Progress"));
     transferListModel->setHeaderData(2, Qt::Horizontal, tr("Speed"));
     transferListModel->setHeaderData(3, Qt::Horizontal, tr("Filename"));
@@ -42,23 +42,23 @@ void TransferWidget::createWidgets()
     transferListModel->setHeaderData(7, Qt::Horizontal, tr("TTH Root"));
     transferListModel->setHeaderData(8, Qt::Horizontal, tr("Host"));
 
-	//Table
-	transferListTable = new QTableView((QWidget *)pParent);
-	transferListTable->setContextMenuPolicy(Qt::CustomContextMenu);
+    //Table
+    transferListTable = new QTableView((QWidget *)pParent);
+    transferListTable->setContextMenuPolicy(Qt::CustomContextMenu);
     transferListTable->setSortingEnabled(true);
     transferListTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     transferListTable->horizontalHeader()->setStretchLastSection(true);
 
-	//Link table and model
-	transferListTable->setModel(transferListModel);
+    //Link table and model
+    transferListTable->setModel(transferListModel);
 
-	//Sizing
-	transferListTable->horizontalHeader()->setResizeMode(QHeaderView::Interactive);
+    //Sizing
+    transferListTable->horizontalHeader()->setResizeMode(QHeaderView::Interactive);
 
-	//Style
-	transferListTable->setShowGrid(false);
-	transferListTable->setGridStyle(Qt::DotLine);
-	transferListTable->verticalHeader()->hide();
+    //Style
+    transferListTable->setShowGrid(false);
+    transferListTable->setGridStyle(Qt::DotLine);
+    transferListTable->verticalHeader()->hide();
     transferListTable->horizontalHeader()->setHighlightSections(false);
     transferListTable->setColumnWidth(0, 75);
     transferListTable->setColumnWidth(2, 75);
@@ -75,7 +75,7 @@ void TransferWidget::createWidgets()
 
     //Menu
     transferListMenu = new QMenu((QWidget *)pParent);
-	transferListMenu->addAction(deleteAction);
+    transferListMenu->addAction(deleteAction);
 }
 
 void TransferWidget::placeWidgets()
@@ -98,9 +98,9 @@ void TransferWidget::showTransferListContextMenu(const QPoint &pos)
     if (transferListTable->selectionModel()->selectedRows().size() == 0)
         return;
 
-	QPoint globalPos = transferListTable->viewport()->mapToGlobal(pos);
+    QPoint globalPos = transferListTable->viewport()->mapToGlobal(pos);
 
-	transferListMenu->popup(globalPos);
+    transferListMenu->popup(globalPos);
 }
 
 void TransferWidget::deleteActionPressed()
@@ -108,12 +108,12 @@ void TransferWidget::deleteActionPressed()
     QList<QModelIndex> selectedRows = transferListTable->selectionModel()->selectedRows();
 
     //Remove rows from parent queue
-	for (int i = 0; i < transferListTable->selectionModel()->selectedRows().size(); i++)
+    for (int i = 0; i < transferListTable->selectionModel()->selectedRows().size(); i++)
     {
         //Get selected files
-	    QModelIndex selectedIndex = transferListTable->selectionModel()->selectedRows().at(i);//userListTable->selectionModel()->selection().indexes().first();
-	    //Get TTH of file
-	    QString base32TTH = transferListModel->data(transferListModel->index(selectedIndex.row(), 7)).toString();
+        QModelIndex selectedIndex = transferListTable->selectionModel()->selectedRows().at(i);//userListTable->selectionModel()->selection().indexes().first();
+        //Get TTH of file
+        QString base32TTH = transferListModel->data(transferListModel->index(selectedIndex.row(), 7)).toString();
         
         QByteArray tthRoot;
         tthRoot.append(base32TTH);
@@ -125,7 +125,7 @@ void TransferWidget::deleteActionPressed()
         //Get host address
         QHostAddress hostAddr = QHostAddress(transferListModel->data(transferListModel->index(selectedIndex.row(), 8)).toString());
 
-	    pParent->removeTransfer(tthRoot, typeFromString(typeStr), hostAddr);
+        pParent->removeTransfer(tthRoot, typeFromString(typeStr), hostAddr);
     }
 
     //Remove rows from model
@@ -317,7 +317,7 @@ QString TransferWidget::progressString(int type, int progress)
 
 QWidget *TransferWidget::widget()
 {
-	return pWidget;
+    return pWidget;
 }
 
 QHash<QByteArray, TransferItemStatus> *TransferWidget::transferList() const

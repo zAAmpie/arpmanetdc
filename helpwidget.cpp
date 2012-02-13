@@ -3,19 +3,19 @@
 
 HelpWidget::HelpWidget(ArpmanetDC *parent)
 {
-	//Constructor
-	pParent = parent;
+    //Constructor
+    pParent = parent;
 
     connect(this, SIGNAL(ftpCheckForUpdate()), pParent, SIGNAL(ftpCheckForUpdate()));
 
-	createWidgets();
-	placeWidgets();
-	connectWidgets();
+    createWidgets();
+    placeWidgets();
+    connectWidgets();
 }
 
 HelpWidget::~HelpWidget()
 {
-	//Destructor
+    //Destructor
 }
 
 void HelpWidget::createWidgets()
@@ -96,7 +96,7 @@ void HelpWidget::placeWidgets()
     browser->scrollToAnchor("ArpmanetDC");
     vlayout->addWidget(browser);
 
-	pWidget->setLayout(vlayout);
+    pWidget->setLayout(vlayout);
 }
 
 void HelpWidget::connectWidgets()
@@ -147,5 +147,5 @@ void HelpWidget::addQA(QString question, QString answer)
 
 QWidget *HelpWidget::widget()
 {
-	return pWidget;
+    return pWidget;
 }

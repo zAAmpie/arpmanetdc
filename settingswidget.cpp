@@ -3,18 +3,18 @@
 
 SettingsWidget::SettingsWidget(QHash<QString, QString> *settings, ArpmanetDC *parent)
 {
-	//Constructor
-	pParent = parent;
-	pSettings = settings;
+    //Constructor
+    pParent = parent;
+    pSettings = settings;
 
-	createWidgets();
-	placeWidgets();
-	connectWidgets();
+    createWidgets();
+    placeWidgets();
+    connectWidgets();
 }
 
 SettingsWidget::~SettingsWidget()
 {
-	//Destructor
+    //Destructor
 }
 
 void SettingsWidget::createWidgets()
@@ -23,37 +23,37 @@ void SettingsWidget::createWidgets()
 
     //========== BASIC SETTINGS ==========
 
-	hubAddressLineEdit = new QLineEdit(pSettings->value("hubAddress"),pWidget);
-	
-	hubPortLineEdit = new QLineEdit(pSettings->value("hubPort"), pWidget);
-	hubPortLineEdit->setValidator(new QIntValidator(0, 65535, this));
+    hubAddressLineEdit = new QLineEdit(pSettings->value("hubAddress"),pWidget);
+    
+    hubPortLineEdit = new QLineEdit(pSettings->value("hubPort"), pWidget);
+    hubPortLineEdit->setValidator(new QIntValidator(0, 65535, this));
 
-	nickLineEdit = new QLineEdit(pSettings->value("nick"), pWidget);
-	
-	passwordLineEdit = new QLineEdit(pSettings->value("password"), pWidget);
-	passwordLineEdit->setEchoMode(QLineEdit::Password);
+    nickLineEdit = new QLineEdit(pSettings->value("nick"), pWidget);
+    
+    passwordLineEdit = new QLineEdit(pSettings->value("password"), pWidget);
+    passwordLineEdit->setEchoMode(QLineEdit::Password);
     
     downloadPathLineEdit = new QLineEdit(pSettings->value("downloadPath"), pWidget);
 
     browseDownloadPathButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/FolderIcon.png"), tr("Browse"), pWidget);
 
-	shareUpdateIntervalSpinBox = new QSpinBox(pWidget);
-	shareUpdateIntervalSpinBox->setRange(0, 10080); //Maximum is every week
-	int value = pSettings->value("autoUpdateShareInterval").toInt()/60000;
-	shareUpdateIntervalSpinBox->setValue(value);
-	if (value != 1)
-		shareUpdateIntervalSpinBox->setSuffix(" minutes");
-	else
-		shareUpdateIntervalSpinBox->setSuffix(" minute");
-	shareUpdateIntervalSpinBox->setSpecialValueText("Disabled");
+    shareUpdateIntervalSpinBox = new QSpinBox(pWidget);
+    shareUpdateIntervalSpinBox->setRange(0, 10080); //Maximum is every week
+    int value = pSettings->value("autoUpdateShareInterval").toInt()/60000;
+    shareUpdateIntervalSpinBox->setValue(value);
+    if (value != 1)
+        shareUpdateIntervalSpinBox->setSuffix(" minutes");
+    else
+        shareUpdateIntervalSpinBox->setSuffix(" minute");
+    shareUpdateIntervalSpinBox->setSpecialValueText("Disabled");
 
     //========== ADVANCED SETTINGS ==========
 
-	ipLineEdit = new QLineEdit(pSettings->value("externalIP"), pWidget);
-	ipLineEdit->setValidator(new IPValidator(this));
+    ipLineEdit = new QLineEdit(pSettings->value("externalIP"), pWidget);
+    ipLineEdit->setValidator(new IPValidator(this));
 
-	externalPortLineEdit = new QLineEdit(pSettings->value("externalPort"), pWidget);
-	externalPortLineEdit->setValidator(new QIntValidator(0, 65535, this));
+    externalPortLineEdit = new QLineEdit(pSettings->value("externalPort"), pWidget);
+    externalPortLineEdit->setValidator(new QIntValidator(0, 65535, this));
 
     protocolList = new QListWidget(pWidget);
     protocolList->setMaximumHeight(150);
@@ -95,24 +95,24 @@ void SettingsWidget::placeWidgets()
     downloadPathLayout->addWidget(downloadPathLineEdit);
     downloadPathLayout->addWidget(browseDownloadPathButton);
 
-	QHBoxLayout *autoUpdateLayout = new QHBoxLayout;
-	autoUpdateLayout->addWidget(shareUpdateIntervalSpinBox);
+    QHBoxLayout *autoUpdateLayout = new QHBoxLayout;
+    autoUpdateLayout->addWidget(shareUpdateIntervalSpinBox);
 
-	QFormLayout *flayout = new QFormLayout();
-	flayout->addRow(new QLabel("<b>User information</b>"));
+    QFormLayout *flayout = new QFormLayout();
+    flayout->addRow(new QLabel("<b>User information</b>"));
     flayout->addRow(new QLabel("Nickname:"), nickLineEdit);
-	flayout->addRow(new QLabel("Password:"), passwordLineEdit);
+    flayout->addRow(new QLabel("Password:"), passwordLineEdit);
     flayout->addRow(new QLabel("<b>Download path</b>"));
     flayout->addRow(new QLabel("Download path:"), downloadPathLayout);
     flayout->addRow(new QLabel("<b>Hub information</b>"));
     flayout->addRow(new QLabel("Hub address:"), hubAddressLineEdit);
-	flayout->addRow(new QLabel("Hub port:"), hubPortLineEdit);
-	flayout->addRow(new QLabel("<b>Shares</b>"));
-	flayout->addRow(new QLabel("Share update interval:"), autoUpdateLayout);
+    flayout->addRow(new QLabel("Hub port:"), hubPortLineEdit);
+    flayout->addRow(new QLabel("<b>Shares</b>"));
+    flayout->addRow(new QLabel("Share update interval:"), autoUpdateLayout);
 
     QHBoxLayout *guessLayout = new QHBoxLayout();
     guessLayout->addWidget(ipLineEdit);
-    guessLayout->addWidget(guessIPButton);	
+    guessLayout->addWidget(guessIPButton);    
 
     QVBoxLayout *protocolButtonLayout = new QVBoxLayout();
     protocolButtonLayout->addStretch(1);
@@ -127,8 +127,8 @@ void SettingsWidget::placeWidgets()
 
     QFormLayout *flayoutR = new QFormLayout();
     flayoutR->addRow(new QLabel("<font color=\"red\"><b>Warning: Advanced users only!</b></font>"));
-	flayoutR->addRow(new QLabel("<font color=\"red\">External IP:</font>"), guessLayout);
-	flayoutR->addRow(new QLabel("<font color=\"red\">External port:</font>"), externalPortLineEdit);
+    flayoutR->addRow(new QLabel("<font color=\"red\">External IP:</font>"), guessLayout);
+    flayoutR->addRow(new QLabel("<font color=\"red\">External port:</font>"), externalPortLineEdit);
     flayoutR->addRow(new QLabel("<font color=\"red\">Transfer protocol preferences</font>"), protocolLayout);
     flayoutR->setContentsMargins(0,0,0,0);
 
@@ -139,17 +139,17 @@ void SettingsWidget::placeWidgets()
     formLayouts->addSpacing(20);
     formLayouts->addWidget(advancedWidget);  
 
-	QHBoxLayout *hlayout = new QHBoxLayout();
-	hlayout->addWidget(toggleAdvancedCheckBox);
+    QHBoxLayout *hlayout = new QHBoxLayout();
+    hlayout->addWidget(toggleAdvancedCheckBox);
     hlayout->addStretch(1);
-	hlayout->addWidget(saveButton);
+    hlayout->addWidget(saveButton);
 
-	QVBoxLayout *layout = new QVBoxLayout();
+    QVBoxLayout *layout = new QVBoxLayout();
     layout->addLayout(formLayouts);
     layout->addStretch(1);
-	layout->addLayout(hlayout);
+    layout->addLayout(hlayout);
 
-	pWidget->setLayout(layout);
+    pWidget->setLayout(layout);
     
     if (!toggleAdvancedCheckBox->isChecked())
         advancedWidget->hide();    
@@ -157,7 +157,7 @@ void SettingsWidget::placeWidgets()
 
 void SettingsWidget::connectWidgets()
 {
-	connect(saveButton, SIGNAL(clicked()), this, SLOT(savePressed()));
+    connect(saveButton, SIGNAL(clicked()), this, SLOT(savePressed()));
     connect(guessIPButton, SIGNAL(clicked()), this, SLOT(guessIPPressed()));
     connect(browseDownloadPathButton, SIGNAL(clicked()), this, SLOT(browseDownloadPathPressed()));
 
@@ -166,40 +166,40 @@ void SettingsWidget::connectWidgets()
 
     connect(toggleAdvancedCheckBox, SIGNAL(stateChanged(int)), this, SLOT(advancedCheckBoxToggled(int)));
 
-	connect(shareUpdateIntervalSpinBox, SIGNAL(valueChanged(int)), this, SLOT(shareUpdateIntervalSpinBoxValueChanged(int)));
+    connect(shareUpdateIntervalSpinBox, SIGNAL(valueChanged(int)), this, SLOT(shareUpdateIntervalSpinBoxValueChanged(int)));
 }
 
 void SettingsWidget::savePressed()
 {
-	QString missingStr = "";
+    QString missingStr = "";
 
-	if (hubAddressLineEdit->text().isEmpty())
-		missingStr.append("Hub address<br/>");
-	if (hubPortLineEdit->text() == "0")
-		missingStr.append("Hub port<br/>");
-	if (nickLineEdit->text().isEmpty())
-		missingStr.append("Nickname<br/>");
-	if (passwordLineEdit->text().isEmpty())
-		missingStr.append("Password<br/>");
-	if (ipLineEdit->text().isEmpty())
-		missingStr.append("External IP<br/>");
-	if (externalPortLineEdit->text() == "0")
-		missingStr.append("External Port<br/>");
+    if (hubAddressLineEdit->text().isEmpty())
+        missingStr.append("Hub address<br/>");
+    if (hubPortLineEdit->text() == "0")
+        missingStr.append("Hub port<br/>");
+    if (nickLineEdit->text().isEmpty())
+        missingStr.append("Nickname<br/>");
+    if (passwordLineEdit->text().isEmpty())
+        missingStr.append("Password<br/>");
+    if (ipLineEdit->text().isEmpty())
+        missingStr.append("External IP<br/>");
+    if (externalPortLineEdit->text() == "0")
+        missingStr.append("External Port<br/>");
     if (downloadPathLineEdit->text() == "")
-		missingStr.append("Download path<br/>");
+        missingStr.append("Download path<br/>");
 
-	if (!missingStr.isEmpty())
-		QMessageBox::warning((QWidget *)pParent, tr("ArpmanetDC"), tr("<p><b>Information missing:</b></p><p>%1</p><p>Please enter the above fields and try again.</p>").arg(missingStr));
-	else
-	{
+    if (!missingStr.isEmpty())
+        QMessageBox::warning((QWidget *)pParent, tr("ArpmanetDC"), tr("<p><b>Information missing:</b></p><p>%1</p><p>Please enter the above fields and try again.</p>").arg(missingStr));
+    else
+    {
         (*pSettings)["hubAddress"] = hubAddressLineEdit->text();
-		(*pSettings)["hubPort"] = hubPortLineEdit->text();
+        (*pSettings)["hubPort"] = hubPortLineEdit->text();
         (*pSettings)["nick"] = nickLineEdit->text();
-		(*pSettings)["password"] = passwordLineEdit->text();
+        (*pSettings)["password"] = passwordLineEdit->text();
         (*pSettings)["externalIP"] = ipLineEdit->text();
         (*pSettings)["externalPort"] = externalPortLineEdit->text();
         (*pSettings)["downloadPath"] = downloadPathLineEdit->text().replace("\\","/");
-		(*pSettings)["autoUpdateShareInterval"] = tr("%1").arg(shareUpdateIntervalSpinBox->value()*60000);
+        (*pSettings)["autoUpdateShareInterval"] = tr("%1").arg(shareUpdateIntervalSpinBox->value()*60000);
 
         //Build protocols string
         QString protocolHint;
@@ -217,8 +217,8 @@ void SettingsWidget::savePressed()
         else
             (*pSettings)["showAdvanced"] = "0";
 
-		emit settingsSaved();
-	}
+        emit settingsSaved();
+    }
 }
 
 void SettingsWidget::guessIPPressed()
@@ -279,10 +279,10 @@ void SettingsWidget::protocolDownPressed()
 
 void SettingsWidget::shareUpdateIntervalSpinBoxValueChanged(int value)
 {
-	if (value == 1)
-		shareUpdateIntervalSpinBox->setSuffix(" minute");
-	else if (value > 1 && shareUpdateIntervalSpinBox->suffix() != " minutes")
-		shareUpdateIntervalSpinBox->setSuffix(" minutes");
+    if (value == 1)
+        shareUpdateIntervalSpinBox->setSuffix(" minute");
+    else if (value > 1 && shareUpdateIntervalSpinBox->suffix() != " minutes")
+        shareUpdateIntervalSpinBox->setSuffix(" minutes");
 }
 
 void SettingsWidget::advancedCheckBoxToggled(int state)
@@ -296,78 +296,78 @@ void SettingsWidget::advancedCheckBoxToggled(int state)
 
 QWidget *SettingsWidget::widget()
 {
-	//TODO: Return widget containing all search widgets
-	return pWidget;
+    //TODO: Return widget containing all search widgets
+    return pWidget;
 }
 
 QHash<QString, QString> *SettingsWidget::settings() const
 {
-	return pSettings;
+    return pSettings;
 }
 
 //Fix an IPv4 address
 void IPValidator::fixup(QString &input) const
 {
-	QStringList octets = input.split(".");
-	QString output = "";
-	for (int i = 0; i < octets.size(); i++)
-	{
-		//Ensure no empty octets exist
-		if (octets.at(i).size() == 0)
-			octets[i] = "0";
-	}
+    QStringList octets = input.split(".");
+    QString output = "";
+    for (int i = 0; i < octets.size(); i++)
+    {
+        //Ensure no empty octets exist
+        if (octets.at(i).size() == 0)
+            octets[i] = "0";
+    }
 
-	//Ensure enough octets exist
-	while (octets.size() < 4)
-		octets.append("0");
+    //Ensure enough octets exist
+    while (octets.size() < 4)
+        octets.append("0");
 
-	//Rebuild address
-	for (int i = 0; i < octets.size(); i++)
-	{
-		output.append(octets.at(i));
-		if (i < octets.size() - 1)
-			output.append(".");
-	}
-	input = output;
+    //Rebuild address
+    for (int i = 0; i < octets.size(); i++)
+    {
+        output.append(octets.at(i));
+        if (i < octets.size() - 1)
+            output.append(".");
+    }
+    input = output;
 }
 
 //Validate an IPv4 address
 QValidator::State IPValidator::validate(QString &input, int &pos) const
 {
-	//Split the address into octets
-	QStringList octets = input.split(".");
+    //Split the address into octets
+    QStringList octets = input.split(".");
 
-	//If more than 4 octects = invalid
-	if (octets.size() > 4)
-		return QValidator::Invalid;
+    //If more than 4 octects = invalid
+    if (octets.size() > 4)
+        return QValidator::Invalid;
 
-	//Iterate through all octets
-	for (int i = 0; i < octets.size(); i++)
-	{
-		//Don't mind a full stop at the end while being entered
-		if (octets.at(i).isEmpty() && i == octets.size() - 1)
-			continue;
+    //Iterate through all octets
+    for (int i = 0; i < octets.size(); i++)
+    {
+        //Don't mind a full stop at the end while being entered
+        if (octets.at(i).isEmpty() && i == octets.size() - 1)
+            continue;
 
-		//Don't allow stuff like 0000000001
-		if (octets.at(i).size() > 3)
-			return QValidator::Invalid;
+        //Don't allow stuff like 0000000001
+        if (octets.at(i).size() > 3)
+            return QValidator::Invalid;
 
-		//Convert octet to integer
-		bool ok;
-		int val = octets.at(i).toInt(&ok);
-		//If not a number = invalid
-		if (!ok)
-			return QValidator::Invalid;
-		if (ok)
-		{
-			//If out of range = invalid
-			if (val > 255 || val < 0)
-				return QValidator::Invalid;
-		}
-	}
-	
-	//Check if less than 4 octets or last octet is empty
-	if (octets.size() < 4 || octets.last().isEmpty())
-		return QValidator::Intermediate;
-	return QValidator::Acceptable;
+        //Convert octet to integer
+        bool ok;
+        int val = octets.at(i).toInt(&ok);
+        //If not a number = invalid
+        if (!ok)
+            return QValidator::Invalid;
+        if (ok)
+        {
+            //If out of range = invalid
+            if (val > 255 || val < 0)
+                return QValidator::Invalid;
+        }
+    }
+    
+    //Check if less than 4 octets or last octet is empty
+    if (octets.size() < 4 || octets.last().isEmpty())
+        return QValidator::Intermediate;
+    return QValidator::Acceptable;
 }

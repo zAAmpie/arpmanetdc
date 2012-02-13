@@ -35,12 +35,12 @@
 class HTMLDelegate : public QStyledItemDelegate
 {
 public:
-	HTMLDelegate(QTableView *tableView);
+    HTMLDelegate(QTableView *tableView);
 protected:
     void paint ( QPainter * painter, const QStyleOptionViewItem & option, const QModelIndex & index ) const;
     QSize sizeHint ( const QStyleOptionViewItem & option, const QModelIndex & index ) const;
 private:
-	QPen pGridPen;
+    QPen pGridPen;
 };
 
 //Custom delegate to display progress bars in QTableView
@@ -75,8 +75,8 @@ private:
 class CTabWidget : public QTabWidget
 {
 public:
-	CTabWidget(QWidget *parent = 0);
-	QTabBar *tabBar() const { return (QTabWidget::tabBar()); }
+    CTabWidget(QWidget *parent = 0);
+    QTabBar *tabBar() const { return (QTabWidget::tabBar()); }
 };
 
 //Custom progressbar that shows text on top

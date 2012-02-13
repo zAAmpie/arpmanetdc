@@ -92,25 +92,25 @@ static const QMap<QString, char> PROTOCOL_MAP = initMapValues();
 //Main GUI window class
 class ArpmanetDC : public QMainWindow
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
     ArpmanetDC(QStringList arguments, QWidget *parent = 0, Qt::WFlags flags = 0);
-	~ArpmanetDC();
+    ~ArpmanetDC();
 
-	//Get functions
-	QString nick();
-	QString password();
+    //Get functions
+    QString nick();
+    QString password();
     QString downloadPath();
     QueueStruct queueEntry(QByteArray tth);
 
-	//HTML link converters
-	void convertHTMLLinks(QString &msg);
-	void convertMagnetLinks(QString &msg);
+    //HTML link converters
+    void convertHTMLLinks(QString &msg);
+    void convertMagnetLinks(QString &msg);
 
-	//Link to database
-	sqlite3 *database() const;
-	QString databasePath();
+    //Link to database
+    sqlite3 *database() const;
+    QString databasePath();
 
     //Guess the computer's IP
     QHostAddress getIPGuess();
@@ -176,29 +176,29 @@ public slots:
 private slots:
     //-----===== OBJECT SLOTS =====-----
 
-	//Hub Connection slots
-	void appendChatLine(QString msg);
-	void userListInfoReceived(QString nick, QString desc, QString mode, QString client, QString version);
-	void userListUserLoggedOut(QString nick);
-	void userListNickListReceived(QStringList list);
+    //Hub Connection slots
+    void appendChatLine(QString msg);
+    void userListInfoReceived(QString nick, QString desc, QString mode, QString client, QString version);
+    void userListUserLoggedOut(QString nick);
+    void userListNickListReceived(QStringList list);
     void opListReceived(QStringList list);
-	void hubOnline();
-	void hubOffline();
+    void hubOnline();
+    void hubOffline();
 
     //TransferManager slots
     void downloadStarted(QByteArray tth);
     void downloadCompleted(QByteArray tth);
 
-	//Dispatcher slots
-	void bootstrapStatusChanged(int status);
+    //Dispatcher slots
+    void bootstrapStatusChanged(int status);
     void searchResultReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult);
     void returnHostCount(int count);
 
     //ShareSearch slot
-	void fileHashed(QString fileName, quint64 fileSize);
-	void directoryParsed(QString path);
-	void hashingDone(int msecs, int numFiles);
-	void parsingDone(int msecs);
+    void fileHashed(QString fileName, quint64 fileSize);
+    void directoryParsed(QString path);
+    void hashingDone(int msecs, int numFiles);
+    void parsingDone(int msecs);
     void searchWordListReceived(QStandardItemModel *wordList);
 
     //FTP Update slots
@@ -209,22 +209,22 @@ private slots:
     //-----===== CUSTOM WIDGET SLOTS =====-----
 
     //Search widget slots
-	void searchButtonPressed(quint64 id, QString searchStr,  QByteArray searchPacket, SearchWidget *widget);
+    void searchButtonPressed(quint64 id, QString searchStr,  QByteArray searchPacket, SearchWidget *widget);
 
-	//PM widget slots
-	void pmSent(QString otherNick, QString msg, PMWidget *);
-	void receivedPrivateMessage(QString otherNick, QString msg);
+    //PM widget slots
+    void pmSent(QString otherNick, QString msg, PMWidget *);
+    void receivedPrivateMessage(QString otherNick, QString msg);
 
-	//Share widget slots
-	void shareSaveButtonPressed();
+    //Share widget slots
+    void shareSaveButtonPressed();
 
-	//Settings widget slots
-	void settingsSaved();
+    //Settings widget slots
+    void settingsSaved();
 
     //-----===== GUI SLOTS =====-----
 
-	//Sort user list
-	void sortUserList();
+    //Sort user list
+    void sortUserList();
 
     //Update GUI slot
     void updateGUIEverySecond();
@@ -232,29 +232,29 @@ private slots:
     //Calculate rates
     void calculateHashRate();
 
-	//GUI interaction
+    //GUI interaction
     void mainChatLinkClicked(const QUrl &link);
     void chatLineEditReturnPressed();
-	void sendChatMessage();
+    void sendChatMessage();
     void quickSearchPressed();
 
-	//Direct user interaction with actions
-	void searchActionPressed();
-	void queueActionPressed();
-	void shareActionPressed();
-	void downloadFinishedActionPressed();
-	void settingsActionPressed();
-	void helpActionPressed();
-	void privateMessageActionPressed();
-	void reconnectActionPressed();
-        void openDownloadDirActionPressed();
+    //Direct user interaction with actions
+    void searchActionPressed();
+    void queueActionPressed();
+    void shareActionPressed();
+    void downloadFinishedActionPressed();
+    void settingsActionPressed();
+    void helpActionPressed();
+    void privateMessageActionPressed();
+    void reconnectActionPressed();
+    void openDownloadDirActionPressed();
 
-	//Tab clicked
-	void tabDeleted(int index);
-	void tabChanged(int index);
+    //Tab clicked
+    void tabDeleted(int index);
+    void tabChanged(int index);
 
-	//Right-click menus
-	void showUserListContextMenu(const QPoint&);
+    //Right-click menus
+    void showUserListContextMenu(const QPoint&);
 
     //Userlist keypresses
     void userListKeyPressed(Qt::Key key, QString keyStr);
@@ -267,7 +267,7 @@ private slots:
 
 signals:
     //Private queued signal for cross-thread comms
-	void updateShares();
+    void updateShares();
 
     //Private signals for FTP updating
     void ftpCheckForUpdate();
@@ -302,7 +302,7 @@ signals:
     void removeQueuedDownload(int priority, QByteArray tth);
     void queueDownload(int priority, QByteArray tth, QString filePath, quint64 fileSize, QHostAddress host);
     void changeQueuedDownloadPriority(int oldpriority, int newpriority, QByteArray tth);
-    
+
     //Signals for transferWidget
     void stopTransfer(QByteArray tth, int transferType, QHostAddress hostAddr);
 
@@ -318,14 +318,14 @@ protected:
     void closeEvent(QCloseEvent *e);
 
 private:
-	//GUI setup functions
-	void createWidgets();
-	void placeWidgets();
-	void connectWidgets();
+    //GUI setup functions
+    void createWidgets();
+    void placeWidgets();
+    void connectWidgets();
 
-	//SQLite setup
-	bool setupDatabase();
-   
+    //SQLite setup
+    bool setupDatabase();
+
     //Load settings from database
     bool loadSettings();
     bool saveSettings();
@@ -333,12 +333,12 @@ private:
     //Get path for downloads
     QString getDefaultDownloadPath();
 
-	//Objects
-	sqlite3 *db; //SQLite database
-	HubConnection *pHub;
-	Dispatcher *pDispatcher;
+    //Objects
+    sqlite3 *db; //SQLite database
+    HubConnection *pHub;
+    Dispatcher *pDispatcher;
     TransferManager *pTransferManager;
-	ShareSearch *pShare;
+    ShareSearch *pShare;
     BucketFlushThread *pBucketFlushThread;
     ResourceExtractor *pTypeIconList;
     FTPUpdate *pFtpUpdate;
@@ -349,8 +349,8 @@ private:
     ExecThread *transferThread;
     ExecThread *bucketFlushThread;
 
-	//Parameters
-	//SettingsStruct pSettings;
+    //Parameters
+    //SettingsStruct pSettings;
     QHash<QString, QString> *pSettings;
 
     //Containers
@@ -358,13 +358,13 @@ private:
     QHash<QString, QueueStruct> pContainerProcessHash;
     QString pContainerDirectory;
 
-    QStringList pOPList;
+
     bool saveSharesPressed;
 
     quint64 pFilesHashedSinceUpdate, pFileSizeHashedSinceUpdate;
     QTimer *hashRateTimer;
 
-	QTimer *updateSharesTimer;
+    QTimer *updateSharesTimer;
     QTimer *updateTimer;
 
     QTimer *checkForFTPUpdatesTimer;
@@ -376,28 +376,28 @@ private:
     QStringList pArguments;
     QSharedMemory *pSharedMemory;
 
-	//Global lists
-	QHash<QByteArray, QueueStruct> *pQueueList;
+    //Global lists
+    QHash<QByteArray, QueueStruct> *pQueueList;
     QHash<QByteArray, FinishedDownloadStruct> *pFinishedList;
     QList<QString> *pStatusHistoryList;
     QStandardItemModel *searchWordList;
 
-	//-----===== Main GUI parameters =====-----
+    //-----===== Main GUI parameters =====-----
 
-	//Determines if sorting should be done
-	bool sortDue;
+    //Determines if sorting should be done
+    bool sortDue;
 
-	//Lines in mainchat
-	quint32 mainChatBlocks;
+    //Lines in mainchat
+    quint32 mainChatBlocks;
 
-	//User list icons
-	QPixmap *userIcon, *arpmanetUserIcon, *oldVersionUserIcon, *newerVersionUserIcon, *userFirewallIcon, *bootstrappedIcon, *unbootstrappedIcon, *fullyBootstrappedIcon;
+    //User list icons
+    QPixmap *userIcon, *arpmanetUserIcon, *oldVersionUserIcon, *newerVersionUserIcon, *userFirewallIcon, *bootstrappedIcon, *unbootstrappedIcon, *fullyBootstrappedIcon;
 
     //Menus
     QMenu *userListMenu;
 
-	//Actions
-        QAction *reconnectAction, *shareAction, *searchAction, *queueAction, *downloadFinishedAction, *settingsAction, *helpAction, *privateMessageAction, *openDownloadDirAction;
+    //Actions
+    QAction *reconnectAction, *shareAction, *searchAction, *queueAction, *downloadFinishedAction, *settingsAction, *helpAction, *privateMessageAction, *openDownloadDirAction;
 
     //-----===== System tray =====-----
 
@@ -407,56 +407,56 @@ private:
     QSize windowSize;
     bool wasMaximized;
 
-	//-----===== Widgets =====-----
+    //-----===== Widgets =====-----
 
     //Quicksearch
     QLineEdit *quickSearchLineEdit;
     QCompleter *searchCompleter;
 
-	//Labels
-	QLabel *userHubCountLabel;
-	QLabel *additionalInfoLabel;
-	QLabel *statusLabel;
-	QLabel *shareSizeLabel;
-	QLabel *connectionIconLabel;
-	QLabel *bootstrapStatusLabel;
+    //Labels
+    QLabel *userHubCountLabel;
+    QLabel *additionalInfoLabel;
+    QLabel *statusLabel;
+    QLabel *shareSizeLabel;
+    QLabel *connectionIconLabel;
+    QLabel *bootstrapStatusLabel;
     QLabel *CIDHostsLabel;
 
-	//Progressbar
-	TextProgressBar *hashingProgressBar;
+    //Progressbar
+    TextProgressBar *hashingProgressBar;
 
-	//Tab
-	CTabWidget *tabs;
-	QColor tabTextColorNotify;
-	QColor tabTextColorNormal;
+    //Tab
+    CTabWidget *tabs;
+    QColor tabTextColorNotify;
+    QColor tabTextColorNormal;
     QColor tabTextColorOffline;
 
-	//Bars
-	QToolBar *toolBar;
-	QMenuBar *menuBar;
-	QStatusBar *statusBar, *infoStatusBar;
+    //Bars
+    QToolBar *toolBar;
+    QMenuBar *menuBar;
+    QStatusBar *statusBar, *infoStatusBar;
 
-	//Chat
-	QLineEdit *chatLineEdit;
-	QTextBrowser *mainChatTextEdit;
+    //Chat
+    QLineEdit *chatLineEdit;
+    QTextBrowser *mainChatTextEdit;
 
-	//Tables and models
-	QTableView *userListTable;
-	QStandardItemModel *userListModel;
-	QSortFilterProxyModel *userSortProxy;
+    //Tables and models
+    QTableView *userListTable;
+    QStandardItemModel *userListModel;
+    QSortFilterProxyModel *userSortProxy;
 
-	//Splitters
-	QSplitter *splitterVertical, *splitterHorizontal;
+    //Splitters
+    QSplitter *splitterVertical, *splitterHorizontal;
 
-	//Full page custom widgets
-	QHash<QWidget *, SearchWidget *> searchWidgetHash;
+    //Full page custom widgets
+    QHash<QWidget *, SearchWidget *> searchWidgetHash;
     QHash<quint64, SearchWidget *> searchWidgetIDHash;
-	QHash<QWidget *, PMWidget *> pmWidgetHash;
-	DownloadQueueWidget *downloadQueueWidget;
-	ShareWidget *shareWidget;
-	DownloadQueueWidget *queueWidget;
-	DownloadFinishedWidget *finishedWidget;
-	SettingsWidget *settingsWidget;
+    QHash<QWidget *, PMWidget *> pmWidgetHash;
+    DownloadQueueWidget *downloadQueueWidget;
+    ShareWidget *shareWidget;
+    DownloadQueueWidget *queueWidget;
+    DownloadFinishedWidget *finishedWidget;
+    SettingsWidget *settingsWidget;
     HelpWidget *helpWidget;
     TransferWidget *transferWidget;
 };

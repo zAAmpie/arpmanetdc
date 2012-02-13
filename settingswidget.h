@@ -25,23 +25,23 @@ class ArpmanetDC;
 //Class encapsulating all widgets/signals for search tab
 class SettingsWidget : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	SettingsWidget(QHash<QString, QString> *settings, ArpmanetDC *parent);
-	~SettingsWidget();
+    SettingsWidget(QHash<QString, QString> *settings, ArpmanetDC *parent);
+    ~SettingsWidget();
 
-	//Get the encapsulating widget
-	QWidget *widget();
+    //Get the encapsulating widget
+    QWidget *widget();
 
-	QHash<QString, QString> *settings() const;
+    QHash<QString, QString> *settings() const;
 
 public slots:
-	//Slots
+    //Slots
 
 private slots:
-	//Pressed save button
-	void savePressed();
+    //Pressed save button
+    void savePressed();
     //Pressed guess IP button
     void guessIPPressed();
     //Pressed download path browse button
@@ -54,32 +54,32 @@ private slots:
     //Display advanced settings toggled
     void advancedCheckBoxToggled(int state);
 
-	//Changed the value of the spinbox
-	void shareUpdateIntervalSpinBoxValueChanged(int value);
+    //Changed the value of the spinbox
+    void shareUpdateIntervalSpinBoxValueChanged(int value);
 
 signals:
-	//Signalled when settings were saved
-	void settingsSaved();
+    //Signalled when settings were saved
+    void settingsSaved();
 
 private:
-	//Functions
-	void createWidgets();
-	void placeWidgets();
-	void connectWidgets();
+    //Functions
+    void createWidgets();
+    void placeWidgets();
+    void connectWidgets();
 
-	//Objects
-	QWidget *pWidget;
-	ArpmanetDC *pParent;
+    //Objects
+    QWidget *pWidget;
+    ArpmanetDC *pParent;
 
-	QHash<QString, QString> *pSettings;
+    QHash<QString, QString> *pSettings;
 
-	//GUI
+    //GUI
     QWidget *advancedWidget;
     QListWidget *protocolList;
 
-	QSpinBox *shareUpdateIntervalSpinBox;
+    QSpinBox *shareUpdateIntervalSpinBox;
     QCheckBox *toggleAdvancedCheckBox;
-	QLineEdit *hubAddressLineEdit, *hubPortLineEdit, *nickLineEdit, *passwordLineEdit, *ipLineEdit, *externalPortLineEdit, *downloadPathLineEdit;
+    QLineEdit *hubAddressLineEdit, *hubPortLineEdit, *nickLineEdit, *passwordLineEdit, *ipLineEdit, *externalPortLineEdit, *downloadPathLineEdit;
     QPushButton *saveButton, *guessIPButton, *browseDownloadPathButton, *protocolUpButton, *protocolDownButton;
 
 };
@@ -87,12 +87,12 @@ private:
 //Custom validator class to deal with IP addresses :)
 class IPValidator : public QValidator
 {
-	Q_OBJECT
+    Q_OBJECT
 public:
-	IPValidator(QObject *parent = 0) : QValidator(parent) {};
+    IPValidator(QObject *parent = 0) : QValidator(parent) {};
 
-	void fixup(QString &input) const;
-	QValidator::State validate(QString &input, int &pos) const;
+    void fixup(QString &input) const;
+    QValidator::State validate(QString &input, int &pos) const;
 };
 
 #endif

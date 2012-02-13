@@ -29,23 +29,23 @@ static bool Encode32Block(unsigned char* in5, unsigned char* out8)
       unsigned long long buffer = 0;
       for(int i = 0; i < 5; i++)
       {
-		  if(i != 0)
-		  {
-			  buffer = (buffer << 8);
-		  }
-		  buffer = buffer | in5[i];
+          if(i != 0)
+          {
+              buffer = (buffer << 8);
+          }
+          buffer = buffer | in5[i];
       }
       // output 8 bytes
       for(int j = 7; j >= 0; j--)
       {
-		  buffer = buffer << (24 + (7 - j) * 5);
-		  buffer = buffer >> (24 + (7 - j) * 5);
-		  unsigned char c = (unsigned char)(buffer >> (j * 5));
-		  // self check
-		  if(c >= 32) return false;
-		  out8[7 - j] = c;
+          buffer = buffer << (24 + (7 - j) * 5);
+          buffer = buffer >> (24 + (7 - j) * 5);
+          unsigned char c = (unsigned char)(buffer >> (j * 5));
+          // self check
+          if(c >= 32) return false;
+          out8[7 - j] = c;
       }
-	  return true;
+      return true;
 }
 
 bool Base32::Encode32(unsigned char* in, int inLen, unsigned char* out)
@@ -81,20 +81,20 @@ static bool Decode32Block(unsigned char* in8, unsigned char* out5)
       unsigned long long buffer = 0;
       for(int i = 0; i < 8; i++)
       {
-		  // input check
-		  if(in8[i] >= 32) return false;
-		  if(i != 0)
-		  {
-			  buffer = (buffer << 5);
-		  }
-		  buffer = buffer | in8[i];
+          // input check
+          if(in8[i] >= 32) return false;
+          if(i != 0)
+          {
+              buffer = (buffer << 5);
+          }
+          buffer = buffer | in8[i];
       }
       // output 5 bytes
       for(int j = 4; j >= 0; j--)
       {
-		  out5[4 - j] = (unsigned char)(buffer >> (j * 8));
+          out5[4 - j] = (unsigned char)(buffer >> (j * 8));
       }
-	  return true;
+      return true;
 }
 
 bool Base32::Decode32(unsigned char* in, int inLen, unsigned char* out)
@@ -126,32 +126,32 @@ bool Base32::Decode32(unsigned char* in, int inLen, unsigned char* out)
 
 bool Base32::Map32(unsigned char* inout32, int inout32Len, unsigned char* alpha32)
 {
-	if((inout32 == 0) || (inout32Len <= 0) || (alpha32 == 0)) return false;
-	for(int i = 0; i < inout32Len; i++)
-	{
-		if(inout32[i] >=32) return false;
-		inout32[i] = alpha32[inout32[i]];
-	}
-	return true;
+    if((inout32 == 0) || (inout32Len <= 0) || (alpha32 == 0)) return false;
+    for(int i = 0; i < inout32Len; i++)
+    {
+        if(inout32[i] >=32) return false;
+        inout32[i] = alpha32[inout32[i]];
+    }
+    return true;
 }
 
 static void ReverseMap(unsigned char* inAlpha32, unsigned char* outMap)
 {
-	memset(outMap, 0, sizeof(unsigned char) * 256);
-	for(int i = 0; i < 32; i++)
-	{
-		outMap[(int)inAlpha32[i]] = i;
-	}
+    memset(outMap, 0, sizeof(unsigned char) * 256);
+    for(int i = 0; i < 32; i++)
+    {
+        outMap[(int)inAlpha32[i]] = i;
+    }
 }
 
 bool Base32::Unmap32(unsigned char* inout32, int inout32Len, unsigned char* alpha32)
 {
-	if((inout32 == 0) || (inout32Len <= 0) || (alpha32 == 0)) return false;
-	unsigned char rmap[256];
-	ReverseMap(alpha32, rmap);
-	for(int i = 0; i < inout32Len; i++)
-	{
-		inout32[i] = rmap[(int)inout32[i]];
-	}
-	return true;
+    if((inout32 == 0) || (inout32Len <= 0) || (alpha32 == 0)) return false;
+    unsigned char rmap[256];
+    ReverseMap(alpha32, rmap);
+    for(int i = 0; i < inout32Len; i++)
+    {
+        inout32[i] = rmap[(int)inout32[i]];
+    }
+    return true;
 }

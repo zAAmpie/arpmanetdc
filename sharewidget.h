@@ -30,14 +30,14 @@ class ArpmanetDC;
 //Class encapsulating all widgets/signals for search tab
 class ShareWidget : public QObject
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	ShareWidget(ShareSearch *share, ArpmanetDC *parent);
-	~ShareWidget();
+    ShareWidget(ShareSearch *share, ArpmanetDC *parent);
+    ~ShareWidget();
 
-	//Get the encapsulating widget
-	QWidget *widget();
+    //Get the encapsulating widget
+    QWidget *widget();
 
 
 private slots:
@@ -58,12 +58,12 @@ private slots:
     //Return the containers requested
     void returnContainers(QHash<QString, ContainerContentsType> containerHash);
 
-	//===== GUI =====
+    //===== GUI =====
     //Slots
-	void selectedItemsChanged();
+    void selectedItemsChanged();
 
-	void saveSharePressed();
-	void refreshButtonPressed();
+    void saveSharePressed();
+    void refreshButtonPressed();
     void containerButtonPressed();
     void addContainerButtonPressed();
     void removeContainerButtonPressed();
@@ -74,18 +74,18 @@ private slots:
 
     void containerTreeViewKeyPressed(Qt::Key key);
 
-	void changeRoot(QString path);
+    void changeRoot(QString path);
     void pathLoaded(QString path);
 
 signals:
-	//Signals
-	void saveButtonPressed();
+    //Signals
+    void saveButtonPressed();
 
     //Private signal - update shares
     void updateShares(QList<QDir> *list);
 
-	//Update shares without saving
-	void updateShares();
+    //Update shares without saving
+    void updateShares();
 
     //Request TTH from filePath for magnets
     void requestTTHFromPath(QString filePath);
@@ -102,18 +102,18 @@ signals:
     void saveContainers(QHash<QString, ContainerContentsType> containerHash, QString containerDirectory);
 
 private:
-	//Functions
-	void createWidgets();
-	void placeWidgets();
-	void connectWidgets();
+    //Functions
+    void createWidgets();
+    void placeWidgets();
+    void connectWidgets();
 
-	//Objects
-	QWidget *pWidget;
-	ArpmanetDC *pParent;
-	ShareSearch *pShare;
+    //Objects
+    QWidget *pWidget;
+    ArpmanetDC *pParent;
+    ShareSearch *pShare;
 
-	//Params
-	QList<QString> pSharesList;
+    //Params
+    QList<QString> pSharesList;
 
     //Loading paths
     QList<QString> pLoadingPaths;
@@ -124,10 +124,10 @@ private:
     QStandardItem *pParentItem;
     QString pContainerDirectory;
 
-	//GUI elements
-	QTreeView *fileTree;
-	QFileSystemModel *fileModel;
-	CheckableProxyModel *checkProxyModel;
+    //GUI elements
+    QTreeView *fileTree;
+    QFileSystemModel *fileModel;
+    CheckableProxyModel *checkProxyModel;
 
     QSplitter *splitter;
 
@@ -137,7 +137,7 @@ private:
 
     QLabel *busyLabel;
 
-	QPushButton *saveButton, *refreshButton, *containerButton, *addContainerButton, *removeContainerButton, *renameContainerButton;
+    QPushButton *saveButton, *refreshButton, *containerButton, *addContainerButton, *removeContainerButton, *renameContainerButton;
 
     QMenu *contextMenu, *containerContextMenu;
     QAction *calculateMagnetAction, *removeContainerEntryAction;

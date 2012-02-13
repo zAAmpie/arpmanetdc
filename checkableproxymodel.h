@@ -112,10 +112,10 @@ private:
 class CheckableProxyModelState
 {
 public:
-	//private constructors: this class is not to be copied around or anything like that.
+    //private constructors: this class is not to be copied around or anything like that.
     CheckableProxyModelState(CheckableProxyModel* proxy): m_proxy(proxy) {}
     //declaration only, we don't need implementation
-	CheckableProxyModelState(const CheckableProxyModelState& other) {}
+    CheckableProxyModelState(const CheckableProxyModelState& other) {}
 
     CheckableProxyModelState& checkedBranchIndexes(QModelIndexList& list);
     CheckableProxyModelState& checkedLeafIndexes(QModelIndexList& list);
