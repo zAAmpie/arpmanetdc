@@ -358,6 +358,7 @@ private:
     QHash<QString, QueueStruct> pContainerProcessHash;
     QString pContainerDirectory;
 
+    QStringList pOPList;
 
     bool saveSharesPressed;
 
