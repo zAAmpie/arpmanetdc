@@ -87,7 +87,7 @@ static const QMap<QString, char> PROTOCOL_MAP = initMapValues();
 #define FTP_UPDATE_DIRECTORY "/pub/Windows/Network/DC/ArpmanetDC/"
 #define CHECK_FOR_NEW_VERSION_INTERVAL_MS 1800000 //Every 30min
 
-#define VERSION_STRING "0.1.5"
+#define VERSION_STRING "0.1.6"
 
 //Main GUI window class
 class ArpmanetDC : public QMainWindow
