@@ -40,7 +40,6 @@ public slots:
     qint64 getBytesReceivedNotFlushed();
 
 private:
-    int status;
     qint64 requestingOffset;
     qint64 requestingLength;
     qint64 requestingTargetOffset;

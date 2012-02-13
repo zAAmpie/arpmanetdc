@@ -53,6 +53,9 @@ DownloadTransfer::~DownloadTransfer()
             r.value().transferSegment->deleteLater();
 }
 
+// Data packets that are related to our TTH gets dispatched to this entry point.
+// Here, we dispatch them to their relevant segments.
+// We perform binary lookups on transferSegmentTable on the offset in the datagram header and dispatch accordingly.
 void DownloadTransfer::incomingDataPacket(quint8, quint64 offset, QByteArray data)
 {
     // map are sorted in key ascending order
@@ -83,15 +86,19 @@ void DownloadTransfer::incomingDataPacket(quint8, quint64 offset, QByteArray dat
     bytesWrittenSinceUpdate += data.size();
 }
 
+// Send a request to the hash thread to compute the tiger tree hash of a 1MB bucket
 void DownloadTransfer::requestHashBucket(QByteArray rootTTH, int bucketNumber, QByteArray *bucket)
 {
     if (bucketFlushStateBitmap.at(bucketNumber) == BucketNotFlushed)
     {
         emit hashBucketRequest(rootTTH, bucketNumber, *bucket);
+        // This is to prevent double requests when bucket ends and segment ends coincide.
+        // A failed hash check must reset this.
         bucketFlushStateBitmap[bucketNumber] = BucketFlushed;
     }
 }
 
+// The hash thread calls this when it has finished calculating the tiger tree hash of a 1MB bucket
 void DownloadTransfer::hashBucketReply(int bucketNumber, QByteArray bucketTTH)
 {
     // buckets can be flushed twice when aligned with a segment boundary.
@@ -113,6 +120,7 @@ void DownloadTransfer::hashBucketReply(int bucketNumber, QByteArray bucketTTH)
     // TODO: must check that tth tree item was received before requesting bucket hash.
 }
 
+// Our hash tree request's answers are sequentially dispatched to this entry point.
 void DownloadTransfer::TTHTreeReply(QByteArray tree)
 {
     int iter = 0;
@@ -173,6 +181,7 @@ int DownloadTransfer::getTransferType()
     return TRANSFER_TYPE_DOWNLOAD;
 }
 
+// Initializes transfer segment block state bitmaps and start the transfer timer to get things moving.
 void DownloadTransfer::startTransfer()
 {
     //QThread *thisThread = QThread::currentThread();
@@ -201,6 +210,9 @@ void DownloadTransfer::abortTransfer()
     emit abort(this);
 }
 
+// TransferManager sticks peers into a DownloadTransfer via this entry point.
+// It calls a request for the peer's protocol abilities, for without it, all hope is lost.
+// Not to be confused with newPeer(), which adds the peer and its capabilities to remotePeerInfoTable
 void DownloadTransfer::addPeer(QHostAddress peer)
 {
     if (peer.toIPv4Address() > 0 && !listOfPeers.contains(peer))
@@ -210,8 +222,6 @@ void DownloadTransfer::addPeer(QHostAddress peer)
     }
 }
 
-// currently copied from uploadtransfer.
-// we need the freedom to change this if necessary, therefore, it is not implemented in parent class.
 void DownloadTransfer::transferRateCalculation()
 {
     if ((status == TRANSFER_STATE_RUNNING) && (bytesWrittenSinceUpdate == 0))
@@ -224,6 +234,8 @@ void DownloadTransfer::transferRateCalculation()
     bytesWrittenSinceUpdate = 0;
 }
 
+// When a 1MB bucket lands from abroad, this is the beginning of its journey to disk.
+// We also determine here when the last bucket has landed that the transfer is complete.
 void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
 {
     // TODO: decide where to store these files
@@ -257,6 +269,8 @@ void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
     }
 }
 
+// This timer event is mainly used to negotiate the transfer of hash trees before the segments are created and the download begins.
+// It is also routed to the segments, so that one timer tickles them all.
 void DownloadTransfer::transferTimerEvent()
 {
     if (status == TRANSFER_STATE_INITIALIZING)
@@ -302,6 +316,7 @@ inline int DownloadTransfer::calculateBucketNumber(quint64 fileOffset)
     return (int)(fileOffset >> 20);
 }
 
+// This gets called when a segment completes to perform some bookkeeping and allocate resources to download some more if applicable.
 void DownloadTransfer::segmentCompleted(TransferSegment *segment)
 {
     qint64 lastTransferTime = QDateTime::currentMSecsSinceEpoch() - segment->getSegmentStartTime();
@@ -314,6 +329,7 @@ void DownloadTransfer::segmentCompleted(TransferSegment *segment)
     downloadNextAvailableChunk(segment, nextSegmentLengthHint);
 }
 
+// This gets called when a segment fails and we need to perform some cleaning duties.
 void DownloadTransfer::segmentFailed(TransferSegment *segment)
 {
     // remote end dead, segment given up hope. mark everything not downloaded as not downloaded, so that
@@ -323,7 +339,11 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
     int endBucket = calculateBucketNumber(segment->getSegmentEnd());
     for (int i = startBucket; i <= endBucket; i++)
         if (transferSegmentStateBitmap.at(i) == SegmentCurrentlyDownloading)
+        {
             transferSegmentStateBitmap[i] = SegmentNotDownloaded;
+            if (downloadBucketTable->value(i))
+                delete downloadBucketTable->value(i);
+        }
 
     transferSegmentTable.remove(segment->getSegmentStart());
     currentActiveSegments--;
@@ -333,7 +353,7 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
     //       : Rational: If a single host shares an object and becomes unavailable mid transfer, the transfer
     //       : stalls indefinitely after the segment fails, even after the host comes back online again.
     QHostAddress h = segment->getSegmentRemotePeer();
-    //segment->deleteLater();
+    segment->deleteLater();
     
     //Remove offending peer
     remotePeerInfoTable.remove(h);
@@ -341,21 +361,16 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
     if (p > -1)
         listOfPeers.removeAt(p);
 
-    //Try another peer
-    if (!listOfPeers.isEmpty())
-    {
-        segment->setRemoteHost(listOfPeers.first());
-        downloadNextAvailableChunk(segment);
+    //Update the alternates
+    emit searchTTHAlternateSources(TTH);
 
-        //Update the alternates
-        emit searchTTHAlternateSources(TTH);
-    }    
-    else
-    {
-        //When this point is reached, it means no other peers are available - the transfer should go into idle mode
-    }
+    // We should not try different peers in the same segment, since they may be of different protocols.
+    // When a segment fails, it gets destroyed. Its funeral process should clean up behind it so that there are
+    // no more clever pointers trying to find it or transferSegmentTable entries trying to get at it.
 }
 
+// This is the segment block allocator.
+// We ask it for blocks available for download, to give them to a segment that needs work.
 SegmentOffsetLengthStruct DownloadTransfer::getSegmentForDownloading(int segmentNumberOfBucketsHint)
 {
     // Ideas for quick and dirty block allocator:
@@ -403,6 +418,9 @@ SegmentOffsetLengthStruct DownloadTransfer::getSegmentForDownloading(int segment
     return segment;
 }
 
+// When we receive remote peer capability response, we immediately take action.
+// If we have room for an extra segment, we instantiate one and put it to work.
+// newPeer() updates remotePeerInfoTable
 void DownloadTransfer::receivedPeerProtocolCapability(QHostAddress peer, quint8 protocols)
 {
     newPeer(peer, protocols);
@@ -415,6 +433,8 @@ void DownloadTransfer::receivedPeerProtocolCapability(QHostAddress peer, quint8 
     }
 }
 
+// Add a peer to remotePeerInfoTable
+// Segment pointer is initially null, since it is not instantiated.
 void DownloadTransfer::newPeer(QHostAddress peer, quint8 protocols)
 {
     if (!remotePeerInfoTable.contains(peer))
@@ -427,6 +447,11 @@ void DownloadTransfer::newPeer(QHostAddress peer, quint8 protocols)
     }
 }
 
+// Create a new transfer segment around QHostAddress(peer)
+// This function decides which protocol the segment will use by consulting remotePeerInfoTable
+// The segment is primed with a pointer to our buckets (transfer level)
+// Remote host, TTH and filesize is set.
+// Returns 0 on failure.
 TransferSegment* DownloadTransfer::createTransferSegment(QHostAddress peer)
 {
     TransferSegment *download = 0;
@@ -453,6 +478,8 @@ TransferSegment* DownloadTransfer::createTransferSegment(QHostAddress peer)
     return download;
 }
 
+// Instantiate an object of TransferProtocol and connect its signals.
+// Returns 0 if specified protocol is not supported.
 TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol p)
 {
     TransferSegment* download = 0;
@@ -482,6 +509,9 @@ TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol 
     return download;
 }
 
+// Get next chunk from block allocator
+// Update incoming packet dispatch segment map
+// Call startDownloading() in segment
 void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int length)
 {
     TransferSegmentTableStruct t;

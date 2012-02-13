@@ -63,6 +63,11 @@ QHostAddress TransferSegment::getSegmentRemotePeer()
     return remoteHost;
 }
 
+int TransferSegment::getSegmentStatus()
+{
+    return status;
+}
+
 void TransferSegment::setTTH(QByteArray tth)
 {
     TTH = tth;

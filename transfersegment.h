@@ -54,6 +54,7 @@ public slots:
     qint64 getSegmentEnd();
     qint64 getSegmentStartTime();
     QHostAddress getSegmentRemotePeer();
+    int getSegmentStatus();
     void setRemoteHost(QHostAddress host);
     virtual void startUploading() = 0;
     virtual void startDownloading() = 0;
@@ -74,6 +75,7 @@ protected:
     qint64 segmentEnd;
     qint64 segmentStartTime;
     qint64 maxUploadRequestOffset;
+    int status;
 
     int lastBucketNumber;
     int lastBucketSize;
