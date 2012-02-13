@@ -92,6 +92,8 @@ void DownloadTransfer::requestHashBucket(QByteArray rootTTH, int bucketNumber, Q
     if (bucketFlushStateBitmap.at(bucketNumber) == BucketNotFlushed)
     {
         emit hashBucketRequest(rootTTH, bucketNumber, *bucket);
+        // This is to prevent double requests when bucket ends and segment ends coincide.
+        // A failed hash check must reset this.
         bucketFlushStateBitmap[bucketNumber] = BucketFlushed;
     }
 }
@@ -327,7 +329,7 @@ void DownloadTransfer::segmentCompleted(TransferSegment *segment)
     downloadNextAvailableChunk(segment, nextSegmentLengthHint);
 }
 
-// This gets called when a segment fails to perform some cleaning duties.
+// This gets called when a segment fails and we need to perform some cleaning duties.
 void DownloadTransfer::segmentFailed(TransferSegment *segment)
 {
     // remote end dead, segment given up hope. mark everything not downloaded as not downloaded, so that
@@ -337,7 +339,11 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
     int endBucket = calculateBucketNumber(segment->getSegmentEnd());
     for (int i = startBucket; i <= endBucket; i++)
         if (transferSegmentStateBitmap.at(i) == SegmentCurrentlyDownloading)
+        {
             transferSegmentStateBitmap[i] = SegmentNotDownloaded;
+            if (downloadBucketTable->value(i))
+                delete downloadBucketTable->value(i);
+        }
 
     transferSegmentTable.remove(segment->getSegmentStart());
     currentActiveSegments--;
@@ -347,7 +353,7 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
     //       : Rational: If a single host shares an object and becomes unavailable mid transfer, the transfer
     //       : stalls indefinitely after the segment fails, even after the host comes back online again.
     QHostAddress h = segment->getSegmentRemotePeer();
-    //segment->deleteLater();
+    segment->deleteLater();
     
     //Remove offending peer
     remotePeerInfoTable.remove(h);
