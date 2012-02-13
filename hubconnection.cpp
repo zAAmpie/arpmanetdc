@@ -9,24 +9,24 @@
 #endif
 
 HubConnection::HubConnection(QObject *parent) :
-    QObject(parent)
+QObject(parent)
 {
     hubSocket = new QTcpSocket(this);
     connect(hubSocket, SIGNAL(readyRead()), this, SLOT(processHubMessage()));
-	connect(hubSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(socketError(QAbstractSocket::SocketError)));
+    connect(hubSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(socketError(QAbstractSocket::SocketError)));
     connect(hubSocket, SIGNAL(connected()), this, SLOT(socketConnected()));
 
-	//Initialize variables - if they're not going to be set
-	hubAddress = "127.0.0.1";
-	hubPort = 4012;
-	nick = "anon";
-	password = "pass";
-	version = "0";
-	hubIsOnline = false;
+    //Initialize variables - if they're not going to be set
+    hubAddress = "127.0.0.1";
+    hubPort = 4012;
+    nick = "anon";
+    password = "pass";
+    version = "0";
+    hubIsOnline = false;
 
-	reconnectTimer = new QTimer(this);
-	reconnectTimer->setInterval(30000); //Try to reconnect every 30 seconds
-	connect(reconnectTimer, SIGNAL(timeout()), this, SLOT(reconnectTimeout()));
+    reconnectTimer = new QTimer(this);
+    reconnectTimer->setInterval(30000); //Try to reconnect every 30 seconds
+    connect(reconnectTimer, SIGNAL(timeout()), this, SLOT(reconnectTimeout()));
 
     keepaliveTimer = new QTimer(this);
     keepaliveTimer->setInterval(600000);  // every 10 minutes
@@ -36,30 +36,30 @@ HubConnection::HubConnection(QObject *parent) :
 
 HubConnection::HubConnection(QString address, quint16 port, QString nick, QString password, QString version, QObject *parent) : QObject(parent)
 {
-	hubSocket = new QTcpSocket(this);
+    hubSocket = new QTcpSocket(this);
     connect(hubSocket, SIGNAL(readyRead()), this, SLOT(processHubMessage()));
-	connect(hubSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(socketError(QAbstractSocket::SocketError)));
+    connect(hubSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(socketError(QAbstractSocket::SocketError)));
     connect(hubSocket, SIGNAL(connected()), this, SLOT(socketConnected()));
 
-	//Initialize variables - use set functions for type checking
-	setHubAddress(address);
-	setHubPort(port);
-	setNick(nick);
-	setPassword(password);
-	setVersion(version);
-	hubIsOnline = false;
+    //Initialize variables - use set functions for type checking
+    setHubAddress(address);
+    setHubPort(port);
+    setNick(nick);
+    setPassword(password);
+    setVersion(version);
+    hubIsOnline = false;
 
-	reconnectTimer = new QTimer(this);
-	reconnectTimer->setInterval(30000); //Try to reconnect every 30 seconds
-	connect(reconnectTimer, SIGNAL(timeout()), this, SLOT(reconnectTimeout()));
+    reconnectTimer = new QTimer(this);
+    reconnectTimer->setInterval(30000); //Try to reconnect every 30 seconds
+    connect(reconnectTimer, SIGNAL(timeout()), this, SLOT(reconnectTimeout()));
 }
 
 HubConnection::~HubConnection()
 {
-	//Destructor
-	reconnectTimer->deleteLater();
-	hubSocket->close();
-	hubSocket->deleteLater();
+    //Destructor
+    reconnectTimer->deleteLater();
+    hubSocket->close();
+    hubSocket->deleteLater();
 }
 
 void HubConnection::setHubAddress(QString addr)
@@ -86,7 +86,7 @@ void HubConnection::setPassword(QString p)
 
 void HubConnection::setVersion(QString v)
 {
-	version = v;
+    version = v;
 }
 
 void HubConnection::sendChatMessage(QString message)
@@ -154,20 +154,20 @@ QString HubConnection::generateMyINFOString()
 
 void HubConnection::processHubMessage()
 {
-	//Hub is considered online if it receives messages - for now
-	if (!hubIsOnline)
-	{
-		hubIsOnline = true;
-		if (reconnectTimer->isActive())
-			reconnectTimer->stop();
-		emit hubOnline();
-	}
+    //Hub is considered online if it receives messages - for now
+    if (!hubIsOnline)
+    {
+        hubIsOnline = true;
+        if (reconnectTimer->isActive())
+            reconnectTimer->stop();
+        emit hubOnline();
+    }
 
     while (hubSocket->bytesAvailable() > 0)
     {
         dataReceived.append(hubSocket->readAll());
 
-		//Check if a full command was received and flag if not
+        //Check if a full command was received and flag if not
         bool lastMessageHalf = false;
         if (QString(dataReceived.right(1)).compare("|") != 0)
             lastMessageHalf = true;
@@ -179,7 +179,7 @@ void HubConnection::processHubMessage()
         while (it.hasNext())
         {
             QString msg = it.next();
-			//If a full command wasn't received, leave the rest of the data in the cache for the next read
+            //If a full command wasn't received, leave the rest of the data in the cache for the next read
             if (lastMessageHalf && !it.hasNext())
             {
                 dataReceived.append(msg);
@@ -189,12 +189,12 @@ void HubConnection::processHubMessage()
             if (msg.length() == 0)
                 continue;
 
-			//If command
+            //If command
             if (msg.mid(0, 1).compare("$") == 0)
             {
                 QByteArray sendData;
 
-				//===== MY INFO COMMAND =====
+                //===== MY INFO COMMAND =====
                 if (msg.mid(0, 7).compare("$MyINFO") == 0)
                 {
                     //Different types of MyINFOs that the RegExp has to match
@@ -205,15 +205,15 @@ void HubConnection::processHubMessage()
                     // $MyINFO $ALL -Trivia- As twak praat 'n bossie was.....$ $Hub$$0$
                     // $MyINFO $ALL -OpChat- Operator chat - only for OPs$ $$$0$
                     QString regex = "\\$MyINFO \\$ALL ([^ ]*) ([^\\$]*)\\$ \\$([^\\$]*)\\$\\$0\\$";
-	                QRegExp rx(regex, Qt::CaseInsensitive);
+                    QRegExp rx(regex, Qt::CaseInsensitive);
 
-	                //Check for regex's
-	                if (rx.indexIn(msg) != -1)
-	                {
-		                //Extract normal information
-		                QString nick = rx.cap(1);
-		                QString desc = rx.cap(2);
-		                QString extra = rx.cap(3);
+                    //Check for regex's
+                    if (rx.indexIn(msg) != -1)
+                    {
+                        //Extract normal information
+                        QString nick = rx.cap(1);
+                        QString desc = rx.cap(2);
+                        QString extra = rx.cap(3);
 
                         //If a client information is embedded in the description, parse it
                         if (!desc.isEmpty() && desc.contains("<"))
@@ -242,17 +242,17 @@ void HubConnection::processHubMessage()
                             //No client information is given, just use normal description and leave the rest of the fields blank
                             emit receivedMyINFO(nick, desc, ""/*mode*/, extra/*client*/, ""/*version*/);
                         }
-                            
+
                     }
                 }
 
-				//===== USER LEFT =====
+                //===== USER LEFT =====
                 else if (msg.mid(0, 5).compare("$Quit") == 0)
                 {
                     emit userLoggedOut(msg.mid(6));
                 }
 
-				//===== AUTHENTICATE CAPABILITIES =====
+                //===== AUTHENTICATE CAPABILITIES =====
                 else if (msg.mid(0, 5).compare("$Lock") == 0)
                 {
                     sendData.append("$Supports NoGetINFO NoHello TTHSearch |$Key ABCABCABC|$ValidateNick ");
@@ -261,7 +261,7 @@ void HubConnection::processHubMessage()
                     hubSocket->write(sendData);
                 }
 
-				//===== AUTHENTICATE USER =====
+                //===== AUTHENTICATE USER =====
                 else if (msg.mid(0, 6).compare("$Hello") == 0)
                 {
                     if (msg.mid(7).compare(nick) == 0)
@@ -276,7 +276,7 @@ void HubConnection::processHubMessage()
                     }
                 }
 
-				//===== AUTHENTICATE PASSWORD =====
+                //===== AUTHENTICATE PASSWORD =====
                 else if (msg.mid(0, 8).compare("$GetPass") == 0)
                 {
                     sendData.append("$MyPass ");
@@ -286,7 +286,7 @@ void HubConnection::processHubMessage()
                     registeredUser = true;
                 }
 
-				//===== PRIVATE MESSAGE =====
+                //===== PRIVATE MESSAGE =====
                 else if (msg.mid(0, 4).compare("$To:") == 0)
                 {
                     QString str = tr("%1 From: ").arg(nick);
@@ -297,7 +297,7 @@ void HubConnection::processHubMessage()
                     emit receivedPrivateMessage(otherNick, escapeHTMLTags(escapeDCProtocol(message)));
                 }
 
-				//===== NICKNAME LIST =====
+                //===== NICKNAME LIST =====
                 else if (msg.mid(0,9).compare("$NickList") == 0)
                 {
                     msg = msg.mid(msg.indexOf("$$")+2);
@@ -305,7 +305,7 @@ void HubConnection::processHubMessage()
                     emit receivedNickList(nicks);
                 }
 
-				//===== OP LIST =====
+                //===== OP LIST =====
                 else if (msg.mid(0,7).compare("$OpList") == 0)
                 {
                     msg = msg.mid(msg.indexOf("$$")+2); //Remove first $$
@@ -316,7 +316,7 @@ void HubConnection::processHubMessage()
             }
             else
             {
-				//===== MAIN CHAT MESSAGE =====
+                //===== MAIN CHAT MESSAGE =====
                 lastChatMessage = escapeHTMLTags(unescapeDCProtocol(msg));
                 emit receivedChatMessage(lastChatMessage);
             }
@@ -326,65 +326,65 @@ void HubConnection::processHubMessage()
 
 void HubConnection::connectHub()
 {
-	//Make sure there is something to connect to
-	if (!hubAddress.isEmpty() && hubPort != 0)
-	{
-		//Check if not already connecting - in that case just wait
-		if (hubSocket->state() != QAbstractSocket::ConnectingState)
-		{
-			registeredUser = false;
+    //Make sure there is something to connect to
+    if (!hubAddress.isEmpty() && hubPort != 0)
+    {
+        //Check if not already connecting - in that case just wait
+        if (hubSocket->state() != QAbstractSocket::ConnectingState)
+        {
+            registeredUser = false;
             hubSocket->close();
-			hubSocket->connectToHost(hubAddress, hubPort);
-            
-			emit receivedChatMessage(tr("&lt;::info&gt;Connecting to %1:%2...").arg(hubAddress).arg(hubPort));
-		}
-	}
-	else
-	{
-		//If address/port is not valid, stop reconnection process cause it's never going to work
-		if (hubIsOnline)
-		{
-			hubIsOnline = false;
-			emit hubOffline();
-		}
-		if (reconnectTimer->isActive())
-			reconnectTimer->stop();
-	}
+            hubSocket->connectToHost(hubAddress, hubPort);
+
+            emit receivedChatMessage(tr("&lt;::info&gt;Connecting to %1:%2...").arg(hubAddress).arg(hubPort));
+        }
+    }
+    else
+    {
+        //If address/port is not valid, stop reconnection process cause it's never going to work
+        if (hubIsOnline)
+        {
+            hubIsOnline = false;
+            emit hubOffline();
+        }
+        if (reconnectTimer->isActive())
+            reconnectTimer->stop();
+    }
 }
 
 void HubConnection::socketError(QAbstractSocket::SocketError error)
 {
-	//Parse error
-	QString errorString;
+    //Parse error
+    QString errorString;
 
-	switch(error)
-	{
-		case QAbstractSocket::ConnectionRefusedError:
-			errorString = "Connection refused by server.";
-			break;
+    switch(error)
+    {
+    case QAbstractSocket::ConnectionRefusedError:
+        errorString = "Connection refused by server.";
+        break;
 
-		case QAbstractSocket::RemoteHostClosedError:
-			errorString = "Remote host forcibly closed the connection.";
-			break;
+    case QAbstractSocket::RemoteHostClosedError:
+        errorString = "Remote host forcibly closed the connection.";
+        break;
 
-		case QAbstractSocket::NetworkError:
-			errorString = "Network error.";
-			break;
+    case QAbstractSocket::NetworkError:
+        errorString = "Network error.";
+        break;
 
-		case QAbstractSocket::HostNotFoundError:
-			errorString = "Remote host could not be found.";
-			break;
+    case QAbstractSocket::HostNotFoundError:
+        errorString = "Remote host could not be found.";
+        break;
 
-		default:
-			errorString = tr("Error occurred: %1").arg(hubSocket->errorString());
-			break;
-	}
-		
-	//Only try reconnecting if there was a connection error - otherwise just show there was an error
-	if (hubSocket->state() == QAbstractSocket::UnconnectedState || hubSocket->state() == QAbstractSocket::ClosingState || hubSocket->state() == QAbstractSocket::ConnectedState)
-	{
-		//Try again if it was a connection error
-		if (!reconnectTimer->isActive())
+    default:
+        errorString = tr("Error occurred: %1").arg(hubSocket->errorString());
+        break;
+    }
+
+    //Only try reconnecting if there was a connection error - otherwise just show there was an error
+    if (hubSocket->state() == QAbstractSocket::UnconnectedState || hubSocket->state() == QAbstractSocket::ClosingState || hubSocket->state() == QAbstractSocket::ConnectedState)
+    {
+        //Try again if it was a connection error
+        if (!reconnectTimer->isActive())
         {
             //Check if the error was due to bad nickname
             int interval = 30000; //30 seconds
@@ -397,9 +397,9 @@ void HubConnection::socketError(QAbstractSocket::SocketError error)
             }
 
             errorString += tr(" Retrying in %1 second%2...").arg(interval / 1000).arg((interval / 1000) != 1 ? "s" : "");
-			reconnectTimer->start(interval);
+            reconnectTimer->start(interval);
         }
-	}	
+    }	
 
     //If hub was online, change status to offline
     if (hubIsOnline)
@@ -408,14 +408,14 @@ void HubConnection::socketError(QAbstractSocket::SocketError error)
         emit hubOffline();
     }
 
-	emit hubError(errorString);
+    emit hubError(errorString);
     emit receivedChatMessage("&lt;::error&gt;" + errorString);
 }
 
 void HubConnection::reconnectTimeout()
 {
-	//Retry connection
-	connectHub();
+    //Retry connection
+    connectHub();
 }
 
 void HubConnection::keepaliveTimeout()
