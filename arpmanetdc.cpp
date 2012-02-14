@@ -135,7 +135,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 
     //Connect HubConnection to GUI
     connect(pHub, SIGNAL(receivedChatMessage(QString)), this, SLOT(appendChatLine(QString)));
-    connect(pHub, SIGNAL(receivedMyINFO(QString, QString, QString, QString, QString)), this, SLOT(userListInfoReceived(QString, QString, QString, QString, QString)));
+    connect(pHub, SIGNAL(receivedMyINFO(QString, QString, QString, QString, QString, QString, quint16, quint64)), 
+        this, SLOT(userListInfoReceived(QString, QString, QString, QString, QString, QString, quint16, quint64)));
     connect(pHub, SIGNAL(receivedNickList(QStringList)), this, SLOT(userListNickListReceived(QStringList)));
     connect(pHub, SIGNAL(receivedOpList(QStringList)), this, SLOT(opListReceived(QStringList)));
     connect(pHub, SIGNAL(userLoggedOut(QString)), this, SLOT(userListUserLoggedOut(QString)));    
@@ -753,6 +754,8 @@ void ArpmanetDC::createWidgets()
     CIDHostsLabel = new QLabel("0");
     CIDHostsLabel->setToolTip(tr("Number of hosts bootstrapped"));
 
+    totalShareSizeLabel = new QLabel;
+
     //Progress bar
     hashingProgressBar = new TextProgressBar(tr("Hashing"), this);
     hashingProgressBar->setRange(0,0);
@@ -857,6 +860,7 @@ void ArpmanetDC::createWidgets()
 
     infoStatusBar = new QStatusBar(this);
     infoStatusBar->addPermanentWidget(additionalInfoLabel,1);
+    infoStatusBar->addPermanentWidget(totalShareSizeLabel);
     infoStatusBar->addPermanentWidget(userHubCountLabel);
     infoStatusBar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
     infoStatusBar->setSizeGripEnabled(false);
@@ -1453,9 +1457,11 @@ void ArpmanetDC::fileHashed(QString fileName, quint64 fileSize)
     //Show on GUI when file has finished hashing
     setStatus(tr("Finished hashing file: %1").arg(fileName));
     shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr()));
-    
+   
     pFilesHashedSinceUpdate++;
     pFileSizeHashedSinceUpdate += fileSize;
+
+    pHub->setTotalShareSize(pFileSizeHashedSinceUpdate);
     //QApplication::processEvents();
 }
 
@@ -1473,9 +1479,13 @@ void ArpmanetDC::hashingDone(int msecs, int numFiles)
     //Show on GUI when hashing is completed
     hashRateTimer->stop();
     setStatus(tr("Shares updated in %1").arg(timeStr));
-    shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr(true)));
+    quint64 totalShare = pShare->totalShare(true);
+    shareSizeLabel->setText(tr("Share: %1").arg(bytesToSize(totalShare)));
     shareSizeLabel->setToolTip(tr("Share size: %1\nFiles shared: %2").arg(pShare->totalShareStr(false)).arg(numFiles));
     hashingProgressBar->setRange(0,1);
+
+    //Set hub share size
+    pHub->setTotalShareSize(totalShare);
 
     //Start processing containers if there are outstanding
     if (saveSharesPressed)
@@ -1742,7 +1752,10 @@ void ArpmanetDC::sortUserList()
 void ArpmanetDC::updateGUIEverySecond()
 {
     //Called every second to update the GUI
-    emit getHostCount();    
+    emit getHostCount();  
+
+    //Calculate total share size
+    totalShareSizeLabel->setText(tr("Total: %1").arg(bytesToSize(calculateTotalShareSize())));
 }
 
 //Calculate rates
@@ -1757,7 +1770,7 @@ void ArpmanetDC::calculateHashRate()
     shareSizeLabel->setToolTip(tr("Hashing speed:\n%1\n%2").arg(rateMB).arg(rateFiles));
 }
 
-void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, QString client, QString version)
+void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, QString client, QString version, QString registerMode, quint16 openSlots, quint64 shareBytes)
 {
     //Don't add empty nicknames
     if (nick.isEmpty())
@@ -1785,7 +1798,10 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
         item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
 
         //Insert item into user list hash for fast retrieval later
-        pUserList.insert(nick, item);
+        QPair<QStandardItem *, quint64> pair;
+        pair.first = item;
+        pair.second = shareBytes;
+        pUserList.insert(nick, pair);
 
         QBrush brush = item->foreground();
 
@@ -1896,9 +1912,12 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
     else
     {
         //Get first match (there should be only one)
-        QStandardItem *item = pUserList.value(nick);
+        QStandardItem *item = pUserList.value(nick).first;
         int foundIndex = item->row();//foundItems.first()->index().row();
         //QStandardItem *item = userListModel->item(foundIndex, 0);
+
+        //Set share size
+        pUserList[nick].second = shareBytes;
 
         QBrush brush = userListModel->item(foundIndex,0)->foreground();
 
@@ -1980,7 +1999,7 @@ void ArpmanetDC::userListUserLoggedOut(QString nick)
     if (!pUserList.contains(nick))
         return;
 
-    QStandardItem *item = pUserList.value(nick);
+    QStandardItem *item = pUserList.value(nick).first;
 
     //Remove nick from ArpmanetDC list if necessary
     //if (userListModel->item(items.first()->row(), 5)->text() == "ArpmanetDC")
@@ -2031,7 +2050,7 @@ void ArpmanetDC::userListNickListReceived(QStringList list)
 {
     //Add/update user list for every nick in nickList
     foreach (QString nick, list)
-        userListInfoReceived(nick, "", "", "", "");
+        userListInfoReceived(nick, "", "", "", "", "", 0, 0);
 }
 
 void ArpmanetDC::opListReceived(QStringList list)
@@ -2122,7 +2141,7 @@ void ArpmanetDC::setStatus(QString msg)
 {
     //Save history
     pStatusHistoryList->append(tr("[%1]: %2").arg(QTime::currentTime().toString()).arg(msg));
-    if (pStatusHistoryList->size() > MAX_STATUS_HISTORY_ENTRIES)
+    if (pStatusHistoryList->size() > MAX_LABEL_HISTORY_ENTRIES)
         pStatusHistoryList->removeFirst();
 
     QString history;
@@ -2145,7 +2164,7 @@ void ArpmanetDC::setAdditionalInfo(QString msg)
 {
     //Save history
     pAdditionalInfoHistoryList->append(tr("[%1]: %2").arg(QTime::currentTime().toString()).arg(msg));
-    if (pAdditionalInfoHistoryList->size() > MAX_STATUS_HISTORY_ENTRIES)
+    if (pAdditionalInfoHistoryList->size() > MAX_LABEL_HISTORY_ENTRIES)
         pAdditionalInfoHistoryList->removeFirst();
 
     QString history;
@@ -2551,6 +2570,19 @@ QHostAddress ArpmanetDC::getIPGuess()
 QString ArpmanetDC::getDefaultDownloadPath()
 {
     return QDir::homePath();
+}
+
+//Calculate total share size
+quint64 ArpmanetDC::calculateTotalShareSize()
+{
+    quint64 totalShare = 0;
+    QHashIterator<QString, QPair<QStandardItem *, quint64> > i(pUserList);
+    while (i.hasNext())
+    {
+        i.next();
+        totalShare += i.value().second;
+    }
+    return totalShare;
 }
 
 QString ArpmanetDC::downloadPath()

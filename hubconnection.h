@@ -36,6 +36,7 @@ public:
     void setNick(QString nick);
     void setPassword(QString pass);
     void setVersion(QString version);
+    void setTotalShareSize(quint64 size);
     void sendPrivateMessage(QString otherNick, QString message);
     void sendChatMessage(QString message);
     QString getHubAddress();
@@ -50,7 +51,7 @@ signals:
     void userLoggedOut(QString nick);
     void receivedNickList(QStringList nickList);
     void receivedOpList(QStringList opList);
-    void receivedMyINFO(QString nick, QString description, QString mode, QString client, QString version);
+    void receivedMyINFO(QString nick, QString description, QString mode, QString client, QString version, QString registerMode, quint16 openSlots, quint64 shareBytes);
 
     //Emitted once when hub goes offline
     void hubOffline();
@@ -101,6 +102,7 @@ private:
     QString version;
     bool registeredUser;
     QByteArray dataReceived;
+    quint64 totalShareSize;
 
     bool hubIsOnline;
 };

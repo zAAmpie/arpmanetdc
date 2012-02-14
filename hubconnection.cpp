@@ -89,6 +89,11 @@ void HubConnection::setVersion(QString v)
     version = v;
 }
 
+void HubConnection::setTotalShareSize(quint64 size)
+{
+    totalShareSize = size;
+}
+
 void HubConnection::sendChatMessage(QString message)
 {
     QByteArray data;
@@ -148,7 +153,7 @@ QString HubConnection::generateMyINFOString()
         s.append("0/1/0");
     else
         s.append("1/0/0");
-    s.append(",S:5>$ $100.00 KiB/s$$0$|");
+    s.append(tr(",S:5>$ $100.00 KiB/s$$%1$|").arg(totalShareSize));
     return s;
 }
 
@@ -204,7 +209,7 @@ void HubConnection::processHubMessage()
                     // $MyINFO $ALL 94171-376 $ $0.005$$0$
                     // $MyINFO $ALL -Trivia- As twak praat 'n bossie was.....$ $Hub$$0$
                     // $MyINFO $ALL -OpChat- Operator chat - only for OPs$ $$$0$
-                    QString regex = "\\$MyINFO \\$ALL ([^ ]*) ([^\\$]*)\\$ \\$([^\\$]*)\\$\\$0\\$";
+                    QString regex = "\\$MyINFO \\$ALL ([^ ]*) ([^\\$]*)\\$ \\$([^\\$]*)\\$\\$([0-9]+)\\$";
                     QRegExp rx(regex, Qt::CaseInsensitive);
 
                     //Check for regex's
@@ -214,6 +219,7 @@ void HubConnection::processHubMessage()
                         QString nick = rx.cap(1);
                         QString desc = rx.cap(2);
                         QString extra = rx.cap(3);
+                        quint64 shareBytes = rx.cap(4).toULongLong();
 
                         //If a client information is embedded in the description, parse it
                         if (!desc.isEmpty() && desc.contains("<"))
@@ -231,16 +237,16 @@ void HubConnection::processHubMessage()
                                 QString version = rxc.cap(3);
                                 QString mode = rxc.cap(4);
                                 QString registerMode = rxc.cap(5); //Not used ATM, but can be implemented later
-                                QString openSlots = rxc.cap(6); //Not really used anymore
+                                quint16 openSlots = rxc.cap(6).toUInt(); //Not really used anymore
 
                                 //Client information parsed correctly, fill in all fields
-                                emit receivedMyINFO(nick, description, mode, client, version);
+                                emit receivedMyINFO(nick, description, mode, client, version, registerMode, openSlots, shareBytes);
                             }
                         }
                         else
                         {
                             //No client information is given, just use normal description and leave the rest of the fields blank
-                            emit receivedMyINFO(nick, desc, ""/*mode*/, extra/*client*/, ""/*version*/);
+                            emit receivedMyINFO(nick, desc, ""/*mode*/, extra/*client*/, ""/*version*/, ""/*registerMode*/, 0/*openSlots*/, shareBytes);
                         }
 
                     }

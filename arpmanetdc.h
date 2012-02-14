@@ -80,7 +80,7 @@ static const QMap<QString, char> PROTOCOL_MAP = initMapValues();
 #define MAX_SIMULTANEOUS_UPLOADS 20 //Max to upload to user users at a time - basically like slots to avoid locking up a client with uploads
 
 #define MAX_MAINCHAT_BLOCKS 1000
-#define MAX_STATUS_HISTORY_ENTRIES 20 //Tooltip of status label
+#define MAX_LABEL_HISTORY_ENTRIES 20 //Tooltip of status and additional info label
 
 #define CONTAINER_DIRECTORY "/Containers/" //The directory in which the containers are stored
 
@@ -181,7 +181,7 @@ private slots:
 
     //Hub Connection slots
     void appendChatLine(QString msg);
-    void userListInfoReceived(QString nick, QString desc, QString mode, QString client, QString version);
+    void userListInfoReceived(QString nick, QString desc, QString mode, QString client, QString version, QString registerMode, quint16 openSlots, quint64 shareBytes);
     void userListUserLoggedOut(QString nick);
     void userListNickListReceived(QStringList list);
     void opListReceived(QStringList list);
@@ -336,6 +336,9 @@ private:
     //Get path for downloads
     QString getDefaultDownloadPath();
 
+    //Calculate total share size
+    quint64 calculateTotalShareSize();
+
     //Objects
     sqlite3 *db; //SQLite database
     HubConnection *pHub;
@@ -363,7 +366,7 @@ private:
 
     //Hub connection - userlist and OP list
     QSet<QString> pOPList;
-    QHash<QString, QStandardItem *> pUserList;
+    QHash<QString, QPair<QStandardItem *, quint64> > pUserList;
     QSet<QString> pADCUserList;
 
     bool saveSharesPressed;
@@ -429,6 +432,7 @@ private:
     QLabel *connectionIconLabel;
     QLabel *bootstrapStatusLabel;
     QLabel *CIDHostsLabel;
+    QLabel *totalShareSizeLabel;
 
     //Progressbar
     TextProgressBar *hashingProgressBar;
