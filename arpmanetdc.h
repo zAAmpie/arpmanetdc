@@ -134,6 +134,8 @@ public:
 public slots:
     //Sets the global status label in the status bar to msg
     void setStatus(QString msg);
+    //Sets the additional info label to msg
+    void setAdditionalInfo(QString msg);
 
     //-----------========== QUEUED DOWNLOADS ==========----------
 
@@ -358,7 +360,10 @@ private:
     QHash<QString, QueueStruct> pContainerProcessHash;
     QString pContainerDirectory;
 
-    QStringList pOPList;
+    //Hub connection - userlist and OP list
+    QSet<QString> pOPList;
+    QHash<QString, QStandardItem *> pUserList;
+    QSet<QString> pADCUserList;
 
     bool saveSharesPressed;
 
@@ -381,6 +386,7 @@ private:
     QHash<QByteArray, QueueStruct> *pQueueList;
     QHash<QByteArray, FinishedDownloadStruct> *pFinishedList;
     QList<QString> *pStatusHistoryList;
+    QList<QString> *pAdditionalInfoHistoryList;
     QStandardItemModel *searchWordList;
 
     //-----===== Main GUI parameters =====-----

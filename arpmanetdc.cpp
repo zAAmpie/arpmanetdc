@@ -369,6 +369,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connectWidgets();    
 
     pStatusHistoryList = new QList<QString>();
+    pAdditionalInfoHistoryList = new QList<QString>();
     pQueueList = new QHash<QByteArray, QueueStruct>();
     pFinishedList = new QHash<QByteArray, FinishedDownloadStruct>();
 
@@ -499,7 +500,7 @@ ArpmanetDC::~ArpmanetDC()
         pDispatcher->deleteLater();
         pBucketFlushThread->deleteLater();
         pShare->deleteLater();
-
+        
         //saveSettings();
         delete pSettings;
 
@@ -1766,19 +1767,24 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
         desc = tr("%1 %2").arg(client).arg(version);
 
     //Check if user is already present in the list
-    QList<QStandardItem *> foundItems = userListModel->findItems(nick, Qt::MatchExactly, 2);
-
+    //QList<QStandardItem *> foundItems = userListModel->findItems(nick, Qt::MatchExactly, 2);
+    
     //Not present - create new
-    if (foundItems.isEmpty())
+    //if (foundItems.isEmpty())
+    if (!pUserList.contains(nick))
     {
-        additionalInfoLabel->setText(tr("User logged in: %1").arg(nick));
+        setAdditionalInfo(tr("User logged in: %1").arg(nick));
 
         //Add new row into table
-        userListModel->appendRow(new QStandardItem());
+        QList<QStandardItem *> row;
+        //userListModel->appendRow(new QStandardItem());
         
         //Use different formats for Active/Passive users
         QStandardItem *item = new QStandardItem();
         item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+
+        //Insert item into user list hash for fast retrieval later
+        pUserList.insert(nick, item);
 
         QBrush brush = item->foreground();
 
@@ -1786,21 +1792,22 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
         if (pOPList.contains(nick) || client.startsWith("Hub"))
         {
             //OP
-            brush.setColor(Qt::darkGray);
+            brush.setColor(Qt::darkGreen);
             item->setText(" " + nick);
         }
         else if (client.compare("ArpmanetDC") == 0)
         {
             //ArpmanetDC user
-            arpmanetDCUsers++; //Increase user count
+            if (!pADCUserList.contains(nick))
+                pADCUserList.insert(nick); //Add user to ArpmanetDC set
 
-            brush.setColor(Qt::darkGreen);
+            brush.setColor(Qt::black);
             item->setText(0xA0 + nick);
         }
         else
         {
             //Other client user
-            brush.setColor(Qt::black);
+            brush.setColor(Qt::red);
             item->setText(0xA0 + nick);
         }
         item->setForeground(brush);
@@ -1828,25 +1835,35 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
         }
 
         //Add nick to model
-        userListModel->setItem(userListModel->rowCount()-1, 0, item);        
+        row.append(item);
+        //userListModel->setItem(userListModel->rowCount()-1, 0, item);        
 
         //Add description to model
         QStandardItem *descItem = new QStandardItem(desc);
         descItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-        userListModel->setItem(userListModel->rowCount()-1, 1, descItem);
+        //userListModel->setItem(userListModel->rowCount()-1, 1, descItem);
+        row.append(descItem);
 
         //Add non displaying fields
-        userListModel->setItem(userListModel->rowCount()-1, 2, new QStandardItem(nick));
-        userListModel->setItem(userListModel->rowCount()-1, 3, new QStandardItem(desc));
-        userListModel->setItem(userListModel->rowCount()-1, 4, new QStandardItem(mode));
-        userListModel->setItem(userListModel->rowCount()-1, 5, new QStandardItem(client));
-        userListModel->setItem(userListModel->rowCount()-1, 6, new QStandardItem(version));
+        row.append(new QStandardItem(nick));
+        row.append(new QStandardItem(desc));
+        row.append(new QStandardItem(mode));
+        row.append(new QStandardItem(client));
+        row.append(new QStandardItem(version));
+        //userListModel->setItem(userListModel->rowCount()-1, 2, new QStandardItem(nick));
+        //userListModel->setItem(userListModel->rowCount()-1, 3, new QStandardItem(desc));
+        //userListModel->setItem(userListModel->rowCount()-1, 4, new QStandardItem(mode));
+        //userListModel->setItem(userListModel->rowCount()-1, 5, new QStandardItem(client));
+        //userListModel->setItem(userListModel->rowCount()-1, 6, new QStandardItem(version));
         
+        //Append row to model
+        userListModel->appendRow(row);
+
         //Signal for sorting
         sortDue = true;
 
         //Update user count
-        userHubCountLabel->setText(tr("Hub Users: %1/%2").arg(arpmanetDCUsers).arg(userListModel->rowCount()));        
+        userHubCountLabel->setText(tr("Hub Users: %1/%2").arg(pADCUserList.size()).arg(pUserList.size()));
 
         //Check if PM windows are open for this user - notify
         QWidget *foundWidget = 0;
@@ -1878,16 +1895,17 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
     else
     {
         //Get first match (there should be only one)
-        int foundIndex = foundItems.first()->index().row();
-        QStandardItem *item = userListModel->item(foundIndex, 0);
+        QStandardItem *item = pUserList.value(nick);
+        int foundIndex = item->row();//foundItems.first()->index().row();
+        //QStandardItem *item = userListModel->item(foundIndex, 0);
 
         QBrush brush = userListModel->item(foundIndex,0)->foreground();
 
         //----- Set name colours and nick sorting -----
-        if (pOPList.contains(nick))
+        if (pOPList.contains(nick) || client.startsWith("Hub"))
         {
             //OP
-            brush.setColor(Qt::darkGray);
+            brush.setColor(Qt::darkGreen);
             item->setText(" " + nick);
         }
         else if (client.compare("ArpmanetDC") == 0)
@@ -1895,13 +1913,13 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
             //ArpmanetDC user
             arpmanetDCUsers++; //Increase user count
 
-            brush.setColor(Qt::darkGreen);
+            brush.setColor(Qt::black);
             item->setText(0xA0 + nick);
         }
         else
         {
             //Other client user
-            brush.setColor(Qt::black);
+            brush.setColor(Qt::red);
             item->setText(0xA0 + nick);
         }
         item->setForeground(brush);
@@ -1955,23 +1973,31 @@ void ArpmanetDC::userListInfoReceived(QString nick, QString desc, QString mode, 
 void ArpmanetDC::userListUserLoggedOut(QString nick)
 {
     //Find the items matching the nickname in the model
-    QList<QStandardItem *> items = userListModel->findItems(nick, Qt::MatchFixedString, 2);
-    
-    if (items.isEmpty())
+    //QList<QStandardItem *> items = userListModel->findItems(nick, Qt::MatchFixedString, 2);
+        
+    //if (items.isEmpty())
+    if (!pUserList.contains(nick))
         return;
 
-    //Get type of client
-    if (userListModel->item(items.first()->row(), 5)->text() == "ArpmanetDC")
-        arpmanetDCUsers--;
+    QStandardItem *item = pUserList.value(nick);
+
+    //Remove nick from ArpmanetDC list if necessary
+    //if (userListModel->item(items.first()->row(), 5)->text() == "ArpmanetDC")
+    if (pADCUserList.contains(nick))
+        pADCUserList.remove(nick);
+
+    //Remove nick from userlist
+    pUserList.remove(nick);
 
     //Remove the user from the list
-    if (userListModel->removeRows(items.first()->index().row(), 1))
-        additionalInfoLabel->setText(tr("User logged out: %1").arg(nick));
+    //if (userListModel->removeRows(items.first()->index().row(), 1))
+    if (userListModel->removeRows(item->row(), 1))
+        setAdditionalInfo(tr("User logged out: %1").arg(nick));
     else
-        additionalInfoLabel->setText(tr("User not in list: %1").arg(nick));
+        setAdditionalInfo(tr("User not in list: %1").arg(nick));
 
     //Update user count
-    userHubCountLabel->setText(tr("Hub Users: %1/%2").arg(arpmanetDCUsers).arg(userListModel->rowCount()));
+    userHubCountLabel->setText(tr("Hub Users: %1/%2").arg(pADCUserList.size()).arg(pUserList.size()));
 
     //Check if a tab exists with a PM for this nick
     QWidget *foundWidget = 0;
@@ -2010,7 +2036,7 @@ void ArpmanetDC::userListNickListReceived(QStringList list)
 void ArpmanetDC::opListReceived(QStringList list)
 {
     //Keep record of all the OPs in the hub to show them in another colour
-    pOPList = list;
+    pOPList = list.toSet();
 
     foreach (QString nick, pOPList)
     {
@@ -2026,7 +2052,7 @@ void ArpmanetDC::opListReceived(QStringList list)
 
         //Set colour and nick sort type
         QBrush brush = item->foreground();
-        brush.setColor(Qt::darkGray);
+        brush.setColor(Qt::darkGreen);
         item->setForeground(brush);
         item->setText(" " + nick);
     }
@@ -2036,6 +2062,14 @@ void ArpmanetDC::hubOffline()
 {
     tabs->setTabIcon(0, QIcon(":/ArpmanetDC/Resources/ServerOfflineIcon.png"));
     setStatus("ArpmanetDC hub went offline");
+
+    //Clear model
+    userListModel->removeRows(0, userListModel->rowCount());
+
+    //Clear user list, op list and ArpmanetDC user list
+    pUserList.clear();
+    pOPList.clear();
+    pADCUserList.clear();
 }
 
 void ArpmanetDC::hubOnline()
@@ -2103,6 +2137,29 @@ void ArpmanetDC::setStatus(QString msg)
     //Elide text to avoid stupid looking shifting of permanent widgets in the status bar
     QFontMetrics fm(statusLabel->font());
     statusLabel->setText(fm.elidedText(msg, Qt::ElideMiddle, statusLabel->width()));
+}
+
+//Sets the additional info label to msg
+void ArpmanetDC::setAdditionalInfo(QString msg)
+{
+    //Save history
+    pAdditionalInfoHistoryList->append(tr("[%1]: %2").arg(QTime::currentTime().toString()).arg(msg));
+    if (pAdditionalInfoHistoryList->size() > MAX_STATUS_HISTORY_ENTRIES)
+        pAdditionalInfoHistoryList->removeFirst();
+
+    QString history;
+    for (int i = 0; i < pAdditionalInfoHistoryList->size(); i++)
+    {
+        if (!history.isEmpty())
+            history += "\n";
+        history.append(pAdditionalInfoHistoryList->at(i));
+    }
+   
+    additionalInfoLabel->setToolTip(history);
+    
+    //Elide text to avoid stupid looking shifting of permanent widgets in the status bar
+    QFontMetrics fm(additionalInfoLabel->font());
+    additionalInfoLabel->setText(fm.elidedText(msg, Qt::ElideMiddle, additionalInfoLabel->width()));
 }
 
 //Get the queue from the database
