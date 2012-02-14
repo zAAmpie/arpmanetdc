@@ -125,6 +125,7 @@ public slots:
 
     // Set functions
     void setMaximumSimultaneousDownloads(int n);
+    void setMaximumSimultaneousUploads(int n);
 
 private:
     Transfer* getTransferObjectPointer(QByteArray &tth, int transferType, QHostAddress hostAddr = QHostAddress("0.0.0.0"));
@@ -136,7 +137,9 @@ private:
     QHash<QHostAddress, char> peerProtocolCapabilities;
     QMultiHash<QHostAddress, Transfer*> peerProtocolDiscoveryWaitingPool;
     int maximumSimultaneousDownloads;
+    int maximumSimultaneousUploads;
     int currentDownloadCount;
+    int currentUploadCount;
 
     const QHash<QString, QString> *pSettings;
 };

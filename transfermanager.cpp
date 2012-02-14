@@ -5,6 +5,7 @@ TransferManager::TransferManager(QHash<QString, QString> *settings, QObject *par
 {
     pSettings = settings;
     currentDownloadCount = 0;
+    currentUploadCount = 0;
 }
 
 TransferManager::~TransferManager()
@@ -30,6 +31,8 @@ void TransferManager::destroyTransferObject(Transfer* transferObject)
     {
         if (type == TRANSFER_TYPE_DOWNLOAD)
             currentDownloadCount--;
+        else if (type == TRANSFER_TYPE_UPLOAD)
+            currentUploadCount--;
 
         QMutableHashIterator<QHostAddress, Transfer *> i(peerProtocolDiscoveryWaitingPool);
         while (i.hasNext())
@@ -81,13 +84,18 @@ void TransferManager::incomingUploadRequest(quint8 protocol, QHostAddress fromHo
     }
     else
     {
-        UploadTransferQueueItem *i = new UploadTransferQueueItem;
-        i->protocol = protocol;
-        i->requestingHost = fromHost;
-        i->fileOffset = offset;
-        i->requestLength = length;
-        uploadTransferQueue.insertMulti(tth, i);
-        emit filePathNameRequest(tth);
+        //Only queue the item if there are "slots" open
+        if (currentUploadCount < maximumSimultaneousUploads)
+        {
+            currentUploadCount++;
+            UploadTransferQueueItem *i = new UploadTransferQueueItem;
+            i->protocol = protocol;
+            i->requestingHost = fromHost;
+            i->fileOffset = offset;
+            i->requestLength = length;
+            uploadTransferQueue.insertMulti(tth, i);
+            emit filePathNameRequest(tth);
+        }
     }
 }
 
@@ -412,4 +420,9 @@ void TransferManager::requestPeerProtocolCapability(QHostAddress peer, Transfer 
 void TransferManager::setMaximumSimultaneousDownloads(int n)
 {
     maximumSimultaneousDownloads = n;
+}
+
+void TransferManager::setMaximumSimultaneousUploads(int n)
+{
+    maximumSimultaneousUploads = n;
 }
