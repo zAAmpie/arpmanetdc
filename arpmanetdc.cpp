@@ -1162,7 +1162,12 @@ void ArpmanetDC::shareActionPressed()
 
 void ArpmanetDC::reconnectActionPressed()
 {
-    //TODO: Reconnect was pressed
+    //Clear userlists
+    pUserList.clear();
+    pOPList.clear();
+    pADCUserList.clear();
+    
+    //Set parameters and reconnect hub
     pHub->setHubAddress(pSettings->value("hubAddress"));
     pHub->setHubPort(pSettings->value("hubPort").toShort());
     pHub->setNick(pSettings->value("nick"));
@@ -2061,14 +2066,12 @@ void ArpmanetDC::opListReceived(QStringList list)
     foreach (QString nick, pOPList)
     {
         //Check if user is already present in the list - otherwise the myINFO section will deal with it
-        QList<QStandardItem *> foundItems = userListModel->findItems(nick, Qt::MatchExactly, 2);
-        
-        if (foundItems.isEmpty())
+        //QList<QStandardItem *> foundItems = userListModel->findItems(nick, Qt::MatchExactly, 2);
+        if (!pUserList.contains(nick))
             continue;
-
+        
         //Get item in first column
-        int foundIndex = foundItems.first()->index().row();
-        QStandardItem *item = userListModel->item(foundIndex, 0);
+        QStandardItem *item = pUserList.value(nick).first;
 
         //Set colour and nick sort type
         QBrush brush = item->foreground();
@@ -2090,6 +2093,19 @@ void ArpmanetDC::hubOffline()
     pUserList.clear();
     pOPList.clear();
     pADCUserList.clear();
+
+    //Mark all PM windows offline
+    QHashIterator<QWidget *, PMWidget *> i(pmWidgetHash);
+    while (i.hasNext())
+    {
+        i.next();
+
+        //Notify tabs
+        tabs->tabBar()->setTabTextColor(tabs->indexOf(i.key()), tabTextColorOffline);
+
+        //Tell PM window user is offline
+        i.value()->userLoginChanged(false);
+    }
 }
 
 void ArpmanetDC::hubOnline()
