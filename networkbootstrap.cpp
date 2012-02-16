@@ -27,6 +27,7 @@ NetworkBootstrap::NetworkBootstrap(QObject *parent) :
     QTimer::singleShot(100, this, SIGNAL(requestLastKnownPeers())); //This signal isn't connected yet when this line is reached - wait 100msecs
 
     // Init bootstrap
+    bootstrapStatus = -3;
     setBootstrapStatus(-2);
     bootstrapTimer = new QTimer(this);
     bootstrapTimer->setSingleShot(true);

@@ -5,6 +5,9 @@ TransferSegment::TransferSegment(QObject *parent) :
 {
     pDownloadBucketTable = 0;
     maxUploadRequestOffset = 0;
+    segmentStart = 0;
+    segmentLength = 0;
+    segmentEnd = 0;
 }
 
 TransferSegment::~TransferSegment(){}

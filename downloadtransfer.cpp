@@ -55,6 +55,10 @@ DownloadTransfer::~DownloadTransfer()
     while (r.hasNext())
         if (r.next().value().transferSegment)
             r.value().transferSegment->deleteLater();
+
+    TTHSearchTimer->deleteLater();
+    transferTimer->deleteLater();
+    transferRateCalculationTimer->deleteLater();
 }
 
 // Data packets that are related to our TTH gets dispatched to this entry point.

@@ -125,6 +125,8 @@ ShareSearch::~ShareSearch()
         containerThread->terminate();
         delete containerThread;
     }
+
+    delete updateTime;
 }
 
 //------------------------------============================== THREAD MANAGEMENT ==============================------------------------------
