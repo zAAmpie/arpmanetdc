@@ -202,6 +202,10 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
             pTransferManager, SLOT(incomingProtocolCapabilityResponse(QHostAddress,char)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(requestProtocolCapability(QHostAddress)),
             pDispatcher, SLOT(sendProtocolCapabilityQuery(QHostAddress)), Qt::QueuedConnection);
+    connect(pDispatcher, SIGNAL(incomingTransferError(QHostAddress,QByteArray,quint64,quint8)),
+            pTransferManager, SLOT(incomingTransferError(fromHost,tth,offset,error)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)),
+            pDispatcher, SLOT(sendTransferError(QHostAddress,quint8,QByteArray,quint64)));
 
     //Connect TransferManager to GUI - notify of started/completed transfers
     connect(pTransferManager, SIGNAL(downloadStarted(QByteArray)), 

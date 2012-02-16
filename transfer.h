@@ -41,6 +41,7 @@ signals:
     void searchTTHAlternateSources(QByteArray tth);
     void loadTTHSourcesFromDatabase(QByteArray tth);
     void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length);
+    void sendTransferError(QHostAddress dstHost, quint8 error, QByteArray tth, quint64 offset);
     void transmitDatagram(QHostAddress dstHost, QByteArray *datagram);
     void transferFinished(QByteArray tth);
     void flushBucket(QString filename, QByteArray *bucket);
@@ -70,6 +71,7 @@ public slots:
     virtual void hashBucketReply(int bucketNumber, QByteArray bucketTTH);
     virtual void TTHTreeReply(QByteArray tree);
     virtual void receivedPeerProtocolCapability(QHostAddress peer, quint8 protocols);
+    virtual void incomingTransferError(quint64 offset, quint8 error);
 
     virtual void incomingDataPacket(quint8 transferProtocolVersion, quint64 offset, QByteArray data);
     virtual int getTransferType() = 0;

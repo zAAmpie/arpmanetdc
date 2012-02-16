@@ -71,6 +71,13 @@ void TransferManager::incomingDataPacket(quint8 transferPacket, QHostAddress fro
     }
 }
 
+void TransferManager::incomingTransferError(QHostAddress fromHost, QByteArray tth, quint64 offset, quint8 error)
+{
+    Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_DOWNLOAD);
+    if (t)
+        t->incomingTransferError(offset, error);
+}
+
 // incoming requests for files we share
 void TransferManager::incomingUploadRequest(quint8 protocol, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length)
 {
@@ -113,6 +120,7 @@ void TransferManager::filePathNameReply(QByteArray tth, QString filename, quint6
     t->createUploadObject(uploadTransferQueue.value(tth)->protocol);
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
     connect(t, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
+    connect(t, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)), this, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)));
     t->setFileName(filename);
     t->setFileSize(fileSize);
     t->setTTH(tth);
@@ -422,7 +430,7 @@ void TransferManager::bucketFlushed(QByteArray tth, int bucketNo)
     Transfer* t = getTransferObjectPointer(tth, TRANSFER_TYPE_DOWNLOAD);
     if (t)
         t->bucketFlushed(bucketNo);
-    qDebug() << "TM bucket flush";// << t;
+    //qDebug() << "TM bucket flush"; << t;
 }
 
 void TransferManager::bucketFlushFailed(QByteArray tth, int bucketNo)
@@ -430,7 +438,7 @@ void TransferManager::bucketFlushFailed(QByteArray tth, int bucketNo)
     Transfer* t = getTransferObjectPointer(tth, TRANSFER_TYPE_DOWNLOAD);
     if (t)
         t->bucketFlushFailed(bucketNo);
-    qDebug() << "TM bucket flush fail" << t;
+    //qDebug() << "TM bucket flush fail" << t;
 }
 
 void TransferManager::setMaximumSimultaneousDownloads(int n)

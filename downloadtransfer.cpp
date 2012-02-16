@@ -260,13 +260,12 @@ void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
     //emit flushBucket(tempFileName, downloadBucketTable->value(bucketNumber));
     //emit assembleOutputFile(TTHBase32, filePathName, bucketNumber, lastBucketNumber);
 
+    QByteArray* bucketPtr = downloadBucketTable->value(bucketNumber);
     bucketFlushQueueLength++;
     congestionTest();
-    emit flushBucketDirect(filePathName, bucketNumber, downloadBucketTable->value(bucketNumber), TTH);
-
-    // just remove entry, bucket pointer gets deleted in BucketFlushThread
-    downloadBucketTable->remove(bucketNumber);
+    downloadBucketTable->remove(bucketNumber); // just remove entry, bucket pointer gets deleted in BucketFlushThread
     transferSegmentStateBitmap[bucketNumber] = SegmentDownloaded;
+    emit flushBucketDirect(filePathName, bucketNumber, bucketPtr, TTH);
 
     int segmentsDone = 0;
     for (int i = 0; i < transferSegmentStateBitmap.length(); i++)
@@ -597,6 +596,24 @@ int DownloadTransfer::getLastHashBucketNumberReceived()
         lastHashBucketReceived = i.key();
     }
     return lastHashBucketReceived;
+}
+
+void DownloadTransfer::incomingTransferError(quint64 offset, quint8 error)
+{
+    TransferSegment *t =0;
+    QMap<quint64, TransferSegmentTableStruct>::const_iterator i = transferSegmentTable.upperBound(offset);
+    if (Q_UNLIKELY(i == transferSegmentTable.constEnd()))
+        --i;
+    if (Q_UNLIKELY(i.key() <= offset && i.value().segmentEnd >= offset))
+        t = i.value().transferSegment;
+    else if (Q_LIKELY(i != transferSegmentTable.constBegin()))
+    {
+        --i;
+        if (Q_LIKELY(i.key() <= offset && i.value().segmentEnd >= offset))
+            t = i.value().transferSegment;
+    }
+    if (t)
+        segmentFailed(t);
 }
 
 void DownloadTransfer::bucketFlushed(int bucketNo)

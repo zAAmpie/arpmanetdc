@@ -18,6 +18,7 @@ void Transfer::receivedPeerProtocolCapability(QHostAddress, quint8){}
 void Transfer::createUploadObject(quint8){}
 void Transfer::bucketFlushed(int) {}
 void Transfer::bucketFlushFailed(int) {}
+void Transfer::incomingTransferError(quint64, quint8) {}
 
 // ------------------------------------------------------------------------
 

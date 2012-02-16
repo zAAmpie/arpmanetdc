@@ -37,6 +37,7 @@ public:
 signals:
     void transmitDatagram(QHostAddress dstHost, QByteArray *datagram);
     void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length);
+    void sendTransferError(QHostAddress dstHost, quint8 error, QByteArray tth, quint64 offset);
     void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
     void requestNextSegment(TransferSegment *requestingSegmentObject);
     void transferRequestFailed(TransferSegment *requestingSegmentObject);

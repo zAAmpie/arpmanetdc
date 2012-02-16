@@ -76,6 +76,7 @@ void UploadTransfer::createUploadObject(quint8 protocol)
     //Used to intercept the amount of data actually transmitted
     connect(upload, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)), this, SLOT(dataTransmitted(QHostAddress, QByteArray *)));
     connect(upload, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)), this, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)));
+    connect(upload, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)), this, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)));
 }
 
 void UploadTransfer::startTransfer()

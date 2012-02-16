@@ -231,7 +231,7 @@ void Dispatcher::handleProtocolInstruction(quint8 &quint8DatagramType, quint8 &q
         break;
 
     case TransferErrorPacket:
-        // TODO: pass aan
+        handleReceivedTransferError(senderHost, datagram);
         break;
 
     case ProtocolCapabilityQueryPacket:
@@ -749,13 +749,15 @@ void Dispatcher::sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByt
     sendUnicastRawDatagram(dstHost, datagram);
 }
 
-// TODO: this isn't used, and is probably not very useful in its current form.
-void Dispatcher::sendTransferError(QHostAddress dstHost, quint8 error)
+void Dispatcher::sendTransferError(QHostAddress dstHost, quint8 error, QByteArray tth, quint64 offset)
 {
     QByteArray *datagram = new QByteArray;
+    datagram->reserve(35);
     datagram->append(UnicastPacket);
     datagram->append(TransferErrorPacket);
     datagram->append(error);
+    datagram->append(tth);
+    datagram->append(quint64ToByteArray(offset));
     sendUnicastRawDatagram(dstHost, datagram);
 }
 
@@ -821,6 +823,16 @@ void Dispatcher::sendProtocolCapabilityQuery(QHostAddress dstHost)
     datagram->append(UnicastPacket);
     datagram->append(ProtocolCapabilityQueryPacket);
     sendUnicastRawDatagram(dstHost, datagram);
+}
+
+void Dispatcher::handleReceivedTransferError(QHostAddress fromHost, QByteArray datagram)
+{
+    datagram.remove(0, 2);
+    quint8 error = getQuint8FromByteArray(&datagram);
+    QByteArray tth = datagram.left(24);
+    datagram.remove(0, 24);
+    quint64 offset = getQuint64FromByteArray(&datagram);
+    emit incomingTransferError(fromHost, tth, offset, error);
 }
 
 // ------------------=====================   CID functions   =====================----------------------

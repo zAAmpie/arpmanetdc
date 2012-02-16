@@ -49,6 +49,12 @@ void FSTPTransferSegment::startUploading()
         maxUploadRequestOffset = fileSize;
 
     const char * f = (char*)inputFile.map(segmentStart, segmentLength);
+    if (f == 0)
+    {
+        emit sendTransferError(remoteHost, 0, TTH, segmentStart);
+        return;
+    }
+
     quint64 wptr = 0;
     QByteArray header;
     header.reserve(2);

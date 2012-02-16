@@ -97,6 +97,7 @@ signals:
     void incomingProtocolCapabilityResponse(QHostAddress fromHost, char capability);
     void incomingUploadRequest(quint8 protocol, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length);
     void incomingDataPacket(quint8 protocolInstruction, QHostAddress senderHost, QByteArray datagram);
+    void incomingTransferError(QHostAddress senderHost, QByteArray tth, quint64 offset, quint8 error);
     //
     // Debug messages
     void appendChatLine(QString message);
@@ -125,7 +126,7 @@ public slots:
     // Transfers
     void sendProtocolCapabilityQuery(QHostAddress dstHost);
     void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length);
-    void sendTransferError(QHostAddress dstHost, quint8 error);
+    void sendTransferError(QHostAddress dstHost, quint8 error, QByteArray tth, quint64 offset);
 
     // Buckets
     void requestBucketContents(QHostAddress host);
@@ -213,6 +214,7 @@ private:
     void handleReceivedProtocolCapabilityQuery(QHostAddress fromHost);
     void handleReceivedProtocolCapabilityResponse(QHostAddress fromHost, QByteArray &datagram);
     void handleIncomingUploadRequest(QHostAddress &fromHost, QByteArray &datagram);
+    void handleReceivedTransferError(QHostAddress fromHost, QByteArray datagram);
 
     // Bootstrap object
     NetworkBootstrap *networkBootstrap;

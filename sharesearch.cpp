@@ -34,10 +34,10 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
     connect(pHashFileThread, SIGNAL(done(QString, QString, qint64, QString, QString, QString, QList<QString> *, HashFileThread *)),
         this, SLOT(hashFileThreadDone(QString, QString, qint64, QString, QString, QString, QList<QString> *, HashFileThread *)), Qt::QueuedConnection);
     connect(pHashFileThread, SIGNAL(failed(QString, HashFileThread *)), this, SLOT(hashFileFailed(QString, HashFileThread *)), Qt::QueuedConnection);
-    connect(pHashFileThread, SIGNAL(doneBucket(QByteArray, int, QByteArray)), this, SLOT(hashBucketDone(QByteArray, int, QByteArray)), Qt::QueuedConnection);
+    //connect(pHashFileThread, SIGNAL(doneBucket(QByteArray, int, QByteArray)), this, SLOT(hashBucketDone(QByteArray, int, QByteArray)), Qt::QueuedConnection);
     connect(pHashFileThread, SIGNAL(doneFile(QString, QByteArray, quint64)), this, SIGNAL(returnTTHFromPath(QString, QByteArray, quint64)), Qt::QueuedConnection);
     connect(this, SIGNAL(runHashThread(QString, QString)), pHashFileThread, SLOT(processFile(QString, QString)), Qt::QueuedConnection);
-    connect(this, SIGNAL(runHashBucket(QByteArray, int, QByteArray, ReturnEncoding)), pHashFileThread, SLOT(processBucket(QByteArray, int, QByteArray, ReturnEncoding)), Qt::QueuedConnection);
+    //connect(this, SIGNAL(runHashBucket(QByteArray, int, QByteArray, ReturnEncoding)), pHashFileThread, SLOT(processBucket(QByteArray, int, QByteArray, ReturnEncoding)), Qt::QueuedConnection);
     connect(this, SIGNAL(stopHashingThread()), pHashFileThread, SLOT(stopHashing()));
     connect(this, SIGNAL(calculateTTHFromPath(QString)), pHashFileThread, SLOT(hashFile(QString)), Qt::QueuedConnection);
 
@@ -53,6 +53,16 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
     pParseDirectoryThread->moveToThread(hashThread);
 
     hashThread->start();
+
+    //Create hash thread for incoming buckets - file hashing blocks bucket hashing
+    hashBucketThread = new ExecThread();
+    pHashBucketThread = new HashFileThread();
+
+    connect(pHashBucketThread, SIGNAL(doneBucket(QByteArray, int, QByteArray)), this, SLOT(hashBucketDone(QByteArray, int, QByteArray)), Qt::QueuedConnection);
+    connect(this, SIGNAL(runHashBucket(QByteArray, int, QByteArray, ReturnEncoding)), pHashBucketThread, SLOT(processBucket(QByteArray, int, QByteArray, ReturnEncoding)), Qt::QueuedConnection);
+
+    pHashBucketThread->moveToThread(hashBucketThread);
+    hashBucketThread->start();
 
     //Create container thead
     containerThread = new ExecThread();
@@ -98,6 +108,14 @@ ShareSearch::~ShareSearch()
     {
         hashThread->terminate();
         delete hashThread;
+    }
+    hashBucketThread->quit();
+    if (hashBucketThread->wait(5000))
+        delete hashBucketThread;
+    else
+    {
+        hashBucketThread->terminate();
+        delete hashBucketThread;
     }
     containerThread->quit();
     if (containerThread->wait(5000))
