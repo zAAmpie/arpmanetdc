@@ -355,7 +355,7 @@ private:
 
     //Objects
     ArpmanetDC *pParent;
-    HashFileThread *pHashFileThread;
+    HashFileThread *pHashFileThread, *pHashBucketThread;
     ParseDirectoryThread *pParseDirectoryThread;
     ContainerThread *pContainerThread;
 
@@ -375,7 +375,7 @@ private:
     
     bool pStopHashing, pStopParsing;
 
-    ExecThread *hashThread, *containerThread;
+    ExecThread *hashThread, *hashBucketThread, *containerThread;
 
     QList<FileListStruct> *pFileList;
     QList<QDir> *pDirList;

@@ -6,6 +6,9 @@ BucketFlushThread::BucketFlushThread(QObject *parent) :
 {
 }
 
+
+// IMPORTANT: this function is deprecated.
+// If it finds use again, it should be modified to receive TTH and emit bucketFlushed() and bucketFlushFailed().
 void BucketFlushThread::flushBucket(QString filename, QByteArray *bucket)
 {
     QFile file(filename);
@@ -111,7 +114,7 @@ void BucketFlushThread::assembleOutputFile(QString tmpfilebase, QString outfile,
         outf.close();
 }
 
-void BucketFlushThread::flushBucketDirect(QString filename, int bucketno, QByteArray *bucket)
+void BucketFlushThread::flushBucketDirect(QString filename, int bucketno, QByteArray *bucket, QByteArray tth)
 {
     //Go to directory
     QString pathStr = filename.left(filename.lastIndexOf("/"));
@@ -124,7 +127,7 @@ void BucketFlushThread::flushBucketDirect(QString filename, int bucketno, QByteA
     if (!outf.open(QIODevice::ReadWrite))
     {
         delete bucket;
-        //TODO: report error
+        emit bucketFlushFailed(tth, bucketno);
         return;
     }
 
@@ -140,6 +143,7 @@ void BucketFlushThread::flushBucketDirect(QString filename, int bucketno, QByteA
         outf.close();
 
     delete bucket;
+    emit bucketFlushed(tth, bucketno);
 }
 
 void BucketFlushThread::renameIncompleteFile(QString filename)

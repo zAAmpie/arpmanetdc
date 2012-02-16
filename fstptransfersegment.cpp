@@ -3,6 +3,7 @@
 FSTPTransferSegment::FSTPTransferSegment(Transfer *parent)
 {
     status = TRANSFER_STATE_INITIALIZING;
+    prev_status = -1;
     requestingOffset = 0;
     //requestingLength = 65536;
     requestingLength = 131072;
@@ -48,6 +49,12 @@ void FSTPTransferSegment::startUploading()
         maxUploadRequestOffset = fileSize;
 
     const char * f = (char*)inputFile.map(segmentStart, segmentLength);
+    if (f == 0)
+    {
+        emit sendTransferError(remoteHost, 0, TTH, segmentStart);
+        return;
+    }
+
     quint64 wptr = 0;
     QByteArray header;
     header.reserve(2);
@@ -57,7 +64,7 @@ void FSTPTransferSegment::startUploading()
     while (wptr < segmentLength)
     {
         QByteArray *packet = new QByteArray(header);
-        packet->reserve(1436);
+        packet->reserve(PACKET_MTU);
         packet->append(toQByteArray((quint64)(segmentStart + wptr)));
         packet->append(TTH);
         //qDebug() << "Write data segmentStart " << segmentStart << " segmentLength " << segmentLength << " wptr " << wptr;
@@ -88,9 +95,21 @@ void FSTPTransferSegment::startDownloading()
         retransmitTimeoutCounter = 0;
         retransmitRetryCounter = 0;
         qDebug() << "FSTPTransferSegment::startDownloading() call checkSendDownloadRequest()";
-        checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
         status = TRANSFER_STATE_RUNNING;
+        checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength, status);
     }
+}
+
+void FSTPTransferSegment::pauseDownload()
+{
+    prev_status = status;
+    status = TRANSFER_STATE_PAUSED;
+}
+
+void FSTPTransferSegment::unpauseDownload()
+{
+    if (prev_status != -1)
+        status = prev_status;
 }
 
 void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
@@ -160,7 +179,7 @@ void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
 
         requestingTargetOffset += requestingLength;
         qDebug() << "FSTPTransferSegment::incomingDataPacket() call checkSendDownloadRequest()";
-        checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
+        checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength, status);
     }
 
     if (requestingOffset >= segmentEnd)
@@ -181,7 +200,7 @@ void FSTPTransferSegment::transferTimerEvent()
         status = TRANSFER_STATE_RUNNING;
         requestingTargetOffset = requestingOffset + requestingLength;
         qDebug() << "FSTPTransferSegment::transferTimerEvent() call checkSendDownloadRequest()" << requestingOffset << requestingLength;
-        checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength);
+        checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength, status);
         retransmitRetryCounter++;
         //30 is only 3 seconds worth of stalling for every 1MB segment! WAY too low for poor connections -> they will go into endless loops
         //Setting this to 300 to test

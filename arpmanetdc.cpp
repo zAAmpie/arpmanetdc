@@ -61,6 +61,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     qRegisterMetaType<QList<ContainerLookupReturnStruct> >("QList<ContainerLookupReturnStruct>");
     qRegisterMetaType<QList<TransferItemStatus> >("QList<TransferItemStatus>");
     qRegisterMetaType<QList<QDir> >("QList<QDir>");
+    qRegisterMetaType<QByteArray>("QByteArray");
 
     //Set database pointer to zero at start
     db = 0;
@@ -202,6 +203,10 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
             pTransferManager, SLOT(incomingProtocolCapabilityResponse(QHostAddress,char)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(requestProtocolCapability(QHostAddress)),
             pDispatcher, SLOT(sendProtocolCapabilityQuery(QHostAddress)), Qt::QueuedConnection);
+    connect(pDispatcher, SIGNAL(incomingTransferError(QHostAddress,QByteArray,quint64,quint8)),
+            pTransferManager, SLOT(incomingTransferError(fromHost,tth,offset,error)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)),
+            pDispatcher, SLOT(sendTransferError(QHostAddress,quint8,QByteArray,quint64)));
 
     //Connect TransferManager to GUI - notify of started/completed transfers
     connect(pTransferManager, SIGNAL(downloadStarted(QByteArray)), 
@@ -333,10 +338,14 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
             pBucketFlushThread, SLOT(flushBucket(QString,QByteArray*)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(assembleOutputFile(QString,QString,int,int)),
             pBucketFlushThread, SLOT(assembleOutputFile(QString,QString,int,int)), Qt::QueuedConnection);
-    connect(pTransferManager, SIGNAL(flushBucketDirect(QString,int,QByteArray*)),
-            pBucketFlushThread, SLOT(flushBucketDirect(QString,int,QByteArray*)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(flushBucketDirect(QString,int,QByteArray*,QByteArray)),
+            pBucketFlushThread, SLOT(flushBucketDirect(QString,int,QByteArray*,QByteArray)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(renameIncompleteFile(QString)),
             pBucketFlushThread, SLOT(renameIncompleteFile(QString)), Qt::QueuedConnection);
+    connect(pBucketFlushThread, SIGNAL(bucketFlushed(QByteArray,int)),
+            pTransferManager, SLOT(bucketFlushed(QByteArray,int)), Qt::QueuedConnection);
+    connect(pBucketFlushThread, SIGNAL(bucketFlushFailed(QByteArray,int)),
+            pTransferManager, SLOT(bucketFlushFailed(QByteArray,int)), Qt::QueuedConnection);
 
     //Connect bucketFlushThread to GUI
     connect(pBucketFlushThread, SIGNAL(fileAssemblyComplete(QString)),

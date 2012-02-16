@@ -71,6 +71,13 @@ void TransferManager::incomingDataPacket(quint8 transferPacket, QHostAddress fro
     }
 }
 
+void TransferManager::incomingTransferError(QHostAddress fromHost, QByteArray tth, quint64 offset, quint8 error)
+{
+    Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_DOWNLOAD);
+    if (t)
+        t->incomingTransferError(offset, error);
+}
+
 // incoming requests for files we share
 void TransferManager::incomingUploadRequest(quint8 protocol, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length)
 {
@@ -113,6 +120,7 @@ void TransferManager::filePathNameReply(QByteArray tth, QString filename, quint6
     t->createUploadObject(uploadTransferQueue.value(tth)->protocol);
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
     connect(t, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
+    connect(t, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)), this, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)));
     t->setFileName(filename);
     t->setFileSize(fileSize);
     t->setTTH(tth);
@@ -200,7 +208,7 @@ void TransferManager::startNextDownload()
             this, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)));
     connect(t, SIGNAL(flushBucket(QString,QByteArray*)), this, SIGNAL(flushBucket(QString,QByteArray*)));
     connect(t, SIGNAL(assembleOutputFile(QString,QString,int,int)), this, SIGNAL(assembleOutputFile(QString,QString,int,int)));
-    connect(t, SIGNAL(flushBucketDirect(QString,int,QByteArray*)), this, SIGNAL(flushBucketDirect(QString,int,QByteArray*)));
+    connect(t, SIGNAL(flushBucketDirect(QString,int,QByteArray*,QByteArray)), this, SIGNAL(flushBucketDirect(QString,int,QByteArray*,QByteArray)));
     connect(t, SIGNAL(renameIncompleteFile(QString)), this, SIGNAL(renameIncompleteFile(QString)));
     connect(t, SIGNAL(transferFinished(QByteArray)), this, SLOT(transferDownloadCompleted(QByteArray)));
     connect(t, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
@@ -415,6 +423,22 @@ void TransferManager::requestPeerProtocolCapability(QHostAddress peer, Transfer 
         peerProtocolDiscoveryWaitingPool.insert(peer, transferObject);
         emit requestProtocolCapability(peer);
     //}
+}
+
+void TransferManager::bucketFlushed(QByteArray tth, int bucketNo)
+{
+    Transfer* t = getTransferObjectPointer(tth, TRANSFER_TYPE_DOWNLOAD);
+    if (t)
+        t->bucketFlushed(bucketNo);
+    //qDebug() << "TM bucket flush"; << t;
+}
+
+void TransferManager::bucketFlushFailed(QByteArray tth, int bucketNo)
+{
+    Transfer* t = getTransferObjectPointer(tth, TRANSFER_TYPE_DOWNLOAD);
+    if (t)
+        t->bucketFlushFailed(bucketNo);
+    //qDebug() << "TM bucket flush fail" << t;
 }
 
 void TransferManager::setMaximumSimultaneousDownloads(int n)

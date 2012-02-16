@@ -37,6 +37,8 @@ public slots:
     void setFileSize(quint64 size);
     void startUploading();
     void startDownloading();
+    void pauseDownload();
+    void unpauseDownload();
     qint64 getBytesReceivedNotFlushed();
 
 private:

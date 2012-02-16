@@ -13,6 +13,9 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
     remoteHost = QHostAddress("0.0.0.0");
     currentActiveSegments = 0;
     hashTreeWindowEnd = 0;
+    bucketHashQueueLength = 0;
+    bucketFlushQueueLength = 0;
+    iowait = false;
 
     transferRateCalculationTimer = new QTimer();
     connect(transferRateCalculationTimer, SIGNAL(timeout()), this, SLOT(transferRateCalculation()));
@@ -22,6 +25,7 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
     transferTimer = new QTimer();
     connect(transferTimer, SIGNAL(timeout()), this, SLOT(transferTimerEvent()));
     transferTimer->setSingleShot(false);
+    transferTimer->setInterval(100);
 
     TTHSearchTimer = new QTimer();
     connect(TTHSearchTimer, SIGNAL(timeout()), this, SLOT(TTHSearchTimerEvent()));
@@ -58,6 +62,10 @@ DownloadTransfer::~DownloadTransfer()
 // We perform binary lookups on transferSegmentTable on the offset in the datagram header and dispatch accordingly.
 void DownloadTransfer::incomingDataPacket(quint8, quint64 offset, QByteArray data)
 {
+    // If the segment is critically IO bound, we start dropping packets as a last resort
+    if (Q_UNLIKELY(bucketHashQueueLength + bucketFlushQueueLength > HASH_BUCKET_QUEUE_CRITICAL_THRESHOLD))
+        return;
+
     // map are sorted in key ascending order
     // QMap::lowerBound will most likely find the segment just before the one we are interested in
     QMap<quint64, TransferSegmentTableStruct>::const_iterator i = transferSegmentTable.upperBound(offset);
@@ -91,6 +99,8 @@ void DownloadTransfer::requestHashBucket(QByteArray rootTTH, int bucketNumber, Q
 {
     if (bucketFlushStateBitmap.at(bucketNumber) == BucketNotFlushed)
     {
+        bucketHashQueueLength++;
+        congestionTest();
         emit hashBucketRequest(rootTTH, bucketNumber, *bucket);
         // This is to prevent double requests when bucket ends and segment ends coincide.
         // A failed hash check must reset this.
@@ -114,10 +124,13 @@ void DownloadTransfer::hashBucketReply(int bucketNumber, QByteArray bucketTTH)
         {
             transferSegmentStateBitmap[bucketNumber] = SegmentNotDownloaded;
             bucketFlushStateBitmap[bucketNumber] = BucketNotFlushed;
+
             // TODO: emit MISTAKE!
         }
     }
     // TODO: must check that tth tree item was received before requesting bucket hash.
+    bucketHashQueueLength--;
+    congestionTest();
 }
 
 // Our hash tree request's answers are sequentially dispatched to this entry point.
@@ -195,7 +208,7 @@ void DownloadTransfer::startTransfer()
         for (int i = 0; i <= lastBucketNumber; i++)
             bucketFlushStateBitmap.append(BucketNotFlushed);
 
-    transferTimer->start(100);
+    transferTimer->start();
     timerBrakes = 0;
 }
 
@@ -246,11 +259,13 @@ void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
 
     //emit flushBucket(tempFileName, downloadBucketTable->value(bucketNumber));
     //emit assembleOutputFile(TTHBase32, filePathName, bucketNumber, lastBucketNumber);
-    emit flushBucketDirect(filePathName, bucketNumber, downloadBucketTable->value(bucketNumber));
 
-    // just remove entry, bucket pointer gets deleted in BucketFlushThread
-    downloadBucketTable->remove(bucketNumber);
+    QByteArray* bucketPtr = downloadBucketTable->value(bucketNumber);
+    bucketFlushQueueLength++;
+    congestionTest();
+    downloadBucketTable->remove(bucketNumber); // just remove entry, bucket pointer gets deleted in BucketFlushThread
     transferSegmentStateBitmap[bucketNumber] = SegmentDownloaded;
+    emit flushBucketDirect(filePathName, bucketNumber, bucketPtr, TTH);
 
     int segmentsDone = 0;
     for (int i = 0; i < transferSegmentStateBitmap.length(); i++)
@@ -505,7 +520,6 @@ TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol 
     connect(transferTimer, SIGNAL(timeout()), download, SLOT(transferTimerEvent()));
     connect(download, SIGNAL(requestNextSegment(TransferSegment*)), this, SLOT(segmentCompleted(TransferSegment*)));
     connect(download, SIGNAL(transferRequestFailed(TransferSegment*)), this, SLOT(segmentFailed(TransferSegment*)));
-    //connect(download, SIGNAL(requestPeerProtocolCapability(QHostAddress,Transfer*)), this, SIGNAL(requestProtocolCapability(QHostAddress,Transfer*)));
     return download;
 }
 
@@ -582,4 +596,65 @@ int DownloadTransfer::getLastHashBucketNumberReceived()
         lastHashBucketReceived = i.key();
     }
     return lastHashBucketReceived;
+}
+
+void DownloadTransfer::incomingTransferError(quint64 offset, quint8 error)
+{
+    TransferSegment *t =0;
+    QMap<quint64, TransferSegmentTableStruct>::const_iterator i = transferSegmentTable.upperBound(offset);
+    if (Q_UNLIKELY(i == transferSegmentTable.constEnd()))
+        --i;
+    if (Q_UNLIKELY(i.key() <= offset && i.value().segmentEnd >= offset))
+        t = i.value().transferSegment;
+    else if (Q_LIKELY(i != transferSegmentTable.constBegin()))
+    {
+        --i;
+        if (Q_LIKELY(i.key() <= offset && i.value().segmentEnd >= offset))
+            t = i.value().transferSegment;
+    }
+    if (t)
+        segmentFailed(t);
+}
+
+void DownloadTransfer::bucketFlushed(int bucketNo)
+{
+    bucketFlushQueueLength--;
+    congestionTest();
+}
+
+void DownloadTransfer::bucketFlushFailed(int bucketNo)
+{
+    bucketFlushQueueLength--;
+    congestionTest();
+    transferSegmentStateBitmap[bucketNo] = SegmentNotDownloaded;
+    bucketFlushStateBitmap[bucketNo] = BucketNotFlushed;
+    // TODO: break the possible infinite download loop by stopping the transfer at some point.
+}
+
+void DownloadTransfer::congestionTest()
+{
+    qDebug() << "DownloadTransfer::congestionTest(): hash queue : bucket queue " << bucketHashQueueLength << bucketFlushQueueLength;
+    QHashIterator<QHostAddress, RemotePeerInfoStruct> i(remotePeerInfoTable);
+    if (!iowait && (bucketFlushQueueLength + bucketHashQueueLength > HASH_BUCKET_QUEUE_CONGESTION_THRESHOLD))
+    {
+        iowait = true;
+        status = TRANSFER_STATE_IOWAIT;
+        transferTimer->stop();
+        while (i.hasNext())
+        {
+            TransferSegment *s = i.next().value().transferSegment;
+            s->pauseDownload();
+        }
+    }
+    else if (iowait && (bucketFlushQueueLength + bucketHashQueueLength <= HASH_BUCKET_QUEUE_CONGESTION_THRESHOLD / 4))
+    {
+        iowait = false;
+        status = TRANSFER_STATE_RUNNING;
+        transferTimer->start();
+        while (i.hasNext())
+        {
+            TransferSegment *s = i.next().value().transferSegment;
+            s->unpauseDownload();
+        }
+    }
 }
