@@ -57,6 +57,7 @@ void DownloadQueueWidget::createWidgets()
     queueTable->setColumnWidth(0, 300);
     queueTable->setColumnWidth(1, 200);
     queueTable->setColumnWidth(3, 75);
+    queueTable->setWordWrap(false);
 
     queueTable->hideColumn(6);
 

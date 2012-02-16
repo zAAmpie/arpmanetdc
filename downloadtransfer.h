@@ -80,6 +80,7 @@ public slots:
     void abortTransfer();
     void addPeer(QHostAddress peer);
     int getTransferProgress();
+    int getSegmentCount();
     void incomingTransferError(quint64 offset, quint8 error);
 
     // Bucket flush callbacks

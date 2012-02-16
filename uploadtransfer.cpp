@@ -134,3 +134,8 @@ int UploadTransfer::getTransferProgress()
     int progress = (maxUploadRequestOffset * 100) / fileSize;
     return progress > 100 ? 100 : progress;
 }
+
+int UploadTransfer::getSegmentCount()
+{
+    return 1;
+}

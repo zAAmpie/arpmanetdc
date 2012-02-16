@@ -34,6 +34,7 @@ void DownloadFinishedWidget::createWidgets()
     finishedTable->horizontalHeader()->setHighlightSections(false);
     //finishedTable->horizontalHeader()->setStretchLastSection(true);
     finishedTable->setTextElideMode(Qt::ElideRight);
+    finishedTable->setWordWrap(false);
 
     //Model
     finishedModel = new QStandardItemModel(0, 5, finishedTable);

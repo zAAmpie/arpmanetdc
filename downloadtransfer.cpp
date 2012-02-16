@@ -598,6 +598,11 @@ int DownloadTransfer::getLastHashBucketNumberReceived()
     return lastHashBucketReceived;
 }
 
+int DownloadTransfer::getSegmentCount()
+{
+    return currentActiveSegments;
+}
+
 void DownloadTransfer::incomingTransferError(quint64 offset, quint8 error)
 {
     TransferSegment *t =0;

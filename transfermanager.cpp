@@ -360,8 +360,11 @@ QList<TransferItemStatus> TransferManager::getGlobalTransferStatus()
         tis.transferProgress = it.peekNext().value()->getTransferProgress();
         tis.transferRate = it.peekNext().value()->getTransferRate();
         tis.uptime = it.peekNext().value()->getUptime();
-        tis.host = *it.next().value()->getRemoteHost();
+        tis.host = *it.peekNext().value()->getRemoteHost();
+        tis.onlineSegments = it.peekNext().value()->getSegmentCount();
         status.append(tis);
+        
+        it.next();
     }
     return status;
 }

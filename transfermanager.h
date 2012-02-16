@@ -52,6 +52,7 @@ typedef struct
     quint64 transferRate;
     QHostAddress host;
     qint64 uptime;
+    int onlineSegments;
 } TransferItemStatus;
 
 class TransferManager : public QObject

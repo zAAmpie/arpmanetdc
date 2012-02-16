@@ -20,6 +20,8 @@ void Transfer::bucketFlushed(int) {}
 void Transfer::bucketFlushFailed(int) {}
 void Transfer::incomingTransferError(quint64, quint8) {}
 
+int Transfer::getSegmentCount() {return 0;}
+
 // ------------------------------------------------------------------------
 
 void Transfer::setFileName(QString filename)

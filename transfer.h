@@ -66,6 +66,7 @@ public slots:
     qint64 getUptime();
     int getTransferStatus();
     virtual int getTransferProgress();
+    virtual int getSegmentCount();
     virtual void addPeer(QHostAddress peer);
     void setProtocolOrderPreference(QByteArray p);
     virtual void hashBucketReply(int bucketNumber, QByteArray bucketTTH);
