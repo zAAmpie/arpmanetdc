@@ -204,7 +204,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(pTransferManager, SIGNAL(requestProtocolCapability(QHostAddress)),
             pDispatcher, SLOT(sendProtocolCapabilityQuery(QHostAddress)), Qt::QueuedConnection);
     connect(pDispatcher, SIGNAL(incomingTransferError(QHostAddress,QByteArray,quint64,quint8)),
-            pTransferManager, SLOT(incomingTransferError(fromHost,tth,offset,error)), Qt::QueuedConnection);
+            pTransferManager, SLOT(incomingTransferError(QHostAddress,QByteArray,quint64,quint8)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)),
             pDispatcher, SLOT(sendTransferError(QHostAddress,quint8,QByteArray,quint64)));
 
@@ -514,6 +514,9 @@ ArpmanetDC::~ArpmanetDC()
         pDispatcher->deleteLater();
         pBucketFlushThread->deleteLater();
         pShare->deleteLater();
+
+        delete pAdditionalInfoHistoryList;
+        delete pTypeIconList;
         
         //saveSettings();
         delete pSettings;

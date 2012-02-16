@@ -6,6 +6,8 @@ NetworkTopology::NetworkTopology(QObject *parent) :
     unbootstrapped = true;
     not_multicast = true;
     incomingAnnouncementCount = 0;
+    startupTime = QDateTime::currentMSecsSinceEpoch();
+
     bootstrapTimeoutTimer = new QTimer(this);
     bootstrapTimeoutTimer->setSingleShot(true);
     connect(bootstrapTimeoutTimer, SIGNAL(timeout()), this, SLOT(bootstrapTimeoutEvent()));
@@ -35,6 +37,14 @@ NetworkTopology::~NetworkTopology()
     {
         QList<QHostAddress> activeNodes = getForwardingPeers(100);
         emit saveLastKnownPeers(activeNodes);
+    }
+
+    QHashIterator<QByteArray, HostIntPair*> ib(buckets);
+    while (ib.hasNext())
+    {
+        delete ib.peekNext().value()->first;
+        delete ib.peekNext().value()->second;
+        delete ib.next().value();
     }
 }
 
