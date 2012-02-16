@@ -70,6 +70,7 @@ private:
     QString stateString(int state);
     QString progressString(int state, int progress);
     int typeFromString(QString typeStr);
+    QString segmentStatusString(SegmentStatusStruct s);
 
     //Objects
     QWidget *pWidget;

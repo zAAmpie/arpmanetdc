@@ -21,6 +21,7 @@ void Transfer::bucketFlushFailed(int) {}
 void Transfer::incomingTransferError(quint64, quint8) {}
 
 int Transfer::getSegmentCount() {return 0;}
+SegmentStatusStruct Transfer::getSegmentStatuses() {SegmentStatusStruct s; return s;}
 
 // ------------------------------------------------------------------------
 

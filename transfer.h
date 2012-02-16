@@ -27,6 +27,15 @@
 #include <QDateTime>
 #include "util.h"
 
+struct SegmentStatusStruct
+{
+    int initializing;
+    int running;
+    int finished;
+    int stalled;
+    int failed;
+};
+
 class Transfer : public QObject
 {
     Q_OBJECT
@@ -67,6 +76,7 @@ public slots:
     int getTransferStatus();
     virtual int getTransferProgress();
     virtual int getSegmentCount();
+    virtual SegmentStatusStruct getSegmentStatuses();
     virtual void addPeer(QHostAddress peer);
     void setProtocolOrderPreference(QByteArray p);
     virtual void hashBucketReply(int bucketNumber, QByteArray bucketTTH);

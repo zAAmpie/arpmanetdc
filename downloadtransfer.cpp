@@ -607,6 +607,39 @@ int DownloadTransfer::getSegmentCount()
     return currentActiveSegments;
 }
 
+SegmentStatusStruct DownloadTransfer::getSegmentStatuses()
+{
+    SegmentStatusStruct s = {0,0,0,0,0};
+        
+    //Iterate through segments and test statuses
+    QMapIterator<quint64, TransferSegmentTableStruct> i(transferSegmentTable);
+    while (i.hasNext())
+    {
+        i.next();
+        int status = i.value().transferSegment->getSegmentStatus();
+        switch (status)
+        {
+        case TRANSFER_STATE_RUNNING:
+            s.running++;
+            break;
+        case TRANSFER_STATE_FINISHED:
+            s.finished++;
+            break;
+        case TRANSFER_STATE_STALLED:
+            s.stalled++;
+            break;
+        case TRANSFER_STATE_INITIALIZING:
+            s.initializing++;
+            break;
+        case TRANSFER_STATE_FAILED:
+            s.failed++;
+            break;
+        }
+    }
+
+    return s;
+}
+
 void DownloadTransfer::incomingTransferError(quint64 offset, quint8 error)
 {
     TransferSegment *t =0;

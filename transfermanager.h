@@ -53,6 +53,7 @@ typedef struct
     QHostAddress host;
     qint64 uptime;
     int onlineSegments;
+    SegmentStatusStruct segmentStatuses;
 } TransferItemStatus;
 
 class TransferManager : public QObject

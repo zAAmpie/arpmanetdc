@@ -196,7 +196,7 @@ void TransferWidget::returnGlobalTransferStatus(QList<TransferItemStatus> status
             row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(q.fileSize)));
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, stateString(s.transferStatus)));
             row.append(new CStandardItem(CStandardItem::TimeDurationType, timeFromInt(s.uptime)));
-            row.append(new CStandardItem(CStandardItem::IntegerType, tr("%1").arg(s.onlineSegments)));
+            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, segmentStatusString(s.segmentStatuses)));
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, base32TTH.data()));
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, s.host.toString()));
             transferListModel->appendRow(row);
@@ -211,7 +211,7 @@ void TransferWidget::returnGlobalTransferStatus(QList<TransferItemStatus> status
             transferListModel->itemFromIndex(transferListModel->index(row, 4))->setText(bytesToSize(q.fileSize));
             transferListModel->itemFromIndex(transferListModel->index(row, 5))->setText(stateString(s.transferStatus));
             transferListModel->itemFromIndex(transferListModel->index(row, 6))->setText(timeFromInt(s.uptime));
-            transferListModel->itemFromIndex(transferListModel->index(row, 7))->setText(tr("%1").arg(s.onlineSegments));
+            transferListModel->itemFromIndex(transferListModel->index(row, 7))->setText(segmentStatusString(s.segmentStatuses));
             transferListModel->itemFromIndex(transferListModel->index(row, 8))->setText(base32TTH.data());
             transferListModel->itemFromIndex(transferListModel->index(row, 9))->setText(s.host.toString());
         }                    
@@ -308,6 +308,11 @@ QString TransferWidget::stateString(int state)
             return "IO Wait";
     }
     return "";
+}
+
+QString TransferWidget::segmentStatusString(SegmentStatusStruct s)
+{
+    return tr("%1-%2-%3-%4-%5").arg(s.running).arg(s.stalled).arg(s.finished).arg(s.initializing).arg(s.failed);
 }
 
 QString TransferWidget::progressString(int type, int progress)

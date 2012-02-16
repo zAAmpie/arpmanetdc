@@ -362,6 +362,7 @@ QList<TransferItemStatus> TransferManager::getGlobalTransferStatus()
         tis.uptime = it.peekNext().value()->getUptime();
         tis.host = *it.peekNext().value()->getRemoteHost();
         tis.onlineSegments = it.peekNext().value()->getSegmentCount();
+        tis.segmentStatuses = it.peekNext().value()->getSegmentStatuses();
         status.append(tis);
         
         it.next();

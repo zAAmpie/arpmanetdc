@@ -81,6 +81,7 @@ public slots:
     void addPeer(QHostAddress peer);
     int getTransferProgress();
     int getSegmentCount();
+    SegmentStatusStruct getSegmentStatuses();
     void incomingTransferError(quint64 offset, quint8 error);
 
     // Bucket flush callbacks
