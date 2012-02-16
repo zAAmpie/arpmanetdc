@@ -236,8 +236,8 @@ qint64 FSTPTransferSegment::getBytesReceivedNotFlushed()
     if (pDownloadBucketTable)
     {
         //Get amount of data received for all buckets not flushed
-        //foreach (QByteArray *data, *pDownloadBucketTable)
-        //    total += data->size();
+        foreach (QByteArray *data, *pDownloadBucketTable)
+            total += data->size();
     }
     
     return total;
