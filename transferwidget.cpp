@@ -301,6 +301,8 @@ QString TransferWidget::stateString(int state)
             return "Aborting";
         case TRANSFER_STATE_FINISHED:
             return "Finished";
+        case TRANSFER_STATE_IOWAIT:
+            return "IO Wait";
     }
     return "";
 }

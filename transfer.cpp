@@ -16,6 +16,8 @@ void Transfer::hashBucketReply(int, QByteArray){}
 void Transfer::TTHTreeReply(QByteArray){}
 void Transfer::receivedPeerProtocolCapability(QHostAddress, quint8){}
 void Transfer::createUploadObject(quint8){}
+void Transfer::bucketFlushed(int) {}
+void Transfer::bucketFlushFailed(int) {}
 
 // ------------------------------------------------------------------------
 

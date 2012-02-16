@@ -31,10 +31,13 @@ public:
 
 signals:
     void fileAssemblyComplete(QString fileName);
+    void bucketFlushed(QByteArray tth, int bucketNo);
+    void bucketFlushFailed(QByteArray tth, int bucketNo);
+
 public slots:
     void flushBucket(QString filename, QByteArray *bucket);
     void assembleOutputFile(QString tmpfilebase, QString outfile, int startbucket, int lastbucket);
-    void flushBucketDirect(QString filename, int bucketno, QByteArray *bucket);
+    void flushBucketDirect(QString filename, int bucketno, QByteArray *bucket, QByteArray tth);
     void renameIncompleteFile(QString filename);
 };
 

@@ -81,6 +81,10 @@ public slots:
     void addPeer(QHostAddress peer);
     int getTransferProgress();
 
+    // Bucket flush callbacks
+    void bucketFlushed(int bucketNo);
+    void bucketFlushFailed(int bucketNo);
+
 private slots:
     void transferTimerEvent();
     void TTHSearchTimerEvent();
@@ -99,6 +103,7 @@ private:
     TransferSegment* createTransferSegment(QHostAddress peer);
     void downloadNextAvailableChunk(TransferSegment *download, int length = 1);
     int getLastHashBucketNumberReceived();
+    void congestionTest();
 
     QHash<int, QByteArray*> *downloadBucketTable;
     QMap<int, QByteArray*> downloadBucketHashLookupTable;
@@ -114,6 +119,9 @@ private:
     int timerBrakes;
     int hashTreeWindowEnd;
     int tthSearchInterval;
+    int bucketHashQueueLength;
+    int bucketFlushQueueLength;
+    bool iowait;
 
     QMap<quint64, TransferSegmentTableStruct> transferSegmentTable;
     QByteArray transferSegmentStateBitmap;

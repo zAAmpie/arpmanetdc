@@ -71,7 +71,7 @@ signals:
     void sendDownloadRequest(quint8 protocolPreference, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length);
     void flushBucket(QString filename, QByteArray *bucket);
     void assembleOutputFile(QString tmpfilebase, QString outfile, int startbucket, int lastbucket);
-    void flushBucketDirect(QString outfile, int bucketno, QByteArray *bucket);
+    void flushBucketDirect(QString outfile, int bucketno, QByteArray *bucket, QByteArray tth);
     void renameIncompleteFile(QString filename);
 
     // Request hashing of a bucket that has finished downloading
@@ -118,6 +118,10 @@ public slots:
     // Protocol capability
     void incomingProtocolCapabilityResponse(QHostAddress fromHost, char protocols);
     void requestPeerProtocolCapability(QHostAddress peer, Transfer* transferObject);
+
+    // Bucket flush callbacks
+    void bucketFlushed(QByteArray tth, int bucketNo);
+    void bucketFlushFailed(QByteArray tth, int bucketNo);
 
     QList<TransferItemStatus> getGlobalTransferStatus();
 

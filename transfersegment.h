@@ -58,6 +58,8 @@ public slots:
     void setRemoteHost(QHostAddress host);
     virtual void startUploading() = 0;
     virtual void startDownloading() = 0;
+    virtual void pauseDownload() = 0;
+    virtual void unpauseDownload() = 0;
     void setDownloadBucketTablePointer(QHash<int, QByteArray*> *dbt);
     //virtual void receivedPeerProtocolCapability(char protocols);
 
@@ -76,6 +78,7 @@ protected:
     qint64 segmentStartTime;
     qint64 maxUploadRequestOffset;
     int status;
+    int prev_status;
 
     int lastBucketNumber;
     int lastBucketSize;
@@ -86,7 +89,7 @@ protected:
     Transfer *pParent;
 
     virtual void checkSendDownloadRequest(quint8 protocol, QHostAddress peer, QByteArray TTH,
-                                         qint64 requestingOffset, qint64 requestingLength);
+                                         qint64 requestingOffset, qint64 requestingLength, int status);
     virtual int calculateBucketNumber(quint64 fileOffset);
 };
 

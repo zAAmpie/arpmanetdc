@@ -95,12 +95,22 @@ void uTPTransferSegment::startDownloading()
 {
     qDebug() << "uTPTransferSegment::startDownloading()";
     segmentOffset = 0;
-    checkSendDownloadRequest(uTPProtocol, remoteHost, TTH, segmentStart, segmentLength);
+    checkSendDownloadRequest(uTPProtocol, remoteHost, TTH, segmentStart, segmentLength, status);
     if (!connect_called)
     {
         UTP_Connect(utpSocket);
         connect_called = true;
     }
+}
+
+void uTPTransferSegment::pauseDownload()
+{
+
+}
+
+void uTPTransferSegment::unpauseDownload()
+{
+
 }
 
 qint64 uTPTransferSegment::getBytesReceivedNotFlushed()

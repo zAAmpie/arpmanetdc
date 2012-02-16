@@ -45,7 +45,7 @@ signals:
     void transferFinished(QByteArray tth);
     void flushBucket(QString filename, QByteArray *bucket);
     void assembleOutputFile(QString tmpfilebase, QString outfile, int startbucket, int lastbucket);
-    void flushBucketDirect(QString outfile, int bucketno, QByteArray *bucket);
+    void flushBucketDirect(QString outfile, int bucketno, QByteArray *bucket, QByteArray tth);
     void renameIncompleteFile(QString filename);
     void requestProtocolCapability(QHostAddress peer, Transfer *obj);
 
@@ -77,6 +77,10 @@ public slots:
     virtual void pauseTransfer() = 0;
     virtual void abortTransfer() = 0;
     virtual void transferRateCalculation() = 0;
+
+    // Bucket flush callbacks
+    virtual void bucketFlushed(int bucketNo);
+    virtual void bucketFlushFailed(int bucketNo);
 
 protected:
     QByteArray TTH;
