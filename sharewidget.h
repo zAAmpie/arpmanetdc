@@ -48,6 +48,9 @@ private slots:
     //Magnet request from ShareSearch
     void returnTTHFromPath(QString filePath, QByteArray tthRoot, quint64 fileSize);
 
+    //Return slot for current shares in the DB
+    void returnShares(QList<QDir> list);
+
     //Item dropped in container
     void droppedURLList(QList<QUrl> list);
 
@@ -89,6 +92,9 @@ signals:
 
     //Request TTH from filePath for magnets
     void requestTTHFromPath(QString filePath);
+
+    //Request total shares
+    void requestShares();
 
     //===== CONTAINERS =====
 

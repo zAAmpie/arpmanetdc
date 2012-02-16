@@ -227,14 +227,15 @@ void ShareSearch::updateShares(QList<QDir> *dirList) //500 msecs to update Share
     }
 }
 
-QList<QDir> *ShareSearch::getShares()
+QList<QDir> ShareSearch::getShares()
 {
     //Query whether a file has been modified - returns results if it has
     QString queryStr = tr("SELECT [path] FROM SharePaths;");
 
-    QList<QString> results;
     sqlite3 *db = pParent->database();    
     sqlite3_stmt *statement;
+
+    QList<QDir> shares;
 
     //Prepare a query
     QByteArray query;
@@ -253,7 +254,7 @@ QList<QDir> *ShareSearch::getShares()
             {
                 for (int col = 0; col < cols; col++)
                 {
-                    results.append(QString::fromUtf16((const unsigned short *)sqlite3_column_text16(statement, col)));
+                    shares.append(QDir(QString::fromUtf16((const unsigned short *)sqlite3_column_text16(statement, col))));
                 }                
             }
             //Otherwise, break - usually means SQLITE_DONE
@@ -270,18 +271,14 @@ QList<QDir> *ShareSearch::getShares()
     if (error != "not an error")
         QString error = "error";
 
-    //Report results
-    QList<QDir> *shares = new QList<QDir>();
-    while (!results.isEmpty())
-        shares->append(QDir(results.takeFirst()));
-
     return shares;
 }
 
 void ShareSearch::updateShares()
 {
     //Convenience function to update existing shares
-    updateShares(getShares());
+    QList<QDir> *returnedValue = new QList<QDir>(getShares());
+    updateShares(returnedValue);
 }
 
 //------------------------------============================== GENERIC DATABASE COMMANDS ==============================------------------------------
@@ -490,7 +487,7 @@ void ShareSearch::hashFileThreadDone(QString filePath, QString fileName, qint64 
     pTotalShare += fileSize;
 
     //Emit signal for status
-    emit fileHashed(filePath, fileSize);
+    emit fileHashed(filePath, fileSize, pTotalShare);
     
     //Continue with next file in the list
     startFileHashing();
@@ -1131,6 +1128,12 @@ void ShareSearch::requestTTHFromPath(QString filePath)
         //Hash file
         emit calculateTTHFromPath(filePath);
     }
+}
+
+//Request the current shares
+void ShareSearch::requestShares()
+{
+    emit returnShares(getShares());
 }
 
 //------------------------------============================== GET HASHES FROM FILEPATHS (CONTAINERTHREAD) ==============================------------------------------
@@ -2031,20 +2034,18 @@ QString ShareSearch::getRelativePath(QString absoluteRootDir, QString absoluteFi
     return absoluteFilePath.remove(absoluteRootDir, Qt::CaseInsensitive);
 }
 
+//Get share size from DB
+void ShareSearch::requestTotalShare(bool fromDB)
+{
+    emit returnTotalShare(totalShare(fromDB));
+}
+
 quint64 ShareSearch::totalShare(bool fromDB)
 {
     if (fromDB)
         pTotalShare = getTotalShareFromDB();
 
     return pTotalShare;
-}
-
-QString ShareSearch::totalShareStr(bool fromDB)
-{
-    if (fromDB)
-        pTotalShare = getTotalShareFromDB();
-        
-    return bytesToSize(pTotalShare);
 }
 
 void ShareSearch::setTotalShare(quint64 size)

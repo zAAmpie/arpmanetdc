@@ -198,11 +198,12 @@ private slots:
     void returnHostCount(int count);
 
     //ShareSearch slot
-    void fileHashed(QString fileName, quint64 fileSize);
+    void fileHashed(QString fileName, quint64 fileSize, quint64 totalShare);
     void directoryParsed(QString path);
     void hashingDone(int msecs, int numFiles);
     void parsingDone(int msecs);
     void searchWordListReceived(QStandardItemModel *wordList);
+    void returnTotalShare(quint64 size);
 
     //FTP Update slots
     void ftpReturnUpdateResults(bool result, QString newVersion);
@@ -283,6 +284,9 @@ signals:
     void removeQueuedDownload(QByteArray tth);
     void requestQueueList();
     void setQueuedDownloadPriority(QByteArray tth, QueuePriority priority);
+
+    //Signal for share size
+    void requestTotalShare(bool fromDB = false);
 
     //Signals for finished downloads
     void clearFinishedDownloads();

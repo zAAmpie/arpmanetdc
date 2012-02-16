@@ -69,15 +69,12 @@ class ShareSearch : public QObject
 public:
     ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent);
     ~ShareSearch();
-
-    //Gets/Sets the total shares
-    quint64 totalShare(bool fromDB = false);
-    QString totalShareStr(bool fromDB = false);
-    void setTotalShare(quint64);
-
-    //Blocking function to get shares from database
-    QList<QDir> *getShares(); 
+    
 public slots:
+    //----------========== GET FUNCTIONS ==========----------
+
+    void requestTotalShare(bool fromDB = false);
+
     //----------========== SHARE QUERIES (DISPATCHER) ==========----------
 
     //String query
@@ -99,6 +96,9 @@ public slots:
 
     //Gets the hash from a filepath if it exists in the database
     void requestTTHFromPath(QString filePath);
+
+    //Request the current share paths
+    void requestShares();
 
     //----------========== GET HASHES FROM FILE PATHS (CONTAINERTHREAD) ==========----------
 
@@ -212,6 +212,8 @@ private slots:
     void garbageCollectSearchHistory();
 
 signals:
+    void returnTotalShare(quint64 size);
+
     //----------========== SEARCH QUERIES (DISPATCHER) ==========----------
     
     //Signal to return a search result
@@ -230,8 +232,12 @@ signals:
 
     //Signal the reply of the hash
     void returnTTHFromPath(QString filePath, QByteArray tthRoot, quint64 fileSize);
+
     //Signal hashFileThread to calculate hash
     void calculateTTHFromPath(QString filePath);
+
+    //Signal return of share data
+    void returnShares(QList<QDir> shares);
 
     //----------========== GET HASHES FROM FILE PATHS (CONTAINERTHREAD) ==========----------
 
@@ -291,7 +297,7 @@ signals:
     //----------========== PUBLIC HASHING / PARSING (GUI) ==========----------
     
     //Signal to show a file has completed hashing
-    void fileHashed(QString fileName, quint64 fileSize);
+    void fileHashed(QString fileName, quint64 fileSize, quint64 totalShare);
     
     //Signal to show a directory has been parsed
     void directoryParsed(QString path);
@@ -317,6 +323,13 @@ signals:
     void stopParsingThread();
 
 private:
+    //Blocking function to get shares from database
+    QList<QDir> getShares(); 
+
+    //Gets/Sets the total shares
+    quint64 totalShare(bool fromDB = false);
+    void setTotalShare(quint64);
+
     //Functions to start threads
     void startHashFileThread(QString filePath, QString rootDir);
     void startParseDirectoryThread(QDir directory);

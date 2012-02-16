@@ -60,6 +60,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     qRegisterMetaType<ContainerLookupReturnStruct>("ContainerLookupReturnStruct");
     qRegisterMetaType<QList<ContainerLookupReturnStruct> >("QList<ContainerLookupReturnStruct>");
     qRegisterMetaType<QList<TransferItemStatus> >("QList<TransferItemStatus>");
+    qRegisterMetaType<QList<QDir> >("QList<QDir>");
 
     //Set database pointer to zero at start
     db = 0;
@@ -253,13 +254,14 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     pShare = new ShareSearch(MAX_SEARCH_RESULTS, this);
 
     //Connect ShareSearch to GUI - share files on this computer and hash them
-    connect(pShare, SIGNAL(fileHashed(QString, quint64)), this, SLOT(fileHashed(QString, quint64)), Qt::QueuedConnection);
+    connect(pShare, SIGNAL(fileHashed(QString, quint64, quint64)), this, SLOT(fileHashed(QString, quint64, quint64)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(directoryParsed(QString)), this, SLOT(directoryParsed(QString)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(hashingDone(int, int)), this, SLOT(hashingDone(int, int)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(parsingDone(int)), this, SLOT(parsingDone(int)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(returnQueueList(QHash<QByteArray, QueueStruct> *)), this, SLOT(returnQueueList(QHash<QByteArray, QueueStruct> *)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(returnFinishedList(QHash<QByteArray, FinishedDownloadStruct> *)), this, SLOT(returnFinishedList(QHash<QByteArray, FinishedDownloadStruct> *)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(searchWordListReceived(QStandardItemModel *)), this, SLOT(searchWordListReceived(QStandardItemModel *)), Qt::QueuedConnection);
+    connect(pShare, SIGNAL(returnTotalShare(quint64)), this, SLOT(returnTotalShare(quint64)), Qt::QueuedConnection);
     connect(this, SIGNAL(updateShares()), pShare, SLOT(updateShares()), Qt::QueuedConnection);
     connect(this, SIGNAL(requestQueueList()), pShare, SLOT(requestQueueList()), Qt::QueuedConnection);
     connect(this, SIGNAL(setQueuedDownloadPriority(QByteArray, QueuePriority)), pShare, SLOT(setQueuedDownloadPriority(QByteArray, QueuePriority)), Qt::QueuedConnection);
@@ -273,6 +275,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(this, SIGNAL(saveAutoCompleteWordList(QString)), pShare, SLOT(saveAutoCompleteWordList(QString)), Qt::QueuedConnection);
     connect(this, SIGNAL(saveContainers(QHash<QString, ContainerContentsType>, QString)), pShare, SIGNAL(saveContainers(QHash<QString, ContainerContentsType>, QString)), Qt::QueuedConnection);
     connect(this, SIGNAL(processContainer(QHostAddress, QString, QString)), pShare, SLOT(processContainer(QHostAddress, QString, QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(requestTotalShare(bool)), pShare, SLOT(requestTotalShare(bool)), Qt::QueuedConnection);
    
     //Connect ShareSearch to Dispatcher - reply to search request from other clients
     connect(pShare, SIGNAL(returnSearchResult(QHostAddress, QByteArray, quint64, QByteArray)), 
@@ -1359,7 +1362,7 @@ void ArpmanetDC::searchButtonPressed(quint64 id, QString searchStr, QByteArray s
     searchWidgetIDHash.remove(searchWidgetIDHash.key(sWidget));
     searchWidgetIDHash.insert(id, sWidget);
 
-    pShare->querySearchString(QHostAddress("127.0.0.1"), QByteArray("ME!"), id, searchPacket);
+    //pShare->querySearchString(QHostAddress("127.0.0.1"), QByteArray("ME!"), id, searchPacket);
 
     tabs->setTabText(tabs->indexOf(sWidget->widget()), tr("Search - %1").arg(searchStr.left(20)));
 
@@ -1457,11 +1460,11 @@ void ArpmanetDC::pmSent(QString otherNick, QString msg, PMWidget *pmWidget)
     pHub->sendPrivateMessage(otherNick, msg);
 }
 
-void ArpmanetDC::fileHashed(QString fileName, quint64 fileSize)
+void ArpmanetDC::fileHashed(QString fileName, quint64 fileSize, quint64 totalShare)
 {
     //Show on GUI when file has finished hashing
     setStatus(tr("Finished hashing file: %1").arg(fileName));
-    shareSizeLabel->setText(tr("Share: %1").arg(pShare->totalShareStr()));
+    shareSizeLabel->setText(tr("Share: %1").arg(totalShare));
    
     pFilesHashedSinceUpdate++;
     pFileSizeHashedSinceUpdate += fileSize;
@@ -1483,14 +1486,12 @@ void ArpmanetDC::hashingDone(int msecs, int numFiles)
 
     //Show on GUI when hashing is completed
     hashRateTimer->stop();
-    setStatus(tr("Shares updated in %1").arg(timeStr));
-    quint64 totalShare = pShare->totalShare(true);
-    shareSizeLabel->setText(tr("Share: %1").arg(bytesToSize(totalShare)));
-    shareSizeLabel->setToolTip(tr("Share size: %1\nFiles shared: %2").arg(pShare->totalShareStr(false)).arg(numFiles));
-    hashingProgressBar->setRange(0,1);
+    pFilesHashedSinceUpdate = numFiles;
 
-    //Set hub share size
-    pHub->setTotalShareSize(totalShare);
+    emit requestTotalShare(true);
+
+    setStatus(tr("Shares updated in %1").arg(timeStr));
+    hashingProgressBar->setRange(0,1);
 
     //Start processing containers if there are outstanding
     if (saveSharesPressed)
@@ -1499,7 +1500,6 @@ void ArpmanetDC::hashingDone(int msecs, int numFiles)
         saveSharesPressed = false;
         emit saveContainers(pContainerHash, pContainerDirectory);
     }
-
 }
 
 void ArpmanetDC::parsingDone(int msecs)
@@ -1509,6 +1509,17 @@ void ArpmanetDC::parsingDone(int msecs)
     //Show on GUI when directory parsing is completed
     setStatus(tr("Finished directory/path parsing in %1. Checking for new/modified files...").arg(timeStr));
     hashingProgressBar->setTopText("Hashing");
+}
+
+//Slot called to return total share size from DB
+void ArpmanetDC::returnTotalShare(quint64 size)
+{
+    //Set labels
+    shareSizeLabel->setText(tr("Share: %1").arg(bytesToSize(size)));
+    shareSizeLabel->setToolTip(tr("Share size: %1\nFiles shared: %2").arg(bytesToSize(size)).arg(pFilesHashedSinceUpdate));
+
+    //Set hub share size
+    pHub->setTotalShareSize(size);
 }
 
 void ArpmanetDC::downloadCompleted(QByteArray tth)
@@ -1542,7 +1553,7 @@ void ArpmanetDC::downloadCompleted(QByteArray tth)
         //Insert the file into the hash for processing
         QueueStruct s(file);
         s.tthRoot = file.tthRoot;
-        pContainerProcessHash.insert(file.filePath + file.fileName, s);
+        pContainerProcessHash.insert(file.filePath/* + file.fileName*/, s);
     }
     
     //Delete from queue
@@ -2403,7 +2414,9 @@ void ArpmanetDC::fileAssemblyComplete(QString fileName)
         if (pContainerProcessHash.contains(fileName))
         {
             QueueStruct file = pContainerProcessHash.value(fileName);
-            emit processContainer(file.fileHost, file.filePath + file.fileName, file.filePath);
+            QString filePath = file.filePath;
+            filePath.remove(file.fileName);
+            emit processContainer(file.fileHost, file.filePath/* + file.fileName*/, filePath);
         }
     }
 

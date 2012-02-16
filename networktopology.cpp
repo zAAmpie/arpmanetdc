@@ -223,14 +223,15 @@ QByteArray NetworkTopology::getBucket(QByteArray bucketid)
     if (!buckets.contains(bucketid))
         return bucket;
 
-    int count = buckets.value(bucketid)->first->count();
+    HostIntPair *bucketHostPair = buckets.value(bucketid);
+    int count = bucketHostPair->first->size();
     if (count > 5)
         count = 5;
 
     for (int i = 0; i < count; i++)
     {
-        QHostAddress host = buckets.value(bucketid)->first->at(i);
-        quint64 tmp = (currentTime - buckets.value(bucketid)->second->at(i)) / 1000;
+        QHostAddress host = bucketHostPair->first->at(i);
+        quint64 tmp = (currentTime - bucketHostPair->second->at(i)) / 1000;
         quint16 age;
         if (tmp < 65536)
             age = (quint16)tmp;

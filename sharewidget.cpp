@@ -11,6 +11,8 @@ ShareWidget::ShareWidget(ShareSearch *share, ArpmanetDC *parent)
     //Shares signals/slots
     connect(this, SIGNAL(updateShares(QList<QDir> *)), pShare, SLOT(updateShares(QList<QDir> *)), Qt::QueuedConnection);
     connect(this, SIGNAL(updateShares()), pShare, SLOT(updateShares()), Qt::QueuedConnection);
+    connect(this, SIGNAL(requestShares()), pShare, SLOT(requestShares()), Qt::QueuedConnection);
+    connect(pShare, SIGNAL(returnShares(QList<QDir>)), this, SLOT(returnShares(QList<QDir>)), Qt::QueuedConnection);
 
     //Magnet links signals/slots
     connect(this, SIGNAL(requestTTHFromPath(QString)), pShare, SLOT(requestTTHFromPath(QString)), Qt::QueuedConnection);
@@ -39,19 +41,7 @@ ShareWidget::ShareWidget(ShareSearch *share, ArpmanetDC *parent)
     emit requestContainers(pContainerDirectory);
 
     //Populate share list
-    QList<QDir> *shares = pShare->getShares();
-    while (!shares->isEmpty())
-    {
-        QDir currentPath = shares->takeFirst();
-        pSharesList.append(currentPath.absolutePath());
-        changeRoot(currentPath.absolutePath());
-        while (currentPath.cdUp())
-            changeRoot(currentPath.absolutePath());
-
-        //QModelIndex index = fileModel->index(currentPath.absolutePath(), 0);
-        //bool res = checkProxyModel->setSourceIndexCheckedState(index, true);
-    }
-    finishedLoading = true;
+    emit requestShares();
 }
 
 ShareWidget::~ShareWidget()
@@ -574,6 +564,23 @@ void ShareWidget::returnTTHFromPath(QString filePath, QByteArray tthRoot, quint6
 
         QWhatsThis::showText(contextMenu->pos(), tr("Magnet link copied to clipboard"));
     }
+}
+
+//Return slot for current shares in the DB
+void ShareWidget::returnShares(QList<QDir> shares)
+{
+    while (!shares.isEmpty())
+    {
+        QDir currentPath = shares.takeFirst();
+        pSharesList.append(currentPath.absolutePath());
+        changeRoot(currentPath.absolutePath());
+        while (currentPath.cdUp())
+            changeRoot(currentPath.absolutePath());
+
+        //QModelIndex index = fileModel->index(currentPath.absolutePath(), 0);
+        //bool res = checkProxyModel->setSourceIndexCheckedState(index, true);
+    }
+    finishedLoading = true;
 }
 
 //Return the containers requested
