@@ -144,7 +144,7 @@ public slots:
     void setMaximumSimultaneousUploads(int n);
 
 private:
-    Transfer* getTransferObjectPointer(QByteArray &tth, int transferType, QHostAddress &hostAddr = QHostAddress("0.0.0.0"));
+    Transfer* getTransferObjectPointer(QByteArray &tth, int transferType, QHostAddress *hostAddr = 0);
     DownloadTransferQueueItem getNextQueuedDownload();
     void startNextDownload();
     QMap<int, QList<DownloadTransferQueueItem>* > downloadTransferQueue;
@@ -157,6 +157,7 @@ private:
     int currentDownloadCount;
     int currentUploadCount;
     quint32 nextSegmentId;
+    QHostAddress zeroHostAddress;
 
     // Transfer segment pointers for direct dispatch
     void setTransferSegmentPointer(quint32 segmentId, TransferSegment *segment);
