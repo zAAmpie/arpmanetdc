@@ -24,6 +24,8 @@ QObject(parent)
     version = "0";
     hubIsOnline = false;
 
+    totalShareSize = 0;
+
     reconnectTimer = new QTimer(this);
     reconnectTimer->setInterval(30000); //Try to reconnect every 30 seconds
     connect(reconnectTimer, SIGNAL(timeout()), this, SLOT(reconnectTimeout()));
@@ -48,6 +50,8 @@ HubConnection::HubConnection(QString address, quint16 port, QString nick, QStrin
     setPassword(password);
     setVersion(version);
     hubIsOnline = false;
+
+    totalShareSize = 0;
 
     reconnectTimer = new QTimer(this);
     reconnectTimer->setInterval(30000); //Try to reconnect every 30 seconds
