@@ -199,8 +199,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
             pTransferManager, SLOT(incomingTTHSource(QByteArray,QHostAddress)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(searchTTHAlternateSources(QByteArray)),
             pDispatcher, SLOT(initiateTTHSearch(QByteArray)), Qt::QueuedConnection);
-    connect(pTransferManager, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64,quint32)),
-            pDispatcher, SLOT(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64,quint32)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)),
+            pDispatcher, SLOT(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)), Qt::QueuedConnection);
     connect(pDispatcher, SIGNAL(incomingProtocolCapabilityResponse(QHostAddress,char)),
             pTransferManager, SLOT(incomingProtocolCapabilityResponse(QHostAddress,char)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(requestProtocolCapability(QHostAddress)),
