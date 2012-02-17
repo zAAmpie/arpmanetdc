@@ -62,6 +62,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     qRegisterMetaType<QList<TransferItemStatus> >("QList<TransferItemStatus>");
     qRegisterMetaType<QList<QDir> >("QList<QDir>");
     qRegisterMetaType<QByteArray>("QByteArray");
+    qRegisterMetaType<QHash<QString, UserCommandStruct> >("QHash<QString, UserCommandStruct>");
 
     //Set database pointer to zero at start
     db = 0;
@@ -269,6 +270,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(pShare, SIGNAL(returnFinishedList(QHash<QByteArray, FinishedDownloadStruct> *)), this, SLOT(returnFinishedList(QHash<QByteArray, FinishedDownloadStruct> *)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(searchWordListReceived(QStandardItemModel *)), this, SLOT(searchWordListReceived(QStandardItemModel *)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(returnTotalShare(quint64)), this, SLOT(returnTotalShare(quint64)), Qt::QueuedConnection);
+    connect(pShare, SIGNAL(returnUserCommands(QHash<QString, UserCommandStruct>*)), this, SLOT(returnUserCommands(QHash<QString, UserCommandStruct>*)), Qt::QueuedConnection);
     connect(this, SIGNAL(updateShares()), pShare, SLOT(updateShares()), Qt::QueuedConnection);
     connect(this, SIGNAL(requestQueueList()), pShare, SLOT(requestQueueList()), Qt::QueuedConnection);
     connect(this, SIGNAL(setQueuedDownloadPriority(QByteArray, QueuePriority)), pShare, SLOT(setQueuedDownloadPriority(QByteArray, QueuePriority)), Qt::QueuedConnection);
@@ -283,6 +285,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(this, SIGNAL(saveContainers(QHash<QString, ContainerContentsType>, QString)), pShare, SIGNAL(saveContainers(QHash<QString, ContainerContentsType>, QString)), Qt::QueuedConnection);
     connect(this, SIGNAL(processContainer(QHostAddress, QString, QString)), pShare, SLOT(processContainer(QHostAddress, QString, QString)), Qt::QueuedConnection);
     connect(this, SIGNAL(requestTotalShare(bool)), pShare, SLOT(requestTotalShare(bool)), Qt::QueuedConnection);
+    connect(this, SIGNAL(requestUserCommands()), pShare, SLOT(requestUserCommands()), Qt::QueuedConnection);
+    
    
     //Connect ShareSearch to Dispatcher - reply to search request from other clients
     connect(pShare, SIGNAL(returnSearchResult(QHostAddress, QByteArray, quint64, QByteArray)), 
@@ -388,6 +392,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     pAdditionalInfoHistoryList = new QList<QString>();
     pQueueList = new QHash<QByteArray, QueueStruct>();
     pFinishedList = new QHash<QByteArray, FinishedDownloadStruct>();
+    pUserCommands = new QHash<QString, UserCommandStruct>();
 
     //Get queue
     setStatus(tr("Loading download queue from database..."));
@@ -400,6 +405,9 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     //Get word list
     setStatus(tr("Loading autocomplete list from database..."));
     emit requestAutoCompleteWordList(searchWordList);
+
+    //Get user command list
+    emit requestUserCommands();
 
     //Update shares
     setStatus(tr("Share update procedure started. Parsing directories/paths..."));
@@ -627,6 +635,9 @@ bool ArpmanetDC::setupDatabase()
 
     //Create AutoCompleteWords table - saves searches
     queries.append("CREATE TABLE AutoCompleteWords (rowID INTEGER PRIMARY KEY, word TEXT, count INTEGER);");
+
+    //Create UserCommands table - saves user commands
+    queries.append("CREATE TABLE UserCommands (rowID INTEGER PRIMARY KEY, name TEXT, command TEXT, parameterCount INT, output TEXT, UNIQUE(command));");
 
     QList<QString> queryErrors(queries);
 
@@ -1071,6 +1082,12 @@ void ArpmanetDC::chatLineEditReturnPressed()
         pHub->sendChatMessage(tr("DC Link: %1%2").arg(FTP_UPDATE_HOST).arg(FTP_UPDATE_DIRECTORY));
         chatLineEdit->setText("");
     }
+    //User command (starts with //)
+    else if (chatLineEdit->text().startsWith(tr("//")))
+    {
+        pHub->sendChatMessage(processUserCommand(chatLineEdit->text()));
+        chatLineEdit->setText("");
+    }
     //Otherwise, just send the message normally
     else
         sendChatMessage();
@@ -1224,9 +1241,9 @@ void ArpmanetDC::settingsActionPressed()
     }
 
     //Otherwise, create it
-    settingsWidget = new SettingsWidget(pSettings, this);
+    settingsWidget = new SettingsWidget(pSettings, pUserCommands, this);
     connect(settingsWidget, SIGNAL(settingsSaved()), this, SLOT(settingsSaved()));
-    
+        
     tabs->addTab(settingsWidget->widget(), QIcon(":/ArpmanetDC/Resources/SettingsIcon.png"), tr("Settings"));
 
     tabs->setCurrentIndex(tabs->indexOf(settingsWidget->widget()));
@@ -2449,6 +2466,15 @@ void ArpmanetDC::fileAssemblyComplete(QString fileName)
 
 }
 
+//Called to set user commands
+void ArpmanetDC::returnUserCommands(QHash<QString, UserCommandStruct> *commands)
+{
+    setUserCommands(commands);
+
+    if (settingsWidget)
+        settingsWidget->returnUserCommands(commands);
+}
+
 //System tray was activated
 void ArpmanetDC::systemTrayActivated(QSystemTrayIcon::ActivationReason reason)
 {
@@ -2499,6 +2525,48 @@ void ArpmanetDC::mainChatLinkClicked(const QUrl &link)
     }
     else
         QDesktopServices::openUrl(link);
+}
+
+QString ArpmanetDC::processUserCommand(QString command)
+{
+    if (command.isEmpty())
+        return command;
+
+    if (pUserCommands->isEmpty())
+        return command;
+
+    //Delete dual forward slashes (//)
+    command.remove(0,2);
+
+    //Split command into command string and parameters
+    QStringList commandList = command.split(" ");
+    
+    QHashIterator<QString, UserCommandStruct> i(*pUserCommands);
+    while (i.hasNext())
+    {
+        i.next();
+        //Match the command with the commands from the list
+        if (i.value().command == commandList.first())
+        {
+            //Found command - now replace variables
+            QString outputStr = i.value().output;
+            if (i.value().parameterCount > 0)
+            {
+                //Iterate and fill parameter spaces
+                for (int k = 0; k < i.value().parameterCount; ++k)
+                {
+                    if (commandList.size() > k+1)
+                        outputStr.replace(tr("%%1").arg(k+1), commandList.at(k+1));
+                    else
+                        outputStr.replace(tr("%%1").arg(k+1), "");
+                }
+            }
+            return outputStr;
+        }
+    }
+
+    //If command was not found
+    return command;
 }
 
 void ArpmanetDC::convertNickname(QString nick, QString &msg)
@@ -2679,6 +2747,22 @@ QString ArpmanetDC::nick()
 QString ArpmanetDC::password()
 {
     return pSettings->value("password");
+}
+
+//User commands
+QHash<QString, UserCommandStruct> *ArpmanetDC::userCommands()
+{
+    return pUserCommands;
+}
+
+void ArpmanetDC::setUserCommands(QHash<QString, UserCommandStruct> *commands)
+{
+    if (!commands)
+        return;
+
+    if (pUserCommands)
+        delete pUserCommands;
+    pUserCommands = commands;
 }
 
 sqlite3 *ArpmanetDC::database() const

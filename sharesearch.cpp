@@ -1029,7 +1029,8 @@ void ShareSearch::saveLastKnownPeers(QList<QHostAddress> peers)
     {
         if (peers.at(i).toString().isEmpty())
             peers.removeAt(i--);
-        queryStr.append(tr("INSERT INTO LastKnownPeers ([ip]) VALUES (?);"));
+        else
+            queryStr.append(tr("INSERT INTO LastKnownPeers ([ip]) VALUES (?);"));
     }
 
     sqlite3 *db = pParent->database();    
@@ -1099,6 +1100,105 @@ void ShareSearch::requestLastKnownPeers()
     emit sendLastKnownPeers(peers);
 }
 
+//------------------------------============================== USER COMMANDS (SETTINGS WIDGET) ==============================------------------------------
+
+//Get all user commands from the database
+void ShareSearch::requestUserCommands()
+{
+    QHash<QString, UserCommandStruct> *commands = new QHash<QString, UserCommandStruct>();
+
+    //Query the database with the search string
+    QString queryStr = tr("SELECT [name], [command], [parameterCount], [output] FROM UserCommands;");
+
+    sqlite3 *db = pParent->database();
+    sqlite3_stmt *statement;
+
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW)
+        {
+            UserCommandStruct u;
+            QString name = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0));
+            u.command = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 1));
+            u.parameterCount = sqlite3_column_int(statement, 2);
+            u.output = QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 3));
+            commands->insert(name, u);
+        }
+        sqlite3_finalize(statement);    
+    }
+
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
+
+    emit returnUserCommands(commands);
+}
+
+//Save user commands to the database
+void ShareSearch::saveUserCommands(QHash<QString, UserCommandStruct> *commands)
+{
+    if (commands->isEmpty())
+        return;
+
+    //Insert a bootstrap peer into the database
+    QStringList queryStr;
+    queryStr.append(tr("DELETE FROM UserCommands;"));
+
+    QMutableHashIterator<QString, UserCommandStruct> i(*commands);
+    while (i.hasNext())
+    {
+        i.next();
+        if (i.key().isEmpty() || i.value().command.isEmpty())
+            i.remove();
+        else
+            queryStr.append(tr("INSERT INTO UserCommands ([name], [command], [parameterCount], [output]) VALUES (?, ?, ?, ?);"));
+    }
+    
+    sqlite3 *db = pParent->database();
+    sqlite3_stmt *statement;
+
+    QHashIterator<QString, UserCommandStruct> k(*commands);
+    for (int i = 0; i < queryStr.size(); i++)
+    {
+        //Prepare a query
+        QByteArray query;
+        query.append(queryStr.at(i));
+        if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+        {
+            //Bind parameters
+            int res = 0;
+            if (query.contains("INSERT INTO") && k.hasNext())
+            {
+                k.next();
+                UserCommandStruct u = k.value();
+                QString name = k.key();
+                res = res | sqlite3_bind_text16(statement, 1, name.utf16(), name.size()*2, SQLITE_STATIC);
+                res = res | sqlite3_bind_text16(statement, 2, u.command.utf16(), u.command.size()*2, SQLITE_STATIC);
+                res = res | sqlite3_bind_int(statement, 3, u.parameterCount);
+                res = res | sqlite3_bind_text16(statement, 4, u.output.utf16(), u.output.size()*2, SQLITE_STATIC);
+            }
+
+            int cols = sqlite3_column_count(statement);
+            int result = 0;
+            while (sqlite3_step(statement) == SQLITE_ROW);
+            sqlite3_finalize(statement);    
+        }
+
+        //Catch all error messages
+        QString error = sqlite3_errmsg(db);
+        if (error != "not an error")
+            QString error = "error";
+    }
+
+    //Commit to ensure access to database hasn't blocked hashing process
+    commitTransaction();
+}
 
 //------------------------------============================== GET HASH FROM FILE PATCH (SHARE WIDGET) ==============================------------------------------
 

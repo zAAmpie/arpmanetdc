@@ -1,15 +1,22 @@
 #include "settingswidget.h"
 #include "arpmanetdc.h"
 
-SettingsWidget::SettingsWidget(QHash<QString, QString> *settings, ArpmanetDC *parent)
+SettingsWidget::SettingsWidget(QHash<QString, QString> *settings, QHash<QString, UserCommandStruct> *commands, ArpmanetDC *parent)
 {
     //Constructor
     pParent = parent;
     pSettings = settings;
+    pUserCommands = commands;
 
     createWidgets();
     placeWidgets();
     connectWidgets();
+
+    connect(this, SIGNAL(saveUserCommands(QHash<QString, UserCommandStruct>*)), parent->shareSearchObject(), SLOT(saveUserCommands(QHash<QString, UserCommandStruct>*)), Qt::QueuedConnection);
+    connect(this, SIGNAL(requestUserCommands()), pParent, SIGNAL(requestUserCommands()));
+
+    //Get user command list
+    emit requestUserCommands();
 }
 
 SettingsWidget::~SettingsWidget()
@@ -190,9 +197,56 @@ QWidget *SettingsWidget::createUserCommandsPage()
 {
     QWidget *pageWidget = new QWidget;
 
+    //User commands - doh
+    QGroupBox *userGroup = new QGroupBox(tr("User commands"));
+
+    userCommandCombo = new QComboBox;
+    userCommandCombo->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    
+    addUserCommandButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/AddIcon.png"), tr("Add"));
+    addUserCommandButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    renameUserCommandButton = new QPushButton(tr("Rename"));
+    renameUserCommandButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    renameUserCommandButton->setEnabled(false);
+    removeUserCommandButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/DeleteIcon.png"), tr("Delete"));
+    removeUserCommandButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    removeUserCommandButton->setEnabled(false);
+
+    QHBoxLayout *buttonLayout = new QHBoxLayout;
+    buttonLayout->addWidget(userCommandCombo);
+    buttonLayout->addWidget(addUserCommandButton);
+    buttonLayout->addWidget(renameUserCommandButton);
+    buttonLayout->addWidget(removeUserCommandButton);
+
+    userCommandNameLineEdit = new QLineEdit();
+    userCommandNameLineEdit->setEnabled(false);
+
+    userCommandOutputLineEdit = new QLineEdit();
+    userCommandOutputLineEdit->setEnabled(false);
+    
+    userCommandParameterCount = new QSpinBox();
+    userCommandParameterCount->setRange(0, 9);
+    userCommandParameterCount->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    userCommandParameterCount->setSpecialValueText(tr("None"));
+    userCommandParameterCount->setMinimumWidth(50);
+    userCommandParameterCount->setEnabled(false);
+
+    QGridLayout *editLayout = new QGridLayout;
+    editLayout->addWidget(new QLabel(tr("Command name:")), 0, 0);
+    editLayout->addWidget(userCommandNameLineEdit, 0, 1);
+    editLayout->addWidget(new QLabel(tr("Parameter count:")), 0, 2);
+    editLayout->addWidget(userCommandParameterCount, 0, 3);
+    editLayout->addWidget(new QLabel(tr("Output string:")), 1, 0);
+    editLayout->addWidget(userCommandOutputLineEdit, 1, 1, 1, 3);
+
+    QVBoxLayout *groupLayout = new QVBoxLayout;
+    groupLayout->addLayout(buttonLayout);
+    groupLayout->addLayout(editLayout);
+    userGroup->setLayout(groupLayout);
+
     //Main page layout
     QVBoxLayout *pageLayout = new QVBoxLayout;
-    pageLayout->addWidget(new QLabel(tr("Under construction")));
+    pageLayout->addWidget(userGroup);
     pageLayout->addStretch(1);
 
     //Set widget to final layout and return
@@ -264,15 +318,23 @@ void SettingsWidget::placeWidgets()
 void SettingsWidget::connectWidgets()
 {
     connect(saveButton, SIGNAL(clicked()), this, SLOT(savePressed()));
-    connect(guessIPButton, SIGNAL(clicked()), this, SLOT(guessIPPressed()));
-    connect(browseDownloadPathButton, SIGNAL(clicked()), this, SLOT(browseDownloadPathPressed()));
 
+    connect(browseDownloadPathButton, SIGNAL(clicked()), this, SLOT(browseDownloadPathPressed()));
+    connect(shareUpdateIntervalSpinBox, SIGNAL(valueChanged(int)), this, SLOT(shareUpdateIntervalSpinBoxValueChanged(int)));
+
+    connect(guessIPButton, SIGNAL(clicked()), this, SLOT(guessIPPressed()));
     connect(protocolUpButton, SIGNAL(clicked()), this, SLOT(protocolUpPressed()));
     connect(protocolDownButton, SIGNAL(clicked()), this, SLOT(protocolDownPressed()));
 
-    connect(toggleAdvancedCheckBox, SIGNAL(stateChanged(int)), this, SLOT(advancedCheckBoxToggled(int)));
+    connect(addUserCommandButton, SIGNAL(clicked()), this, SLOT(addUserCommandButtonPressed()));
+    connect(renameUserCommandButton, SIGNAL(clicked()), this, SLOT(renameUserCommandButtonPressed()));
+    connect(removeUserCommandButton, SIGNAL(clicked()), this, SLOT(removeUserCommandButtonPressed()));
+    connect(userCommandCombo, SIGNAL(currentIndexChanged(const QString &)), this, SLOT(switchedUserCommands(const QString &)));
+    connect(userCommandNameLineEdit, SIGNAL(editingFinished()), this, SLOT(updateUserCommand()));
+    connect(userCommandOutputLineEdit, SIGNAL(editingFinished()), this, SLOT(updateUserCommand()));
+    connect(userCommandParameterCount, SIGNAL(valueChanged(int)), this, SLOT(updateUserCommand()));
 
-    connect(shareUpdateIntervalSpinBox, SIGNAL(valueChanged(int)), this, SLOT(shareUpdateIntervalSpinBoxValueChanged(int)));
+    connect(toggleAdvancedCheckBox, SIGNAL(stateChanged(int)), this, SLOT(advancedCheckBoxToggled(int)));
 
     connect(contentsWidget, SIGNAL(currentItemChanged(QListWidgetItem *, QListWidgetItem *)),
         this, SLOT(changePage(QListWidgetItem *, QListWidgetItem *)));
@@ -285,6 +347,62 @@ void SettingsWidget::changePage(QListWidgetItem *current, QListWidgetItem *previ
         current = previous;
 
     pagesWidget->setCurrentIndex(contentsWidget->row(current));
+}
+
+//Return the user commands from the database
+void SettingsWidget::returnUserCommands(QHash<QString, UserCommandStruct> *commands)
+{
+    if (!commands)
+        return;
+
+    if (commands->isEmpty())
+        return;
+
+    //Set local list
+    pUserCommands = commands;
+
+    //Populate user command combo box
+
+    //Clear container list
+    userCommandCombo->clear();
+
+    QHashIterator<QString, UserCommandStruct> i(*pUserCommands);
+    while (i.hasNext())
+    {
+        i.next();
+        QString name = i.key();
+        userCommandCombo->addItem(QIcon(":/ArpmanetDC/Resources/UserIcon.png"), name);
+    }
+
+    //Sort list of containers
+    userCommandCombo->view()->model()->sort(0);
+
+    //Disable entries if no containers exist
+    if (userCommandCombo->count() == 0)
+    {
+        renameUserCommandButton->setEnabled(false);
+        removeUserCommandButton->setEnabled(false);
+        
+        //Clear views
+        userCommandNameLineEdit->clear();
+        userCommandOutputLineEdit->clear();
+        userCommandParameterCount->setValue(0);
+
+        //Disable views
+        userCommandNameLineEdit->setEnabled(false);
+        userCommandOutputLineEdit->setEnabled(false);
+        userCommandParameterCount->setEnabled(false);
+    }
+    else
+    {
+        renameUserCommandButton->setEnabled(true);
+        removeUserCommandButton->setEnabled(true);
+        
+        //Enable views if they were disabled
+        userCommandNameLineEdit->setEnabled(true);
+        userCommandOutputLineEdit->setEnabled(true);
+        userCommandParameterCount->setEnabled(true);
+    }
 }
 
 void SettingsWidget::savePressed()
@@ -335,6 +453,10 @@ void SettingsWidget::savePressed()
         else
             (*pSettings)["showAdvanced"] = "0";
 
+        //Save user commands
+        emit saveUserCommands(pUserCommands);
+
+        //Alert main GUI
         emit settingsSaved();
     }
 }
@@ -393,6 +515,153 @@ void SettingsWidget::protocolDownPressed()
     //Add to list
     protocolList->insertItem(index, selectedItems.first());
     protocolList->setCurrentItem(selectedItems.first());
+}
+
+//Pressed add user command
+void SettingsWidget::addUserCommandButtonPressed()
+{
+    QString name = QInputDialog::getText((QWidget *)pParent, tr("ArpmanetDC"), tr("Please enter a name for the user command"));
+    if (!name.isEmpty() && !pUserCommands->contains(name))
+    {
+        //Add container to hash list
+        UserCommandStruct u = {"", 0, ""};
+        
+        pUserCommands->insert(name, u);
+        
+        //Add container name to combo box
+        userCommandCombo->addItem(QIcon(":/ArpmanetDC/Resources/UserIcon.png"), name);
+        userCommandCombo->setCurrentIndex(userCommandCombo->count()-1);
+                
+        //Enable buttons
+        renameUserCommandButton->setEnabled(true);
+        removeUserCommandButton->setEnabled(true);
+        
+        //Enable views if they were disabled
+        userCommandNameLineEdit->setEnabled(true);
+        userCommandOutputLineEdit->setEnabled(true);
+        userCommandParameterCount->setEnabled(true);
+    }
+    else if (!name.isEmpty())
+        QMessageBox::information(pParent, tr("ArpmanetDC"), tr("A user command with that name already exists. Please try another name."));
+}
+
+//Pressed rename
+void SettingsWidget::renameUserCommandButtonPressed()
+{
+    QString oldName = userCommandCombo->currentText();
+    QString newName = QInputDialog::getText((QWidget *)pParent, tr("ArpmanetDC"), tr("Please enter a new name for user command <b>%1</b>").arg(oldName));
+    if (!newName.isEmpty() && !pUserCommands->contains(newName))
+    {
+        //Replace user command
+        UserCommandStruct u = pUserCommands->value(oldName);
+        pUserCommands->remove(oldName);
+        pUserCommands->insert(newName, u);
+        
+        //Add name to combo box
+        userCommandCombo->removeItem(userCommandCombo->currentIndex());
+        userCommandCombo->addItem(QIcon(":/ArpmanetDC/Resources/UserIcon.png"), newName);
+        userCommandCombo->setCurrentIndex(userCommandCombo->count()-1);        
+    }
+    else if (!newName.isEmpty())
+        QMessageBox::information(pParent, tr("ArpmanetDC"), tr("A user command with that name already exists. Please try another name."));
+}
+
+//Pressed remove
+void SettingsWidget::removeUserCommandButtonPressed()
+{
+    if (userCommandCombo->count() == 0)
+        return;
+
+    QString name = userCommandCombo->currentText();
+    if (QMessageBox::information((QWidget *)pParent, tr("ArpmanetDC"), tr("Are you sure you want to remove the user command <b>%1</b>?")
+        .arg(name), QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes)
+    {
+        //Remove from combobox
+        userCommandCombo->removeItem(userCommandCombo->currentIndex());
+
+        //Remove from hash
+        pUserCommands->remove(name);
+
+        //Clear views
+        userCommandNameLineEdit->clear();
+        userCommandOutputLineEdit->clear();
+        userCommandParameterCount->setValue(0);
+
+        //Disable views if no commands exist
+        if (userCommandCombo->count() == 0)
+        {
+            renameUserCommandButton->setEnabled(false);
+            removeUserCommandButton->setEnabled(false);
+
+            userCommandNameLineEdit->setEnabled(false);
+            userCommandOutputLineEdit->setEnabled(false);
+            userCommandParameterCount->setEnabled(false);
+        }
+        else
+        {
+            switchedUserCommands(userCommandCombo->currentText());            
+        }
+    }
+}
+
+//Switched user commands
+void SettingsWidget::switchedUserCommands(const QString &name)
+{
+    if (pUserCommands->contains(name))
+    {
+        //Populate fields with data
+        UserCommandStruct u = pUserCommands->value(name);
+
+        userCommandNameLineEdit->setText(u.command);
+        userCommandOutputLineEdit->setText(u.output);
+        userCommandParameterCount->setValue(u.parameterCount);
+    }
+}
+
+//We should save the current user command info
+void SettingsWidget::updateUserCommand()
+{
+    QString name = userCommandCombo->currentText();
+    
+    //Check that command name doesn't have any spaces
+    QString commandName = userCommandNameLineEdit->text().trimmed();
+    
+    //Check that the command name isn't used by another user command
+    QHashIterator<QString, UserCommandStruct> i(*pUserCommands);
+    while (i.hasNext())
+    {
+        i.next();
+        if (i.value().command == commandName && i.key() != name)
+        {
+            commandName.append("1");
+            if (i.hasPrevious())
+            {
+                i.previous();
+            }
+        }
+    }
+
+    userCommandNameLineEdit->setText(commandName.left(commandName.indexOf(" ")));
+
+    UserCommandStruct u;
+    u.command = userCommandNameLineEdit->text();
+    u.parameterCount = userCommandParameterCount->value();
+
+    //Check if output contains all necessary parameters - ignore if it contains more than needed
+    QString outputStr = userCommandOutputLineEdit->text();
+    for (int i = 1; i <= u.parameterCount; ++i)
+    {
+        if (!outputStr.contains(tr("%%1").arg(i)))
+        {
+            outputStr.append(tr(" %%1").arg(i));
+        }
+    }
+
+    u.output = outputStr;
+    userCommandOutputLineEdit->setText(outputStr);
+
+    //Update hash
+    (*pUserCommands)[name] = u;
 }
 
 void SettingsWidget::shareUpdateIntervalSpinBoxValueChanged(int value)

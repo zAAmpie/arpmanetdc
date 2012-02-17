@@ -29,6 +29,7 @@
 #include "execthread.h"
 #include "downloadqueuewidget.h"
 #include "downloadfinishedwidget.h"
+#include "settingswidget.h"
 #include "util.h"
 #include "protocoldef.h"
 #include "containerthread.h"
@@ -91,6 +92,14 @@ public slots:
 
     //Return the last known bootstrapped peers
     void requestLastKnownPeers();
+
+    //----------========== USER COMMANDS (SETTINGS WIDGET) ==========----------
+
+    //Get all user commands from the database
+    void requestUserCommands();
+
+    //Save user commands to the database
+    void saveUserCommands(QHash<QString, UserCommandStruct> *commands);
 
     //----------========== GET HASH FROM FILE PATH (SHARE WIDGET) ==========----------
 
@@ -227,6 +236,11 @@ signals:
 
     //Signal to return last known peers
     void sendLastKnownPeers(QList<QHostAddress> peers);
+
+    //----------========== USER COMMANDS (SETTINGS WIDGET) ==========----------
+
+    //Signal to return user commands
+    void returnUserCommands(QHash<QString, UserCommandStruct> *commands);
     
     //----------========== GET HASH FROM FILE PATCH (SHARE WIDGET) ==========----------
 

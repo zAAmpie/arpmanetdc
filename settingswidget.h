@@ -20,6 +20,13 @@
 
 #include <QtGui>
 
+struct UserCommandStruct //Used to store/return users commands from the db
+{
+    QString command;
+    int parameterCount;
+    QString output;
+};
+
 class ArpmanetDC;
 
 //Class encapsulating all widgets/signals for search tab
@@ -28,7 +35,7 @@ class SettingsWidget : public QObject
     Q_OBJECT
 
 public:
-    SettingsWidget(QHash<QString, QString> *settings, ArpmanetDC *parent);
+    SettingsWidget(QHash<QString, QString> *settings, QHash<QString, UserCommandStruct> *commands, ArpmanetDC *parent);
     ~SettingsWidget();
 
     //Get the encapsulating widget
@@ -38,18 +45,35 @@ public:
 
 public slots:
     //Slots
+    void returnUserCommands(QHash<QString, UserCommandStruct> *commands);
 
 private slots:
     //Pressed save button
     void savePressed();
-    //Pressed guess IP button
-    void guessIPPressed();
+
+    //===== GENERAL OPTIONS =====
     //Pressed download path browse button
     void browseDownloadPathPressed();
+
+    //===== ADVANCED OPTIONS =====
+    //Pressed guess IP button
+    void guessIPPressed();
     //Up pressed
     void protocolUpPressed();
     //Down pressed
     void protocolDownPressed();
+
+    //===== USER COMMANDS =====
+    //Pressed add user command
+    void addUserCommandButtonPressed();
+    //Pressed rename
+    void renameUserCommandButtonPressed();
+    //Pressed remove
+    void removeUserCommandButtonPressed();
+    //Switched user commands
+    void switchedUserCommands(const QString &name);
+    //We should save the current user command info
+    void updateUserCommand();
 
     //Display advanced settings toggled
     void advancedCheckBoxToggled(int state);
@@ -63,6 +87,12 @@ private slots:
 signals:
     //Signalled when settings were saved
     void settingsSaved();
+
+    //Signal to get user commands
+    void requestUserCommands();
+
+    //Signal to save user commands
+    void saveUserCommands(QHash<QString, UserCommandStruct> *commands);
 
 private:
     //Functions
@@ -81,6 +111,7 @@ private:
     ArpmanetDC *pParent;
 
     QHash<QString, QString> *pSettings;
+    QHash<QString, UserCommandStruct> *pUserCommands;
 
     //GUI pages
     QWidget *advancedWidget;
@@ -107,7 +138,10 @@ private:
     QPushButton *guessIPButton, *protocolUpButton, *protocolDownButton;
 
     //User command settings widgets
-    
+    QComboBox *userCommandCombo;
+    QPushButton *addUserCommandButton, *renameUserCommandButton, *removeUserCommandButton;
+    QLineEdit *userCommandNameLineEdit, *userCommandOutputLineEdit;
+    QSpinBox *userCommandParameterCount;
 };
 
 //Custom validator class to deal with IP addresses :)

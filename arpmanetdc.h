@@ -109,6 +109,9 @@ public:
     void convertHTMLLinks(QString &msg);
     void convertMagnetLinks(QString &msg);
     void convertNickname(QString nick, QString &msg);
+    
+    //User commands
+    QString processUserCommand(QString command);
 
     //Link to database
     sqlite3 *database() const;
@@ -132,6 +135,10 @@ public:
     bool createdGUI;
 
     QSize sizeHint() const; //reimplement sizeHint to determine initial screen size
+
+    //User commands
+    QHash<QString, UserCommandStruct> *userCommands();
+    void setUserCommands(QHash<QString, UserCommandStruct> *commands);
 
 public slots:
     //Sets the global status label in the status bar to msg
@@ -176,6 +183,11 @@ public slots:
 
     //Called when a file has been assembled correctly
     void fileAssemblyComplete(QString fileName);
+
+    //-----------========== USER COMMANDS ==========----------
+
+    //Called to set user commands
+    void returnUserCommands(QHash<QString, UserCommandStruct> *commands);
 
 private slots:
     //-----===== OBJECT SLOTS =====-----
@@ -278,6 +290,9 @@ signals:
     void ftpCheckForUpdate();
     void ftpDownloadNewestVersion();
 
+    //Get user commands
+    void requestUserCommands();
+
     //----------========== SHARESEARCH SIGNALS ==========----------
 
     //Signals for queues
@@ -363,6 +378,7 @@ private:
     //Parameters
     //SettingsStruct pSettings;
     QHash<QString, QString> *pSettings;
+    QHash<QString, UserCommandStruct> *pUserCommands;
 
     //Containers
     QHash<QString, ContainerContentsType> pContainerHash;
