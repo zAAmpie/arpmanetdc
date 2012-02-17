@@ -1035,29 +1035,41 @@ void ArpmanetDC::connectWidgets()
 
 void ArpmanetDC::chatLineEditReturnPressed()
 {
+    //===== Client commands =====
+    //Display all the buckets with their respective hosts
     if (chatLineEdit->text().compare("/debugbuckets") == 0)
     {
         appendChatLine("DEBUG Bucket contents");
         appendChatLine(pDispatcher->getDebugBucketsContents());
         chatLineEdit->setText("");
     }
+    //Display all known hosts in your own buckets (since startup)
     else if (chatLineEdit->text().compare("/debugcidhosts") == 0)
     {
         appendChatLine("DEBUG CID Host contents");
         appendChatLine(pDispatcher->getDebugCIDHostContents());
         chatLineEdit->setText("");
     }
+    //Scan network for hosts (overuse can be dangerous)
     else if (chatLineEdit->text().compare("/linscan") == 0)
     {
         appendChatLine("DEBUG Linear scan hosts on network");
         pDispatcher->initiateLinscan();
         chatLineEdit->setText("");
     }
+    //Display client uptime
     else if (chatLineEdit->text().compare("/uptime") == 0 || chatLineEdit->text().compare("/u") == 0)
     {
         pHub->sendChatMessage(tr("/me uptime: %1").arg(uptimeFromInt(QDateTime::currentMSecsSinceEpoch() - uptime.toMSecsSinceEpoch())));
         chatLineEdit->setText("");
     }
+    //Display link to update DC - since EVERYONE is CONSTANTLY asking for this... sheesh
+    else if (chatLineEdit->text().compare("/dclink") == 0)
+    {
+        pHub->sendChatMessage(tr("DC Link: %1%2").arg(FTP_UPDATE_HOST).arg(FTP_UPDATE_DIRECTORY));
+        chatLineEdit->setText("");
+    }
+    //Otherwise, just send the message normally
     else
         sendChatMessage();
 
@@ -1733,7 +1745,8 @@ void ArpmanetDC::appendChatLine(QString msg)
     msg.replace("\r","");
 
     //Replace nick with red text
-    msg.replace(pSettings->value("nick"), tr("<font color=\"red\">%1</font>").arg(pSettings->value("nick")));
+    convertNickname(pSettings->value("nick"), msg);
+    //msg.replace(pSettings->value("nick"), tr("<font color=\"red\">%1</font>").arg(pSettings->value("nick")));
     
     //Convert plain text links to HTML links
     convertHTMLLinks(msg);
@@ -2484,6 +2497,31 @@ void ArpmanetDC::mainChatLinkClicked(const QUrl &link)
     }
     else
         QDesktopServices::openUrl(link);
+}
+
+void ArpmanetDC::convertNickname(QString nick, QString &msg)
+{
+    //Replace nick with coloured text
+    int currentIndex = 0;
+    QString regex = tr("(%1)").arg(nick);
+    QRegExp rx(regex, Qt::CaseInsensitive);
+
+    int pos = 0;
+    //Check for regex's and replace
+    while ((pos = rx.indexIn(msg, pos)) != -1)
+    {
+        //Extract link
+        QString nickExtracted = rx.cap(1);
+        
+        //Construct coloured nick string
+        QString nickColoured = tr("<font color=\"red\">%1</font>").arg(nickExtracted);
+
+        //Replace link
+        msg.remove(pos, nickExtracted.size());
+        msg.insert(pos, nickColoured);
+
+        pos += nickColoured.size();
+    }
 }
 
 void ArpmanetDC::convertHTMLLinks(QString &msg)

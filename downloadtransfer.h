@@ -22,7 +22,7 @@
 #include "fstptransfersegment.h"
 #include "utptransfersegment.h"
 
-#define MAXIMUM_SIMULTANEOUS_SEGMENTS 10
+#define MAXIMUM_SIMULTANEOUS_SEGMENTS 5//10 When downloading a ton of segments, the sheer number of ACKs and stalls actually slow down the transfer
 
 #define HASH_TREE_WINDOW_LENGTH 184 // 8 datagrams
 

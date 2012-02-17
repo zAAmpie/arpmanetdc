@@ -139,3 +139,36 @@ int UploadTransfer::getSegmentCount()
 {
     return 1;
 }
+
+SegmentStatusStruct UploadTransfer::getSegmentStatuses()
+{
+    SegmentStatusStruct s;
+    s.failed = 0;
+    s.finished = 0;
+    s.initializing = 0;
+    s.running = 0;
+    s.stalled = 0;
+    if (upload)
+    {
+        switch (upload->getSegmentStatus())
+        {
+        case TRANSFER_STATE_RUNNING:
+            s.running++;
+            break;
+        case TRANSFER_STATE_FAILED:
+            s.failed++;
+            break;
+        case TRANSFER_STATE_FINISHED:
+            s.finished++;
+            break;
+        case TRANSFER_STATE_INITIALIZING:
+            s.initializing++;
+            break;
+        case TRANSFER_STATE_STALLED:
+            s.stalled++;
+            break;
+        }
+    }
+
+    return s;
+}
