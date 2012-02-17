@@ -62,15 +62,26 @@ void FSTPTransferSegment::startUploading()
     quint64 wptr = 0;
     QByteArray header;
     header.reserve(2);
-    header.append(DataPacket);
+    if (segmentId > 0)
+        header.append(DirectDataPacket);
+    else
+        header.append(DataPacket);
     header.append(FailsafeTransferProtocol);
     QByteArray data(QByteArray::fromRawData(f, segmentLength));
     while (wptr < segmentLength)
     {
         QByteArray *packet = new QByteArray(header);
         packet->reserve(PACKET_MTU);
-        packet->append(toQByteArray((quint64)(segmentStart + wptr)));
-        packet->append(TTH);
+        if (segmentId > 0)
+        {
+            packet->append(quint64ToByteArray((quint64)(segmentStart + wptr)));
+            packet->append(quint32ToByteArray(segmentId));
+        }
+        else
+        {
+            packet->append(quint64ToByteArray((quint64)(segmentStart + wptr)));
+            packet->append(TTH);
+        }
         //qDebug() << "Write data segmentStart " << segmentStart << " segmentLength " << segmentLength << " wptr " << wptr;
         if (wptr + PACKET_DATA_MTU < segmentLength)
         {

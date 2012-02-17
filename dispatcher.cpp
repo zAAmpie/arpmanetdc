@@ -286,8 +286,8 @@ void Dispatcher::handleProtocolInstruction(quint8 &quint8DatagramType, quint8 &q
 void Dispatcher::dispatchDirectDataPacket(QByteArray datagram)
 {
     datagram.remove(0, 2);
-    quint32 segmentId = getQuint32FromByteArray(&datagram);
     quint64 offset = getQuint64FromByteArray(&datagram);
+    quint32 segmentId = getQuint32FromByteArray(&datagram);
     emit incomingDirectDataPacket(segmentId, offset, datagram);
 }
 
