@@ -93,7 +93,7 @@ protected:
     Transfer *pParent;
 
     virtual void checkSendDownloadRequest(quint8 protocol, QHostAddress peer, QByteArray TTH,
-                                         quint64 requestingOffset, quint64 requestingLength, int status);
+                                         qint64 requestingOffset, qint64 requestingLength, int status);
     virtual int calculateBucketNumber(quint64 fileOffset);
 };
 

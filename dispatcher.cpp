@@ -131,7 +131,7 @@ void Dispatcher::receiveP2PData()
         switch(quint8DatagramType)
         {
         case DirectDataPacket:
-
+            dispatchDirectDataPacket(datagram);
             break;
 
         case DataPacket:
@@ -742,7 +742,6 @@ void Dispatcher::handleIncomingUploadRequest(QHostAddress &fromHost, QByteArray 
     //quint64 offset = getQuint64FromByteArray(&tmp);
     //tmp = datagram.mid(35, 8);
     //quint64 length = getQuint64FromByteArray(&tmp);
-    //QByteArray protocolHint = datagram.mid(43);
 
     datagram.remove(0, 2);
     quint8 protocol = getQuint8FromByteArray(&datagram);

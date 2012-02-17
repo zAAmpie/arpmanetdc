@@ -71,7 +71,7 @@ signals:
     void deleteTTHSourcesFromDatabase(QByteArray tth);
     void searchTTHAlternateSources(QByteArray tth);
     void TTHTreeRequest(QHostAddress hostAddr,QByteArray rootTTH, quint32 startBucket, quint32 bucketCount);
-    void sendDownloadRequest(quint8 protocolPreference, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length, quint32 segmentId);
+    void sendDownloadRequest(quint8 protocolPreference, QHostAddress dstHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId);
     void sendTransferError(QHostAddress dstHost, quint8 error, QByteArray tth, quint64 offset);
     void flushBucket(QString filename, QByteArray *bucket);
     void assembleOutputFile(QString tmpfilebase, QString outfile, int startbucket, int lastbucket);
