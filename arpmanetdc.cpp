@@ -183,10 +183,12 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     pTransferManager->setMaximumSimultaneousUploads(MAX_SIMULTANEOUS_UPLOADS);
 
     //Connect Dispatcher to TransferManager - handles upload/download requests and transfers
-    connect(pDispatcher, SIGNAL(incomingUploadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)),
-            pTransferManager, SLOT(incomingUploadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)), Qt::QueuedConnection);
+    connect(pDispatcher, SIGNAL(incomingUploadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)),
+            pTransferManager, SLOT(incomingUploadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)), Qt::QueuedConnection);
     connect(pDispatcher, SIGNAL(incomingDataPacket(quint8,QHostAddress,QByteArray)),
             pTransferManager, SLOT(incomingDataPacket(quint8,QHostAddress,QByteArray)), Qt::QueuedConnection);
+    connect(pDispatcher, SIGNAL(incomingDirectDataPacket(quint32,quint64,QByteArray)),
+            pTransferManager, SLOT(incomingDirectDataPacket(quint32,quint64,QByteArray)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)),
             pDispatcher, SLOT(sendUnicastRawDatagram(QHostAddress,QByteArray*)), Qt::QueuedConnection);
     connect(pDispatcher, SIGNAL(receivedTTHTree(QByteArray,QByteArray)),
@@ -197,8 +199,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
             pTransferManager, SLOT(incomingTTHSource(QByteArray,QHostAddress)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(searchTTHAlternateSources(QByteArray)),
             pDispatcher, SLOT(initiateTTHSearch(QByteArray)), Qt::QueuedConnection);
-    connect(pTransferManager, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)),
-            pDispatcher, SLOT(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)),
+            pDispatcher, SLOT(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)), Qt::QueuedConnection);
     connect(pDispatcher, SIGNAL(incomingProtocolCapabilityResponse(QHostAddress,char)),
             pTransferManager, SLOT(incomingProtocolCapabilityResponse(QHostAddress,char)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(requestProtocolCapability(QHostAddress)),

@@ -32,6 +32,7 @@ typedef struct
     QHostAddress requestingHost;
     quint64 fileOffset;
     quint64 requestLength;
+    quint32 segmentId;
 } UploadTransferQueueItem;
 
 typedef struct
@@ -70,7 +71,7 @@ signals:
     void deleteTTHSourcesFromDatabase(QByteArray tth);
     void searchTTHAlternateSources(QByteArray tth);
     void TTHTreeRequest(QHostAddress hostAddr,QByteArray rootTTH, quint32 startBucket, quint32 bucketCount);
-    void sendDownloadRequest(quint8 protocolPreference, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length);
+    void sendDownloadRequest(quint8 protocolPreference, QHostAddress dstHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId);
     void sendTransferError(QHostAddress dstHost, quint8 error, QByteArray tth, quint64 offset);
     void flushBucket(QString filename, QByteArray *bucket);
     void assembleOutputFile(QString tmpfilebase, QString outfile, int startbucket, int lastbucket);
@@ -92,14 +93,18 @@ signals:
     // Request peer protocol capabilities
     void requestProtocolCapability(QHostAddress peer);
 
+    // Segment ID to transfers
+    void setSegmentId(quint32 segmentId);
+
 public slots:
     void incomingDataPacket(quint8 transferProtocolVersion, QHostAddress fromHost, QByteArray datagram);
+    void incomingDirectDataPacket(quint32 segmentId, quint64 offset, QByteArray data);
     void incomingTransferError(QHostAddress fromHost, QByteArray tth, quint64 offset, quint8 error);
 
     // Request file name for given TTH from sharing engine, reply with empty string if not found.
     void filePathNameReply(QByteArray tth, QString filename, quint64 fileSize);
 
-    void incomingUploadRequest(quint8 protocol, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length);
+    void incomingUploadRequest(quint8 protocol, QHostAddress fromHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId);
     void queueDownload(int priority, QByteArray tth, QString filePathName, quint64 fileSize, QHostAddress fileHost);
     void changeQueuedDownloadPriority(int oldPriority, int newPriority, QByteArray tth);
     void removeQueuedDownload(int priority, QByteArray tth);
@@ -127,6 +132,9 @@ public slots:
     void bucketFlushed(QByteArray tth, int bucketNo);
     void bucketFlushFailed(QByteArray tth, int bucketNo);
 
+    // Segment ID requests from transfers
+    void requestNextSegmentId();
+
     QList<TransferItemStatus> getGlobalTransferStatus();
 
     void destroyTransferObject(Transfer*);
@@ -148,6 +156,13 @@ private:
     int maximumSimultaneousUploads;
     int currentDownloadCount;
     int currentUploadCount;
+    quint32 nextSegmentId;
+
+    // Transfer segment pointers for direct dispatch
+    void setTransferSegmentPointer(quint32 segmentId, TransferSegment *segment);
+    void removeTransferSegmentPointer(quint32 segmentId);
+    TransferSegment *getTransferSegmentPointer(quint32 segmentId);
+    QHash<quint32, TransferSegment*> transferSegmentPointers;
 
     const QHash<QString, QString> *pSettings;
 };

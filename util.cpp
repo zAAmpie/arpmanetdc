@@ -378,6 +378,23 @@ QByteArray quint64ToByteArray(quint64 num)
     return numBA;
 }
 
+QByteArray qint64ToByteArray(qint64 num)
+{
+    //Convert quint64 to QByteArray
+    qint64 numBS = num;
+#ifdef Q_LITTLE_ENDIAN
+    //Convert to BigEndian
+    numBS = qbswap(num);
+#endif
+    QByteArray numBA((const char *)&numBS, 8);
+
+    //QByteArray numBA;
+    //QDataStream ds(&numBA,QIODevice::WriteOnly);
+    //ds.setVersion(QDataStream::Qt_4_6);
+    //ds << (quint64)num;
+    return numBA;
+}
+
 QByteArray stringToByteArray(QString str)
 {
     //Return a n byte QByteArray with str and its size
@@ -503,6 +520,23 @@ quint64 getQuint64FromByteArray(QByteArray *data)
     data->remove(0,8);
     return num;
 }
+
+qint64 getQint64FromByteArray(QByteArray *data)
+{
+    //Remove a quint64 from a QByteArray
+    qint64 num;
+    //QDataStream ds(data,QIODevice::ReadOnly);
+    //ds.setVersion(QDataStream::Qt_4_6);
+    //ds >> num;
+    memcpy(&num, data->constData(), 8);
+#ifdef Q_LITTLE_ENDIAN
+    //Convert to BigEndian
+    num = qbswap(num);
+#endif
+    data->remove(0,8);
+    return num;
+}
+
 
 qint16 getQint16FromByteArray(QByteArray *data)
 {

@@ -26,6 +26,7 @@
 #include "protocoldef.h"
 #include "util.h"
 #include "transfer.h"
+class Transfer;
 
 class TransferSegment : public QObject
 {
@@ -36,7 +37,7 @@ public:
 
 signals:
     void transmitDatagram(QHostAddress dstHost, QByteArray *datagram);
-    void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length);
+    void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId);
     void sendTransferError(QHostAddress dstHost, quint8 error, QByteArray tth, quint64 offset);
     void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
     void requestNextSegment(TransferSegment *requestingSegmentObject);
@@ -62,7 +63,7 @@ public slots:
     virtual void pauseDownload() = 0;
     virtual void unpauseDownload() = 0;
     void setDownloadBucketTablePointer(QHash<int, QByteArray*> *dbt);
-    //virtual void receivedPeerProtocolCapability(char protocols);
+    void setSegmentId(quint32 id);
 
     virtual qint64 getBytesReceivedNotFlushed();
     virtual qint64 getMaxUploadRequestOffset();
@@ -83,6 +84,8 @@ protected:
 
     int lastBucketNumber;
     int lastBucketSize;
+
+    quint32 segmentId;
 
     QFile inputFile;
     QHash<int, QByteArray*> *pDownloadBucketTable;

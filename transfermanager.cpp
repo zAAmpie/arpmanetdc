@@ -6,6 +6,9 @@ TransferManager::TransferManager(QHash<QString, QString> *settings, QObject *par
     pSettings = settings;
     currentDownloadCount = 0;
     currentUploadCount = 0;
+    nextSegmentId = qrand();
+    if (nextSegmentId == 0)
+        nextSegmentId++;
 }
 
 TransferManager::~TransferManager()
@@ -71,6 +74,14 @@ void TransferManager::incomingDataPacket(quint8 transferPacket, QHostAddress fro
     }
 }
 
+// incoming direct dispatched data packets
+void TransferManager::incomingDirectDataPacket(quint32 segmentId, quint64 offset, QByteArray data)
+{
+    TransferSegment *t = getTransferSegmentPointer(segmentId);
+    if (t)
+        t->incomingDataPacket(offset, data);
+}
+
 void TransferManager::incomingTransferError(QHostAddress fromHost, QByteArray tth, quint64 offset, quint8 error)
 {
     Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_DOWNLOAD);
@@ -79,7 +90,7 @@ void TransferManager::incomingTransferError(QHostAddress fromHost, QByteArray tt
 }
 
 // incoming requests for files we share
-void TransferManager::incomingUploadRequest(quint8 protocol, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length)
+void TransferManager::incomingUploadRequest(quint8 protocol, QHostAddress fromHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId)
 {
     qDebug() << "TransferManager::incomingUploadRequest(): Data request offset " << offset << " length " << length;
     Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_UPLOAD, fromHost);
@@ -100,6 +111,7 @@ void TransferManager::incomingUploadRequest(quint8 protocol, QHostAddress fromHo
             i->requestingHost = fromHost;
             i->fileOffset = offset;
             i->requestLength = length;
+            i->segmentId = segmentId;
             uploadTransferQueue.insertMulti(tth, i);
             emit filePathNameRequest(tth);
         }
@@ -117,7 +129,8 @@ void TransferManager::filePathNameReply(QByteArray tth, QString filename, quint6
         return; // TODO: stuur error terug na requesting host
     }
     Transfer *t = new UploadTransfer(this);
-    t->createUploadObject(uploadTransferQueue.value(tth)->protocol);
+    TransferSegment *s = t->createUploadObject(uploadTransferQueue.value(tth)->protocol, uploadTransferQueue.value(tth)->segmentId);
+    setTransferSegmentPointer(uploadTransferQueue.value(tth)->segmentId, s);
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
     connect(t, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
     connect(t, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)), this, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)));
@@ -204,14 +217,17 @@ void TransferManager::startNextDownload()
     connect(t, SIGNAL(searchTTHAlternateSources(QByteArray)), this, SIGNAL(searchTTHAlternateSources(QByteArray)));
     connect(t, SIGNAL(loadTTHSourcesFromDatabase(QByteArray)), this, SIGNAL(loadTTHSourcesFromDatabase(QByteArray)));
     connect(t, SIGNAL(requestProtocolCapability(QHostAddress,Transfer*)), this, SLOT(requestPeerProtocolCapability(QHostAddress,Transfer*)));
-    connect(t, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)),
-            this, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,quint64,quint64)));
+    connect(t, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)),
+            this, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)));
     connect(t, SIGNAL(flushBucket(QString,QByteArray*)), this, SIGNAL(flushBucket(QString,QByteArray*)));
     connect(t, SIGNAL(assembleOutputFile(QString,QString,int,int)), this, SIGNAL(assembleOutputFile(QString,QString,int,int)));
     connect(t, SIGNAL(flushBucketDirect(QString,int,QByteArray*,QByteArray)), this, SIGNAL(flushBucketDirect(QString,int,QByteArray*,QByteArray)));
     connect(t, SIGNAL(renameIncompleteFile(QString)), this, SIGNAL(renameIncompleteFile(QString)));
     connect(t, SIGNAL(transferFinished(QByteArray)), this, SLOT(transferDownloadCompleted(QByteArray)));
     connect(t, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
+    connect(t, SIGNAL(requestNextSegmentId()), this, SLOT(requestNextSegmentId()));
+    connect(this, SIGNAL(setSegmentId(quint32)), t, SLOT(setNextSegmentId(quint32)));
+
     t->setFileName(i.filePathName);
     t->setTTH(i.tth);
     t->setFileSize(i.fileSize);
@@ -453,4 +469,29 @@ void TransferManager::setMaximumSimultaneousDownloads(int n)
 void TransferManager::setMaximumSimultaneousUploads(int n)
 {
     maximumSimultaneousUploads = n;
+}
+
+void TransferManager::requestNextSegmentId()
+{
+    nextSegmentId++;
+    if (nextSegmentId == 0)
+        nextSegmentId++;
+
+    emit setSegmentId(nextSegmentId);
+}
+
+TransferSegment* TransferManager::getTransferSegmentPointer(quint32 segmentId)
+{
+    // QHash automatically returns 0 for TransferSegment* when key not found
+    return transferSegmentPointers.value(segmentId);
+}
+
+void TransferManager::setTransferSegmentPointer(quint32 segmentId, TransferSegment *segment)
+{
+    transferSegmentPointers.insert(segmentId, segment);
+}
+
+void TransferManager::removeTransferSegmentPointer(quint32 segmentId)
+{
+    transferSegmentPointers.remove(segmentId);
 }

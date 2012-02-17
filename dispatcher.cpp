@@ -131,6 +131,10 @@ void Dispatcher::receiveP2PData()
         quint8 quint8ProtocolInstruction = datagram.at(1);
         switch(quint8DatagramType)
         {
+        case DirectDataPacket:
+            dispatchDirectDataPacket(datagram);
+            break;
+
         case DataPacket:
             emit incomingDataPacket(quint8ProtocolInstruction, senderHost, datagram);
             break;
@@ -280,6 +284,13 @@ void Dispatcher::handleProtocolInstruction(quint8 &quint8DatagramType, quint8 &q
     }
 }
 
+void Dispatcher::dispatchDirectDataPacket(QByteArray datagram)
+{
+    datagram.remove(0, 2);
+    quint64 offset = getQuint64FromByteArray(&datagram);
+    quint32 segmentId = getQuint32FromByteArray(&datagram);
+    emit incomingDirectDataPacket(segmentId, offset, datagram);
+}
 
 // ------------------=====================   Network announcement functions   =====================----------------------
 
@@ -725,18 +736,28 @@ void Dispatcher::handleReceivedTTHSearchQuestion(QHostAddress &fromAddr, QByteAr
 
 void Dispatcher::handleIncomingUploadRequest(QHostAddress &fromHost, QByteArray &datagram)
 {
-    quint8 protocol = datagram.at(2);
-    QByteArray tth = datagram.mid(3, 24);
-    QByteArray tmp;
-    tmp = datagram.mid(27, 8);
-    quint64 offset = getQuint64FromByteArray(&tmp);
-    tmp = datagram.mid(35, 8);
-    quint64 length = getQuint64FromByteArray(&tmp);
-    //QByteArray protocolHint = datagram.mid(43);
-    emit incomingUploadRequest(protocol, fromHost, tth, offset, length);
+    //quint8 protocol = datagram.at(2);
+    //QByteArray tth = datagram.mid(3, 24);
+    //QByteArray tmp;
+    //tmp = datagram.mid(27, 8);
+    //quint64 offset = getQuint64FromByteArray(&tmp);
+    //tmp = datagram.mid(35, 8);
+    //quint64 length = getQuint64FromByteArray(&tmp);
+
+    datagram.remove(0, 2);
+    quint8 protocol = getQuint8FromByteArray(&datagram);
+    QByteArray tth = datagram.left(24);
+    datagram.remove(0, 24);
+    qint64 offset = (qint64)getQuint64FromByteArray(&datagram);
+    qint64 length = (qint64)getQuint64FromByteArray(&datagram);
+    quint32 segmentId = 0;
+    if (datagram.length() >= 4)
+        segmentId = getQuint32FromByteArray(&datagram);
+
+    emit incomingUploadRequest(protocol, fromHost, tth, offset, length, segmentId);
 }
 
-void Dispatcher::sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length)
+void Dispatcher::sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId)
 {
     QByteArray *datagram = new QByteArray;
     datagram->reserve(43);
@@ -744,9 +765,9 @@ void Dispatcher::sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByt
     datagram->append(DownloadRequestPacket);
     datagram->append(protocol);
     datagram->append(tth);
-    datagram->append(toQByteArray(offset));
-    datagram->append(toQByteArray(length));
-    //datagram->append(protocolPreference);
+    datagram->append(quint64ToByteArray((quint64)offset));
+    datagram->append(quint64ToByteArray((quint64)length));
+    datagram->append(quint32ToByteArray(segmentId));
     sendUnicastRawDatagram(dstHost, datagram);
 }
 

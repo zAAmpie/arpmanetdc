@@ -95,8 +95,9 @@ signals:
 
     // Transfers
     void incomingProtocolCapabilityResponse(QHostAddress fromHost, char capability);
-    void incomingUploadRequest(quint8 protocol, QHostAddress fromHost, QByteArray tth, quint64 offset, quint64 length);
+    void incomingUploadRequest(quint8 protocol, QHostAddress fromHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId);
     void incomingDataPacket(quint8 protocolInstruction, QHostAddress senderHost, QByteArray datagram);
+    void incomingDirectDataPacket(quint32 segmentId, quint64 offset, QByteArray data);
     void incomingTransferError(QHostAddress senderHost, QByteArray tth, quint64 offset, quint8 error);
     //
     // Debug messages
@@ -125,7 +126,7 @@ public slots:
 
     // Transfers
     void sendProtocolCapabilityQuery(QHostAddress dstHost);
-    void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length);
+    void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId=0);
     void sendTransferError(QHostAddress dstHost, quint8 error, QByteArray tth, quint64 offset);
 
     // Buckets
@@ -202,6 +203,7 @@ private:
     // P2P protocol helper
     void handleProtocolInstruction(quint8 &quint8DatagramType, quint8 &quint8ProtocolInstruction, QByteArray &datagram,
                                    QHostAddress &senderHost);
+    void dispatchDirectDataPacket(QByteArray datagram);
 
     // Buckets
     void sendLocalBucket(QHostAddress &host);

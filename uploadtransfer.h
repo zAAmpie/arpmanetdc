@@ -32,7 +32,7 @@ public:
     ~UploadTransfer();
     void setFileName(QString filename);
     void setTTH(QByteArray tth);
-    void createUploadObject(quint8 protocol);
+    TransferSegment* createUploadObject(quint8 protocol, quint32 segmentId);
 
 public slots:
     int getTransferProgress();

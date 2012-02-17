@@ -26,6 +26,8 @@
 #include <QTimer>
 #include <QDateTime>
 #include "util.h"
+#include "transfersegment.h"
+class TransferSegment;
 
 struct SegmentStatusStruct
 {
@@ -49,7 +51,7 @@ signals:
     void TTHTreeRequest(QHostAddress hostAddr, QByteArray rootTTH, quint32 startBucket, quint32 bucketCount);
     void searchTTHAlternateSources(QByteArray tth);
     void loadTTHSourcesFromDatabase(QByteArray tth);
-    void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, quint64 offset, quint64 length);
+    void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId);
     void sendTransferError(QHostAddress dstHost, quint8 error, QByteArray tth, quint64 offset);
     void transmitDatagram(QHostAddress dstHost, QByteArray *datagram);
     void transferFinished(QByteArray tth);
@@ -58,6 +60,7 @@ signals:
     void flushBucketDirect(QString outfile, int bucketno, QByteArray *bucket, QByteArray tth);
     void renameIncompleteFile(QString filename);
     void requestProtocolCapability(QHostAddress peer, Transfer *obj);
+    void requestNextSegmentId();
 
 public slots:
     virtual void setFileName(QString filename);
@@ -65,7 +68,7 @@ public slots:
     void setFileOffset(quint64 offset);
     void setSegmentLength(quint64 length);
     void setRemoteHost(QHostAddress remote);
-    virtual void createUploadObject(quint8 protocol);
+    virtual TransferSegment* createUploadObject(quint8 protocol, quint32 segmentId);
     void setFileSize(quint64 size);
     QByteArray* getTTH();
     QString* getFileName();
@@ -83,6 +86,7 @@ public slots:
     virtual void TTHTreeReply(QByteArray tree);
     virtual void receivedPeerProtocolCapability(QHostAddress peer, quint8 protocols);
     virtual void incomingTransferError(quint64 offset, quint8 error);
+    virtual void setNextSegmentId(quint32 id);
 
     virtual void incomingDataPacket(quint8 transferProtocolVersion, quint64 offset, QByteArray data);
     virtual int getTransferType() = 0;
