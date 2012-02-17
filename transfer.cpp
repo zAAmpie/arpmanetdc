@@ -15,7 +15,7 @@ void Transfer::incomingDataPacket(quint8, quint64, QByteArray){}
 void Transfer::hashBucketReply(int, QByteArray){}
 void Transfer::TTHTreeReply(QByteArray){}
 void Transfer::receivedPeerProtocolCapability(QHostAddress, quint8){}
-TransferSegment* Transfer::createUploadObject(quint8, quint32){}
+TransferSegment* Transfer::createUploadObject(quint8, quint32){return 0;}
 void Transfer::bucketFlushed(int) {}
 void Transfer::bucketFlushFailed(int) {}
 void Transfer::incomingTransferError(quint64, quint8) {}
