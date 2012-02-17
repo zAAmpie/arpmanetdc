@@ -108,6 +108,7 @@ public:
     //HTML link converters
     void convertHTMLLinks(QString &msg);
     void convertMagnetLinks(QString &msg);
+    void convertNickname(QString nick, QString &msg);
 
     //Link to database
     sqlite3 *database() const;

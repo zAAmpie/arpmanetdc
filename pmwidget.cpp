@@ -66,8 +66,8 @@ void PMWidget::receivePrivateMessage(QString msg)
         msg.replace("\r","");
 
         //Replace nick with red text
-        msg.replace(pParent->nick(), tr("<font color=\"red\">%1</font>").arg(pParent->nick()));
-
+        pParent->convertNickname(pParent->nick(), msg);
+        
         //Convert plain text links to HTML links
         pParent->convertHTMLLinks(msg);
 
