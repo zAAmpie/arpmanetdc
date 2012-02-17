@@ -86,8 +86,13 @@ void TransferSegment::setDownloadBucketTablePointer(QHash<int, QByteArray *> *db
     pDownloadBucketTable = dbt;
 }
 
+void TransferSegment::setSegmentId(quint32 id)
+{
+    segmentId = id;
+}
+
 void TransferSegment::checkSendDownloadRequest(quint8 protocol, QHostAddress peer, QByteArray TTH,
-                                                       qint64 requestingOffset, qint64 requestingLength, int status)
+                                                       quint64 requestingOffset, quint64 requestingLength, int status)
 {
     if (status & (TRANSFER_STATE_RUNNING | TRANSFER_STATE_STALLED))
     {
@@ -95,9 +100,9 @@ void TransferSegment::checkSendDownloadRequest(quint8 protocol, QHostAddress pee
             requestingLength = segmentEnd - requestingOffset;
         if (requestingLength > 0)
         {
-            qDebug() << "TransferSegment::checkSendDownloadRequest() emit sendDownloadRequest() peer tth offset length "
-                     << peer << TTH.toBase64() << requestingOffset << requestingLength;
-            emit sendDownloadRequest(protocol, peer, TTH, requestingOffset, requestingLength);
+            qDebug() << "TransferSegment::checkSendDownloadRequest() emit sendDownloadRequest() peer tth offset length segmentid "
+                     << peer << TTH.toBase64() << requestingOffset << requestingLength << segmentId;
+            emit sendDownloadRequest(protocol, peer, TTH, requestingOffset, requestingLength, segmentId);
         }
     }
     else

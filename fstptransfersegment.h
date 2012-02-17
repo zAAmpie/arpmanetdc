@@ -42,9 +42,9 @@ public slots:
     qint64 getBytesReceivedNotFlushed();
 
 private:
-    qint64 requestingOffset;
-    qint64 requestingLength;
-    qint64 requestingTargetOffset;
+    quint64 requestingOffset;
+    quint64 requestingLength;
+    quint64 requestingTargetOffset;
     int packetsSinceUpdate;
     int retransmitTimeoutCounter;
     int retransmitRetryCounter;

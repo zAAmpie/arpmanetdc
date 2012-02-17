@@ -50,7 +50,7 @@ int UploadTransfer::getTransferType()
     return TRANSFER_TYPE_UPLOAD;
 }
 
-void UploadTransfer::createUploadObject(quint8 protocol)
+TransferSegment* UploadTransfer::createUploadObject(quint8 protocol, quint32 segmentId)
 {
     if (upload)
         delete upload;
@@ -71,12 +71,15 @@ void UploadTransfer::createUploadObject(quint8 protocol)
     }
 
     if (!upload)
-        return;
+        return 0;
+
+    upload->setSegmentId(segmentId);
 
     //Used to intercept the amount of data actually transmitted
     connect(upload, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)), this, SLOT(dataTransmitted(QHostAddress, QByteArray *)));
     connect(upload, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)), this, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)));
     connect(upload, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)), this, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)));
+    return upload;
 }
 
 void UploadTransfer::startTransfer()

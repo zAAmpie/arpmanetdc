@@ -51,7 +51,7 @@ private:
     UTPFunctionTable utp_callbacks;
     
     const unsigned char * fileMap;
-    qint64 segmentOffset;
+    quint64 segmentOffset;
 
     bool connect_called;
 

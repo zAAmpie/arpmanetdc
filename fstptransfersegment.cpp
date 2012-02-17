@@ -10,6 +10,7 @@ FSTPTransferSegment::FSTPTransferSegment(Transfer *parent)
     requestingTargetOffset = 0;
     retransmitTimeoutCounter = 0;
     retransmitRetryCounter = 0;
+    packetsSinceUpdate = 0;
 
     pParent = parent;
 }
@@ -38,7 +39,10 @@ void FSTPTransferSegment::startUploading()
     maxUploadRequestOffset = 0;
 
     if (segmentStart > fileSize)
+    {
+        emit sendTransferError(remoteHost, 0, TTH, segmentStart);
         return;
+    }
     else if (segmentStart + segmentLength > fileSize)
         segmentLength = fileSize - segmentStart;
 

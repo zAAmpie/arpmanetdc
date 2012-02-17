@@ -28,6 +28,7 @@ enum TransferProtocol
 
 enum MajorPacketType
 {
+    DirectDataPacket=0xc3,
     DataPacket=0xaa,
     UnicastPacket=0x55,
     BroadcastPacket=0x5a,

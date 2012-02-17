@@ -15,10 +15,11 @@ void Transfer::incomingDataPacket(quint8, quint64, QByteArray){}
 void Transfer::hashBucketReply(int, QByteArray){}
 void Transfer::TTHTreeReply(QByteArray){}
 void Transfer::receivedPeerProtocolCapability(QHostAddress, quint8){}
-void Transfer::createUploadObject(quint8){}
+TransferSegment* Transfer::createUploadObject(quint8, quint32){}
 void Transfer::bucketFlushed(int) {}
 void Transfer::bucketFlushFailed(int) {}
 void Transfer::incomingTransferError(quint64, quint8) {}
+void Transfer::setNextSegmentId(quint32) {}
 
 int Transfer::getSegmentCount() {return 0;}
 SegmentStatusStruct Transfer::getSegmentStatuses() {SegmentStatusStruct s; return s;}
