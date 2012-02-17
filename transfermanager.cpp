@@ -6,6 +6,7 @@ TransferManager::TransferManager(QHash<QString, QString> *settings, QObject *par
     pSettings = settings;
     currentDownloadCount = 0;
     currentUploadCount = 0;
+    zeroHostAddress = QHostAddress("0.0.0.0");
     nextSegmentId = qrand();
     if (nextSegmentId == 0)
         nextSegmentId++;
@@ -64,7 +65,7 @@ void TransferManager::incomingDataPacket(quint8 transferPacket, QHostAddress fro
             t->incomingDataPacket(transferPacket, offset, data);
         else
         {
-            t = getTransferObjectPointer(tth, TRANSFER_TYPE_UPLOAD, fromHost);
+            t = getTransferObjectPointer(tth, TRANSFER_TYPE_UPLOAD, &fromHost);
             if (t)
             {
                 qDebug() << "TransferManager::incomingDataPacket() for upload" << t->getFileName();
@@ -93,7 +94,7 @@ void TransferManager::incomingTransferError(QHostAddress fromHost, QByteArray tt
 void TransferManager::incomingUploadRequest(quint8 protocol, QHostAddress fromHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId)
 {
     qDebug() << "TransferManager::incomingUploadRequest(): Data request offset " << offset << " length " << length;
-    Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_UPLOAD, fromHost);
+    Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_UPLOAD, &fromHost);
     if (t)
     {
         t->setFileOffset(offset);
@@ -313,7 +314,7 @@ void TransferManager::stopTransfer(QByteArray tth, int transferType, QHostAddres
     if (transferType == TRANSFER_TYPE_DOWNLOAD)
         t = getTransferObjectPointer(tth, transferType);
     else
-        t = getTransferObjectPointer(tth, transferType, hostAddr);
+        t = getTransferObjectPointer(tth, transferType, &hostAddr);
     if (t)
     {
         //Abort transfer before deletion
@@ -345,8 +346,11 @@ void TransferManager::requestGlobalTransferStatus()
 }
 
 // look for pointer to Transfer object matching tth, transfer type and host address
-Transfer* TransferManager::getTransferObjectPointer(QByteArray &tth, int transferType, QHostAddress &hostAddr)
+Transfer* TransferManager::getTransferObjectPointer(QByteArray &tth, int transferType, QHostAddress *hostAddr)
 {
+    if (hostAddr == 0)
+        hostAddr = &zeroHostAddress;
+
     if (transferObjectTable.contains(tth))
     {
         QListIterator<Transfer*> it(transferObjectTable.values(tth));
@@ -354,7 +358,7 @@ Transfer* TransferManager::getTransferObjectPointer(QByteArray &tth, int transfe
         {
             Transfer* p = it.next();
             //if ((p->getTransferType() == transferType) && (p->getRemoteHost()->toString() == hostAddr.toString()))
-            if ((p->getTransferType() == transferType) && (*p->getRemoteHost() == hostAddr))
+            if ((p->getTransferType() == transferType) && (*p->getRemoteHost() == *hostAddr))
                 return p;
         }
     }
