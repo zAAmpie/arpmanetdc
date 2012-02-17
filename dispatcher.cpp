@@ -122,6 +122,7 @@ void Dispatcher::receiveP2PData()
         quint16 senderPort; // ignoreer
         datagram.resize(receiverUdpSocket->pendingDatagramSize());
         receiverUdpSocket->readDatagram(datagram.data(), datagram.size(), &senderHost, &senderPort);
+        //receiverUdpSocket->readDatagram(datagram.data(), datagram.size(), &senderHost, &senderPort);
         //QByteArray datagramType(datagram.left(1));
         //QByteArray protocolInstruction(datagram.mid(1,1));
         //quint8 quint8DatagramType = datagramType.at(0); // hy wil graag mooi gevra wees om by die rou byte uit te kom...

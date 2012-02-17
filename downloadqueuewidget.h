@@ -20,6 +20,7 @@
 
 #include <QtGui>
 #include <QHostAddress>
+#include "util.h"
 
 class ArpmanetDC;
 class ShareSearch;

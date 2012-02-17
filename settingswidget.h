@@ -57,6 +57,9 @@ private slots:
     //Changed the value of the spinbox
     void shareUpdateIntervalSpinBoxValueChanged(int value);
 
+    //Changed the list widget item
+    void changePage(QListWidgetItem *current, QListWidgetItem *previous);
+
 signals:
     //Signalled when settings were saved
     void settingsSaved();
@@ -67,21 +70,44 @@ private:
     void placeWidgets();
     void connectWidgets();
 
+    QWidget *createGeneralSettingsPage();
+    QWidget *createAdvancedSettingsPage();
+    QWidget *createUserCommandsPage();
+
+    void createPageIcons();
+
     //Objects
     QWidget *pWidget;
     ArpmanetDC *pParent;
 
     QHash<QString, QString> *pSettings;
 
-    //GUI
+    //GUI pages
     QWidget *advancedWidget;
-    QListWidget *protocolList;
+    QWidget *generalWidget;
+    QWidget *userCommandWidget;
 
-    QSpinBox *shareUpdateIntervalSpinBox;
+    //Main widgets
     QCheckBox *toggleAdvancedCheckBox;
-    QLineEdit *hubAddressLineEdit, *hubPortLineEdit, *nickLineEdit, *passwordLineEdit, *ipLineEdit, *externalPortLineEdit, *downloadPathLineEdit;
-    QPushButton *saveButton, *guessIPButton, *browseDownloadPathButton, *protocolUpButton, *protocolDownButton;
+    QPushButton *saveButton;
+    QListWidget *contentsWidget;
+    QStackedWidget *pagesWidget;
 
+    //Content list widgets
+    QListWidgetItem *advancedPageButton, *generalPageButton, *userCommandsPageButton;
+
+    //General settings widgets
+    QSpinBox *shareUpdateIntervalSpinBox;
+    QLineEdit *hubAddressLineEdit, *hubPortLineEdit, *nickLineEdit, *passwordLineEdit, *downloadPathLineEdit;
+    QPushButton *browseDownloadPathButton;
+
+    //Advanced settings widgets
+    QLineEdit *ipLineEdit, *externalPortLineEdit;
+    QListWidget *protocolList;
+    QPushButton *guessIPButton, *protocolUpButton, *protocolDownButton;
+
+    //User command settings widgets
+    
 };
 
 //Custom validator class to deal with IP addresses :)

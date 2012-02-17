@@ -329,7 +329,7 @@ void TransferManager::requestGlobalTransferStatus()
 }
 
 // look for pointer to Transfer object matching tth, transfer type and host address
-Transfer* TransferManager::getTransferObjectPointer(QByteArray &tth, int transferType, QHostAddress hostAddr)
+Transfer* TransferManager::getTransferObjectPointer(QByteArray &tth, int transferType, QHostAddress &hostAddr)
 {
     if (transferObjectTable.contains(tth))
     {

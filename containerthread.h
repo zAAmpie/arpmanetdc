@@ -7,6 +7,7 @@
 #include <QFileInfo>
 #include <QStringList>
 #include <QHostAddress>
+#include "util.h"
 
 #define CONTAINER_EXTENSION "adcc"
 

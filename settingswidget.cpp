@@ -23,16 +23,60 @@ void SettingsWidget::createWidgets()
 
     //========== BASIC SETTINGS ==========
 
+    generalWidget = createGeneralSettingsPage();
+
+    //========== ADVANCED SETTINGS ==========
+
+    advancedWidget = createAdvancedSettingsPage();
+
+    //========== USER COMMANDS ==========
+
+    userCommandWidget = createUserCommandsPage();
+
+    //========== MISC ==========
+    saveButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Save changes"), pWidget);
+    toggleAdvancedCheckBox = new QCheckBox(tr("Show advanced settings"), pWidget);
+    if (pSettings->value("showAdvanced") == "1")
+        toggleAdvancedCheckBox->setChecked(true);
+    else
+        toggleAdvancedCheckBox->setChecked(false);
+}
+
+
+//Create the page widget for general settings
+QWidget *SettingsWidget::createGeneralSettingsPage()
+{
+    QWidget *pageWidget = new QWidget;
+
+    //User settings
+    QGroupBox *userGroup = new QGroupBox(tr("User settings"));
+    
+    nickLineEdit = new QLineEdit(pSettings->value("nick"), pWidget);
+    
+    passwordLineEdit = new QLineEdit(pSettings->value("password"), pWidget);
+    passwordLineEdit->setEchoMode(QLineEdit::Password);
+
+    QFormLayout *userLayout = new QFormLayout;
+    userLayout->addRow(tr("Nickname:"), nickLineEdit);
+    userLayout->addRow(tr("Password"), passwordLineEdit);
+    userGroup->setLayout(userLayout);
+
+    //Hub settings
+    QGroupBox *hubGroup = new QGroupBox(tr("Hub settings"));
+    
     hubAddressLineEdit = new QLineEdit(pSettings->value("hubAddress"),pWidget);
     
     hubPortLineEdit = new QLineEdit(pSettings->value("hubPort"), pWidget);
     hubPortLineEdit->setValidator(new QIntValidator(0, 65535, this));
 
-    nickLineEdit = new QLineEdit(pSettings->value("nick"), pWidget);
-    
-    passwordLineEdit = new QLineEdit(pSettings->value("password"), pWidget);
-    passwordLineEdit->setEchoMode(QLineEdit::Password);
-    
+    QFormLayout *hubLayout = new QFormLayout;
+    hubLayout->addRow(tr("Hub address:"), hubAddressLineEdit);
+    hubLayout->addRow(tr("Hub port:"), hubPortLineEdit);
+    hubGroup->setLayout(hubLayout);
+
+    //Sharing/Download settings    
+    QGroupBox *sharingGroup = new QGroupBox(tr("Sharing/Download settings"));
+
     downloadPathLineEdit = new QLineEdit(pSettings->value("downloadPath"), pWidget);
 
     browseDownloadPathButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/FolderIcon.png"), tr("Browse"), pWidget);
@@ -47,23 +91,74 @@ void SettingsWidget::createWidgets()
         shareUpdateIntervalSpinBox->setSuffix(" minute");
     shareUpdateIntervalSpinBox->setSpecialValueText("Disabled");
 
-    //========== ADVANCED SETTINGS ==========
+    QHBoxLayout *downloadPathLayout = new QHBoxLayout;
+    downloadPathLayout->addWidget(downloadPathLineEdit);
+    downloadPathLayout->addWidget(browseDownloadPathButton);
+
+    QFormLayout *sharingLayout = new QFormLayout;
+    sharingLayout->addRow(tr("Download path:"), downloadPathLayout);
+    sharingLayout->addRow(tr("Share update interval:"), shareUpdateIntervalSpinBox);
+    sharingGroup->setLayout(sharingLayout);
+
+    //Main page layout
+    QVBoxLayout *pageLayout = new QVBoxLayout;
+    pageLayout->addWidget(userGroup);
+    pageLayout->addWidget(hubGroup);
+    pageLayout->addWidget(sharingGroup);
+    pageLayout->addStretch(1);
+
+    //Set widget to final layout and return
+    pageWidget->setLayout(pageLayout);
+    return pageWidget;
+}
+
+//Create the page widget for advanced settings
+QWidget *SettingsWidget::createAdvancedSettingsPage()
+{
+    QWidget *pageWidget = new QWidget;
+
+    //Dispatcher settings
+    QGroupBox *dispatchGroup = new QGroupBox(tr("Dispatcher settings"));
 
     ipLineEdit = new QLineEdit(pSettings->value("externalIP"), pWidget);
     ipLineEdit->setValidator(new IPValidator(this));
+    
+    guessIPButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/GuessIcon.png"), tr("Guess External IP"), pWidget);
 
     externalPortLineEdit = new QLineEdit(pSettings->value("externalPort"), pWidget);
     externalPortLineEdit->setValidator(new QIntValidator(0, 65535, this));
+    
+    QHBoxLayout *guessLayout = new QHBoxLayout();
+    guessLayout->addWidget(ipLineEdit);
+    guessLayout->addWidget(guessIPButton);  
+
+    QFormLayout *dispatcherLayout = new QFormLayout;
+    dispatcherLayout->addRow(tr("External IP:"), guessLayout);
+    dispatcherLayout->addRow(tr("External port:"), externalPortLineEdit);
+    dispatchGroup->setLayout(dispatcherLayout);
+
+    //Protocol settings
+    QGroupBox *protocolGroup = new QGroupBox(tr("Protocol settings"));
 
     protocolList = new QListWidget(pWidget);
     protocolList->setMaximumHeight(150);
     protocolList->setMaximumWidth(100);
     protocolList->setSelectionMode(QAbstractItemView::SingleSelection);
-
-    guessIPButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/GuessIcon.png"), tr("Guess External IP"), pWidget);
     
     protocolUpButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/GreenUpIcon.png"), tr("Up"), pWidget);
     protocolDownButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/RedDownIcon.png"), tr("Down"), pWidget);
+
+    QVBoxLayout *protocolButtonLayout = new QVBoxLayout();
+    protocolButtonLayout->addStretch(1);
+    protocolButtonLayout->addWidget(protocolUpButton);
+    protocolButtonLayout->addWidget(protocolDownButton);
+    protocolButtonLayout->addStretch(1);
+
+    QHBoxLayout *protocolLayout = new QHBoxLayout();
+    protocolLayout->addWidget(protocolList);
+    protocolLayout->addLayout(protocolButtonLayout);
+    protocolLayout->addStretch(1);
+    protocolGroup->setLayout(protocolLayout);
 
     //Enqueue supported protocols
     QString protocolHint = pSettings->value("protocolHint");
@@ -79,80 +174,91 @@ void SettingsWidget::createWidgets()
         }
     }
 
-    //========== MISC ==========
-    saveButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Save changes"), pWidget);
-    toggleAdvancedCheckBox = new QCheckBox(tr("Show advanced settings"), pWidget);
-    if (pSettings->value("showAdvanced") == "1")
-        toggleAdvancedCheckBox->setChecked(true);
-    else
-        toggleAdvancedCheckBox->setChecked(false);
-    advancedWidget = new QWidget(pWidget);
+    //Main page layout
+    QVBoxLayout *pageLayout = new QVBoxLayout;
+    pageLayout->addWidget(dispatchGroup);
+    pageLayout->addWidget(protocolGroup);
+    pageLayout->addStretch(1);
+
+    //Set widget to final layout and return
+    pageWidget->setLayout(pageLayout);
+    return pageWidget;
+}
+
+//Create the page widget for user command settings
+QWidget *SettingsWidget::createUserCommandsPage()
+{
+    QWidget *pageWidget = new QWidget;
+
+    //Main page layout
+    QVBoxLayout *pageLayout = new QVBoxLayout;
+    pageLayout->addWidget(new QLabel(tr("Under construction")));
+    pageLayout->addStretch(1);
+
+    //Set widget to final layout and return
+    pageWidget->setLayout(pageLayout);
+    return pageWidget;
+}
+
+//Create icons for pagesWidget
+void SettingsWidget::createPageIcons()
+{
+    generalPageButton = new QListWidgetItem(contentsWidget);
+    generalPageButton->setIcon(QIcon(":/ArpmanetDC/Resources/ServerIcon.png"));
+    generalPageButton->setText(tr("General"));
+    generalPageButton->setTextAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    generalPageButton->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+
+    userCommandsPageButton = new QListWidgetItem(contentsWidget);
+    userCommandsPageButton->setIcon(QIcon(":/ArpmanetDC/Resources/UserIcon.png"));
+    userCommandsPageButton->setText(tr("User commands"));
+    userCommandsPageButton->setTextAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    userCommandsPageButton->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+
+    advancedPageButton = new QListWidgetItem(contentsWidget);
+    advancedPageButton->setIcon(QIcon(":/ArpmanetDC/Resources/SettingsIcon.png"));
+    advancedPageButton->setText(tr("Advanced"));
+    advancedPageButton->setTextColor(Qt::red);
+    advancedPageButton->setTextAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    advancedPageButton->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
 }
 
 void SettingsWidget::placeWidgets()
 {
-    QHBoxLayout *downloadPathLayout = new QHBoxLayout;
-    downloadPathLayout->addWidget(downloadPathLineEdit);
-    downloadPathLayout->addWidget(browseDownloadPathButton);
+    //Create list of pages and the icons associated with it
+    contentsWidget = new QListWidget;
+    contentsWidget->setViewMode(QListView::ListMode);
+    contentsWidget->setIconSize(QSize(32, 32));
+    contentsWidget->setMovement(QListView::Static);
+    contentsWidget->setMaximumWidth(200);
+    //contentsWidget->setSpacing(12);
 
-    QHBoxLayout *autoUpdateLayout = new QHBoxLayout;
-    autoUpdateLayout->addWidget(shareUpdateIntervalSpinBox);
+    createPageIcons();
+    contentsWidget->setCurrentRow(0);
 
-    QFormLayout *flayout = new QFormLayout();
-    flayout->addRow(new QLabel("<b>User information</b>"));
-    flayout->addRow(new QLabel("Nickname:"), nickLineEdit);
-    flayout->addRow(new QLabel("Password:"), passwordLineEdit);
-    flayout->addRow(new QLabel("<b>Download path</b>"));
-    flayout->addRow(new QLabel("Download path:"), downloadPathLayout);
-    flayout->addRow(new QLabel("<b>Hub information</b>"));
-    flayout->addRow(new QLabel("Hub address:"), hubAddressLineEdit);
-    flayout->addRow(new QLabel("Hub port:"), hubPortLineEdit);
-    flayout->addRow(new QLabel("<b>Shares</b>"));
-    flayout->addRow(new QLabel("Share update interval:"), autoUpdateLayout);
+    //Create pages widget
+    pagesWidget = new QStackedWidget;
+    pagesWidget->addWidget(generalWidget);
+    pagesWidget->addWidget(userCommandWidget);
+    pagesWidget->addWidget(advancedWidget);
+        
+    //Create bottom button layout
+    QHBoxLayout *buttonLayout = new QHBoxLayout();
+    buttonLayout->addWidget(toggleAdvancedCheckBox);
+    buttonLayout->addStretch(1);
+    buttonLayout->addWidget(saveButton);
 
-    QHBoxLayout *guessLayout = new QHBoxLayout();
-    guessLayout->addWidget(ipLineEdit);
-    guessLayout->addWidget(guessIPButton);    
+    //Create pages layout
+    QHBoxLayout *pagesLayout = new QHBoxLayout;
+    pagesLayout->addWidget(contentsWidget);
+    pagesLayout->addWidget(pagesWidget);
 
-    QVBoxLayout *protocolButtonLayout = new QVBoxLayout();
-    protocolButtonLayout->addStretch(1);
-    protocolButtonLayout->addWidget(protocolUpButton);
-    protocolButtonLayout->addWidget(protocolDownButton);
-    protocolButtonLayout->addStretch(1);
-
-    QHBoxLayout *protocolLayout = new QHBoxLayout();
-    protocolLayout->addWidget(protocolList);
-    protocolLayout->addLayout(protocolButtonLayout);
-    protocolLayout->addStretch(1);
-
-    QFormLayout *flayoutR = new QFormLayout();
-    flayoutR->addRow(new QLabel("<font color=\"red\"><b>Warning: Advanced users only!</b></font>"));
-    flayoutR->addRow(new QLabel("<font color=\"red\">External IP:</font>"), guessLayout);
-    flayoutR->addRow(new QLabel("<font color=\"red\">External port:</font>"), externalPortLineEdit);
-    flayoutR->addRow(new QLabel("<font color=\"red\">Transfer protocol preferences</font>"), protocolLayout);
-    flayoutR->setContentsMargins(0,0,0,0);
-
-    advancedWidget->setLayout(flayoutR);
-
-    QHBoxLayout *formLayouts = new QHBoxLayout();
-    formLayouts->addLayout(flayout);
-    formLayouts->addSpacing(20);
-    formLayouts->addWidget(advancedWidget);  
-
-    QHBoxLayout *hlayout = new QHBoxLayout();
-    hlayout->addWidget(toggleAdvancedCheckBox);
-    hlayout->addStretch(1);
-    hlayout->addWidget(saveButton);
-
-    QVBoxLayout *layout = new QVBoxLayout();
-    layout->addLayout(formLayouts);
-    layout->addStretch(1);
-    layout->addLayout(hlayout);
+    //Main layout
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->addLayout(pagesLayout);
+    layout->addLayout(buttonLayout);
 
     pWidget->setLayout(layout);
-    
-    if (!toggleAdvancedCheckBox->isChecked())
-        advancedWidget->hide();    
 }
 
 void SettingsWidget::connectWidgets()
@@ -167,6 +273,18 @@ void SettingsWidget::connectWidgets()
     connect(toggleAdvancedCheckBox, SIGNAL(stateChanged(int)), this, SLOT(advancedCheckBoxToggled(int)));
 
     connect(shareUpdateIntervalSpinBox, SIGNAL(valueChanged(int)), this, SLOT(shareUpdateIntervalSpinBoxValueChanged(int)));
+
+    connect(contentsWidget, SIGNAL(currentItemChanged(QListWidgetItem *, QListWidgetItem *)),
+        this, SLOT(changePage(QListWidgetItem *, QListWidgetItem *)));
+}
+
+//Changed the list widget item
+void SettingsWidget::changePage(QListWidgetItem *current, QListWidgetItem *previous)
+{
+    if (!current)
+        current = previous;
+
+    pagesWidget->setCurrentIndex(contentsWidget->row(current));
 }
 
 void SettingsWidget::savePressed()
@@ -288,9 +406,19 @@ void SettingsWidget::shareUpdateIntervalSpinBoxValueChanged(int value)
 void SettingsWidget::advancedCheckBoxToggled(int state)
 {
     if (state == Qt::Checked)
-        advancedWidget->show();
+    {
+        //Show advanced settings
+        advancedPageButton->setHidden(false);
+    }
     else
-        advancedWidget->hide();
+    {
+        //Move away from advanced page
+        if (contentsWidget->currentItem() == advancedPageButton)
+            contentsWidget->setCurrentRow(0);
+
+        //Hide advanced settings
+        advancedPageButton->setHidden(true);
+    }
     QApplication::processEvents();
 }
 

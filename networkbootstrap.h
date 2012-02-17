@@ -25,6 +25,7 @@
 #include <QHash>
 #include <QList>
 #include <QDateTime>
+#include "util.h"
 
 // bootstrap status definitions
 #define NETWORK_BOOTATTEMPT_NONE -2

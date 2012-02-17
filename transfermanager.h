@@ -136,7 +136,7 @@ public slots:
     void setMaximumSimultaneousUploads(int n);
 
 private:
-    Transfer* getTransferObjectPointer(QByteArray &tth, int transferType, QHostAddress hostAddr = QHostAddress("0.0.0.0"));
+    Transfer* getTransferObjectPointer(QByteArray &tth, int transferType, QHostAddress &hostAddr = QHostAddress("0.0.0.0"));
     DownloadTransferQueueItem getNextQueuedDownload();
     void startNextDownload();
     QMap<int, QList<DownloadTransferQueueItem>* > downloadTransferQueue;
