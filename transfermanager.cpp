@@ -228,6 +228,7 @@ void TransferManager::startNextDownload()
     connect(t, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
     connect(t, SIGNAL(requestNextSegmentId()), this, SLOT(requestNextSegmentId()));
     connect(this, SIGNAL(setSegmentId(quint32)), t, SLOT(setNextSegmentId(quint32)));
+    connect(t, SIGNAL(saveBucketFlushStateBitmap(QByteArray,QByteArray)), this, SIGNAL(saveBucketFlushStateBitmap(QByteArray,QByteArray)));
 
     t->setFileName(i.filePathName);
     t->setTTH(i.tth);
@@ -235,6 +236,7 @@ void TransferManager::startNextDownload()
     t->setProtocolOrderPreference(pSettings->value("protocolHint").toAscii());
     t->addPeer(i.fileHost);
     transferObjectTable.insertMulti(i.tth, t);
+    emit loadBucketFlushStateBitmap(i.tth);
     emit loadTTHSourcesFromDatabase(i.tth);
     emit searchTTHAlternateSources(i.tth);
     t->startTransfer();
@@ -483,6 +485,13 @@ void TransferManager::requestNextSegmentId()
         nextSegmentId++;
 
     emit setSegmentId(nextSegmentId);
+}
+
+void TransferManager::restoreBucketFlushStateBitmap(QByteArray tth, QByteArray bitmap)
+{
+    Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_DOWNLOAD);
+    if (t)
+        t->setBucketFlushStateBitmap(bitmap);
 }
 
 TransferSegment* TransferManager::getTransferSegmentPointer(quint32 segmentId)

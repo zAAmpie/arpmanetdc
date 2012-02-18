@@ -43,7 +43,9 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
 
 DownloadTransfer::~DownloadTransfer()
 {
-    //TODO: save transferSegmentStateBitmap to db
+    // save bucketFlushStateBitmap to db
+    emit saveBucketFlushStateBitmap(TTH, bucketFlushStateBitmap);
+
     transferRateCalculationTimer->deleteLater();
     transferTimer->deleteLater();
     QHashIterator<int, QByteArray*> itdb(*downloadBucketTable);
@@ -204,6 +206,34 @@ int DownloadTransfer::getTransferType()
     return TRANSFER_TYPE_DOWNLOAD;
 }
 
+// Restore transfer segment block state bitmaps if the database knows about them
+void DownloadTransfer::setBucketFlushStateBitmap(QByteArray bitmap)
+{
+    if (bucketFlushStateBitmap.length() == 0)
+    {
+        bucketFlushStateBitmap = bitmap;
+
+        // Important: bucket flush states must coincide with transfer segment states, otherwise we will need to loop-compare-set
+        //SegmentNotDownloaded = 0x01,
+        //SegmentDownloaded = 0x02,
+        //BucketNotFlushed = 0x01,
+        //BucketFlushed = 0x02
+        transferSegmentStateBitmap = bitmap;
+    }
+    // If the asynchronous signal arrives late, we must iterate and update, in case things started happening already.
+    else if (bitmap.length() == bucketFlushStateBitmap.length())
+    {
+        for (int i = 0; i < bitmap.length(); i++)
+        {
+            if (transferSegmentStateBitmap.at(i) == SegmentNotDownloaded)
+            {
+                bucketFlushStateBitmap[i] = bitmap.at(i);
+                transferSegmentStateBitmap[i] = bitmap.at(i);
+            }
+        }
+    }
+}
+
 // Initializes transfer segment block state bitmaps and start the transfer timer to get things moving.
 void DownloadTransfer::startTransfer()
 {
@@ -278,22 +308,6 @@ void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
     downloadBucketTable->remove(bucketNumber); // just remove entry, bucket pointer gets deleted in BucketFlushThread
     transferSegmentStateBitmap[bucketNumber] = SegmentCurrentlyFlushing;
     emit flushBucketDirect(filePathName, bucketNumber, bucketPtr, TTH);
-
-    int segmentsDone = 0;
-    for (int i = 0; i < transferSegmentStateBitmap.length(); i++)
-    {
-        if (transferSegmentStateBitmap.at(i) == SegmentDownloaded)
-            segmentsDone++;
-    }
-    int fileBuckets = calculateBucketNumber(fileSize);
-    fileBuckets = fileSize % HASH_BUCKET_SIZE == 0 ? fileBuckets : fileBuckets + 1;
-    if (segmentsDone ==  fileBuckets)
-    {
-        status = TRANSFER_STATE_FINISHED;
-        emit renameIncompleteFile(filePathName); // TODO: revisit this when fixing resumable downloads
-        emit transferFinished(TTH);
-        abortTransfer();
-    }
 }
 
 // This timer event is mainly used to negotiate the transfer of hash trees before the segments are created and the download begins.
@@ -681,6 +695,26 @@ void DownloadTransfer::bucketFlushed(int bucketNo)
 {
     bucketFlushQueueLength--;
     congestionTest();
+    transferSegmentStateBitmap[bucketNo] = SegmentDownloaded;
+
+    int segmentsDone = 0;
+    for (int i = 0; i < transferSegmentStateBitmap.length(); i++)
+    {
+        if (transferSegmentStateBitmap.at(i) == SegmentDownloaded)
+            segmentsDone++;
+    }
+    int fileBuckets = calculateBucketNumber(fileSize);
+    fileBuckets = fileSize % HASH_BUCKET_SIZE == 0 ? fileBuckets : fileBuckets + 1;
+    if (segmentsDone ==  fileBuckets)
+    {
+        status = TRANSFER_STATE_FINISHED;
+        emit renameIncompleteFile(filePathName); // TODO: revisit this when fixing resumable downloads
+        emit transferFinished(TTH);
+
+        // let's rather keep the state finished, just emit the abort signal, so that the destructor knows not to persist the block bitmap on finish.
+        //abortTransfer();
+        emit abort(this);
+    }
 }
 
 void DownloadTransfer::bucketFlushFailed(int bucketNo)
