@@ -45,6 +45,7 @@ typedef struct
     quint8 protocolCapability;
     TransferSegment *transferSegment;
     QByteArray triedProtocols;
+    int failureCount;
 } RemotePeerInfoStruct;
 
 class DownloadTransfer : public Transfer
@@ -98,6 +99,7 @@ private:
     int getLastHashBucketNumberReceived();
     void congestionTest();
     void requestHashTree(int lastHashBucketReceived, bool timerRequest = false);
+    QHostAddress getBestIdlePeer();
 
     QHash<int, QByteArray*> *downloadBucketTable;
     QMap<int, QByteArray*> downloadBucketHashLookupTable;
@@ -116,6 +118,7 @@ private:
     int tthSearchInterval;
     int bucketHashQueueLength;
     int bucketFlushQueueLength;
+    int treeUpdatesSinceTimer;
     bool iowait;
     quint32 nextSegmentId;
     QHostAddress treeRequestHost;
