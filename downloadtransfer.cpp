@@ -175,11 +175,8 @@ void DownloadTransfer::TTHTreeReply(QByteArray tree)
     lastBucket = fileSize % HASH_BUCKET_SIZE == 0 ? lastBucket - 1 : lastBucket;
 
     if (lastHashBucketReceived == hashTreeWindowEnd)
-    {
-        emit TTHTreeRequest(listOfPeers.first(), TTH, lastHashBucketReceived + 1, HASH_TREE_WINDOW_LENGTH);
-        hashTreeWindowEnd = lastHashBucketReceived + HASH_TREE_WINDOW_LENGTH;
-        qDebug() << "Request TTH tree " << lastHashBucketReceived + 1 << calculateBucketNumber(fileSize);
-    }
+        requestHashTree(lastHashBucketReceived);
+
     //Start downloading if total hash tree has been downloaded
     else if (lastHashBucketReceived == lastBucket)
     {
@@ -233,9 +230,9 @@ void DownloadTransfer::abortTransfer()
 // Not to be confused with newPeer(), which adds the peer and its capabilities to remotePeerInfoTable
 void DownloadTransfer::addPeer(QHostAddress peer)
 {
-    if (peer.toIPv4Address() > 0 && !listOfPeers.contains(peer))
+    if (peer.toIPv4Address() > 0 && !remotePeerInfoRequestPool.contains(peer))
     {
-        listOfPeers.append(peer);  // TODO: is this list then strictly necessary?
+        remotePeerInfoRequestPool.insert(peer, 1);
         emit requestProtocolCapability(peer, this);
     }
 }
@@ -319,9 +316,8 @@ void DownloadTransfer::transferTimerEvent()
         }
         else
         {
-            qDebug() << "Timer request TTH tree " << listOfPeers.first().toString() << lastHashBucketReceived + 1;
-            emit TTHTreeRequest(listOfPeers.first(), TTH, lastHashBucketReceived + 1, HASH_TREE_WINDOW_LENGTH); // 8 datagrams
-            hashTreeWindowEnd = lastHashBucketReceived + HASH_TREE_WINDOW_LENGTH;
+            requestHashTree(lastHashBucketReceived);
+            qDebug() << "Timer request TTH tree " << lastHashBucketReceived + 1;
         }
     }
 }
@@ -376,10 +372,7 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
     segment->deleteLater();
     
     //Remove offending peer
-    remotePeerInfoTable.remove(h);
-    int p = listOfPeers.indexOf(h);
-    if (p > -1)
-        listOfPeers.removeAt(p);
+    remotePeerInfoTable.remove(h); // TODO: flag, don't remove
 
     //Update the alternates
     emit searchTTHAlternateSources(TTH);
@@ -708,4 +701,12 @@ void DownloadTransfer::congestionTest()
 void DownloadTransfer::setNextSegmentId(quint32 id)
 {
     nextSegmentId = id;
+}
+
+void DownloadTransfer::requestHashTree(int lastHashBucketReceived)
+{
+    emit TTHTreeRequest(listOfPeers.first(), TTH, lastHashBucketReceived + 1, HASH_TREE_WINDOW_LENGTH);
+    hashTreeWindowEnd = lastHashBucketReceived + HASH_TREE_WINDOW_LENGTH;
+    qDebug() << "Request TTH tree " << lastHashBucketReceived + 1 << calculateBucketNumber(fileSize);
+
 }

@@ -52,7 +52,6 @@ typedef struct
     TransferSegment *transferSegment;
 } TransferSegmentTableStruct;
 
-// somehow this thing becomes read-only, hence the pointers and double pointer
 typedef struct
 {
     quint64 bytesTransferred;
@@ -108,12 +107,15 @@ private:
     void downloadNextAvailableChunk(TransferSegment *download, int length = 1);
     int getLastHashBucketNumberReceived();
     void congestionTest();
+    void protocolCapabilityRequestTimerEvent();
+    void requestHashTree(int lastHashBucketReceived);
 
     QHash<int, QByteArray*> *downloadBucketTable;
     QMap<int, QByteArray*> downloadBucketHashLookupTable;
 
     QTimer *transferTimer;
     QTimer *TTHSearchTimer;
+    QTimer *protocolCapabilityRequestTimer;
 
     int lastBucketNumber;
     int lastBucketSize;
@@ -132,6 +134,7 @@ private:
     QByteArray transferSegmentStateBitmap;
     QByteArray bucketFlushStateBitmap;
     QHash<QHostAddress, RemotePeerInfoStruct> remotePeerInfoTable;
+    QHash<QHostAddress,int> remotePeerInfoRequestPool;
 };
 
 #endif // DOWNLOADTRANSFER_H

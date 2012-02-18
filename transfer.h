@@ -109,7 +109,7 @@ protected:
     quint64 fileOffset;
     quint64 segmentLength;
     int status;
-    QList<QHostAddress> listOfPeers;
+    //QList<QHostAddress> listOfPeers;
     QTimer *transferRateCalculationTimer;
     quint64 transferRate;
     int transferProgress;

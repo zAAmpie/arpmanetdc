@@ -16,10 +16,11 @@ void Transfer::hashBucketReply(int, QByteArray){}
 void Transfer::TTHTreeReply(QByteArray){}
 void Transfer::receivedPeerProtocolCapability(QHostAddress, quint8){}
 TransferSegment* Transfer::createUploadObject(quint8, quint32){return 0;}
-void Transfer::bucketFlushed(int) {}
-void Transfer::bucketFlushFailed(int) {}
-void Transfer::incomingTransferError(quint64, quint8) {}
-void Transfer::setNextSegmentId(quint32) {}
+void Transfer::bucketFlushed(int){}
+void Transfer::bucketFlushFailed(int){}
+void Transfer::incomingTransferError(quint64, quint8){}
+void Transfer::setNextSegmentId(quint32){}
+void Transfer::addPeer(QHostAddress){}
 
 int Transfer::getSegmentCount() {return 0;}
 SegmentStatusStruct Transfer::getSegmentStatuses() {SegmentStatusStruct s = {0,0,0,0,0}; return s;}
@@ -109,10 +110,4 @@ int Transfer::getTransferProgress()
 qint64 Transfer::getUptime()
 {
     return QDateTime::currentMSecsSinceEpoch() - upTime.toMSecsSinceEpoch();
-}
-
-void Transfer::addPeer(QHostAddress peer)
-{
-    if (peer.toIPv4Address() > 0 && !listOfPeers.contains(peer))
-        listOfPeers.append(peer);
 }
