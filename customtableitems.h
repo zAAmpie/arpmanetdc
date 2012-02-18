@@ -35,10 +35,10 @@
 
 //Bitmap colours
 const static QColor downloadedColor(79, 189, 54);
-const static QColor notDownloadedColor(79, 189, 54, 128);
+const static QColor notDownloadedColor(255,255,255);
 
 const static QColor uploadedColor(37, 149, 214);
-const static QColor notUploadedColor(37, 149, 214, 128);
+const static QColor notUploadedColor(255,255,255);
 
 const static QColor downloadingColor(79, 189, 54, 192);
 const static QColor uploadingColor(37, 149, 214, 192);

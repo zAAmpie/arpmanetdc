@@ -269,7 +269,8 @@ void BitmapDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option
         pixel = (QRgb*)line;
        
         //Determine pixel colour
-        *pixel = BITMAP_COLOUR_MAP.value(bitmap.at(i)).rgba();
+        char val = bitmap.at(i);
+        *pixel = BITMAP_COLOUR_MAP.value(val).rgba();
 
         //Move 4 bytes on (32bit)
         line+=4;
