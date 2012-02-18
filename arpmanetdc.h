@@ -42,7 +42,8 @@
 #include <sqlite/sqlite3.h>
 #include "protocoldef.h"
 
-#define QT_NO_DEBUG_OUTPUT
+//#define QT_NO_DEBUG
+//#define QT_NO_DEBUG_OUTPUT
 
 #define SHARED_MEMORY_KEY "ArpmanetDCv0.1"
 

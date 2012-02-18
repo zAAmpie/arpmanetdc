@@ -64,7 +64,7 @@ enum MinorPacketType
     RevConnectReplyPacket=0xa2
 };
 
-#define HASH_BUCKET_SIZE (1<<20)
+#define HASH_BUCKET_SIZE (1LL<<20)
 #define HASH_BUCKET_QUEUE_CONGESTION_THRESHOLD 16
 #define HASH_BUCKET_QUEUE_CRITICAL_THRESHOLD 256
 

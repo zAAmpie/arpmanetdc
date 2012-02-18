@@ -358,7 +358,7 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
         {
             transferSegmentStateBitmap[i] = SegmentNotDownloaded;
             if (downloadBucketTable->value(i))
-                delete downloadBucketTable->value(i);
+                downloadBucketTable->value(i)->clear();
         }
 
     transferSegmentTable.remove(segment->getSegmentStart());
@@ -531,9 +531,12 @@ void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int
 {
     TransferSegmentTableStruct t;
     SegmentOffsetLengthStruct s = getSegmentForDownloading(length);
-    quint64 segmentStart = s.segmentBucketOffset * HASH_BUCKET_SIZE;
-    t.segmentEnd = (s.segmentBucketOffset + s.segmentBucketCount) * HASH_BUCKET_SIZE;
+    qint64 segmentStart = (qint64)s.segmentBucketOffset * HASH_BUCKET_SIZE;
+    Q_ASSERT(segmentStart >= 0);
+    t.segmentEnd = (qint64)(s.segmentBucketOffset + s.segmentBucketCount) * HASH_BUCKET_SIZE;
     t.segmentEnd = t.segmentEnd > fileSize ? fileSize : t.segmentEnd;
+    Q_ASSERT(t.segmentEnd >= 0);
+    
     download->setSegmentStart(segmentStart);
     download->setSegmentEnd(t.segmentEnd);
     if (segmentStart != t.segmentEnd) // otherwise done
