@@ -44,7 +44,7 @@ const static QColor downloadingColor(79, 189, 54, 192);
 const static QColor uploadingColor(37, 149, 214, 192);
 
 const static QColor hashingColor(0, 255, 0);
-const static QColor flushingColor(255, 0, 0);
+const static QColor flushingColor(255, 255, 0);
 
 //Initialize the color map
 static QMap<char, QColor> initColourMapValues() {

@@ -241,25 +241,8 @@ void BitmapDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option
     QRectF valRect(rect);
     valRect.adjust(2,2,-2,-2);
 
-    //Ensure there is enough data to display to avoid nasty resizing artifacts
-    while (bitmap.size() < valRect.width())
-    {
-        //Interpolate values of bitmap to fill pixels
-        QByteArray temp;
-        temp.reserve(bitmap.size()*2);
-        for (int i = 0; i < bitmap.size(); ++i)
-        {
-            //Double the length of the bitmap
-            temp.append(bitmap.at(i));
-            temp.append(bitmap.at(i));
-        }
-
-        //Set the bitmap as the new interpolated byteArray
-        bitmap = temp;
-    }
-
     //Make pixmap from data
-    QImage img(bitmap.size(), 1, QImage::Format_ARGB32_Premultiplied);
+    QImage img(bitmap.size(), 2, QImage::Format_ARGB32_Premultiplied);
     img.fill(Qt::white);
 
     unsigned char *line = img.scanLine(0);
@@ -276,9 +259,23 @@ void BitmapDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option
         line+=4;
     }
 
+    line = img.scanLine(1);
+    for (int i = 0; i < bitmap.size(); i++)
+    {
+        pixel = (QRgb*)line;
+       
+        //Determine pixel colour
+        char val = bitmap.at(i);
+        *pixel = BITMAP_COLOUR_MAP.value(val).darker(150).rgba();
+
+        //Move 4 bytes on (32bit)
+        line+=4;
+    }
+
     //Resize image to fit
     QPixmap pix = QPixmap::fromImage(img);
-    pix = pix.scaled(valRect.width(), valRect.height());
+    pix = pix.scaled(img.width(), valRect.height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    pix = pix.scaled(valRect.width(), pix.height());
     painter->drawPixmap(valRect, pix, pix.rect());
 
     //Draw the percentage text
