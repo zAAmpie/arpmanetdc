@@ -78,6 +78,7 @@ signals:
     void renameIncompleteFile(QString filename);
     void requestProtocolCapability(QHostAddress peer, Transfer *obj);
     void requestNextSegmentId();
+    void saveBucketFlushStateBitmap(QByteArray tth, QByteArray bitmap);
 
 public slots:
     virtual void setFileName(QString filename);
@@ -104,6 +105,7 @@ public slots:
     virtual void receivedPeerProtocolCapability(QHostAddress peer, quint8 protocols);
     virtual void incomingTransferError(quint64 offset, quint8 error);
     virtual void setNextSegmentId(quint32 id);
+    virtual void setBucketFlushStateBitmap(QByteArray bitmap);
 
     virtual void incomingDataPacket(quint8 transferProtocolVersion, quint64 offset, QByteArray data);
     virtual int getTransferType() = 0;

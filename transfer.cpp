@@ -21,7 +21,7 @@ void Transfer::bucketFlushFailed(int){}
 void Transfer::incomingTransferError(quint64, quint8){}
 void Transfer::setNextSegmentId(quint32){}
 void Transfer::addPeer(QHostAddress){}
-
+void Transfer::setBucketFlushStateBitmap(QByteArray){}
 int Transfer::getSegmentCount() {return 0;}
 SegmentStatusStruct Transfer::getSegmentStatuses() {SegmentStatusStruct s = {0,0,0,0,0}; return s;}
 

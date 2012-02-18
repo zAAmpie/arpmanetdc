@@ -70,6 +70,7 @@ public slots:
     SegmentStatusStruct getSegmentStatuses();
     void incomingTransferError(quint64 offset, quint8 error);
     void setNextSegmentId(quint32 id);
+    void setBucketFlushStateBitmap(QByteArray bitmap);
 
     // Bucket flush callbacks
     void bucketFlushed(int bucketNo);

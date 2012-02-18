@@ -96,6 +96,10 @@ signals:
     // Segment ID to transfers
     void setSegmentId(quint32 segmentId);
 
+    // Transfer state bitmap to/from database
+    void saveBucketFlushStateBitmap(QByteArray tth, QByteArray bitmap);
+    void loadBucketFlushStateBitmap(QByteArray tth);
+
 public slots:
     void incomingDataPacket(quint8 transferProtocolVersion, QHostAddress fromHost, QByteArray datagram);
     void incomingDirectDataPacket(quint32 segmentId, quint64 offset, QByteArray data);
@@ -134,6 +138,9 @@ public slots:
 
     // Segment ID requests from transfers
     void requestNextSegmentId();
+
+    // Restore transfer state bitmap from database
+    void restoreBucketFlushStateBitmap(QByteArray tth, QByteArray bitmap);
 
     QList<TransferItemStatus> getGlobalTransferStatus();
 
