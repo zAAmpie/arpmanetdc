@@ -5,13 +5,14 @@
 
 quint64 SearchWidget::staticID = 0;
 
-SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconList, TransferManager *transferManager, ArpmanetDC *parent)
+SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconList, TransferManager *transferManager, QHash<QString, QString> *settings, ArpmanetDC *parent)
 {
     //Constructor
     pParent = parent;
     pIconList = mappedIconList;
     pTransferManager = transferManager;
     pCompleter = completer;
+    pSettings = settings;
 
     createWidgets();
     placeWidgets();
@@ -30,13 +31,14 @@ SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconL
     processResultTimer->setInterval(PROCESS_RESULTS_EVERY_MS);
 }
 
-SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconList, TransferManager *transferManager, QString startupSearchString, ArpmanetDC *parent)
+SearchWidget::SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconList, TransferManager *transferManager, QHash<QString, QString> *settings, QString startupSearchString, ArpmanetDC *parent)
 {
     //Constructor
     pParent = parent;
     pIconList = mappedIconList;
     pTransferManager = transferManager;
     pCompleter = completer;
+    pSettings = settings;
 
     createWidgets();
     placeWidgets();
@@ -134,11 +136,14 @@ void SearchWidget::createWidgets()
 
     downloadAction = new QAction(QIcon(":/ArpmanetDC/Resources/DownloadIcon.png"), tr("Download"), this);
     downloadToAction = new QAction(QIcon(":/ArpmanetDC/Resources/DownloadIcon.png"), tr("Download to folder..."), this);
+    downloadToLastFolderAction = new QAction(QIcon(":/ArpmanetDC/Resources/DownloadIcon.png"), tr("Download to..."), this);
     calculateMagnetAction = new QAction(QIcon(":/ArpmanetDC/Resources/MagnetIcon.png"), tr("Copy magnet link"), this);
 
     resultsMenu = new QMenu(pWidget);
     resultsMenu->addAction(downloadAction);
     resultsMenu->addAction(downloadToAction);
+    resultsMenu->addAction(downloadToLastFolderAction);
+    resultsMenu->addSeparator();
     resultsMenu->addAction(calculateMagnetAction);    
 }
 
@@ -174,6 +179,7 @@ void SearchWidget::connectWidgets()
 
     connect(downloadAction, SIGNAL(triggered()), this, SLOT(downloadActionPressed()));
     connect(downloadToAction, SIGNAL(triggered()), this, SLOT(downloadToActionPressed()));
+    connect(downloadToLastFolderAction, SIGNAL(triggered()), this, SLOT(downloadToLastFolderActionPressed()));
     connect(calculateMagnetAction, SIGNAL(triggered()), this, SLOT(calculateMagnetActionPressed()));
 
     connect(searchButton, SIGNAL(clicked()), this, SLOT(searchPressed()));
@@ -182,9 +188,10 @@ void SearchWidget::connectWidgets()
     connect(minorVersionLineEdit, SIGNAL(returnPressed()), this, SLOT(searchPressed()));
 }
 
+//Download to default path
 void SearchWidget::downloadActionPressed()
 {
-    //TODO: Download to default path
+    //Get default path from parent
     QString path = pParent->downloadPath();
     if (path.right(1).compare("/") != 0)
         path.append("/");
@@ -228,12 +235,30 @@ void SearchWidget::downloadActionPressed()
     }
 }
 
+//Download to specific folder
 void SearchWidget::downloadToActionPressed()
 {
-    //TODO: Download to specific folder
-    QString path = QFileDialog::getExistingDirectory((QWidget *)pParent, tr("Select download path"), pParent->downloadPath()).replace("\\","/");
+    //Get last folder from settings as starting point
+    QString startingPath = pSettings->value("lastDownloadToFolder");
+    
+    //Make sure the starting path exists, otherwise go to parent directory until valid
+    QDir dirCheck(startingPath);
+    while (!dirCheck.exists() && dirCheck.cdUp()) 
+    {
+        startingPath = dirCheck.path();
+    }
+
+    QString path = QFileDialog::getExistingDirectory((QWidget *)pParent, tr("Select download path"), startingPath).replace("\\","/");
+    if (path.isEmpty())
+        return;
+
     if (path.right(1).compare("/") != 0)
         path.append("/");
+
+    //Set last download to folder
+    (*pSettings)["lastDownloadToFolder"] = path;
+    //Save last download to folder to the DB - well actually we're saving everything but anyway
+    pParent->saveSettings();    
 
     for (int i = 0; i < resultsTable->selectionModel()->selectedRows().size(); i++)
     {
@@ -269,6 +294,56 @@ void SearchWidget::downloadToActionPressed()
         pParent->addDownloadToQueue(item);
 
         //I'm totally guessing the protocol here??? How should I distinguish?
+        QString finalPath = item.filePath;
+        emit queueDownload((int)NormalQueuePriority, tthRoot, finalPath, fileSize, senderIP);
+    }
+}
+
+//Download directly to the last folder chosen
+void SearchWidget::downloadToLastFolderActionPressed()
+{
+    //Get last folder from settings
+    QString path = pSettings->value("lastDownloadToFolder");
+    if (path.isEmpty())
+        return;
+
+    QDir dirCheck(path);
+    if (!dirCheck.exists())
+        dirCheck.mkpath(path);
+
+    for (int i = 0; i < resultsTable->selectionModel()->selectedRows().size(); i++)
+    {
+        //Get the selected row index
+        QModelIndex selectedIndex = resultsTable->selectionModel()->selectedRows().at(i);
+
+        //Get the selected item in column 0 and its parent
+        QStandardItem *selItem = resultsModel->itemFromIndex(selectedIndex);
+        QStandardItem *parent = selItem->parent();
+        //If the item has a parent -> use the data from the parent
+        if (parent)
+            selectedIndex = parent->index();
+
+        //Get TTH and filename of the result
+        QString tthBase32 = resultsModel->data(resultsModel->index(selectedIndex.row(), 8)).toString();
+        QString fileName = resultsModel->data(resultsModel->index(selectedIndex.row(), 0)).toString();
+        quint64 fileSize = resultsModel->data(resultsModel->index(selectedIndex.row(), 5)).toULongLong();
+        QHostAddress senderIP = QHostAddress(resultsModel->data(resultsModel->index(selectedIndex.row(), 9)).toString());
+
+        //Convert TTH back to binary from Base32
+        QByteArray tthRoot;
+        tthRoot.append(tthBase32);
+        base32Decode(tthRoot);
+
+        //Add to download queue
+        QueueStruct item;
+        item.fileName = fileName;
+        item.filePath = path + fileName;
+        item.fileSize = fileSize;
+        item.fileHost = senderIP;
+        item.priority = NormalQueuePriority;
+        item.tthRoot = tthRoot;
+        pParent->addDownloadToQueue(item);
+
         QString finalPath = item.filePath;
         emit queueDownload((int)NormalQueuePriority, tthRoot, finalPath, fileSize, senderIP);
     }
@@ -520,6 +595,10 @@ void SearchWidget::showContextMenu(const QPoint &pos)
         calculateMagnetAction->setVisible(true);
     else
         calculateMagnetAction->setVisible(false);
+
+    //Fill context menu with the last download to folder
+    QString startingFolder = pSettings->value("lastDownloadToFolder");
+    downloadToLastFolderAction->setText(tr("Download to %1").arg(startingFolder));
 
     QPoint globalPos = resultsTable->viewport()->mapToGlobal(pos);
 

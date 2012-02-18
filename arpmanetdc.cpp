@@ -102,6 +102,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
         pSettings->insert("lastSeenIP", ipString);
     if (!pSettings->contains("autoUpdateShareInterval"))
         pSettings->insert("autoUpdateShareInterval", DEFAULT_SHARE_UPDATE_INTERVAL);
+    if (!pSettings->contains("lastDownloadToFolder"))
+        pSettings->insert("lastDownloadToFolder", pSettings->value("downloadPath"));
     if (!pSettings->contains("protocolHint"))
     {
         QByteArray protocolHint;
@@ -1107,7 +1109,7 @@ void ArpmanetDC::sendChatMessage()
 void ArpmanetDC::quickSearchPressed()
 {
     //Search for text
-    SearchWidget *sWidget = new SearchWidget(searchCompleter, pTypeIconList, pTransferManager, quickSearchLineEdit->text(), this);
+    SearchWidget *sWidget = new SearchWidget(searchCompleter, pTypeIconList, pTransferManager, pSettings, quickSearchLineEdit->text(), this);
     quickSearchLineEdit->clear();  
 
     connect(sWidget, SIGNAL(search(quint64, QString, QByteArray, SearchWidget *)), this, SLOT(searchButtonPressed(quint64, QString, QByteArray, SearchWidget *)));
@@ -1129,7 +1131,7 @@ void ArpmanetDC::quickSearchPressed()
 
 void ArpmanetDC::searchActionPressed()
 {
-    SearchWidget *sWidget = new SearchWidget(searchCompleter, pTypeIconList, pTransferManager, this);
+    SearchWidget *sWidget = new SearchWidget(searchCompleter, pTypeIconList, pTransferManager, pSettings, this);
     
     connect(sWidget, SIGNAL(search(quint64, QString, QByteArray, SearchWidget *)), this, SLOT(searchButtonPressed(quint64, QString, QByteArray, SearchWidget *)));
     connect(sWidget, SIGNAL(queueDownload(int, QByteArray, QString, quint64, QHostAddress)), pTransferManager, SLOT(queueDownload(int, QByteArray, QString, quint64, QHostAddress)));
@@ -2505,7 +2507,7 @@ void ArpmanetDC::mainChatLinkClicked(const QUrl &link)
         QString tth = strLink.mid(pos + type.size(), 39);
 
         //Search for tth
-        SearchWidget *sWidget = new SearchWidget(searchCompleter, pTypeIconList, pTransferManager, tth, this);
+        SearchWidget *sWidget = new SearchWidget(searchCompleter, pTypeIconList, pTransferManager, pSettings, tth, this);
  
         connect(sWidget, SIGNAL(search(quint64, QString, QByteArray, SearchWidget *)), this, SLOT(searchButtonPressed(quint64, QString, QByteArray, SearchWidget *)));
         connect(sWidget, SIGNAL(queueDownload(int, QByteArray, QString, quint64, QHostAddress)), pTransferManager, SLOT(queueDownload(int, QByteArray, QString, quint64, QHostAddress)));
@@ -2761,8 +2763,10 @@ void ArpmanetDC::setUserCommands(QHash<QString, UserCommandStruct> *commands)
         return;
 
     if (pUserCommands)
-        delete pUserCommands;
-    pUserCommands = commands;
+        pUserCommands->clear();
+
+    //Set the data without changing the data address as the pointer is shared amount widgets
+    (*pUserCommands) = *commands;
 }
 
 sqlite3 *ArpmanetDC::database() const

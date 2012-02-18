@@ -118,6 +118,9 @@ public:
     sqlite3 *database() const;
     QString databasePath();
 
+    //Save settings to database
+    bool saveSettings();
+
     //Guess the computer's IP
     QHostAddress getIPGuess();
 
@@ -352,8 +355,7 @@ private:
 
     //Load settings from database
     bool loadSettings();
-    bool saveSettings();
-
+    
     //Get path for downloads
     QString getDefaultDownloadPath();
 
