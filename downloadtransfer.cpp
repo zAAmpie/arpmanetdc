@@ -603,6 +603,11 @@ int DownloadTransfer::getTransferProgress()
     return returnVal > 100 ? 100 : returnVal;
 }
 
+QByteArray DownloadTransfer::getTransferStateBitmap()
+{
+    return transferSegmentStateBitmap;
+}
+
 int DownloadTransfer::getLastHashBucketNumberReceived()
 {
     int lastHashBucketReceived = -1;

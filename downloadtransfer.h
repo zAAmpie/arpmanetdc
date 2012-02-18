@@ -79,6 +79,7 @@ public slots:
     void abortTransfer();
     void addPeer(QHostAddress peer);
     int getTransferProgress();
+    QByteArray getTransferStateBitmap();
     int getSegmentCount();
     SegmentStatusStruct getSegmentStatuses();
     void incomingTransferError(quint64 offset, quint8 error);

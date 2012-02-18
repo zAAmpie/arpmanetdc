@@ -36,6 +36,7 @@ public:
 
 public slots:
     int getTransferProgress();
+    QByteArray getTransferStateBitmap();
     int getSegmentCount();
     SegmentStatusStruct getSegmentStatuses();
     void incomingDataPacket(quint8 transferProtocolVersion, quint64 offset, QByteArray data);
