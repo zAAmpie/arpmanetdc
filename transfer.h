@@ -96,6 +96,7 @@ public slots:
     qint64 getUptime();
     int getTransferStatus();
     virtual int getTransferProgress();
+    virtual QByteArray getTransferStateBitmap();
     virtual int getSegmentCount();
     virtual SegmentStatusStruct getSegmentStatuses();
     virtual void addPeer(QHostAddress peer);

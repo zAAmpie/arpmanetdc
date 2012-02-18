@@ -138,6 +138,13 @@ int UploadTransfer::getTransferProgress()
     return progress > 100 ? 100 : progress;
 }
 
+
+QByteArray UploadTransfer::getTransferStateBitmap()
+{
+    //Return an empty array for the time being
+    return QByteArray(fileSize, SegmentNotUploaded);
+}
+
 int UploadTransfer::getSegmentCount()
 {
     return 1;

@@ -107,6 +107,11 @@ int Transfer::getTransferProgress()
     return transferProgress;
 }
 
+QByteArray Transfer::getTransferStateBitmap()
+{
+    return QByteArray();
+}
+
 qint64 Transfer::getUptime()
 {
     return QDateTime::currentMSecsSinceEpoch() - upTime.toMSecsSinceEpoch();
