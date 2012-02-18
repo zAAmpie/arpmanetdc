@@ -704,7 +704,8 @@ void DownloadTransfer::congestionTest()
         while (i.hasNext())
         {
             TransferSegment *s = i.next().value().transferSegment;
-            s->pauseDownload();
+            if (s)
+                s->pauseDownload();
         }
     }
     else if (iowait && (bucketFlushQueueLength + bucketHashQueueLength <= HASH_BUCKET_QUEUE_CONGESTION_THRESHOLD / 4))
@@ -715,7 +716,8 @@ void DownloadTransfer::congestionTest()
         while (i.hasNext())
         {
             TransferSegment *s = i.next().value().transferSegment;
-            s->unpauseDownload();
+            if (s)
+                s->unpauseDownload();
         }
     }
 }

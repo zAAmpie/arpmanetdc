@@ -55,6 +55,7 @@ typedef struct
     qint64 uptime;
     int onlineSegments;
     SegmentStatusStruct segmentStatuses;
+    QByteArray segmentBitmap;
 } TransferItemStatus;
 
 class TransferManager : public QObject

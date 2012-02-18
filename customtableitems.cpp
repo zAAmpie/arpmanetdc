@@ -6,6 +6,8 @@
 #include "util.h"
 #include <QtGui>
 
+//--------------------==================== HTML DELEGATE ====================--------------------
+
 HTMLDelegate::HTMLDelegate(QTableView *tableView)
 {
     int gridHint = tableView->style()->styleHint(QStyle::SH_Table_GridLineColor, new QStyleOptionViewItemV4());
@@ -74,6 +76,8 @@ void HTMLDelegate::paint(QPainter* painter, const QStyleOptionViewItem & option,
 
     painter->restore();
 }
+
+//--------------------==================== PROGRESS DELEGATE ====================--------------------
 
 ProgressDelegate::ProgressDelegate()
 {
@@ -177,6 +181,119 @@ void ProgressDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
     painter->restore();
 }
 
+//--------------------==================== BITMAP DELEGATE ====================--------------------
+
+BitmapDelegate::BitmapDelegate()
+{
+    //Constructor
+}
+
+QSize BitmapDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    QStyleOptionViewItemV4 options = option;
+    initStyleOption(&options, index);
+
+    return QSize(options.rect.width(), options.rect.height());
+}
+
+void BitmapDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    QStyleOptionViewItemV4 options = option;
+    initStyleOption(&options, index);
+
+    painter->save();
+
+    //Get bitmap
+    QByteArray bitmap;
+    bitmap.append(options.text);
+    bitmap = QByteArray::fromBase64(bitmap);
+
+    //Get value
+    quint8 value = getQuint8FromByteArray(&bitmap);
+        
+    //Draw the main control
+    options.text = "";
+    options.widget->style()->drawControl(QStyle::CE_ItemViewItem, &options, painter);
+
+    QColor frameColor(Qt::darkGray);
+    QColor textColor(Qt::black);
+    if (options.state & QStyle::State_Selected && options.state & QStyle::State_Active)
+    {
+        frameColor = QColor(Qt::white);
+        textColor = QColor(Qt::white);
+    }
+    else if (options.state & QStyle::State_Selected)
+        frameColor = QColor(Qt::darkGray);
+    
+    //Draw the frame
+    painter->setRenderHint(QPainter::Antialiasing);
+
+    int width = options.rect.width();
+    int height = options.rect.height();
+    QRectF rect(options.rect);
+    rect.adjust(1,2,-1,-2);
+
+    painter->setPen(frameColor);
+    painter->setBrush(Qt::NoBrush);
+    painter->drawRoundedRect(rect, 3, 3);
+
+    //Draw the bitmap
+    QRectF valRect(rect);
+    valRect.adjust(2,2,-2,-2);
+
+    //Ensure there is enough data to display to avoid nasty resizing artifacts
+    while (bitmap.size() < valRect.width())
+    {
+        //Interpolate values of bitmap to fill pixels
+        QByteArray temp;
+        temp.reserve(bitmap.size()*2);
+        for (int i = 0; i < bitmap.size(); ++i)
+        {
+            //Double the length of the bitmap
+            temp.append(bitmap.at(i));
+            temp.append(bitmap.at(i));
+        }
+
+        //Set the bitmap as the new interpolated byteArray
+        bitmap = temp;
+    }
+
+    //Make pixmap from data
+    QImage img(bitmap.size(), 1, QImage::Format_ARGB32_Premultiplied);
+    img.fill(Qt::white);
+
+    unsigned char *line = img.scanLine(0);
+    QRgb *pixel;
+    for (int i = 0; i < bitmap.size(); i++)
+    {
+        pixel = (QRgb*)line;
+       
+        //Determine pixel colour
+        *pixel = BITMAP_COLOUR_MAP.value(bitmap.at(i)).rgba();
+
+        //Move 4 bytes on (32bit)
+        line+=4;
+    }
+
+    //Resize image to fit
+    QPixmap pix = QPixmap::fromImage(img);
+    pix = pix.scaled(valRect.width(), valRect.height());
+    painter->drawPixmap(valRect, pix, pix.rect());
+
+    //Draw the percentage text
+    painter->setPen(textColor);
+    QString drawString;
+    if (value != 100)
+        drawString = tr("%1%").arg(value);
+    else
+        drawString = tr("Finished");
+    painter->drawText(rect, Qt::AlignCenter, drawString);
+
+    painter->restore();
+}
+
+//--------------------==================== CSTANDARDITEM ====================--------------------
+
 //Sort items according to their individual types
 bool CStandardItem::operator<(const QStandardItem &other) const
 {
@@ -253,6 +370,8 @@ QString CStandardItem::format()
 {
     return pFormat;
 }
+
+//--------------------==================== CUSTOM WIDGETS ====================--------------------
 
 CTabWidget::CTabWidget(QWidget *parent) : QTabWidget(parent)
 {

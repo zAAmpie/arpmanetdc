@@ -30,6 +30,37 @@
 #include <QTreeView>
 #include <QListView>
 #include <QUrl>
+#include <QRgb>
+#include "transfer.h"
+
+//Bitmap colours
+const static QColor downloadedColor(79, 189, 54);
+const static QColor notDownloadedColor(79, 189, 54, 128);
+
+const static QColor uploadedColor(37, 149, 214);
+const static QColor notUploadedColor(37, 149, 214, 128);
+
+const static QColor downloadingColor(79, 189, 54, 192);
+const static QColor uploadingColor(37, 149, 214, 192);
+
+const static QColor hashingColor(0, 255, 0);
+const static QColor flushingColor(255, 0, 0);
+
+//Initialize the color map
+static QMap<char, QColor> initColourMapValues() {
+    QMap<char, QColor> map;
+    map.insert(SegmentNotDownloaded, notDownloadedColor);
+    map.insert(SegmentDownloaded, downloadedColor);
+    map.insert(SegmentCurrentlyDownloading, downloadingColor);
+    map.insert(SegmentCurrentlyHashing, hashingColor);
+    map.insert(SegmentCurrentlyFlushing, flushingColor);
+    map.insert(SegmentCurrentlyUploading, uploadingColor);
+    map.insert(SegmentNotUploaded, notUploadedColor);
+    map.insert(SegmentUploaded, uploadedColor);
+    return map;
+}
+
+static const QMap<char, QColor> BITMAP_COLOUR_MAP = initColourMapValues();
 
 //Custom delegate to display HTML code in QTableView
 class HTMLDelegate : public QStyledItemDelegate
@@ -53,12 +84,22 @@ protected:
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
 };
 
+//Custom delegate to display bitmap in QTableView
+class BitmapDelegate : public QStyledItemDelegate
+{
+public:
+    BitmapDelegate();
+protected:
+    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
+};
+
 
 //Custom QStandardItem to allow for integer/size sorting
 class CStandardItem : public QStandardItem
 {
 public:
-    enum CStandardItemType {IntegerType, DoubleType, SizeType, RateType, CaseInsensitiveTextType, PriorityType, ProgressType, DateType, TimeDurationType};
+    enum CStandardItemType {IntegerType, DoubleType, SizeType, RateType, CaseInsensitiveTextType, PriorityType, ProgressType, BitmapType, DateType, TimeDurationType};
     CStandardItem(CStandardItemType type, const QString &value) : QStandardItem(value) {pType = type; setEditable(false);}
     CStandardItem(CStandardItemType type, const QString &value, const QIcon &icon) : QStandardItem(icon, value) {pType = type; setEditable(false);}
 

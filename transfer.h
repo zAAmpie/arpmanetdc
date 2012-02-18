@@ -37,7 +37,8 @@ enum transferSegmentState
     SegmentCurrentlyHashing=0x08,
     SegmentCurrentlyFlushing=0x10,
     SegmentCurrentlyUploading=0x40,
-    SegmentNotUploaded=0x80
+    SegmentNotUploaded=0x80,
+    SegmentUploaded=0x20
 };
 
 enum bucketFlushState

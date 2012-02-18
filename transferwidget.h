@@ -69,6 +69,7 @@ private:
     QString typeString(int type);
     QString stateString(int state);
     QString progressString(int state, int progress);
+    QString bitmapString(int progress, QByteArray bitmap);
     int typeFromString(QString typeStr);
     QString segmentStatusString(SegmentStatusStruct s);
 

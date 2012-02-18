@@ -67,7 +67,8 @@ void TransferWidget::createWidgets()
     transferListTable->setColumnWidth(4, 75);
     transferListTable->setWordWrap(false);
     //transferListTable->setItemDelegate(new HTMLDelegate(transferListTable));
-    transferListTable->setItemDelegateForColumn(1, new ProgressDelegate());
+    //transferListTable->setItemDelegateForColumn(1, new ProgressDelegate());
+    transferListTable->setItemDelegateForColumn(1, new BitmapDelegate());
     
     transferListTable->hideColumn(9);
 
@@ -190,7 +191,7 @@ void TransferWidget::returnGlobalTransferStatus(QList<TransferItemStatus> status
         {
             QList<QStandardItem *> row;
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, typeString(s.transferType)));
-            row.append(new CStandardItem(CStandardItem::ProgressType, progressString(s.transferType, s.transferProgress)));
+            row.append(new CStandardItem(CStandardItem::BitmapType, bitmapString(s.transferProgress, s.segmentBitmap)));
             row.append(new CStandardItem(CStandardItem::RateType, bytesToRate(s.transferRate)));
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, s.filePathName.remove(pParent->downloadPath(), Qt::CaseInsensitive)));
             row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(q.fileSize)));
@@ -205,7 +206,8 @@ void TransferWidget::returnGlobalTransferStatus(QList<TransferItemStatus> status
         else
         {
             transferListModel->itemFromIndex(transferListModel->index(row, 0))->setText(typeString(s.transferType));
-            transferListModel->itemFromIndex(transferListModel->index(row, 1))->setText(progressString(s.transferType, s.transferProgress));
+            //transferListModel->itemFromIndex(transferListModel->index(row, 1))->setText(progressString(s.transferType, s.transferProgress));
+            transferListModel->itemFromIndex(transferListModel->index(row, 1))->setText(bitmapString(s.transferProgress, s.segmentBitmap));
             transferListModel->itemFromIndex(transferListModel->index(row, 2))->setText(bytesToRate(s.transferRate));
             transferListModel->itemFromIndex(transferListModel->index(row, 3))->setText(s.filePathName.remove(pParent->downloadPath(), Qt::CaseInsensitive));
             transferListModel->itemFromIndex(transferListModel->index(row, 4))->setText(bytesToSize(q.fileSize));
@@ -323,6 +325,14 @@ QString TransferWidget::progressString(int type, int progress)
         return tr("U%1").arg(progress);
 
     return "";
+}
+
+QString TransferWidget::bitmapString(int progress, QByteArray bitmap)
+{
+    //Add progress to bitmap
+    bitmap.prepend(quint8ToByteArray(progress));
+    QString bitmapStr(bitmap.toBase64());
+    return bitmapStr;
 }
 
 QWidget *TransferWidget::widget()
