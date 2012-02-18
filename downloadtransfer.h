@@ -91,6 +91,7 @@ public slots:
 private slots:
     void transferTimerEvent();
     void TTHSearchTimerEvent();
+    void protocolCapabilityRequestTimerEvent();
     void segmentCompleted(TransferSegment *segment);
     void segmentFailed(TransferSegment *segment);
     void requestHashBucket(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
@@ -107,8 +108,7 @@ private:
     void downloadNextAvailableChunk(TransferSegment *download, int length = 1);
     int getLastHashBucketNumberReceived();
     void congestionTest();
-    void protocolCapabilityRequestTimerEvent();
-    void requestHashTree(int lastHashBucketReceived);
+    void requestHashTree(int lastHashBucketReceived, bool timerRequest = false);
 
     QHash<int, QByteArray*> *downloadBucketTable;
     QMap<int, QByteArray*> downloadBucketHashLookupTable;
@@ -129,6 +129,7 @@ private:
     int bucketFlushQueueLength;
     bool iowait;
     quint32 nextSegmentId;
+    QHostAddress treeRequestHost;
 
     QMap<quint64, TransferSegmentTableStruct> transferSegmentTable;
     QByteArray transferSegmentStateBitmap;

@@ -11,6 +11,7 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
     initializationStateTimerBrakes = 0;
     status = TRANSFER_STATE_INITIALIZING;
     remoteHost = QHostAddress("0.0.0.0");
+    treeRequestHost = QHostAddress();
     currentActiveSegments = 0;
     hashTreeWindowEnd = 0;
     bucketHashQueueLength = 0;
@@ -18,21 +19,26 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
     iowait = false;
     nextSegmentId = 0;
 
-    transferRateCalculationTimer = new QTimer();
+    transferRateCalculationTimer = new QTimer(this);
     connect(transferRateCalculationTimer, SIGNAL(timeout()), this, SLOT(transferRateCalculation()));
     transferRateCalculationTimer->setSingleShot(false);
     transferRateCalculationTimer->start(1000);
 
-    transferTimer = new QTimer();
+    transferTimer = new QTimer(this);
     connect(transferTimer, SIGNAL(timeout()), this, SLOT(transferTimerEvent()));
     transferTimer->setSingleShot(false);
     transferTimer->setInterval(100);
 
-    TTHSearchTimer = new QTimer();
+    TTHSearchTimer = new QTimer(this);
     connect(TTHSearchTimer, SIGNAL(timeout()), this, SLOT(TTHSearchTimerEvent()));
     TTHSearchTimer->setSingleShot(true);
     tthSearchInterval = 30000; // start out quick, work up to longer intervals in event func
     TTHSearchTimer->start(tthSearchInterval);
+
+    protocolCapabilityRequestTimer = new QTimer(this);
+    connect(protocolCapabilityRequestTimer, SIGNAL(timeout()), this, SLOT(protocolCapabilityRequestTimerEvent()));
+    protocolCapabilityRequestTimer->setSingleShot(false);
+    protocolCapabilityRequestTimer->setInterval(3000);
 }
 
 DownloadTransfer::~DownloadTransfer()
@@ -60,6 +66,7 @@ DownloadTransfer::~DownloadTransfer()
     TTHSearchTimer->deleteLater();
     transferTimer->deleteLater();
     transferRateCalculationTimer->deleteLater();
+    protocolCapabilityRequestTimer->deleteLater();
 }
 
 // Data packets that are related to our TTH gets dispatched to this entry point.
@@ -234,6 +241,8 @@ void DownloadTransfer::addPeer(QHostAddress peer)
     {
         remotePeerInfoRequestPool.insert(peer, 1);
         emit requestProtocolCapability(peer, this);
+        if (!protocolCapabilityRequestTimer->isActive())
+            protocolCapabilityRequestTimer->start();
     }
 }
 
@@ -316,7 +325,7 @@ void DownloadTransfer::transferTimerEvent()
         }
         else
         {
-            requestHashTree(lastHashBucketReceived);
+            requestHashTree(lastHashBucketReceived, true);
             qDebug() << "Timer request TTH tree " << lastHashBucketReceived + 1;
         }
     }
@@ -437,6 +446,10 @@ SegmentOffsetLengthStruct DownloadTransfer::getSegmentForDownloading(int segment
 void DownloadTransfer::receivedPeerProtocolCapability(QHostAddress peer, quint8 protocols)
 {
     newPeer(peer, protocols);
+    remotePeerInfoRequestPool.remove(peer);
+    if (remotePeerInfoRequestPool.isEmpty())
+        protocolCapabilityRequestTimer->stop();
+
     if (currentActiveSegments < MAXIMUM_SIMULTANEOUS_SEGMENTS)
     {
         currentActiveSegments++;
@@ -706,10 +719,34 @@ void DownloadTransfer::setNextSegmentId(quint32 id)
     nextSegmentId = id;
 }
 
-void DownloadTransfer::requestHashTree(int lastHashBucketReceived)
+void DownloadTransfer::requestHashTree(int lastHashBucketReceived, bool timerRequest)
 {
-    emit TTHTreeRequest(listOfPeers.first(), TTH, lastHashBucketReceived + 1, HASH_TREE_WINDOW_LENGTH);
-    hashTreeWindowEnd = lastHashBucketReceived + HASH_TREE_WINDOW_LENGTH;
-    qDebug() << "Request TTH tree " << lastHashBucketReceived + 1 << calculateBucketNumber(fileSize);
+    if (!remotePeerInfoTable.isEmpty() && timerRequest)
+    {
+        int n = (int)((double)qrand() / RAND_MAX * remotePeerInfoTable.size());
+        QHashIterator<QHostAddress, RemotePeerInfoStruct> it(remotePeerInfoTable);
+        for (int i = 0; i <= n; i++)
+            if (it.hasNext())
+                treeRequestHost = it.next().key();
+    }
+    if (!treeRequestHost.isNull())
+    {
+        emit TTHTreeRequest(treeRequestHost, TTH, lastHashBucketReceived + 1, HASH_TREE_WINDOW_LENGTH);
+        hashTreeWindowEnd = lastHashBucketReceived + HASH_TREE_WINDOW_LENGTH;
+        qDebug() << "Request TTH tree " << lastHashBucketReceived + 1 << calculateBucketNumber(fileSize);
+    }
+}
 
+void DownloadTransfer::protocolCapabilityRequestTimerEvent()
+{
+    QMutableHashIterator<QHostAddress, int> i(remotePeerInfoRequestPool);
+    while(i.hasNext())
+    {
+        emit requestProtocolCapability(i.peekNext().key(), this);
+        i.next().value()++;
+        if (i.peekPrevious().value() <= 5)
+            i.remove();
+    }
+    if (remotePeerInfoRequestPool.isEmpty())
+        protocolCapabilityRequestTimer->stop();
 }
