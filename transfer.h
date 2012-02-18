@@ -29,6 +29,23 @@
 #include "transfersegment.h"
 class TransferSegment;
 
+enum transferSegmentState
+{
+    SegmentNotDownloaded = 0x01,
+    SegmentDownloaded = 0x02,
+    SegmentCurrentlyDownloading=0x04,
+    SegmentCurrentlyHashing=0x08,
+    SegmentCurrentlyFlushing=0x10,
+    SegmentCurrentlyUploading=0x40,
+    SegmentNotUploaded=0x80
+};
+
+enum bucketFlushState
+{
+    BucketNotFlushed = 0x01,
+    BucketFlushed = 0x02
+};
+
 struct SegmentStatusStruct
 {
     int initializing;
