@@ -18,6 +18,7 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
     bucketFlushQueueLength = 0;
     iowait = false;
     nextSegmentId = 0;
+    treeUpdatesSinceTimer = 0;
 
     transferRateCalculationTimer = new QTimer(this);
     connect(transferRateCalculationTimer, SIGNAL(timeout()), this, SLOT(transferRateCalculation()));
@@ -166,6 +167,8 @@ void DownloadTransfer::TTHTreeReply(QByteArray tree)
     }
     if (iter == 0)  // don't burn it if the buckets start showing up empty or if we receive duplicates
         return;
+
+    treeUpdatesSinceTimer += iter;
 
     //int prev = -1;
     //QMapIterator<int, QByteArray*> i(downloadBucketHashLookupTable);
@@ -338,18 +341,14 @@ void DownloadTransfer::transferTimerEvent()
                     i.value().transferSegment->startDownloading();
             }
         }
-        else
+        else if (treeUpdatesSinceTimer == 0)
         {
             requestHashTree(lastHashBucketReceived, true);
             qDebug() << "Timer request TTH tree " << lastHashBucketReceived + 1;
         }
+        treeUpdatesSinceTimer = 0;
     }
 }
-
-/*void DownloadTransfer::setProtocolPreference(QByteArray &preference)
-{
-    protocolPreference = preference;
-}*/
 
 inline int DownloadTransfer::calculateBucketNumber(quint64 fileOffset)
 {
@@ -386,7 +385,7 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
         }
 
     transferSegmentTable.remove(segment->getSegmentStart());
-    currentActiveSegments--;
+    //currentActiveSegments--;
     // currently the object keeps sitting in remotePeerInfoTable and gets destroyed once the download completes.
     // this can be improved (TODO)
     // UPDATE: see if this breaks anything.
@@ -396,7 +395,9 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
     segment->deleteLater();
     
     //Remove offending peer
-    remotePeerInfoTable.remove(h); // TODO: flag, don't remove
+    //remotePeerInfoTable.remove(h); // TODO: flag, don't remove
+    remotePeerInfoTable[h].transferSegment = 0;
+    remotePeerInfoTable[h].failureCount++;
 
     //Update the alternates
     emit searchTTHAlternateSources(TTH);
@@ -404,6 +405,20 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
     // We should not try different peers in the same segment, since they may be of different protocols.
     // When a segment fails, it gets destroyed. Its funeral process should clean up behind it so that there are
     // no more clever pointers trying to find it or transferSegmentTable entries trying to get at it.
+    QHostAddress nextPeer = getBestIdlePeer();
+    if (nextPeer.isNull())
+        currentActiveSegments--;
+    else
+    {
+        TransferSegment *download = createTransferSegment(nextPeer);
+        if (download)
+        {
+            remotePeerInfoTable[nextPeer].transferSegment = download;
+            downloadNextAvailableChunk(download);
+        }
+        else
+            currentActiveSegments--;
+    }
 }
 
 // This is the segment block allocator.
@@ -470,7 +485,10 @@ void DownloadTransfer::receivedPeerProtocolCapability(QHostAddress peer, quint8 
         currentActiveSegments++;
         TransferSegment *download = createTransferSegment(peer);
         if (download)
+        {
+            remotePeerInfoTable[peer].transferSegment = download;
             downloadNextAvailableChunk(download);
+        }
     }
 }
 
@@ -484,6 +502,7 @@ void DownloadTransfer::newPeer(QHostAddress peer, quint8 protocols)
         rpis.bytesTransferred = 0;
         rpis.protocolCapability = protocols;
         rpis.transferSegment = 0;
+        rpis.failureCount = 0;
         remotePeerInfoTable.insert(peer, rpis);
     }
 }
@@ -572,6 +591,12 @@ void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int
         t.transferSegment = download;
         transferSegmentTable.insert(segmentStart, t);
         download->startDownloading();
+    }
+    else if (remotePeerInfoTable.contains(download->getSegmentRemotePeer()))
+    {
+        download->deleteLater();
+        remotePeerInfoTable[download->getSegmentRemotePeer()].transferSegment = 0;
+        currentActiveSegments--;
     }
 }
 
@@ -791,4 +816,25 @@ void DownloadTransfer::protocolCapabilityRequestTimerEvent()
     }
     if (remotePeerInfoRequestPool.isEmpty())
         protocolCapabilityRequestTimer->stop();
+}
+
+QHostAddress DownloadTransfer::getBestIdlePeer()
+{
+    QHostAddress bestPeer = QHostAddress();
+    int leastFails = 1000;
+    QHashIterator<QHostAddress, RemotePeerInfoStruct> i(remotePeerInfoTable);
+    while (i.hasNext())
+    {
+        QHostAddress h = i.peekNext().key();
+        RemotePeerInfoStruct s = i.next().value();
+        if ((s.transferSegment == 0) && (s.failureCount < leastFails))
+        {
+            leastFails = s.failureCount;
+            if (leastFails == 0)
+                return h;
+
+            bestPeer = h;
+        }
+    }
+    return bestPeer;
 }
