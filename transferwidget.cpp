@@ -16,6 +16,9 @@ TransferWidget::TransferWidget(TransferManager *transferManager, ArpmanetDC *par
     placeWidgets();
     connectWidgets();
 
+    currentUpdateID = 0;
+    transferID = 0;
+
     //Update status every second
     updateStatusTimer = new QTimer();
     connect(updateStatusTimer, SIGNAL(timeout()), this, SLOT(updateStatus()));
@@ -62,6 +65,7 @@ void TransferWidget::createWidgets()
     transferListTable->verticalHeader()->hide();
     transferListTable->horizontalHeader()->setHighlightSections(false);
     transferListTable->setColumnWidth(0, 75);
+    transferListTable->setColumnWidth(1, 150);
     transferListTable->setColumnWidth(2, 75);
     transferListTable->setColumnWidth(3, 300);
     transferListTable->setColumnWidth(4, 75);
@@ -189,9 +193,10 @@ void TransferWidget::returnGlobalTransferStatus(QList<TransferItemStatus> status
         //If new transfer - add
         if (row == -1)
         {
+            pIDHash.insert(s.TTH, transferID++);
             QList<QStandardItem *> row;
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, typeString(s.transferType)));
-            row.append(new CStandardItem(CStandardItem::BitmapType, bitmapString(s.transferProgress, s.segmentBitmap)));
+            row.append(new CStandardItem(CStandardItem::BitmapType, bitmapString(transferID, currentUpdateID++, s.transferProgress, s.segmentBitmap)));
             row.append(new CStandardItem(CStandardItem::RateType, bytesToRate(s.transferRate)));
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, s.filePathName.remove(pParent->downloadPath(), Qt::CaseInsensitive)));
             row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(q.fileSize)));
@@ -207,7 +212,7 @@ void TransferWidget::returnGlobalTransferStatus(QList<TransferItemStatus> status
         {
             transferListModel->itemFromIndex(transferListModel->index(row, 0))->setText(typeString(s.transferType));
             //transferListModel->itemFromIndex(transferListModel->index(row, 1))->setText(progressString(s.transferType, s.transferProgress));
-            transferListModel->itemFromIndex(transferListModel->index(row, 1))->setText(bitmapString(s.transferProgress, s.segmentBitmap));
+            transferListModel->itemFromIndex(transferListModel->index(row, 1))->setText(bitmapString(pIDHash.value(s.TTH), currentUpdateID++, s.transferProgress, s.segmentBitmap));
             transferListModel->itemFromIndex(transferListModel->index(row, 2))->setText(bytesToRate(s.transferRate));
             transferListModel->itemFromIndex(transferListModel->index(row, 3))->setText(s.filePathName.remove(pParent->downloadPath(), Qt::CaseInsensitive));
             transferListModel->itemFromIndex(transferListModel->index(row, 4))->setText(bytesToSize(q.fileSize));
@@ -229,6 +234,7 @@ void TransferWidget::returnGlobalTransferStatus(QList<TransferItemStatus> status
         if (!pTransferList->contains(tth))
         {
             transferListModel->removeRow(i);
+            pIDHash.remove(tth);
             i--;
         }
     }
@@ -327,9 +333,11 @@ QString TransferWidget::progressString(int type, int progress)
     return "";
 }
 
-QString TransferWidget::bitmapString(int progress, QByteArray bitmap)
+QString TransferWidget::bitmapString(quint8 transferID, quint8 updateID, int progress, QByteArray bitmap)
 {
     //Add progress to bitmap
+    bitmap.prepend(quint8ToByteArray(transferID));
+    bitmap.prepend(quint8ToByteArray(updateID));
     bitmap.prepend(quint8ToByteArray(progress));
     QString bitmapStr(bitmap.toBase64());
     return bitmapStr;

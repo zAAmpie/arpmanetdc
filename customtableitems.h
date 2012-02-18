@@ -60,7 +60,22 @@ static QMap<char, QColor> initColourMapValues() {
     return map;
 }
 
+//Initialize the color map
+static QMap<char, QColor> initColourMapValuesDarker() {
+    QMap<char, QColor> map;
+    map.insert(SegmentNotDownloaded, notDownloadedColor.darker(150));
+    map.insert(SegmentDownloaded, downloadedColor.darker(150));
+    map.insert(SegmentCurrentlyDownloading, downloadingColor.darker(150));
+    map.insert(SegmentCurrentlyHashing, hashingColor.darker(150));
+    map.insert(SegmentCurrentlyFlushing, flushingColor.darker(150));
+    map.insert(SegmentCurrentlyUploading, uploadingColor.darker(150));
+    map.insert(SegmentNotUploaded, notUploadedColor.darker(150));
+    map.insert(SegmentUploaded, uploadedColor.darker(150));
+    return map;
+}
+
 static const QMap<char, QColor> BITMAP_COLOUR_MAP = initColourMapValues();
+static const QMap<char, QColor> BITMAP_COLOUR_MAP_DARKER = initColourMapValuesDarker();
 
 //Custom delegate to display HTML code in QTableView
 class HTMLDelegate : public QStyledItemDelegate
@@ -92,6 +107,8 @@ public:
 protected:
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
+private:
+    static QHash<quint8, QPair<quint8, QPixmap> > renderedPixmaps;
 };
 
 

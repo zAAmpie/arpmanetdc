@@ -69,9 +69,14 @@ private:
     QString typeString(int type);
     QString stateString(int state);
     QString progressString(int state, int progress);
-    QString bitmapString(int progress, QByteArray bitmap);
+    QString bitmapString(quint8 transferID, quint8 updateID, int progress, QByteArray bitmap);
     int typeFromString(QString typeStr);
     QString segmentStatusString(SegmentStatusStruct s);
+
+    quint8 currentUpdateID;
+    quint8 transferID;
+
+    QHash<QByteArray, quint8> pIDHash;
 
     //Objects
     QWidget *pWidget;

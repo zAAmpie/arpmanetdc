@@ -209,7 +209,16 @@ void BitmapDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option
     bitmap = QByteArray::fromBase64(bitmap);
 
     //Get value
+    quint8 transferID = getQuint8FromByteArray(&bitmap);
+    quint8 updateID = getQuint8FromByteArray(&bitmap);
     quint8 value = getQuint8FromByteArray(&bitmap);
+
+    bool update = true;
+    if (renderedPixmaps.contains(transferID))
+    {
+        if (renderedPixmaps.value(transferID).first == updateID)
+            update = false;
+    }
         
     //Draw the main control
     options.text = "";
@@ -241,41 +250,57 @@ void BitmapDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option
     QRectF valRect(rect);
     valRect.adjust(2,2,-2,-2);
 
-    //Make pixmap from data
-    QImage img(bitmap.size(), 2, QImage::Format_ARGB32_Premultiplied);
-    img.fill(Qt::white);
-
-    unsigned char *line = img.scanLine(0);
-    QRgb *pixel;
-    for (int i = 0; i < bitmap.size(); i++)
+    QPixmap pix;
+    if (update)
     {
-        pixel = (QRgb*)line;
+        //Make pixmap from data
+        QImage img(bitmap.size(), 2, QImage::Format_ARGB32_Premultiplied);
+        img.fill(Qt::white);
+        if (img.isNull())
+        {
+            painter->restore();
+            return;
+        }
+
+        unsigned char *line = img.scanLine(0);
+        QRgb *pixel;
+        for (int i = 0; i < bitmap.size(); i++)
+        {
+            pixel = (QRgb*)line;
        
-        //Determine pixel colour
-        char val = bitmap.at(i);
-        *pixel = BITMAP_COLOUR_MAP.value(val).rgba();
+            //Determine pixel colour
+            char val = bitmap.at(i);
+            *pixel = BITMAP_COLOUR_MAP.value(val).rgba();
 
-        //Move 4 bytes on (32bit)
-        line+=4;
-    }
+            //Move 4 bytes on (32bit)
+            line+=4;
+        }
 
-    line = img.scanLine(1);
-    for (int i = 0; i < bitmap.size(); i++)
-    {
-        pixel = (QRgb*)line;
+        line = img.scanLine(1);
+        for (int i = 0; i < bitmap.size(); i++)
+        {
+            pixel = (QRgb*)line;
        
-        //Determine pixel colour
-        char val = bitmap.at(i);
-        *pixel = BITMAP_COLOUR_MAP.value(val).darker(150).rgba();
+            //Determine pixel colour
+            char val = bitmap.at(i);
+            *pixel = BITMAP_COLOUR_MAP_DARKER.value(val).rgba();
 
-        //Move 4 bytes on (32bit)
-        line+=4;
+            //Move 4 bytes on (32bit)
+            line+=4;
+        }
+
+        pix = QPixmap::fromImage(img);
+        QPair<quint8, QPixmap> pair;
+        pair.first = updateID;
+        pair.second = pix;
+        renderedPixmaps.insert(transferID, pair);
     }
+    else
+        pix = renderedPixmaps.value(transferID).second;
 
-    //Resize image to fit
-    QPixmap pix = QPixmap::fromImage(img);
-    pix = pix.scaled(img.width(), valRect.height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    //Resize image to fit    
     pix = pix.scaled(valRect.width(), pix.height());
+    pix = pix.scaled(pix.width(), valRect.height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     painter->drawPixmap(valRect, pix, pix.rect());
 
     //Draw the percentage text
@@ -289,6 +314,8 @@ void BitmapDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option
 
     painter->restore();
 }
+
+QHash<quint8, QPair<quint8, QPixmap> > BitmapDelegate::renderedPixmaps;
 
 //--------------------==================== CSTANDARDITEM ====================--------------------
 

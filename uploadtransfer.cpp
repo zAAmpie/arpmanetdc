@@ -141,8 +141,11 @@ int UploadTransfer::getTransferProgress()
 
 QByteArray UploadTransfer::getTransferStateBitmap()
 {
+    int totalBuckets = (fileSize>>20);
+    totalBuckets += ((fileSize % HASH_BUCKET_SIZE) != 0) ? 1 : 0;
+
     //Return an empty array for the time being
-    return QByteArray(fileSize, SegmentNotUploaded);
+    return QByteArray(totalBuckets, SegmentNotUploaded);
 }
 
 int UploadTransfer::getSegmentCount()
