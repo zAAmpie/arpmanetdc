@@ -117,6 +117,7 @@ void DownloadTransfer::requestHashBucket(QByteArray rootTTH, int bucketNumber, Q
         // This is to prevent double requests when bucket ends and segment ends coincide.
         // A failed hash check must reset this.
         bucketFlushStateBitmap[bucketNumber] = BucketFlushed;
+        transferSegmentStateBitmap[bucketNumber] = SegmentCurrentlyHashing;
     }
 }
 
@@ -136,7 +137,7 @@ void DownloadTransfer::hashBucketReply(int bucketNumber, QByteArray bucketTTH)
         {
             transferSegmentStateBitmap[bucketNumber] = SegmentNotDownloaded;
             bucketFlushStateBitmap[bucketNumber] = BucketNotFlushed;
-
+            downloadBucketTable->value(bucketNumber)->clear();
             // TODO: emit MISTAKE!
         }
     }
@@ -275,7 +276,7 @@ void DownloadTransfer::flushBucketToDisk(int &bucketNumber)
     bucketFlushQueueLength++;
     congestionTest();
     downloadBucketTable->remove(bucketNumber); // just remove entry, bucket pointer gets deleted in BucketFlushThread
-    transferSegmentStateBitmap[bucketNumber] = SegmentDownloaded;
+    transferSegmentStateBitmap[bucketNumber] = SegmentCurrentlyFlushing;
     emit flushBucketDirect(filePathName, bucketNumber, bucketPtr, TTH);
 
     int segmentsDone = 0;

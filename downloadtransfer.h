@@ -26,19 +26,6 @@
 
 #define HASH_TREE_WINDOW_LENGTH 184 // 8 datagrams
 
-enum transferSegmentState
-{
-    SegmentNotDownloaded = 0x00,
-    SegmentDownloaded = 0x01,
-    SegmentCurrentlyDownloading=0x02
-};
-
-enum bucketFlushState
-{
-    BucketNotFlushed = 0x00,
-    BucketFlushed = 0x01
-};
-
 typedef struct
 {
     int segmentBucketOffset;
