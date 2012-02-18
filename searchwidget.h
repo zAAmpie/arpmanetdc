@@ -43,9 +43,9 @@ class SearchWidget : public QObject
     Q_OBJECT
 
 public:
-    SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconList, TransferManager *transferManager, ArpmanetDC *parent);
+    SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconList, TransferManager *transferManager, QHash<QString, QString> *settings, ArpmanetDC *parent);
     //Overloaded constructor to automatically search for a string
-    SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconList, TransferManager *transferManager, QString startupSearchString, ArpmanetDC *parent);
+    SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconList, TransferManager *transferManager, QHash<QString, QString> *settings, QString startupSearchString, ArpmanetDC *parent);
     ~SearchWidget();
 
     //Get the encapsulating widget
@@ -65,6 +65,7 @@ private slots:
     //Actions
     void downloadActionPressed();
     void downloadToActionPressed();
+    void downloadToLastFolderActionPressed();
     void calculateMagnetActionPressed();
     
     //User double clicked on a result
@@ -86,6 +87,9 @@ signals:
     //Queue download
     void queueDownload(int priority, QByteArray tth, QString finalPath, quint64 fileSize, QHostAddress senderIP);
 
+    //Save settings to save lastDownloadToFolder
+    void saveSettings();
+
 private:
     //Functions
     void createWidgets();
@@ -99,9 +103,10 @@ private:
     ArpmanetDC *pParent;
     ResourceExtractor *pIconList;
     TransferManager *pTransferManager;
-
     QCompleter *pCompleter;
 
+    QHash<QString, QString> *pSettings;
+    
     QTimer *sortTimer;
     bool sortDue;
 
@@ -121,7 +126,7 @@ private:
     QMenu *resultsMenu;
 
     //Actions
-    QAction *downloadAction, *downloadToAction, *calculateMagnetAction;
+    QAction *downloadAction, *downloadToAction, *calculateMagnetAction, *downloadToLastFolderAction;
 
     //Search
     QLineEdit *searchLineEdit;
