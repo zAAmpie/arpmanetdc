@@ -462,6 +462,7 @@ void SettingsWidget::savePressed()
 
         //Save user commands
         emit saveUserCommands(pUserCommands);
+        pParent->setUserCommands(pUserCommands);
 
         //Alert main GUI
         emit settingsSaved();
