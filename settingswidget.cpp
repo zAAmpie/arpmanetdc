@@ -239,6 +239,13 @@ QWidget *SettingsWidget::createUserCommandsPage()
     editLayout->addWidget(new QLabel(tr("Output string:")), 1, 0);
     editLayout->addWidget(userCommandOutputLineEdit, 1, 1, 1, 3);
 
+    QTextEdit *textEdit = new QTextEdit();
+    textEdit->setReadOnly(true);
+    textEdit->setWordWrapMode(QTextOption::WordWrap);
+    textEdit->setHtml(tr("<b>Using user commands:</b><br/>User commands can be used as shortcuts for frequently used commands or expressions. They are invoked with double forward slashes followed by the command ie. //commandName<br/><br/>To add a user command:<br/>1) Click Add and choose a descriptive name for the command<br/>2) Type a single word without spaces to use as the shortcut (ex. \"logoutmessage\")<br/>3) Set the number of parameters you want to include in your command. For each parameter, a placeholder (ex. \"%1\", \"%2\" etc.) will appear in your output string and these placeholders will be replaced when you issue your command<br/>4) Type the string you want to show when issuing the command. Placeholders will automatically be added to this string (ex. \"/me is asking %1 whether he likes to %2\")<br/>5) When finished editing the user commands, click Save changes to save all user commands<br/><br/><b>Example</b><br/>Command name: annoy<br/>Parameter count: 2<br/>Output string: /me is trying to annoy %1 by being %2<br/><br/>To invoke the user command, type \"//annoy myFellowMan sarcastic\" in chat to produce the result: \"/me is trying to annoy myFellowMan by being sarcastic\""));
+    
+    editLayout->addWidget(textEdit,2,0,1,4);
+
     QVBoxLayout *groupLayout = new QVBoxLayout;
     groupLayout->addLayout(buttonLayout);
     groupLayout->addLayout(editLayout);

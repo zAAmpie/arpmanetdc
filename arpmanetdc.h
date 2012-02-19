@@ -269,6 +269,9 @@ private slots:
     void privateMessageActionPressed();
     void reconnectActionPressed();
     void openDownloadDirActionPressed();
+    void pmActionPressed();
+
+    void userCommandMenuPressed(QAction *action);
 
     //Tab clicked
     void tabDeleted(int index);
@@ -276,6 +279,7 @@ private slots:
 
     //Right-click menus
     void showUserListContextMenu(const QPoint&);
+    void showMainChatContextMenu(const QPoint&);
 
     //Userlist keypresses
     void userListKeyPressed(Qt::Key key, QString keyStr);
@@ -430,9 +434,10 @@ private:
 
     //Menus
     QMenu *userListMenu;
+    QMenu *userCommandListMenu;
 
     //Actions
-    QAction *reconnectAction, *shareAction, *searchAction, *queueAction, *downloadFinishedAction, *settingsAction, *helpAction, *privateMessageAction, *openDownloadDirAction;
+    QAction *reconnectAction, *shareAction, *searchAction, *queueAction, *downloadFinishedAction, *settingsAction, *helpAction, *privateMessageAction, *openDownloadDirAction, *pmAction;
 
     //-----===== System tray =====-----
 

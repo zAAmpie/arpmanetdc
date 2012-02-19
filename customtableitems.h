@@ -43,8 +43,8 @@ const static QColor notUploadedColor(255,255,255);
 const static QColor downloadingColor(79, 189, 54, 192);
 const static QColor uploadingColor(37, 149, 214, 192);
 
-const static QColor hashingColor(0, 255, 0);
-const static QColor flushingColor(255, 255, 0);
+const static QColor hashingColor(255, 168, 0);
+const static QColor flushingColor(255, 240, 0);
 
 //Initialize the color map
 static QMap<char, QColor> initColourMapValues() {
@@ -104,6 +104,8 @@ class BitmapDelegate : public QStyledItemDelegate
 {
 public:
     BitmapDelegate();
+    static void removePixmap(quint8 id) {renderedPixmaps.remove(id);}
+    static void clearRenderedPixmaps() {renderedPixmaps.clear();}
 protected:
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;

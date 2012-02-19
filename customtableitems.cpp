@@ -209,9 +209,9 @@ void BitmapDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option
     bitmap = QByteArray::fromBase64(bitmap);
 
     //Get value
-    quint8 transferID = getQuint8FromByteArray(&bitmap);
-    quint8 updateID = getQuint8FromByteArray(&bitmap);
     quint8 value = getQuint8FromByteArray(&bitmap);
+    quint8 updateID = getQuint8FromByteArray(&bitmap);
+    quint8 transferID = getQuint8FromByteArray(&bitmap);
 
     bool update = true;
     if (renderedPixmaps.contains(transferID))

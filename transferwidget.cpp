@@ -153,6 +153,7 @@ void TransferWidget::returnGlobalTransferStatus(QList<TransferItemStatus> status
 {
     //Update local list
     pTransferList->clear();
+    BitmapDelegate::clearRenderedPixmaps();
     foreach (TransferItemStatus s, status)
         pTransferList->insert(s.TTH, s);
 
@@ -313,7 +314,7 @@ QString TransferWidget::stateString(int state)
         case TRANSFER_STATE_FINISHED:
             return "Finished";
         case TRANSFER_STATE_IOWAIT:
-            return "IO Wait";
+            return "I/O Wait";
     }
     return "";
 }

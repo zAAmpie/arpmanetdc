@@ -809,6 +809,7 @@ void ArpmanetDC::createWidgets()
     mainChatTextEdit = new QTextBrowser(this);
     mainChatTextEdit->setOpenExternalLinks(false);
     mainChatTextEdit->setOpenLinks(false);
+    mainChatTextEdit->setContextMenuPolicy(Qt::CustomContextMenu);
     
     chatLineEdit = new QLineEdit(this);
     chatLineEdit->setPlaceholderText(tr("Type here to chat"));
@@ -902,14 +903,18 @@ void ArpmanetDC::createWidgets()
     shareAction = new QAction(QIcon(":/ArpmanetDC/Resources/ShareIcon.png"), tr("Share"), this);
     settingsAction = new QAction(QIcon(":/ArpmanetDC/Resources/SettingsIcon.png"), tr("Settings"), this);
     helpAction = new QAction(QIcon(":/ArpmanetDC/Resources/HelpIcon.png"), tr("Help"), this);
-    privateMessageAction = new QAction(QIcon(":/ArpmanetDC/Resources/PMIcon.png"), tr("Send private message"), this);
+    privateMessageAction = new QAction(QIcon(":/ArpmanetDC/Resources/EnvelopeIcon.png"), tr("Send PM"), this);
     reconnectAction = new QAction(QIcon(":/ArpmanetDC/Resources/ServerIcon.png"), tr("Reconnect"), this);
     openDownloadDirAction = new QAction(QIcon(":/ArpmanetDC/Resources/FolderIcon.png"), tr("Download directory"), this);
-
+    pmAction = new QAction(QIcon(":/ArpmanetDC/Resources/EnvelopeIcon.png"), tr("Send PM"), this);
 
     //===== Menus =====
     userListMenu = new QMenu(this);
     userListMenu->addAction(privateMessageAction);
+
+    userCommandListMenu = new QMenu(this);
+    userCommandListMenu->setTitle(tr("Use as first parameter in user command"));
+    userCommandListMenu->setIcon(QIcon(":/ArpmanetDC/Resources/UserIcon.png"));
 
     //========== System tray ==========
     systemTrayIcon = new QSystemTrayIcon(this);
@@ -1025,6 +1030,7 @@ void ArpmanetDC::connectWidgets()
     connect(quickSearchLineEdit, SIGNAL(returnPressed()), this, SLOT(quickSearchPressed()));
 
     connect(mainChatTextEdit, SIGNAL(anchorClicked(const QUrl &)), this, SLOT(mainChatLinkClicked(const QUrl &)));
+    connect(mainChatTextEdit, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(showMainChatContextMenu(const QPoint&)));
     
     //Connect actions
     connect(queueAction, SIGNAL(triggered()), this, SLOT(queueActionPressed()));
@@ -1035,10 +1041,13 @@ void ArpmanetDC::connectWidgets()
     connect(helpAction, SIGNAL(triggered()), this, SLOT(helpActionPressed()));
     connect(privateMessageAction, SIGNAL(triggered()), this, SLOT(privateMessageActionPressed()));
     connect(reconnectAction, SIGNAL(triggered()), this, SLOT(reconnectActionPressed()));
-        connect(openDownloadDirAction, SIGNAL(triggered()), this, SLOT(openDownloadDirActionPressed()));
+    connect(openDownloadDirAction, SIGNAL(triggered()), this, SLOT(openDownloadDirActionPressed()));
+    connect(pmAction, SIGNAL(triggered()), this, SLOT(pmActionPressed()));
 
     connect(restoreAction, SIGNAL(triggered()), this, SLOT(showNormal()));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
+
+    connect(userCommandListMenu, SIGNAL(triggered(QAction *)), this, SLOT(userCommandMenuPressed(QAction *)));
 
     //Connect system tray
     connect(systemTrayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(systemTrayActivated(QSystemTrayIcon::ActivationReason)));
@@ -1229,6 +1238,63 @@ void ArpmanetDC::openDownloadDirActionPressed()
     QDesktopServices::openUrl(QUrl("file:///" + path));
 }
 
+//Shortcut PM action pressed - when right-clicking on a user name
+void ArpmanetDC::pmActionPressed()
+{
+    QString nick = pmAction->data().toString();
+
+    //Check if a tab exists with a PM for this nick
+    QWidget *foundWidget = 0;
+    QHashIterator<QWidget *, PMWidget *> i(pmWidgetHash);
+    while (i.hasNext())
+    {
+        if (i.peekNext().value()->otherNick().compare(nick) == 0)
+        {
+            foundWidget = i.value()->widget();
+            break;
+        }
+        i.next();
+    }
+
+    //If no existing tab is found - create new one
+    if (!foundWidget)
+    {
+        PMWidget *pmWidget = new PMWidget(nick, this);
+        connect(pmWidget, SIGNAL(sendPrivateMessage(QString, QString, PMWidget *)), this, SLOT(pmSent(QString, QString, PMWidget *)));
+        pmWidgetHash.insert(pmWidget->widget(), pmWidget);
+
+        tabs->addTab(pmWidget->widget(), QIcon(":/ArpmanetDC/Resources/UserIcon.png"), tr("PM - %1").arg(nick));
+        tabs->setCurrentIndex(tabs->indexOf(pmWidget->widget()));
+
+        if (!pUserList.contains(nick))
+            pmWidget->userLoginChanged(false);
+    }
+    //Else switch to existing tab
+    else
+    {
+        tabs->setCurrentIndex(tabs->indexOf(foundWidget));
+    }
+}
+
+//Send user command with selected word as first argument
+void ArpmanetDC::userCommandMenuPressed(QAction *action)
+{
+    //Get command name and arguments
+    QString userCommandName = action->text();
+    QString argument = action->data().toString();
+
+    //Must be a valid command
+    if (!pUserCommands->contains(userCommandName))
+        return;
+
+    //Build the command
+    UserCommandStruct u = pUserCommands->value(userCommandName);
+    QString command = tr("//%1 %2").arg(u.command).arg(argument);
+
+    //Send it
+    pHub->sendChatMessage(processUserCommand(command));
+}
+
 void ArpmanetDC::settingsActionPressed()
 {
     //Check if share widget exists already
@@ -1318,6 +1384,58 @@ void ArpmanetDC::showUserListContextMenu(const QPoint &pos)
     QPoint globalPos = userListTable->viewport()->mapToGlobal(pos);
 
     userListMenu->popup(globalPos);
+}
+
+void ArpmanetDC::showMainChatContextMenu(const QPoint &pos)
+{
+    QTextCursor textCursor = mainChatTextEdit->textCursor();
+    QString previouslySelectedText = textCursor.selectedText();
+
+    textCursor = mainChatTextEdit->cursorForPosition(pos);
+    textCursor.select(QTextCursor::WordUnderCursor);
+
+    QString selectedWord = textCursor.selection().toPlainText();
+    
+    if (pUserList.contains(selectedWord))
+        mainChatTextEdit->setTextCursor(textCursor);
+    
+    QString selectedText = textCursor.selectedText();
+    QMenu *standardMenu = mainChatTextEdit->createStandardContextMenu(pos);
+    
+    QAction *separatorAction = standardMenu->actions().first();
+
+    bool addSeparator = false;
+
+    //Add user command list
+    if (!pUserCommands->isEmpty() && !selectedText.contains(" ") && !selectedText.isEmpty())
+    {
+        userCommandListMenu->clear();
+        foreach (QString name, pUserCommands->keys())
+        {
+            QAction *action = new QAction(QIcon(":/ArpmanetDC/Resources/UserIcon.png"), name, userCommandListMenu);
+            action->setData(selectedText);
+            userCommandListMenu->addAction(action);
+            userCommandListMenu->setTitle(tr("Use %1 in user command").arg(selectedText));
+        }
+        standardMenu->insertMenu(standardMenu->actions().first(), userCommandListMenu);
+        addSeparator = true;
+    }
+
+    //Check if word is a user
+    if (pUserList.contains(selectedText))
+    {
+        pmAction->setText(tr("Send PM to %1").arg(selectedText));
+        pmAction->setData(selectedText);
+        standardMenu->insertAction(standardMenu->actions().first(), pmAction);
+        addSeparator = true;
+    }
+
+    if (addSeparator)
+        standardMenu->insertSeparator(separatorAction);
+
+    QPoint globalPos = mainChatTextEdit->viewport()->mapToGlobal(pos);
+
+    standardMenu->popup(globalPos);
 }
 
 //Userlist keypresses

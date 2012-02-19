@@ -35,5 +35,6 @@
         <file>Resources/RedDownIcon.png</file>
         <file>Resources/CoolUserIcon.png</file>
         <file>Resources/SkullUserIcon.png</file>
+        <file>Resources/EnvelopeIcon.png</file>
     </qresource>
 </RCC>
