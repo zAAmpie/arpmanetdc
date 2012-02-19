@@ -43,6 +43,7 @@ signals:
     void requestNextSegment(TransferSegment *requestingSegmentObject);
     void transferRequestFailed(TransferSegment *requestingSegmentObject);
     void requestNextSegmentId(TransferSegment *segment);
+    void removeTransferSegmentPointer(quint32 segmentId);
 
 public slots:
     virtual void incomingDataPacket(quint64 offset, QByteArray data) = 0;
@@ -57,6 +58,7 @@ public slots:
     qint64 getSegmentStartTime();
     QHostAddress getSegmentRemotePeer();
     int getSegmentStatus();
+    quint32 getSegmentId();
     void setRemoteHost(QHostAddress host);
     virtual void startUploading() = 0;
     virtual void startDownloading() = 0;

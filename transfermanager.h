@@ -154,6 +154,10 @@ public slots:
     void setMaximumSimultaneousDownloads(int n);
     void setMaximumSimultaneousUploads(int n);
 
+    // Transfer segment pointers for direct dispatch
+    void setTransferSegmentPointer(quint32 segmentId, TransferSegment *segment);
+    void removeTransferSegmentPointer(quint32 segmentId);
+
 private:
     Transfer* getTransferObjectPointer(QByteArray &tth, int transferType, QHostAddress *hostAddr = 0);
     DownloadTransferQueueItem getNextQueuedDownload();
@@ -171,8 +175,6 @@ private:
     QHostAddress zeroHostAddress;
 
     // Transfer segment pointers for direct dispatch
-    void setTransferSegmentPointer(quint32 segmentId, TransferSegment *segment);
-    void removeTransferSegmentPointer(quint32 segmentId);
     TransferSegment *getTransferSegmentPointer(quint32 segmentId);
     QHash<quint32, TransferSegment*> transferSegmentPointers;
 

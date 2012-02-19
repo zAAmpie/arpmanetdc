@@ -132,7 +132,7 @@ void TransferManager::filePathNameReply(QByteArray tth, QString filename, quint6
     }
     Transfer *t = new UploadTransfer(this);
     TransferSegment *s = t->createUploadObject(uploadTransferQueue.value(tth)->protocol, uploadTransferQueue.value(tth)->segmentId);
-    setTransferSegmentPointer(uploadTransferQueue.value(tth)->segmentId, s);
+    //setTransferSegmentPointer(uploadTransferQueue.value(tth)->segmentId, s);
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
     connect(t, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
     connect(t, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)), this, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)));
@@ -228,8 +228,9 @@ void TransferManager::startNextDownload()
     connect(t, SIGNAL(transferFinished(QByteArray)), this, SLOT(transferDownloadCompleted(QByteArray)));
     connect(t, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
     connect(t, SIGNAL(requestNextSegmentId(TransferSegment*)), this, SLOT(requestNextSegmentId(TransferSegment*)));
-
     connect(t, SIGNAL(saveBucketFlushStateBitmap(QByteArray,QByteArray)), this, SIGNAL(saveBucketFlushStateBitmap(QByteArray,QByteArray)));
+    connect(t, SIGNAL(setTransferSegmentPointer(quint32,TransferSegment*)), this, SLOT(setTransferSegmentPointer(quint32,TransferSegment*)));
+    connect(t, SIGNAL(removeTransferSegmentPointer(quint32)), this, SLOT(removeTransferSegmentPointer(quint32)));
 
     t->setFileName(i.filePathName);
     t->setTTH(i.tth);

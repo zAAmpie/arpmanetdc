@@ -10,7 +10,11 @@ TransferSegment::TransferSegment(QObject *parent) :
     segmentEnd = 0;
 }
 
-TransferSegment::~TransferSegment(){}
+TransferSegment::~TransferSegment()
+{
+    emit removeTransferSegmentPointer(segmentId);
+}
+
 void TransferSegment::transferTimerEvent(){}
 void TransferSegment::setFileSize(quint64){}
 //void TransferSegment::receivedPeerProtocolCapability(char){}
@@ -69,6 +73,11 @@ QHostAddress TransferSegment::getSegmentRemotePeer()
 int TransferSegment::getSegmentStatus()
 {
     return status;
+}
+
+quint32 TransferSegment::getSegmentId()
+{
+    return segmentId;
 }
 
 void TransferSegment::setTTH(QByteArray tth)
