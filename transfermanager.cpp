@@ -7,6 +7,7 @@ TransferManager::TransferManager(QHash<QString, QString> *settings, QObject *par
     currentDownloadCount = 0;
     currentUploadCount = 0;
     zeroHostAddress = QHostAddress("0.0.0.0");
+    qsrand(QDateTime::currentMSecsSinceEpoch());
     nextSegmentId = qrand();
     if (nextSegmentId == 0)
         nextSegmentId++;
@@ -226,8 +227,8 @@ void TransferManager::startNextDownload()
     connect(t, SIGNAL(renameIncompleteFile(QString)), this, SIGNAL(renameIncompleteFile(QString)));
     connect(t, SIGNAL(transferFinished(QByteArray)), this, SLOT(transferDownloadCompleted(QByteArray)));
     connect(t, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
-    connect(t, SIGNAL(requestNextSegmentId()), this, SLOT(requestNextSegmentId()));
-    connect(this, SIGNAL(setSegmentId(quint32)), t, SLOT(setNextSegmentId(quint32)));
+    connect(t, SIGNAL(requestNextSegmentId(TransferSegment*)), this, SLOT(requestNextSegmentId(TransferSegment*)));
+
     connect(t, SIGNAL(saveBucketFlushStateBitmap(QByteArray,QByteArray)), this, SIGNAL(saveBucketFlushStateBitmap(QByteArray,QByteArray)));
 
     t->setFileName(i.filePathName);
@@ -481,13 +482,13 @@ void TransferManager::setMaximumSimultaneousUploads(int n)
     maximumSimultaneousUploads = n;
 }
 
-void TransferManager::requestNextSegmentId()
+void TransferManager::requestNextSegmentId(TransferSegment *segment)
 {
     nextSegmentId++;
     if (nextSegmentId == 0)
         nextSegmentId++;
 
-    emit setSegmentId(nextSegmentId);
+    segment->setSegmentId(nextSegmentId);
 }
 
 void TransferManager::restoreBucketFlushStateBitmap(QByteArray tth, QByteArray bitmap)

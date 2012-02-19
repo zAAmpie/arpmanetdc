@@ -42,7 +42,7 @@ signals:
     void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
     void requestNextSegment(TransferSegment *requestingSegmentObject);
     void transferRequestFailed(TransferSegment *requestingSegmentObject);
-    //void requestPeerProtocolCapability(QHostAddress peer);
+    void requestNextSegmentId(TransferSegment *segment);
 
 public slots:
     virtual void incomingDataPacket(quint64 offset, QByteArray data) = 0;

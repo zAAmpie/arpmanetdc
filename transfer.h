@@ -87,7 +87,7 @@ signals:
     void flushBucketDirect(QString outfile, int bucketno, QByteArray *bucket, QByteArray tth);
     void renameIncompleteFile(QString filename);
     void requestProtocolCapability(QHostAddress peer, Transfer *obj);
-    void requestNextSegmentId();
+    void requestNextSegmentId(TransferSegment *segment);
     void saveBucketFlushStateBitmap(QByteArray tth, QByteArray bitmap);
 
 public slots:

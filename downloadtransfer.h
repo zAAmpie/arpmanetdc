@@ -71,7 +71,6 @@ public slots:
     int getSegmentCount();
     SegmentStatusStruct getSegmentStatuses();
     void incomingTransferError(quint64 offset, quint8 error);
-    void setNextSegmentId(quint32 id);
     void setBucketFlushStateBitmap(QByteArray bitmap);
 
     // Bucket flush callbacks
@@ -121,7 +120,6 @@ private:
     int bucketFlushQueueLength;
     int treeUpdatesSinceTimer;
     bool iowait;
-    quint32 nextSegmentId;
     QHostAddress treeRequestHost;
 
     QMap<quint64, TransferSegmentTableStruct> transferSegmentTable;

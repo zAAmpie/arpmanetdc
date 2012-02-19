@@ -94,9 +94,6 @@ signals:
     // Request peer protocol capabilities
     void requestProtocolCapability(QHostAddress peer);
 
-    // Segment ID to transfers
-    void setSegmentId(quint32 segmentId);
-
     // Transfer state bitmap to/from database
     void saveBucketFlushStateBitmap(QByteArray tth, QByteArray bitmap);
     void loadBucketFlushStateBitmap(QByteArray tth);
@@ -140,8 +137,8 @@ public slots:
     void bucketFlushed(QByteArray tth, int bucketNo);
     void bucketFlushFailed(QByteArray tth, int bucketNo);
 
-    // Segment ID requests from transfers
-    void requestNextSegmentId();
+    // Segment ID requests from transfer segments
+    void requestNextSegmentId(TransferSegment*);
 
     // Restore transfer state bitmap from database
     void restoreBucketFlushStateBitmap(QByteArray tth, QByteArray bitmap);

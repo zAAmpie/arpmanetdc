@@ -17,7 +17,6 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
     bucketHashQueueLength = 0;
     bucketFlushQueueLength = 0;
     iowait = false;
-    nextSegmentId = 0;
     treeUpdatesSinceTimer = 0;
 
     transferRateCalculationTimer = new QTimer(this);
@@ -559,8 +558,7 @@ TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol 
     default:
         return download;
     }
-    download->setSegmentId(nextSegmentId);
-    emit requestNextSegmentId();
+    emit requestNextSegmentId(download);
 
     connect(download, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)), this, SLOT(requestHashBucket(QByteArray,int,QByteArray*)));
     connect(download, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)),
@@ -783,11 +781,6 @@ void DownloadTransfer::congestionTest()
                 s->unpauseDownload();
         }
     }
-}
-
-void DownloadTransfer::setNextSegmentId(quint32 id)
-{
-    nextSegmentId = id;
 }
 
 void DownloadTransfer::requestHashTree(int lastHashBucketReceived, bool timerRequest)
