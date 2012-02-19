@@ -518,4 +518,6 @@ void TransferManager::closeClientEvent()
     QHashIterator<QByteArray, Transfer*> i(transferObjectTable);
     while (i.hasNext())
         i.next().value()->abortTransfer();
+
+    emit closeClientEventReturn();
 }

@@ -101,6 +101,9 @@ signals:
     void saveBucketFlushStateBitmap(QByteArray tth, QByteArray bitmap);
     void loadBucketFlushStateBitmap(QByteArray tth);
 
+    // Notify when done handling closeClientEvent()
+    void closeClientEventReturn();
+
 public slots:
     void incomingDataPacket(quint8 transferProtocolVersion, QHostAddress fromHost, QByteArray datagram);
     void incomingDirectDataPacket(quint32 segmentId, quint64 offset, QByteArray data);
