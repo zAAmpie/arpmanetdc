@@ -227,7 +227,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(this, SIGNAL(stopTransfer(QByteArray, int, QHostAddress)),
             pTransferManager, SLOT(stopTransfer(QByteArray, int, QHostAddress)), Qt::QueuedConnection);
     connect(this, SIGNAL(closeClientEvent()),
-            pTransferManger, SLOT(closeClientEvent()), Qt::QueuedConnection);
+            pTransferManager, SLOT(closeClientEvent()), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(closeClientEventReturn()),
             this, SLOT(closeClientEventReturn()), Qt::QueuedConnection);
 
@@ -440,6 +440,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 
     arpmanetDCUsers = 0;
     notifyCount = 0;
+
+    pCloseEvent = 0;
 
     saveSharesPressed = false;
 
@@ -3077,8 +3079,9 @@ void ArpmanetDC::changeEvent(QEvent *e)
 //Event returned when everything is saved in transferManager
 void ArpmanetDC::closeClientEventReturn()
 {
-    //Send the event to the main window
-    QMainWindow::closeEvent(pCloseEvent);
+    if (pCloseEvent)
+        //Send the event to the main window
+        QMainWindow::closeEvent(pCloseEvent);
 }
 
 //Event signalled when the user closes the client
