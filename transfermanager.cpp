@@ -396,8 +396,11 @@ QList<TransferItemStatus> TransferManager::getGlobalTransferStatus()
 // signals from db restore and incoming tth search both route here
 void TransferManager::incomingTTHSource(QByteArray tth, QHostAddress sourcePeer)
 {
-    if (transferObjectTable.contains(tth))
-        transferObjectTable.value(tth)->addPeer(sourcePeer);
+    //if (transferObjectTable.contains(tth))
+    //    transferObjectTable.value(tth)->addPeer(sourcePeer);
+    Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_DOWNLOAD);
+    if (t)
+        t->addPeer(sourcePeer);
 }
 
 // packet containing part of a tree

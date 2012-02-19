@@ -40,7 +40,7 @@ void FSTPTransferSegment::startUploading()
 
     if (segmentStart > fileSize)
     {
-        emit sendTransferError(remoteHost, 0, TTH, segmentStart);
+        emit sendTransferError(remoteHost, InvalidOffsetError, TTH, segmentStart);
         return;
     }
     else if (segmentStart + segmentLength > fileSize)
@@ -55,7 +55,7 @@ void FSTPTransferSegment::startUploading()
     const char * f = (char*)inputFile.map(segmentStart, segmentLength);
     if (f == 0)
     {
-        emit sendTransferError(remoteHost, 0, TTH, segmentStart);
+        emit sendTransferError(remoteHost, FileIOError, TTH, segmentStart);
         return;
     }
 

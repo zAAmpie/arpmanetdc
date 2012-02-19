@@ -47,6 +47,14 @@ enum bucketFlushState
     BucketFlushed = 0x02
 };
 
+enum transferErrors
+{
+    FileIOError=0x01,
+    InvalidOffsetError=0x02,
+    PeerAlreadyTransferring=0x04,
+    NoSlotsAvailable=0x08
+};
+
 struct SegmentStatusStruct
 {
     int initializing;
