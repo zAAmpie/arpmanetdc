@@ -105,6 +105,7 @@ void UploadTransfer::pauseTransfer()
 void UploadTransfer::abortTransfer()
 {
     status = TRANSFER_STATE_ABORTING;
+    emit sendTransferError(remoteHost, TransferAbortingError, TTH, fileOffset);
     emit abort(this);
 }
 

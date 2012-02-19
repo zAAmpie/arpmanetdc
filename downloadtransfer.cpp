@@ -263,6 +263,7 @@ void DownloadTransfer::pauseTransfer()
 void DownloadTransfer::abortTransfer()
 {
     status = TRANSFER_STATE_ABORTING;
+    // bucketFlushStateBitmap is saved in the destructor, we shouldn't do it here too.
     emit abort(this);
 }
 
@@ -607,6 +608,9 @@ void DownloadTransfer::TTHSearchTimerEvent()
     if (tthSearchInterval < 300000)  // 5 min max interval
         tthSearchInterval += tthSearchInterval;
     TTHSearchTimer->start(tthSearchInterval);
+
+    // borrow this timer to save the bucket flush state periodically.
+    emit saveBucketFlushStateBitmap(TTH, bucketFlushStateBitmap);
 }
 
 int DownloadTransfer::getTransferProgress()

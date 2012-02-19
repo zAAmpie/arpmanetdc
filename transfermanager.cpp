@@ -396,8 +396,11 @@ QList<TransferItemStatus> TransferManager::getGlobalTransferStatus()
 // signals from db restore and incoming tth search both route here
 void TransferManager::incomingTTHSource(QByteArray tth, QHostAddress sourcePeer)
 {
-    if (transferObjectTable.contains(tth))
-        transferObjectTable.value(tth)->addPeer(sourcePeer);
+    //if (transferObjectTable.contains(tth))
+    //    transferObjectTable.value(tth)->addPeer(sourcePeer);
+    Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_DOWNLOAD);
+    if (t)
+        t->addPeer(sourcePeer);
 }
 
 // packet containing part of a tree
@@ -508,4 +511,13 @@ void TransferManager::setTransferSegmentPointer(quint32 segmentId, TransferSegme
 void TransferManager::removeTransferSegmentPointer(quint32 segmentId)
 {
     transferSegmentPointers.remove(segmentId);
+}
+
+void TransferManager::closeClientEvent()
+{
+    QHashIterator<QByteArray, Transfer*> i(transferObjectTable);
+    while (i.hasNext())
+        i.next().value()->abortTransfer();
+
+    emit closeClientEventReturn();
 }
