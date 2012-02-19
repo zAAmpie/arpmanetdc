@@ -45,7 +45,7 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
 DownloadTransfer::~DownloadTransfer()
 {
     // save bucketFlushStateBitmap to db
-    emit saveBucketFlushStateBitmap(TTH, bucketFlushStateBitmap);
+    saveBucketStateBitmap();
 
     transferRateCalculationTimer->deleteLater();
     transferTimer->deleteLater();
@@ -610,7 +610,7 @@ void DownloadTransfer::TTHSearchTimerEvent()
     TTHSearchTimer->start(tthSearchInterval);
 
     // borrow this timer to save the bucket flush state periodically.
-    emit saveBucketFlushStateBitmap(TTH, bucketFlushStateBitmap);
+    saveBucketStateBitmap();
 }
 
 int DownloadTransfer::getTransferProgress()
@@ -841,4 +841,17 @@ QHostAddress DownloadTransfer::getBestIdlePeer()
         }
     }
     return bestPeer;
+}
+
+void DownloadTransfer::saveBucketStateBitmap()
+{
+    r.clear();
+    for (int i = 0; i < transferSegmentStateBitmap.length(); i++)
+    {
+        if (transferSegmentStateBitmap.at(i) == SegmentDownloaded)
+            r[i] = BucketFlushed;
+        else
+            r[i] = BucketNotFlushed;
+    }
+    emit saveBucketFlushStateBitmap(TTH, r);
 }

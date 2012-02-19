@@ -100,6 +100,7 @@ private:
     void congestionTest();
     void requestHashTree(int lastHashBucketReceived, bool timerRequest = false);
     QHostAddress getBestIdlePeer();
+    void saveBucketStateBitmap();
 
     QHash<int, QByteArray*> *downloadBucketTable;
     QMap<int, QByteArray*> downloadBucketHashLookupTable;
@@ -128,6 +129,8 @@ private:
     QByteArray bucketFlushStateBitmap;
     QHash<QHostAddress, RemotePeerInfoStruct> remotePeerInfoTable;
     QHash<QHostAddress,int> remotePeerInfoRequestPool;
+
+    QByteArray r;
 };
 
 #endif // DOWNLOADTRANSFER_H
