@@ -147,6 +147,9 @@ public slots:
 
     void destroyTransferObject(Transfer*);
 
+    // Slot to notify us on program exit to abort the transfers, so that they can save their state bitmaps
+    void closeClientEvent();
+
     // Set functions
     void setMaximumSimultaneousDownloads(int n);
     void setMaximumSimultaneousUploads(int n);

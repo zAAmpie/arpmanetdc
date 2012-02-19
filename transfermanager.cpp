@@ -512,3 +512,10 @@ void TransferManager::removeTransferSegmentPointer(quint32 segmentId)
 {
     transferSegmentPointers.remove(segmentId);
 }
+
+void TransferManager::closeClientEvent()
+{
+    QHashIterator<QByteArray, Transfer*> i(transferObjectTable);
+    while (i.hasNext())
+        i.next().value()->abortTransfer();
+}
