@@ -44,6 +44,7 @@ signals:
     void transferRequestFailed(TransferSegment *requestingSegmentObject);
     void requestNextSegmentId(TransferSegment *segment);
     void removeTransferSegmentPointer(quint32 segmentId);
+    void updateDirectBytesStats(int bytes);
 
 public slots:
     virtual void incomingDataPacket(quint64 offset, QByteArray data) = 0;

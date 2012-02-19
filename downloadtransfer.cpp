@@ -109,7 +109,8 @@ void DownloadTransfer::incomingDataPacket(quint8, quint64 offset, QByteArray dat
         }
 
     }*/
-    bytesWrittenSinceUpdate += data.size();
+    // segment updates this, direct dispatch bypasses this function
+    //bytesWrittenSinceUpdate += data.size();
 }
 
 // Send a request to the hash thread to compute the tiger tree hash of a 1MB bucket
@@ -573,6 +574,7 @@ TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol 
     connect(download, SIGNAL(requestNextSegment(TransferSegment*)), this, SLOT(segmentCompleted(TransferSegment*)));
     connect(download, SIGNAL(transferRequestFailed(TransferSegment*)), this, SLOT(segmentFailed(TransferSegment*)));
     connect(download, SIGNAL(removeTransferSegmentPointer(quint32)), this, SIGNAL(removeTransferSegmentPointer(quint32)));
+    connect(download, SIGNAL(updateDirectBytesStats(int)), this, SLOT(updateDirectBytesStats(int)));
     return download;
 }
 
@@ -856,4 +858,9 @@ void DownloadTransfer::saveBucketStateBitmap()
             r[i] = BucketNotFlushed;
     }
     emit saveBucketFlushStateBitmap(TTH, r);
+}
+
+void DownloadTransfer::updateDirectBytesStats(int bytes)
+{
+    bytesWrittenSinceUpdate += bytes;
 }
