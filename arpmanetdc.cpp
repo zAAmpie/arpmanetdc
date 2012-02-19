@@ -227,7 +227,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(this, SIGNAL(stopTransfer(QByteArray, int, QHostAddress)),
             pTransferManager, SLOT(stopTransfer(QByteArray, int, QHostAddress)), Qt::QueuedConnection);
     connect(this, SIGNAL(closeClientEvent()),
-            pTransferManger, SLOT(closeClientEvent()), Qt::QueuedConnection);
+            pTransferManager, SLOT(closeClientEvent()), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(closeClientEventReturn()),
             this, SLOT(closeClientEventReturn()), Qt::QueuedConnection);
 
