@@ -28,7 +28,8 @@ void PMWidget::createWidgets()
 
     //Chat browser
     chatBrowser = new QTextBrowser(pWidget);
-    chatBrowser->setOpenExternalLinks(true);
+    chatBrowser->setOpenExternalLinks(false);
+    chatBrowser->setOpenLinks(false);
 }
 
 void PMWidget::placeWidgets()
@@ -38,8 +39,7 @@ void PMWidget::placeWidgets()
     vlayout->addWidget(chatBrowser);
     vlayout->addWidget(chatLineEdit);
     vlayout->setContentsMargins(0,0,0,0);
-
-    
+        
     pWidget->setLayout(vlayout);
 }
 
@@ -47,6 +47,7 @@ void PMWidget::connectWidgets()
 {
     //TODO: Connect all widgets
     connect(chatLineEdit, SIGNAL(returnPressed()), this, SLOT(sendMessage()));
+    connect(chatBrowser, SIGNAL(anchorClicked(const QUrl &)), pParent, SLOT(mainChatLinkClicked(const QUrl &)));
 }
 
 void PMWidget::receivePrivateMessage(QString msg)
@@ -111,6 +112,10 @@ void PMWidget::sendMessage()
 
     QString msg = chatLineEdit->text();
     chatLineEdit->setText("");
+
+    //Process user commands if necessary
+    if (msg.startsWith("//"))
+        msg = pParent->processUserCommand(msg);
 
     emit sendPrivateMessage(pOtherNick, msg, this);
 

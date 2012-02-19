@@ -125,7 +125,7 @@ public slots:
     //Hashes a 1MB bucket
     void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray bucket);
 
-    //----------========== TTH SOURCES FOR TRANSFERS (TRANSFER MANAGER) ==========----------
+    //----------========== TRANSFERS (TRANSFER MANAGER) ==========----------
     
     //Save a source for a particular TTH
     void saveTTHSource(QByteArray tthRoot, QHostAddress peerAddress);
@@ -138,6 +138,11 @@ public slots:
     
     //Release all sources for a particular TTH
     void deleteTTHSources(QByteArray tthRoot);
+
+    // Transfer state bitmap to/from database
+    void saveBucketFlushStateBitmap(QByteArray tthRoot, QByteArray bitmap);
+    void loadBucketFlushStateBitmap(QByteArray tthRoot);
+    void deleteBucketFlushStateBitmap(QByteArray tthRoot);
 
     //----------========== TTH REQUESTS FOR ALTERNATE SEARCHING ==========----------
 
@@ -276,6 +281,9 @@ signals:
     
     //TTH source load reply
     void tthSourceLoaded(QByteArray tthRoot, QHostAddress peerAddress);
+    
+    // Restore transfer state bitmap from database
+    void restoreBucketFlushStateBitmap(QByteArray tthRoot, QByteArray bitmap);
 
     //----------========== TTH REQUESTS FOR ALTERNATE SEARCHING ==========----------
 

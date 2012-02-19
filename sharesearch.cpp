@@ -1517,6 +1517,115 @@ void ShareSearch::deleteTTHSources(QByteArray tthRoot)
     commitTransaction();
 }
 
+//Save state bitmap to database
+void ShareSearch::saveBucketFlushStateBitmap(QByteArray tthRoot, QByteArray bitmap)
+{
+    //Insert a bitmap
+    QString queryStr = tr("INSERT INTO FileStateBitmaps ([tthRoot], [bitmap]) VALUES (?, ?);");
+
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
+
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        //Bind parameters
+        int res = 0;
+        QString tthRootStr = QString(tthRoot.toBase64().data());
+        res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size()*2, SQLITE_STATIC);
+        QString bitmapStr = QString(bitmap.toBase64().data());
+        res = res | sqlite3_bind_text16(statement, 2, bitmapStr.utf16(), bitmapStr.size()*2, SQLITE_STATIC);
+
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW);
+        sqlite3_finalize(statement);    
+    }
+
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
+
+    //Commit to ensure access to database hasn't blocked hashing process
+    commitTransaction();
+}
+
+//Get state bitmap from database
+void ShareSearch::loadBucketFlushStateBitmap(QByteArray tthRoot)
+{
+    //Return the bitmap for a file
+    QString queryStr = tr("SELECT [bitmap] FROM FileStateBitmaps WHERE [tthRoot] = ?;");
+
+    QByteArray bitmap;
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
+
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        //Bind parameters
+        int res = 0;
+        QString tthRootStr = QString(tthRoot.toBase64().data());
+        res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size()*2, SQLITE_STATIC);
+
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW)
+        {
+            bitmap.append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 1)));
+            bitmap = QByteArray::fromBase64(bitmap);            
+        }
+        sqlite3_finalize(statement);    
+    }
+
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
+
+    // Restore transfer state bitmap from database
+    emit restoreBucketFlushStateBitmap(tthRoot, bitmap);
+}
+
+//Delete state bitmap
+void ShareSearch::deleteBucketFlushStateBitmap(QByteArray tthRoot)
+{
+    //Delete a bitmap for a specific file (typically when done downloading)
+    QString queryStr = tr("DELETE FROM FileStateBitmaps WHERE [tthRoot] = ?;");
+
+    sqlite3 *db = pParent->database();    
+    sqlite3_stmt *statement;
+
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        //Bind parameters
+        int res = 0;
+        QString tthRootStr = QString(tthRoot.toBase64().data());
+        res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size(), SQLITE_STATIC);
+
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW);
+        sqlite3_finalize(statement);    
+    }
+
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
+
+    //Commit to ensure access to database hasn't blocked hashing process
+    commitTransaction();
+}
+
 //------------------------------============================== TTH REQUESTS FOR ALTERNATE SEARCHING ==============================------------------------------
 
 //Request whether a file is being shared

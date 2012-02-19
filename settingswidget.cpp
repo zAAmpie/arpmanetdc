@@ -282,6 +282,9 @@ void SettingsWidget::createPageIcons()
     advancedPageButton->setTextColor(Qt::red);
     advancedPageButton->setTextAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     advancedPageButton->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
+
+    if (!toggleAdvancedCheckBox->isChecked())
+        advancedPageButton->setHidden(true);
 }
 
 void SettingsWidget::placeWidgets()

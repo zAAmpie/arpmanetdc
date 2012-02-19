@@ -288,7 +288,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(this, SIGNAL(processContainer(QHostAddress, QString, QString)), pShare, SLOT(processContainer(QHostAddress, QString, QString)), Qt::QueuedConnection);
     connect(this, SIGNAL(requestTotalShare(bool)), pShare, SLOT(requestTotalShare(bool)), Qt::QueuedConnection);
     connect(this, SIGNAL(requestUserCommands()), pShare, SLOT(requestUserCommands()), Qt::QueuedConnection);
-    
+    connect(this, SIGNAL(deleteBucketFlushStateBitmap(QByteArray)), pShare, SLOT(deleteBucketFlushStateBitmap(QByteArray)), Qt::QueuedConnection);
    
     //Connect ShareSearch to Dispatcher - reply to search request from other clients
     connect(pShare, SIGNAL(returnSearchResult(QHostAddress, QByteArray, quint64, QByteArray)), 
@@ -327,6 +327,13 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
             pTransferManager, SLOT(filePathNameReply(QByteArray, QString, quint64)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(tthSourceLoaded(QByteArray, QHostAddress)),
             pTransferManager, SLOT(incomingTTHSource(QByteArray, QHostAddress)), Qt::QueuedConnection);
+
+    connect(pShare, SIGNAL(restoreBucketFlushStateBitmap(QByteArray, QByteArray)),
+        pTransferManager, SLOT(restoreBucketFlushStateBitmap(QByteArray, QByteArray)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(saveBucketFlushStateBitmap(QByteArray, QByteArray)),
+        pShare, SLOT(saveBucketFlushStateBitmap(QByteArray, QByteArray)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(loadBucketFlushStateBitmap(QByteArray)),
+        pShare, SLOT(loadBucketFlushStateBitmap(QByteArray)), Qt::QueuedConnection);
 
     connect(pTransferManager, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray)),
             pShare, SLOT(hashBucketRequest(QByteArray, int, QByteArray)), Qt::QueuedConnection);
@@ -385,6 +392,9 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     pTransferManager->moveToThread(transferThread);
     transferThread->start();
 
+    arpmanetDCLogoNormal = new QPixmap(":/ArpmanetDC/Resources/Logo128x128.png");
+    arpmanetDCLogoNotify = new QPixmap(":/ArpmanetDC/Resources/Logo128x128Notify.png");
+
     //GUI setup
     createWidgets();
     placeWidgets();
@@ -425,11 +435,9 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     //transferWidget = 0;
 
     arpmanetDCUsers = 0;
+    notifyCount = 0;
 
     saveSharesPressed = false;
-
-    //Set window icon
-    setWindowIcon(QIcon(QPixmap(":/ArpmanetDC/Resources/Logo128x128.png")));
 
     //Icon generation
     userIcon = new QPixmap();
@@ -443,13 +451,15 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     newerVersionUserIcon = new QPixmap();
     *newerVersionUserIcon = QPixmap(":/ArpmanetDC/Resources/CoolUserIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
-
     fullyBootstrappedIcon = new QPixmap();
     *fullyBootstrappedIcon = QPixmap(":/ArpmanetDC/Resources/ServerOnlineIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     bootstrappedIcon = new QPixmap();
     *bootstrappedIcon = QPixmap(":/ArpmanetDC/Resources/ServerIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     unbootstrappedIcon = new QPixmap();
     *unbootstrappedIcon = QPixmap(":/ArpmanetDC/Resources/ServerOfflineIcon.png").scaled(16,16, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+
+    //Set window icon
+    setWindowIcon(QIcon(*arpmanetDCLogoNormal));
 
     //Init type icon list with resource extractor class
     pTypeIconList = new ResourceExtractor();
@@ -637,9 +647,14 @@ bool ArpmanetDC::setupDatabase()
 
     //Create AutoCompleteWords table - saves searches
     queries.append("CREATE TABLE AutoCompleteWords (rowID INTEGER PRIMARY KEY, word TEXT, count INTEGER);");
+    queries.append("CREATE INDEX IDX_AUTO_COMPLETE_WORDS on AutoCompleteWords(word);");
 
     //Create UserCommands table - saves user commands
     queries.append("CREATE TABLE UserCommands (rowID INTEGER PRIMARY KEY, name TEXT, command TEXT, parameterCount INT, output TEXT, UNIQUE(command));");
+
+    //Create FileStateBitmaps table - saves bitmap data for a specific file for resuming
+    queries.append("CREATE TABLE FileStateBitmaps (rowID INTEGER PRIMARY KEY, tthRoot TEXT, bitmap TEXT, UNIQUE(tthRoot));");
+    queries.append("CREATE INDEX IDX_FILE_STATE_BITMAPS on FileStateBitmaps(tthRoot);");
 
     QList<QString> queryErrors(queries);
 
@@ -918,14 +933,14 @@ void ArpmanetDC::createWidgets()
 
     //========== System tray ==========
     systemTrayIcon = new QSystemTrayIcon(this);
-    systemTrayIcon->setIcon(QIcon(":/ArpmanetDC/Resources/Logo128x128.png"));
+    systemTrayIcon->setIcon(QIcon(*arpmanetDCLogoNormal));
     systemTrayIcon->setToolTip(tr("ArpmanetDC v%1").arg(VERSION_STRING));
     systemTrayIcon->show();
 
     systemTrayMenu = new QMenu(this);
 
-    quitAction = new QAction("Quit", this);
-    restoreAction = new QAction("Restore", this);
+    quitAction = new QAction(QIcon(":/ArpmanetDC/Resources/DeleteIcon.png"), "Quit", this);
+    restoreAction = new QAction(QIcon(":/ArpmanetDC/Resources/GreenUpIcon.png"), "Restore", this);
     restoreAction->setEnabled(false);
 
     systemTrayMenu->addAction(restoreAction);
@@ -1535,7 +1550,11 @@ void ArpmanetDC::tabDeleted(int index)
 void ArpmanetDC::tabChanged(int index)
 {
     if (tabs->tabBar()->tabTextColor(index) == tabTextColorNotify)
+    {
+        if (pmWidgetHash.contains(tabs->widget(index)))
+            updateNotify(--notifyCount);
         tabs->tabBar()->setTabTextColor(index, tabTextColorNormal);
+    }
 }
 
 void ArpmanetDC::searchButtonPressed(quint64 id, QString searchStr, QByteArray searchPacket, SearchWidget *sWidget)
@@ -1744,6 +1763,9 @@ void ArpmanetDC::downloadCompleted(QByteArray tth)
     //Delete from queue
     deleteFromQueue(tth);
 
+    //Delete the state bitmap of this download from the database
+    emit deleteBucketFlushStateBitmap(tth);
+
     //Set status
     setStatus(tr("Download completed: %1").arg(file.fileName));
 }
@@ -1797,6 +1819,7 @@ void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)
             {
                 //Notify tab
                 tabs->tabBar()->setTabTextColor(tabs->indexOf(pmWidget->widget()), tabTextColorNotify);
+                updateNotify(++notifyCount);
             }
         }
         //tabs->setCurrentIndex(tabs->indexOf(pmWidget->widget()));
@@ -1819,6 +1842,7 @@ void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)
             {
                 //Notify tab
                 tabs->tabBar()->setTabTextColor(tabs->indexOf(foundWidget), tabTextColorNotify);
+                updateNotify(++notifyCount);
             }
         }
         //Process message
@@ -2740,7 +2764,7 @@ void ArpmanetDC::convertHTMLLinks(QString &msg)
 {
     //Replace html links with hrefs
     int currentIndex = 0;
-    QString regex = "(href\\s*=\\s*['\"]?)?((www\\.|(http|https|ftp|news|file)+\\:\\/\\/)[&#95;._a-z0-9\\-]+\\.[a-z0-9\\/&#95;:@=.+?,##%&~\\-_]*[^.|\\'|\\# |!|\\(|?|,| |>|<|;|\\)])";
+    QString regex = "(href\\s*=\\s*['\"]?)?((www\\.|(http|https|ftp|news|file)+\\:\\/\\/)[&#95;._a-z0-9\\-]+\\.[a-z0-9\\/&#95;:@=.+?,##%&!~\\-_]*[^.|\\'|\\# |!|\\(|?|,| |>|<|;|\\)])";
     QRegExp rx(regex, Qt::CaseInsensitive);
     
     int pos = 0;
@@ -2773,7 +2797,7 @@ void ArpmanetDC::convertMagnetLinks(QString &msg)
 {
     //Replace magnet links with hrefs
     int currentIndex = 0;
-    QString regex = "(magnet:\\?xt\\=urn:(?:tree:tiger|sha1):([a-z0-9]{32,39})([a-z0-9\\/&#95;:@=.+?,##%&~\\-_()'\\[\\]]*))";
+    QString regex = "(magnet:\\?xt\\=urn:(?:tree:tiger|sha1):([a-z0-9]{32,39})([a-z0-9\\/&#95;:@=.+?,##%&~\\-_(!)'\\[\\]]*))";
     QRegExp rx(regex, Qt::CaseInsensitive);
 
     int pos = 0;
@@ -2804,7 +2828,8 @@ void ArpmanetDC::convertMagnetLinks(QString &msg)
             sizeStr = bytesToSize(size.toULongLong());
 
             //Parse filename
-            QString fileNameRegEx = "&dn=([a-z0-9+\\-_.\\[\\]()']*(?:[\\.]+[a-z0-9+\\-_\\[\\]]*))";
+            //QString fileNameRegEx = "&dn=([a-z0-9+\\-_.\\[\\]()']*(?:[\\.]+[a-z0-9+\\-_!\\[\\]]*))";
+            QString fileNameRegEx = "&dn=([a-z0-9\\/&#95;:@=.+?,##%&~\\-_(!)'\\[\\]]*(?:[\\.]+[a-z0-9\\/&#95;:@=.+?,##%&~\\-_(!)'\\[\\]]*))";
             QRegExp fRx(fileNameRegEx, Qt::CaseInsensitive);
 
             //Replace +'s with spaces
@@ -2874,6 +2899,23 @@ quint64 ArpmanetDC::calculateTotalShareSize()
         totalShare += i.value().second;
     }
     return totalShare;
+}
+
+//Used to determine if an icon change should be done for notifications
+void ArpmanetDC::updateNotify(int count)
+{
+    if (notifyCount == 0)
+    {
+        //No PM tabs are set to notify
+        setWindowIcon(QIcon(*arpmanetDCLogoNormal));
+        systemTrayIcon->setIcon(QIcon(*arpmanetDCLogoNormal));
+    }
+    else if (notifyCount == 1)
+    {
+        //There are still PM notifications
+        setWindowIcon(QIcon(*arpmanetDCLogoNotify));
+        systemTrayIcon->setIcon(QIcon(*arpmanetDCLogoNotify));
+    }
 }
 
 QString ArpmanetDC::downloadPath()
@@ -3028,11 +3070,25 @@ void ArpmanetDC::changeEvent(QEvent *e)
     }
 }
 
+//Event returned when everything is saved in transferManager
+void ArpmanetDC::closeClientEventReturn()
+{
+    QMainWindow::closeEvent(pCloseEvent);
+}
+
+//Event signalled when the user closes the client
 void ArpmanetDC::closeEvent(QCloseEvent *e)
 {
+    //Save the event for future use
+    pCloseEvent = e;
+
+    //Tell transferManager that the client is closing
+    emit closeClientEvent();
+
     //Will maybe later add an option to bypass the close operation and ask the user 
     //if the program should be minimized to tray rather than closed... For now it works normally
-    QMainWindow::closeEvent(e);
+    
+    //QMainWindow::closeEvent(pCloseEvent);
 }
 
 void ArpmanetDC::checkSharedMemory()

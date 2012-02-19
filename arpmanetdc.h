@@ -208,6 +208,7 @@ private slots:
     //TransferManager slots
     void downloadStarted(QByteArray tth);
     void downloadCompleted(QByteArray tth);
+    void closeClientEventReturn(); //Return when everything is saved
 
     //Dispatcher slots
     void bootstrapStatusChanged(int status);
@@ -327,6 +328,9 @@ signals:
     //Process downloaded container
     void processContainer(QHostAddress host, QString containerPath, QString downloadPath);
 
+    //Delete a state bitmap on download completion
+    void deleteBucketFlushStateBitmap(QByteArray tthRoot);
+
     //----------========== TRANSFERMANAGER SIGNALS ==========----------
 
     //Signals for queue
@@ -336,6 +340,9 @@ signals:
 
     //Signals for transferWidget
     void stopTransfer(QByteArray tth, int transferType, QHostAddress hostAddr);
+
+    //Signal for close event to save bitmaps
+    void closeClientEvent();
 
     //----------========== DISPATCHER SIGNALS ==========----------
 
@@ -365,6 +372,9 @@ private:
 
     //Calculate total share size
     quint64 calculateTotalShareSize();
+
+    //Used to determine if an icon change should be done for notifications
+    void updateNotify(int count);
 
     //Objects
     sqlite3 *db; //SQLite database
@@ -397,6 +407,8 @@ private:
     QHash<QString, QPair<QStandardItem *, quint64> > pUserList;
     QSet<QString> pADCUserList;
 
+    quint32 notifyCount; //Used to keep track of the amount of PM windows that has new messages to change icon
+
     bool saveSharesPressed;
 
     quint64 pFilesHashedSinceUpdate, pFileSizeHashedSinceUpdate;
@@ -413,6 +425,9 @@ private:
 
     QStringList pArguments;
     QSharedMemory *pSharedMemory;
+
+    //Event parameter to save when a closeEvent is called to pass to QMainWindow (this can also serve to check for duplicate events)
+    QCloseEvent *pCloseEvent;
 
     //Global lists
     QHash<QByteArray, QueueStruct> *pQueueList;
@@ -431,6 +446,9 @@ private:
 
     //User list icons
     QPixmap *userIcon, *arpmanetUserIcon, *oldVersionUserIcon, *newerVersionUserIcon, *userFirewallIcon, *bootstrappedIcon, *unbootstrappedIcon, *fullyBootstrappedIcon;
+    
+    //Application icons
+    QPixmap *arpmanetDCLogoNormal, *arpmanetDCLogoNotify;
 
     //Menus
     QMenu *userListMenu;

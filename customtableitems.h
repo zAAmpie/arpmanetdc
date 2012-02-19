@@ -34,17 +34,17 @@
 #include "transfer.h"
 
 //Bitmap colours
-const static QColor downloadedColor(79, 189, 54);
-const static QColor notDownloadedColor(255,255,255);
+const static QColor downloadedColor(79, 189, 54); //Green
+const static QColor notDownloadedColor(255,255,255); //White
 
-const static QColor uploadedColor(37, 149, 214);
-const static QColor notUploadedColor(255,255,255);
+const static QColor uploadedColor(37, 149, 214); //Blue
+const static QColor notUploadedColor(255,255,255); //While
 
-const static QColor downloadingColor(79, 189, 54, 192);
-const static QColor uploadingColor(37, 149, 214, 192);
+const static QColor downloadingColor(79, 189, 54, 192); //Light green
+const static QColor uploadingColor(37, 149, 214, 192); //Light blue
 
-const static QColor hashingColor(255, 168, 0);
-const static QColor flushingColor(255, 240, 0);
+const static QColor hashingColor(228, 66, 243); //Magenta
+const static QColor flushingColor(255, 240, 0); //Yellow
 
 //Initialize the color map
 static QMap<char, QColor> initColourMapValues() {
