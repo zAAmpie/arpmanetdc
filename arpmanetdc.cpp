@@ -441,6 +441,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     arpmanetDCUsers = 0;
     notifyCount = 0;
 
+    pCloseEvent = 0;
+
     saveSharesPressed = false;
 
     //Icon generation
@@ -3077,8 +3079,9 @@ void ArpmanetDC::changeEvent(QEvent *e)
 //Event returned when everything is saved in transferManager
 void ArpmanetDC::closeClientEventReturn()
 {
-    //Send the event to the main window
-    QMainWindow::closeEvent(pCloseEvent);
+    if (pCloseEvent)
+        //Send the event to the main window
+        QMainWindow::closeEvent(pCloseEvent);
 }
 
 //Event signalled when the user closes the client

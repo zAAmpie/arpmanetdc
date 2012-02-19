@@ -1577,7 +1577,7 @@ void ShareSearch::loadBucketFlushStateBitmap(QByteArray tthRoot)
         int result = 0;
         while (sqlite3_step(statement) == SQLITE_ROW)
         {
-            bitmap.append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 1)));
+            bitmap.append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0)));
             bitmap = QByteArray::fromBase64(bitmap);            
         }
         sqlite3_finalize(statement);    
