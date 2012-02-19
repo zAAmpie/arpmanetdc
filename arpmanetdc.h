@@ -278,8 +278,8 @@ private slots:
     void tabChanged(int index);
 
     //Right-click menus
-    void showUserListContextMenu(const QPoint&);
-    void showMainChatContextMenu(const QPoint&);
+    void showUserListContextMenu(const QPoint &pos);
+    void showMainChatContextMenu(const QPoint &pos);
 
     //Userlist keypresses
     void userListKeyPressed(Qt::Key key, QString keyStr);

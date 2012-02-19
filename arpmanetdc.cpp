@@ -1381,6 +1381,28 @@ void ArpmanetDC::showUserListContextMenu(const QPoint &pos)
     if (userListTable->selectionModel()->selectedRows().size() == 0)
         return;
 
+    userListMenu->clear();
+    userListMenu->addAction(privateMessageAction);
+
+    //Get selected user
+    QModelIndex selectedIndex = userListTable->selectionModel()->selectedRows().first();
+    //Get nick of first user
+    QString nick = userSortProxy->data(userSortProxy->index(selectedIndex.row(), 2)).toString();
+
+    //Add user command list
+    if (!pUserCommands->isEmpty())
+    {
+        userCommandListMenu->clear();
+        foreach (QString name, pUserCommands->keys())
+        {
+            QAction *action = new QAction(QIcon(":/ArpmanetDC/Resources/UserIcon.png"), name, userCommandListMenu);
+            action->setData(nick);
+            userCommandListMenu->addAction(action);
+            userCommandListMenu->setTitle(tr("Use %1 in user command").arg(nick));
+        }
+        userListMenu->addMenu(userCommandListMenu);
+    }
+
     QPoint globalPos = userListTable->viewport()->mapToGlobal(pos);
 
     userListMenu->popup(globalPos);
