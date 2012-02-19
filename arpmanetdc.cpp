@@ -211,7 +211,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(pDispatcher, SIGNAL(incomingTransferError(QHostAddress,QByteArray,quint64,quint8)),
             pTransferManager, SLOT(incomingTransferError(QHostAddress,QByteArray,quint64,quint8)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)),
-            pDispatcher, SLOT(sendTransferError(QHostAddress,quint8,QByteArray,quint64)));
+            pDispatcher, SLOT(sendTransferError(QHostAddress,quint8,QByteArray,quint64)), Qt::QueuedConnection);
 
     //Connect TransferManager to GUI - notify of started/completed transfers
     connect(pTransferManager, SIGNAL(downloadStarted(QByteArray)), 
@@ -2579,6 +2579,10 @@ void ArpmanetDC::returnFinishedList(QHash<QByteArray, FinishedDownloadStruct> *l
 void ArpmanetDC::removeTransfer(QByteArray tth, int transferType, QHostAddress hostAddr)
 {
     deleteFromQueue(tth);
+
+    //Delete the state bitmap of this download from the database
+    emit deleteBucketFlushStateBitmap(tth);
+
     emit stopTransfer(tth, transferType, hostAddr);
 
     if (queueWidget)
