@@ -226,6 +226,10 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
             pTransferManager, SLOT(changeQueuedDownloadPriority(int, int, QByteArray)), Qt::QueuedConnection);
     connect(this, SIGNAL(stopTransfer(QByteArray, int, QHostAddress)),
             pTransferManager, SLOT(stopTransfer(QByteArray, int, QHostAddress)), Qt::QueuedConnection);
+    connect(this, SIGNAL(closeClientEvent()),
+            pTransferManger, SLOT(closeClientEvent()), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(closeClientEventReturn()),
+            this, SLOT(closeClientEventReturn()), Qt::QueuedConnection);
 
     // Set network scan ranges in Dispatcher, initial shotgun approach
     //pDispatcher->addNetworkScanRange(QHostAddress("143.160.0.1").toIPv4Address(), 65534);
@@ -3073,6 +3077,7 @@ void ArpmanetDC::changeEvent(QEvent *e)
 //Event returned when everything is saved in transferManager
 void ArpmanetDC::closeClientEventReturn()
 {
+    //Send the event to the main window
     QMainWindow::closeEvent(pCloseEvent);
 }
 
