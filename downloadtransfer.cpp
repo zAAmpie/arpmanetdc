@@ -80,6 +80,10 @@ void DownloadTransfer::incomingDataPacket(quint8, quint64 offset, QByteArray dat
     if (Q_UNLIKELY(bucketHashQueueLength + bucketFlushQueueLength > HASH_BUCKET_QUEUE_CRITICAL_THRESHOLD))
         return;
 
+    // The iteration code below does not expect an empty table.
+    if (transferSegmentTable.isEmpty())
+        return;
+
     // map are sorted in key ascending order
     // QMap::lowerBound will most likely find the segment just before the one we are interested in
     QMap<quint64, TransferSegmentTableStruct>::const_iterator i = transferSegmentTable.upperBound(offset);
@@ -105,7 +109,8 @@ void DownloadTransfer::incomingDataPacket(quint8, quint64 offset, QByteArray dat
         }
 
     }*/
-    bytesWrittenSinceUpdate += data.size();
+    // segment updates this, direct dispatch bypasses this function
+    //bytesWrittenSinceUpdate += data.size();
 }
 
 // Send a request to the hash thread to compute the tiger tree hash of a 1MB bucket
@@ -559,6 +564,7 @@ TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol 
         return download;
     }
     emit requestNextSegmentId(download);
+    emit setTransferSegmentPointer(download->getSegmentId(), download);
 
     connect(download, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)), this, SLOT(requestHashBucket(QByteArray,int,QByteArray*)));
     connect(download, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)),
@@ -567,6 +573,8 @@ TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol 
     connect(transferTimer, SIGNAL(timeout()), download, SLOT(transferTimerEvent()));
     connect(download, SIGNAL(requestNextSegment(TransferSegment*)), this, SLOT(segmentCompleted(TransferSegment*)));
     connect(download, SIGNAL(transferRequestFailed(TransferSegment*)), this, SLOT(segmentFailed(TransferSegment*)));
+    connect(download, SIGNAL(removeTransferSegmentPointer(quint32)), this, SIGNAL(removeTransferSegmentPointer(quint32)));
+    connect(download, SIGNAL(updateDirectBytesStats(int)), this, SLOT(updateDirectBytesStats(int)));
     return download;
 }
 
@@ -702,6 +710,9 @@ SegmentStatusStruct DownloadTransfer::getSegmentStatuses()
 
 void DownloadTransfer::incomingTransferError(quint64 offset, quint8 error)
 {
+    if (transferSegmentTable.isEmpty())
+        return;
+
     TransferSegment *t =0;
     QMap<quint64, TransferSegmentTableStruct>::const_iterator i = transferSegmentTable.upperBound(offset);
     if (Q_UNLIKELY(i == transferSegmentTable.constEnd()))
@@ -847,4 +858,9 @@ void DownloadTransfer::saveBucketStateBitmap()
             r[i] = BucketNotFlushed;
     }
     emit saveBucketFlushStateBitmap(TTH, r);
+}
+
+void DownloadTransfer::updateDirectBytesStats(int bytes)
+{
+    bytesWrittenSinceUpdate += bytes;
 }

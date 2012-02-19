@@ -89,6 +89,8 @@ signals:
     void requestProtocolCapability(QHostAddress peer, Transfer *obj);
     void requestNextSegmentId(TransferSegment *segment);
     void saveBucketFlushStateBitmap(QByteArray tth, QByteArray bitmap);
+    void setTransferSegmentPointer(quint32 segmentId, TransferSegment *segment);
+    void removeTransferSegmentPointer(quint32 segmentId);
 
 public slots:
     virtual void setFileName(QString filename);

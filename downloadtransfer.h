@@ -84,6 +84,7 @@ private slots:
     void segmentCompleted(TransferSegment *segment);
     void segmentFailed(TransferSegment *segment);
     void requestHashBucket(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
+    void updateDirectBytesStats(int bytes);
 
 private:
     void transferRateCalculation();
