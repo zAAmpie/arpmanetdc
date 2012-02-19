@@ -1769,9 +1769,6 @@ void ArpmanetDC::downloadCompleted(QByteArray tth)
     //Delete from queue
     deleteFromQueue(tth);
 
-    //Delete the state bitmap of this download from the database
-    emit deleteBucketFlushStateBitmap(tth);
-
     //Set status
     setStatus(tr("Download completed: %1").arg(file.fileName));
 }
@@ -2499,6 +2496,9 @@ void ArpmanetDC::deleteFromQueue(QByteArray tth)
 
         //Remove from database
         emit removeQueuedDownload(tth);
+
+        //Delete the state bitmap of this download from the database
+        emit deleteBucketFlushStateBitmap(tth);
     }
 }
 
@@ -2579,9 +2579,6 @@ void ArpmanetDC::returnFinishedList(QHash<QByteArray, FinishedDownloadStruct> *l
 void ArpmanetDC::removeTransfer(QByteArray tth, int transferType, QHostAddress hostAddr)
 {
     deleteFromQueue(tth);
-
-    //Delete the state bitmap of this download from the database
-    emit deleteBucketFlushStateBitmap(tth);
 
     emit stopTransfer(tth, transferType, hostAddr);
 
