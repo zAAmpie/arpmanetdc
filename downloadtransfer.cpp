@@ -4,7 +4,7 @@
 DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
 {
     //TODO: load transferSegmentStateBitmap from db
-    downloadBucketTable = new QHash<int, QByteArray*>();
+    downloadBucketTable = new QHash<int, QByteArray *>();
     transferRate = 0;
     transferProgress = 0;
     bytesWrittenSinceUpdate = 0;
@@ -54,8 +54,9 @@ DownloadTransfer::~DownloadTransfer()
         // TODO: save halwe buckets na files toe
         delete itdb.next().value();
     }
-    delete downloadBucketTable;
 
+    delete downloadBucketTable;
+    
     QMapIterator<int, QByteArray*> ithb(downloadBucketHashLookupTable);
     while (ithb.hasNext())
         delete ithb.next().value();
@@ -63,8 +64,11 @@ DownloadTransfer::~DownloadTransfer()
     QHashIterator<QHostAddress, RemotePeerInfoStruct> r(remotePeerInfoTable);
     while (r.hasNext())
         if (r.next().value().transferSegment)
-            r.value().transferSegment->deleteLater();
-
+        {
+            emit removeTransferSegmentPointer(r.value().transferSegment->getSegmentId());
+            r.value().transferSegment->deleteLater();            
+        }
+    
     TTHSearchTimer->deleteLater();
     transferTimer->deleteLater();
     transferRateCalculationTimer->deleteLater();

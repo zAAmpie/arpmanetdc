@@ -1689,7 +1689,7 @@ void ArpmanetDC::fileHashed(QString fileName, quint64 fileSize, quint64 totalSha
 {
     //Show on GUI when file has finished hashing
     setStatus(tr("Finished hashing file: %1").arg(fileName));
-    shareSizeLabel->setText(tr("Share: %1").arg(totalShare));
+    shareSizeLabel->setText(tr("Share: %1").arg(bytesToSize(totalShare)));
    
     pFilesHashedSinceUpdate++;
     pFileSizeHashedSinceUpdate += fileSize;

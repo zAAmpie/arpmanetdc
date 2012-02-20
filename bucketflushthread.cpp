@@ -62,52 +62,24 @@ void BucketFlushThread::assembleOutputFile(QString tmpfilebase, QString outfile,
                 outf.resize((quint64)bucket * HASH_BUCKET_SIZE + buf.size());
             
             //Disable MM files due to excessive memory consumption till we figure out how to force release modified memory to disk - to fix lockups
-            outf.seek((quint64)bucket * HASH_BUCKET_SIZE);
-            outf.write(buf);
+            //outf.seek((quint64)bucket * HASH_BUCKET_SIZE);
+            //outf.write(buf);
 
             //Map file to memory
-            //uchar *f = outf.map((quint64)bucket * HASH_BUCKET_SIZE, buf.size());
+            uchar *f = outf.map((quint64)bucket * HASH_BUCKET_SIZE, buf.size());
             
             //Write to memory if map succeeded
-            /*if (f != 0)
+            if (f != 0)
                 memmove(f, (const uchar *)buf.constData(), buf.size());
             else
                 qDebug() << "BucketFlushThread::assembleOutputFile: Big booboo for map! bucket : size" << bucket << buf.size();
                 
-
-            /*quint64 fileEnd = (bucket + 1) * HASH_BUCKET_SIZE;
-            if (outf.size() < fileEnd)
-            {
-                outf.seek(fileEnd);
-                outf.write("", 0);
-            }
-
-            const char *f = (char*)outf.map(bucket * HASH_BUCKET_SIZE, HASH_BUCKET_SIZE);
-
-            // tmp check until mapping is sorted out
-            if (outf.size() == bucket * HASH_BUCKET_SIZE)
-            {
-                QByteArray buf = inf.readAll();
-                outf.write(buf);
-            }
-            QByteArray outputmap(QByteArray::fromRawData(f, HASH_BUCKET_SIZE));
-            outputmap = inf.readAll();*/
-
             inf.close();
             inf.remove();
-            //bool res = outf.unmap(f);
+            if (!outf.unmap(f))
+                qDebug() << "BucketFlushThread::assembleOutputFile: Could not unmap file! bucket : size" << bucket << buf.size();
 
         }
-
-        // NOTE: this breaks the output file when downloading in segments
-        //if (bucket == lastbucket)
-        //{
-        //    outf.close();
-        //    if (!outf.rename(outfile))
-        //        outf.remove();
-        //    emit fileAssemblyComplete(outfile);
-        //}
-
         bucket++;
     }
     if (outf.isOpen())
@@ -136,8 +108,20 @@ void BucketFlushThread::flushBucketDirect(QString filename, int bucketno, QByteA
         outf.resize((quint64)bucketno * HASH_BUCKET_SIZE + bucket->size());
 
     //Disable MM files due to excessive memory consumption till we figure out how to force release modified memory to disk - to fix lockups
-    outf.seek((quint64)bucketno * HASH_BUCKET_SIZE);
-    outf.write(*bucket);
+    //outf.seek((quint64)bucketno * HASH_BUCKET_SIZE);
+    //outf.write(*bucket);
+
+    //Map file to memory
+    uchar *f = outf.map((quint64)bucketno * HASH_BUCKET_SIZE, bucket->size());
+            
+    //Write to memory if map succeeded
+    if (f != 0)
+        memmove(f, (const uchar *)bucket->constData(), bucket->size());
+    else
+        qDebug() << "BucketFlushThread::flushBucketDirect: Big booboo for map! bucket : size" << bucketno << bucket->size();
+
+    if (!outf.unmap(f))
+        qDebug() << "BucketFlushThread::flushBucketDirect: Could not unmap file! bucket : size" << bucketno << bucket->size();
 
     if (outf.isOpen())
         outf.close();
