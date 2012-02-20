@@ -449,7 +449,7 @@ void SettingsWidget::savePressed()
 
         //Build protocols string
         QString protocolHint;
-        
+
         for (int i = 0; i < protocolList->count(); i++)
         {
             QString itemText = protocolList->item(i)->text();

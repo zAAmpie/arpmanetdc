@@ -1,4 +1,7 @@
 #include "arpmanetdc.h"
+#ifdef Q_OS_WIN
+#include "Windows.h"
+#endif
 
 ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     : QMainWindow(parent, flags)
@@ -1113,6 +1116,16 @@ void ArpmanetDC::chatLineEditReturnPressed()
     {
         pHub->sendChatMessage(tr("DC Link: %1%2").arg(FTP_UPDATE_HOST).arg(FTP_UPDATE_DIRECTORY));
         chatLineEdit->setText("");
+    }
+    else if (chatLineEdit->text().compare("/w") == 0)
+    {
+        QString title = getWinampSongTitle();
+        if (!title.isEmpty())
+        {
+            //TODO: Set Winamp string in settings
+            pHub->sendChatMessage(tr("/me is listening to %1").arg(title));
+            chatLineEdit->setText("");
+        }
     }
     //User command (starts with //)
     else if (chatLineEdit->text().startsWith(tr("//")))
@@ -2862,6 +2875,40 @@ void ArpmanetDC::convertMagnetLinks(QString &msg)
     }
 }
 
+QString ArpmanetDC::getWinampSongTitle()
+{
+#ifdef Q_OS_WIN
+    //Get Winamp song title
+    HWND hwndWinamp = FindWindow(L"Winamp v1.x", NULL);
+    LPWSTR windowTextLPWSTR = new WCHAR[200];
+    char *windowTextCharPtr = new char[200];
+    int length = GetWindowText(hwndWinamp, windowTextLPWSTR, 200);
+    size_t count = wcstombs(windowTextCharPtr, windowTextLPWSTR, 200);
+    QByteArray windowTextBA(windowTextCharPtr, count);
+    QString windowText(windowTextBA.data());
+    delete [] windowTextLPWSTR;
+    delete [] windowTextCharPtr;
+    QString separatorStr("*** ");
+    if (windowText.contains(separatorStr)) //Scrolling
+        windowText = windowText.mid(windowText.indexOf(separatorStr)+separatorStr.size());
+    QString regex = "\\d+\\.(.*)\\s\\-\\sWinamp";
+    QString regex2 = "(.*)\\s\\-\\sWinamp";
+    QRegExp regExp(regex, Qt::CaseInsensitive);
+    if (regExp.indexIn(windowText) >= 0)
+        return regExp.cap(1);
+    else
+    {
+        regExp.setPattern(regex2);
+        if (regExp.indexIn(windowText) >= 0)
+            return regExp.cap(1);
+        else
+            return "";
+    }
+#else
+    return "";
+#endif
+}
+
 QHostAddress ArpmanetDC::getIPGuess()
 {
     //For jokes, get the actual IP of the computer and use the first one for the dispatcher
@@ -2950,9 +2997,6 @@ void ArpmanetDC::setUserCommands(QHash<QString, UserCommandStruct> *commands)
 {
     if (!commands)
         return;
-
-    if (pUserCommands)
-        pUserCommands->clear();
 
     //Set the data without changing the data address as the pointer is shared amount widgets
     (*pUserCommands) = *commands;
