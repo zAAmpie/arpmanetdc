@@ -593,11 +593,6 @@ void SettingsWidget::removeUserCommandButtonPressed()
         //Remove from hash
         pUserCommands->remove(name);
 
-        //Clear views
-        userCommandNameLineEdit->clear();
-        userCommandOutputLineEdit->clear();
-        userCommandParameterCount->setValue(0);
-
         //Disable views if no commands exist
         if (userCommandCombo->count() == 0)
         {
