@@ -1124,8 +1124,10 @@ void ArpmanetDC::chatLineEditReturnPressed()
         {
             //TODO: Set Winamp string in settings
             pHub->sendChatMessage(tr("/me is listening to %1").arg(title));
-            chatLineEdit->setText("");
         }
+        else
+            appendChatLine("<font color=\"darkGray\">Winamp is not running or feature is unsupported</font>");
+        chatLineEdit->setText("");
     }
     //User command (starts with //)
     else if (chatLineEdit->text().startsWith(tr("//")))
