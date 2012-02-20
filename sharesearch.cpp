@@ -1618,7 +1618,7 @@ void ShareSearch::deleteBucketFlushStateBitmap(QByteArray tthRoot)
         //Bind parameters
         int res = 0;
         QString tthRootStr = QString(tthRoot.toBase64().data());
-        res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size(), SQLITE_STATIC);
+        res = res | sqlite3_bind_text16(statement, 1, tthRootStr.utf16(), tthRootStr.size()*2, SQLITE_STATIC);
 
         int cols = sqlite3_column_count(statement);
         int result = 0;
