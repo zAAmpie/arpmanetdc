@@ -729,36 +729,44 @@ void ShareWidget::contextMenuRequested(const QPoint &pos)
     QFileInfo fi(filePath);
     if (fi.isFile())
     {
-        //Generate submenu
-        magnetRemoveListContextMenu->clear();
-        
-        QHashIterator<QString, QString> i(pMagnetList);
-        while (i.hasNext())
-        {
-            i.next();
-            QAction *action = new QAction(QIcon(":/ArpmanetDC/Resources/MagnetIcon.png"), i.key(), this);
-            action->setData(i.key());
-            magnetRemoveListContextMenu->addAction(action);
-        }
-
-        if (pMagnetList.isEmpty())
-        {
-            magnetRemoveListContextMenu->setTitle(tr("No entries in list"));
-            magnetRemoveListContextMenu->setEnabled(false);
-            clearMagnetListAction->setEnabled(false);
-            copyListToClipboardAction->setEnabled(false);
-        }
-        else
-        {
-            magnetRemoveListContextMenu->setTitle(tr("Remove magnet from list"));
-            magnetRemoveListContextMenu->setEnabled(true);
-            clearMagnetListAction->setEnabled(true);
-            copyListToClipboardAction->setEnabled(true);
-        }
-                
-        QPoint globalPos = fileTree->viewport()->mapToGlobal(pos);
-        contextMenu->popup(globalPos);
+        calculateMagnetAction->setVisible(true);
+        addToMagnetListAction->setVisible(true);
     }
+    else
+    {
+        calculateMagnetAction->setVisible(false);
+        addToMagnetListAction->setVisible(false);
+    }
+
+    //Generate submenu
+    magnetRemoveListContextMenu->clear();
+        
+    QHashIterator<QString, QString> i(pMagnetList);
+    while (i.hasNext())
+    {
+        i.next();
+        QAction *action = new QAction(QIcon(":/ArpmanetDC/Resources/MagnetIcon.png"), i.key(), this);
+        action->setData(i.key());
+        magnetRemoveListContextMenu->addAction(action);
+    }
+
+    if (pMagnetList.isEmpty())
+    {
+        magnetRemoveListContextMenu->setTitle(tr("No entries in list"));
+        magnetRemoveListContextMenu->setEnabled(false);
+        clearMagnetListAction->setEnabled(false);
+        copyListToClipboardAction->setEnabled(false);
+    }
+    else
+    {
+        magnetRemoveListContextMenu->setTitle(tr("Remove magnet from list"));
+        magnetRemoveListContextMenu->setEnabled(true);
+        clearMagnetListAction->setEnabled(true);
+        copyListToClipboardAction->setEnabled(true);
+    }
+                
+    QPoint globalPos = fileTree->viewport()->mapToGlobal(pos);
+    contextMenu->popup(globalPos);
 }
 
 //Context menu for containers
