@@ -1259,6 +1259,8 @@ void ArpmanetDC::reconnectActionPressed()
     pUserList.clear();
     pOPList.clear();
     pADCUserList.clear();
+
+    userListModel->removeRows(0, userListModel->rowCount());
     
     //Set parameters and reconnect hub
     pHub->setHubAddress(pSettings->value("hubAddress"));
@@ -1946,6 +1948,9 @@ void ArpmanetDC::appendChatLine(QString msg)
     //Replace new lines with <br/>
     msg.replace("\n"," <br/>");
     msg.replace("\r","");
+
+    //Replace OP names with green text
+    convertOPName(msg);
 
     //Replace nick with red text
     convertNickname(pSettings->value("nick"), msg);
@@ -2779,6 +2784,36 @@ void ArpmanetDC::convertNickname(QString nick, QString &msg)
         msg.insert(pos, nickColoured);
 
         pos += nickColoured.size();
+    }
+}
+
+void ArpmanetDC::convertOPName(QString &msg)
+{
+    //Replace OP names with coloured text
+    QString regex;
+    QRegExp rx(regex, Qt::CaseInsensitive);
+
+    foreach (QString nick, pOPList)
+    {
+        regex = tr("(%1)").arg(nick);
+        rx.setPattern(regex);
+
+        int pos = 0;
+        //Check for regex's and replace
+        while ((pos = rx.indexIn(msg, pos)) != -1)
+        {
+            //Extract link
+            QString nickExtracted = rx.cap(1);
+        
+            //Construct coloured OP name string
+            QString nickColoured = tr("<font color=\"green\">%1</font>").arg(nickExtracted);
+
+            //Replace link
+            msg.remove(pos, nickExtracted.size());
+            msg.insert(pos, nickColoured);
+
+            pos += nickColoured.size();
+        }
     }
 }
 

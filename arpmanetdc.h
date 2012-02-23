@@ -110,6 +110,7 @@ public:
     void convertHTMLLinks(QString &msg);
     void convertMagnetLinks(QString &msg);
     void convertNickname(QString nick, QString &msg);
+    void convertOPName(QString &msg);
 
     //Windows only implementation to get Winamp song title - anything more requires a lot of work ;)
     QString getWinampSongTitle();

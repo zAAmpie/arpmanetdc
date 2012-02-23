@@ -66,6 +66,9 @@ void PMWidget::receivePrivateMessage(QString msg)
         msg.replace("\n"," <br/>");
         msg.replace("\r","");
 
+        //Replace OP names with green text
+        pParent->convertOPName(msg);
+
         //Replace nick with red text
         pParent->convertNickname(pParent->nick(), msg);
         
