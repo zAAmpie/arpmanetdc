@@ -92,9 +92,13 @@ void HelpWidget::placeWidgets()
 
     QVBoxLayout *vlayout = new QVBoxLayout();
     vlayout->addLayout(aboutLayout);
+    vlayout->addSpacing(20);
 
     browser->scrollToAnchor("ArpmanetDC");
     vlayout->addWidget(browser);
+
+    vlayout->setStretchFactor(aboutLayout, 0);
+    vlayout->setStretchFactor(browser, 1);
 
     pWidget->setLayout(vlayout);
 }
