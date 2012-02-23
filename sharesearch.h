@@ -104,7 +104,7 @@ public slots:
     //----------========== GET HASH FROM FILE PATH (SHARE WIDGET) ==========----------
 
     //Gets the hash from a filepath if it exists in the database
-    void requestTTHFromPath(QString filePath);
+    void requestTTHFromPath(quint8, QString filePath);
 
     //Request the current share paths
     void requestShares();
@@ -250,10 +250,10 @@ signals:
     //----------========== GET HASH FROM FILE PATCH (SHARE WIDGET) ==========----------
 
     //Signal the reply of the hash
-    void returnTTHFromPath(QString filePath, QByteArray tthRoot, quint64 fileSize);
+    void returnTTHFromPath(quint8 type, QString filePath, QByteArray tthRoot, quint64 fileSize);
 
     //Signal hashFileThread to calculate hash
-    void calculateTTHFromPath(QString filePath);
+    void calculateTTHFromPath(quint8 type, QString filePath);
 
     //Signal return of share data
     void returnShares(QList<QDir> shares);

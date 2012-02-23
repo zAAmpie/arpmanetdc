@@ -33,6 +33,12 @@ class ShareWidget : public QObject
     Q_OBJECT
 
 public:
+    enum MagnetCalculationType
+    {
+        SingleMagnetType = 0x0,
+        MultipleListMagnetType = 0x1
+    };
+
     ShareWidget(ShareSearch *share, ArpmanetDC *parent);
     ~ShareWidget();
 
@@ -46,7 +52,7 @@ private slots:
     void containerContextMenuRequested(const QPoint &pos);
 
     //Magnet request from ShareSearch
-    void returnTTHFromPath(QString filePath, QByteArray tthRoot, quint64 fileSize);
+    void returnTTHFromPath(quint8 type, QString filePath, QByteArray tthRoot, quint64 fileSize);
 
     //Return slot for current shares in the DB
     void returnShares(QList<QDir> list);
@@ -75,6 +81,11 @@ private slots:
     void calculateMagnetActionPressed();
     void removeContainerEntryActionPressed();
 
+    void addToMagnetListActionPressed();
+    void copyListToClipboardActionPressed();
+    void clearMagnetListActionPressed();
+    void magnetRemoveListContextMenuPressed(QAction *action);
+
     void containerTreeViewKeyPressed(Qt::Key key);
 
     void changeRoot(QString path);
@@ -91,7 +102,7 @@ signals:
     void updateShares();
 
     //Request TTH from filePath for magnets
-    void requestTTHFromPath(QString filePath);
+    void requestTTHFromPath(quint8 type, QString filePath);
 
     //Request total shares
     void requestShares();
@@ -147,7 +158,11 @@ private:
 
     QMenu *contextMenu, *containerContextMenu;
     QAction *calculateMagnetAction, *removeContainerEntryAction;
-
+    
+    //Magnet lists
+    QHash<QString, QString> pMagnetList;
+    QAction *addToMagnetListAction, *copyListToClipboardAction, *clearMagnetListAction;
+    QMenu *magnetRemoveListContextMenu;
 };
 
 #endif

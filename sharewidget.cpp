@@ -15,8 +15,8 @@ ShareWidget::ShareWidget(ShareSearch *share, ArpmanetDC *parent)
     connect(pShare, SIGNAL(returnShares(QList<QDir>)), this, SLOT(returnShares(QList<QDir>)), Qt::QueuedConnection);
 
     //Magnet links signals/slots
-    connect(this, SIGNAL(requestTTHFromPath(QString)), pShare, SLOT(requestTTHFromPath(QString)), Qt::QueuedConnection);
-    connect(pShare, SIGNAL(returnTTHFromPath(QString, QByteArray, quint64)), this, SLOT(returnTTHFromPath(QString, QByteArray, quint64)), Qt::QueuedConnection);
+    connect(this, SIGNAL(requestTTHFromPath(quint8, QString)), pShare, SLOT(requestTTHFromPath(quint8, QString)), Qt::QueuedConnection);
+    connect(pShare, SIGNAL(returnTTHFromPath(quint8, QString, QByteArray, quint64)), this, SLOT(returnTTHFromPath(quint8, QString, QByteArray, quint64)), Qt::QueuedConnection);
 
     //Container signals/slots
     connect(this, SIGNAL(requestContainers(QString)), 
@@ -136,6 +136,19 @@ void ShareWidget::createWidgets()
     contextMenu = new QMenu(pWidget);
     calculateMagnetAction = new QAction(QIcon(":/ArpmanetDC/Resources/MagnetIcon.png"), tr("Copy magnet link"), pWidget);
     contextMenu->addAction(calculateMagnetAction);
+    contextMenu->addSeparator();
+
+    addToMagnetListAction = new QAction(QIcon(":/ArpmanetDC/Resources/AddIcon.png"), tr("Add to magnet list"), pWidget);
+    copyListToClipboardAction = new QAction(QIcon(":/ArpmanetDC/Resources/CopyIcon.png"), tr("Copy list to clipboard"), pWidget);
+    clearMagnetListAction = new QAction(QIcon(":/ArpmanetDC/Resources/RemoveIcon.png"), tr("Clear magnet list"), pWidget);
+    contextMenu->addAction(addToMagnetListAction);
+    contextMenu->addAction(copyListToClipboardAction);
+    contextMenu->addSeparator();
+    contextMenu->addAction(clearMagnetListAction);
+
+    magnetRemoveListContextMenu = new QMenu(tr("Remove from magnet list"), pWidget);
+    magnetRemoveListContextMenu->setIcon(QIcon(":/ArpmanetDC/Resources/DeleteIcon.png"));
+    contextMenu->addMenu(magnetRemoveListContextMenu);
 
     containerContextMenu = new QMenu((QWidget *)pParent);
     removeContainerEntryAction = new QAction(QIcon(":/ArpmanetDC/Resources/RemoveIcon.png"), tr("Remove entry"), pWidget);
@@ -194,7 +207,7 @@ void ShareWidget::connectWidgets()
     //Context menu
     connect(fileTree, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(contextMenuRequested(const QPoint &)));
     connect(containerTreeView, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(containerContextMenuRequested(const QPoint &)));
-
+    
     //View
     connect(containerTreeView, SIGNAL(droppedURLList(QList<QUrl>)), this, SLOT(droppedURLList(QList<QUrl>)));
     connect(containerTreeView, SIGNAL(keyPressed(Qt::Key)), this, SLOT(containerTreeViewKeyPressed(Qt::Key)));
@@ -217,6 +230,10 @@ void ShareWidget::connectWidgets()
     //Actions
     connect(calculateMagnetAction, SIGNAL(triggered()), this, SLOT(calculateMagnetActionPressed()));
     connect(removeContainerEntryAction, SIGNAL(triggered()), this, SLOT(removeContainerEntryActionPressed()));
+    connect(addToMagnetListAction, SIGNAL(triggered()), this, SLOT(addToMagnetListActionPressed()));
+    connect(copyListToClipboardAction, SIGNAL(triggered()), this, SLOT(copyListToClipboardActionPressed()));
+    connect(clearMagnetListAction, SIGNAL(triggered()), this, SLOT(clearMagnetListActionPressed()));
+    connect(magnetRemoveListContextMenu, SIGNAL(triggered(QAction *)), this, SLOT(magnetRemoveListContextMenuPressed(QAction *)));
 }
 
 void ShareWidget::changeRoot(QString path)
@@ -462,12 +479,13 @@ void ShareWidget::renameContainerButtonPressed()
         QMessageBox::information(pParent, tr("ArpmanetDC"), tr("A container with that name already exists. Please try another name."));
 }
 
+//Calculate a magnet link from a file
 void ShareWidget::calculateMagnetActionPressed()
 {
     QModelIndex index = fileTree->selectionModel()->selectedRows().first(); 
     QString filePath = fileModel->filePath(checkProxyModel->mapToSource(index));
     
-    emit requestTTHFromPath(filePath);
+    emit requestTTHFromPath((int)SingleMagnetType, filePath);
 
     QWhatsThis::showText(contextMenu->pos(), tr("Calculating hash. Please wait..."));
 }
@@ -544,7 +562,58 @@ void ShareWidget::switchedContainer(const QString &name)
     containerModel->sort(1);
 }
 
-void ShareWidget::returnTTHFromPath(QString filePath, QByteArray tthRoot, quint64 fileSize)
+//Add a magnet link to the list
+void ShareWidget::addToMagnetListActionPressed()
+{
+    QModelIndex index = fileTree->selectionModel()->selectedRows().first(); 
+    QString filePath = fileModel->filePath(checkProxyModel->mapToSource(index));
+    
+    emit requestTTHFromPath((int)MultipleListMagnetType, filePath);
+
+    QWhatsThis::showText(contextMenu->pos(), tr("Calculating hash. Please wait..."));
+}
+
+//Copy list to clipboard
+void ShareWidget::copyListToClipboardActionPressed()
+{
+    //Generate a clipboard entry
+    QClipboard *clipboard = QApplication::clipboard();
+    QString clipboardEntry;
+    foreach (QString magnet, pMagnetList)
+    {
+        if (!clipboardEntry.isEmpty())
+            clipboardEntry.append("\n");
+        clipboardEntry.append(magnet);
+    }
+    clipboard->setText(clipboardEntry);
+}
+
+//Clear the magnet list
+void ShareWidget::clearMagnetListActionPressed()
+{
+    pMagnetList.clear();
+}
+
+//Remove a magnet link from the list
+void ShareWidget::magnetRemoveListContextMenuPressed(QAction *action)
+{
+    QString filePath = action->data().toString();
+
+    pMagnetList.remove(filePath);
+
+    //Generate a clipboard entry
+    QClipboard *clipboard = QApplication::clipboard();
+    QString clipboardEntry;
+    foreach (QString magnet, pMagnetList)
+    {
+        if (!clipboardEntry.isEmpty())
+            clipboardEntry.append("\n");
+        clipboardEntry.append(magnet);
+    }
+    clipboard->setText(clipboardEntry);
+}
+
+void ShareWidget::returnTTHFromPath(quint8 type, QString filePath, QByteArray tthRoot, quint64 fileSize)
 {
     if (!tthRoot.isEmpty())
     {
@@ -559,10 +628,33 @@ void ShareWidget::returnTTHFromPath(QString filePath, QByteArray tthRoot, quint6
         //Generate magnet link
         QString fileName = fi.fileName();
         QString magnetLink = tr("magnet:?xt=urn:tree:tiger:%1&xl=%2&dn=%3").arg(tthStr).arg(fileSize).arg(fileName.replace(" ", "+"));
-        QClipboard *clipboard = QApplication::clipboard();
-        clipboard->setText(magnetLink);
 
-        QWhatsThis::showText(contextMenu->pos(), tr("Magnet link copied to clipboard"));
+        QClipboard *clipboard = QApplication::clipboard();
+
+        //Copy to clipboard
+        if (type == SingleMagnetType)
+        {
+            //Just copy the single magnet link to the clipboard
+            clipboard->setText(magnetLink);
+
+            QWhatsThis::showText(contextMenu->pos(), tr("Magnet link copied to clipboard"));
+        }
+        else if (type == MultipleListMagnetType)
+        {
+            //Save the entry to the list and copy list to clipboard
+            pMagnetList.insert(filePath, magnetLink);
+
+            //Generate a clipboard entry
+            QString clipboardEntry;
+            foreach (QString magnet, pMagnetList)
+            {
+                if (!clipboardEntry.isEmpty())
+                    clipboardEntry.append("\n");
+                clipboardEntry.append(magnet);
+            }
+            clipboard->setText(clipboardEntry);
+            QWhatsThis::showText(contextMenu->pos(), tr("Magnet link added to list"));
+        }
     }
 }
 
@@ -637,6 +729,33 @@ void ShareWidget::contextMenuRequested(const QPoint &pos)
     QFileInfo fi(filePath);
     if (fi.isFile())
     {
+        //Generate submenu
+        magnetRemoveListContextMenu->clear();
+        
+        QHashIterator<QString, QString> i(pMagnetList);
+        while (i.hasNext())
+        {
+            i.next();
+            QAction *action = new QAction(QIcon(":/ArpmanetDC/Resources/MagnetIcon.png"), i.key(), this);
+            action->setData(i.key());
+            magnetRemoveListContextMenu->addAction(action);
+        }
+
+        if (pMagnetList.isEmpty())
+        {
+            magnetRemoveListContextMenu->setTitle(tr("No entries in list"));
+            magnetRemoveListContextMenu->setEnabled(false);
+            clearMagnetListAction->setEnabled(false);
+            copyListToClipboardAction->setEnabled(false);
+        }
+        else
+        {
+            magnetRemoveListContextMenu->setTitle(tr("Remove magnet from list"));
+            magnetRemoveListContextMenu->setEnabled(true);
+            clearMagnetListAction->setEnabled(true);
+            copyListToClipboardAction->setEnabled(true);
+        }
+                
         QPoint globalPos = fileTree->viewport()->mapToGlobal(pos);
         contextMenu->popup(globalPos);
     }

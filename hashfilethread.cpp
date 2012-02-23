@@ -131,7 +131,7 @@ void HashFileThread::processBucket(QByteArray rootTTH, int bucketNumber, QByteAr
     emit doneBucket(rootTTH, bucketNumber, tth);
 }
 
-void HashFileThread::hashFile(QString filePath)
+void HashFileThread::hashFile(quint8 type, QString filePath)
 {
     QFileInfo fi(filePath);
     quint64 fileSize = fi.size();
@@ -164,11 +164,11 @@ void HashFileThread::hashFile(QString filePath)
         file.close();
 
         //Done hashing the file
-        emit doneFile(filePath, tthRoot, fileSize);
+        emit doneFile(type, filePath, tthRoot, fileSize);
     }
     else
         //Could not open file - return null
-        emit doneFile(filePath, QByteArray(), fileSize);
+        emit doneFile(type, filePath, QByteArray(), fileSize);
 }
 
 void HashFileThread::stopHashing()

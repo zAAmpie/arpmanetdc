@@ -35,11 +35,11 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
         this, SLOT(hashFileThreadDone(QString, QString, qint64, QString, QString, QString, QList<QString> *, HashFileThread *)), Qt::QueuedConnection);
     connect(pHashFileThread, SIGNAL(failed(QString, HashFileThread *)), this, SLOT(hashFileFailed(QString, HashFileThread *)), Qt::QueuedConnection);
     //connect(pHashFileThread, SIGNAL(doneBucket(QByteArray, int, QByteArray)), this, SLOT(hashBucketDone(QByteArray, int, QByteArray)), Qt::QueuedConnection);
-    connect(pHashFileThread, SIGNAL(doneFile(QString, QByteArray, quint64)), this, SIGNAL(returnTTHFromPath(QString, QByteArray, quint64)), Qt::QueuedConnection);
+    connect(pHashFileThread, SIGNAL(doneFile(quint8, QString, QByteArray, quint64)), this, SIGNAL(returnTTHFromPath(quint8, QString, QByteArray, quint64)), Qt::QueuedConnection);
     connect(this, SIGNAL(runHashThread(QString, QString)), pHashFileThread, SLOT(processFile(QString, QString)), Qt::QueuedConnection);
     //connect(this, SIGNAL(runHashBucket(QByteArray, int, QByteArray, ReturnEncoding)), pHashFileThread, SLOT(processBucket(QByteArray, int, QByteArray, ReturnEncoding)), Qt::QueuedConnection);
     connect(this, SIGNAL(stopHashingThread()), pHashFileThread, SLOT(stopHashing()));
-    connect(this, SIGNAL(calculateTTHFromPath(QString)), pHashFileThread, SLOT(hashFile(QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(calculateTTHFromPath(quint8, QString)), pHashFileThread, SLOT(hashFile(quint8, QString)), Qt::QueuedConnection);
 
     pHashFileThread->moveToThread(hashThread);
 
@@ -1203,7 +1203,7 @@ void ShareSearch::saveUserCommands(QHash<QString, UserCommandStruct> *commands)
 //------------------------------============================== GET HASH FROM FILE PATCH (SHARE WIDGET) ==============================------------------------------
 
 //Gets the hash from a filepath if it exists in the database
-void ShareSearch::requestTTHFromPath(QString filePath)
+void ShareSearch::requestTTHFromPath(quint8 type, QString filePath)
 {
     //Query the database with the search string
     QString queryStr = tr("SELECT DISTINCT [tth], [fileSize] FROM FileShares WHERE [active] = 1 AND [filePath] = ?;");
@@ -1241,12 +1241,12 @@ void ShareSearch::requestTTHFromPath(QString filePath)
     if (!tthResult.isEmpty())
     {
         //Report results
-        emit returnTTHFromPath(filePath, tthResult, fileSize);
+        emit returnTTHFromPath(type, filePath, tthResult, fileSize);
     }
     else
     {
         //Hash file
-        emit calculateTTHFromPath(filePath);
+        emit calculateTTHFromPath(type, filePath);
     }
 }
 
