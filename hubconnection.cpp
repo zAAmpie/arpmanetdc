@@ -451,6 +451,16 @@ void HubConnection::socketConnected()
     //Try to keep the socket alive
     hubSocket->setSocketOption(QAbstractSocket::KeepAliveOption, 1);
     hubSocket->setSocketOption(QAbstractSocket::LowDelayOption, 1);
+
+    //Set LINGER Option
+    linger pLinger;
+    pLinger.l_onoff = 0; //Disable socket lingering to avoid keeping the socket open when trying to send data as the socket closes - can't really hurt to disable it
+    pLinger.l_linger = 0;
+
+    if (::setsockopt(hubSocket->socketDescriptor(), SOL_SOCKET, SO_LINGER, (char *)&pLinger, sizeof(pLinger)) == -1)
+    {
+        qDebug() << "HubConnection::socketConnected: Could not disable socket lingering";
+    }
 }
 
 // Get functions, so that we do not need to reconnect on every settings change

@@ -1448,18 +1448,101 @@ void ArpmanetDC::showUserListContextMenu(const QPoint &pos)
 
 void ArpmanetDC::showMainChatContextMenu(const QPoint &pos)
 {
+    //Get current textCursor and selected text
     QTextCursor textCursor = mainChatTextEdit->textCursor();
     QString previouslySelectedText = textCursor.selectedText();
 
+    //Get word under current cursor
     textCursor = mainChatTextEdit->cursorForPosition(pos);
     textCursor.select(QTextCursor::WordUnderCursor);
-
     QString selectedWord = textCursor.selection().toPlainText();
-    
+
+    //Get the 3 words under the current cursor
+    QTextCursor textCursorMore = mainChatTextEdit->cursorForPosition(pos);
+    QString moreWords;
+    textCursorMore = textCursor;
+    moreWords = textCursorMore.selection().toPlainText();
+    textCursorMore.movePosition(QTextCursor::StartOfWord, QTextCursor::MoveAnchor);
+    moreWords = textCursorMore.selection().toPlainText();
+    textCursorMore.movePosition(QTextCursor::PreviousWord, QTextCursor::MoveAnchor, 2);
+    moreWords = textCursorMore.selection().toPlainText();
+    textCursorMore.movePosition(QTextCursor::NextWord, QTextCursor::KeepAnchor, 2);
+    moreWords = textCursorMore.selection().toPlainText();
+    textCursorMore.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor);
+    moreWords = textCursorMore.selection().toPlainText();
+    moreWords.remove(" ");
+
+    //Get the space-delimited word below the cursor
+    QTextCursor tcSpace = mainChatTextEdit->cursorForPosition(pos);
+    tcSpace.movePosition(QTextCursor::EndOfLine, QTextCursor::KeepAnchor);
+    QString untilEndOfLine = tcSpace.selectedText();
+    QString fromStartOfLine = tcSpace.selectedText();
+    tcSpace.movePosition(QTextCursor::StartOfLine, QTextCursor::KeepAnchor);
+    tcSpace.select(QTextCursor::LineUnderCursor);
+    QString line = tcSpace.selectedText();
+
+    //Get index of cursor in line
+    int cursorIndexInLine = -1;
+    if (untilEndOfLine.isEmpty())
+    {
+        cursorIndexInLine = line.indexOf(fromStartOfLine);
+        if (cursorIndexInLine != -1)
+            cursorIndexInLine += fromStartOfLine.size();
+    }
+    else
+        cursorIndexInLine = line.indexOf(untilEndOfLine);
+
+    QString boundedWord;
+    if (cursorIndexInLine == 0)
+    {
+        //If word is the start of the line
+        boundedWord = line.left(untilEndOfLine.indexOf(" "));
+    }
+    else if (cursorIndexInLine == line.size())
+    {
+        //If word is at end of line
+        boundedWord = line.mid(line.lastIndexOf(" ") + 1);
+    }
+    else if (cursorIndexInLine > 0)
+    {
+        //If in middle of line
+        int firstIndex = fromStartOfLine.lastIndexOf(" ");
+        int lastIndex = untilEndOfLine.indexOf(" ");
+        if (lastIndex == -1)
+            lastIndex = line.size();
+        else
+            lastIndex += cursorIndexInLine - 1;
+        boundedWord = line.mid(firstIndex + 1, lastIndex - firstIndex);
+    }
+                
+    //Test if the word is a user nick
+    QString selectedText;
     if (pUserList.contains(selectedWord))
+    {
+        //Single word matched - set selection to word
         mainChatTextEdit->setTextCursor(textCursor);
+        selectedText = selectedWord;
+    }
+    else if (pUserList.contains(moreWords))
+    {
+        //Multiple words matched - set selection to words
+        mainChatTextEdit->setTextCursor(textCursorMore);
+        selectedText = moreWords;
+    }
+    else if (pUserList.contains(boundedWord))
+    {
+        //Space delimited word matched - don't have selection for it though so just use the word
+        selectedText = boundedWord;
+    }
+    else if (previouslySelectedText.isEmpty())
+    {
+        //No words matched and nothing was selected beforehand - just use the current word under the cursor
+        selectedText = textCursor.selectedText();
+    }
+    else
+        //No words matched but a previous selection exists - use that
+        selectedText = previouslySelectedText;
     
-    QString selectedText = textCursor.selectedText();
     QMenu *standardMenu = mainChatTextEdit->createStandardContextMenu(pos);
     
     QAction *separatorAction = standardMenu->actions().first();
