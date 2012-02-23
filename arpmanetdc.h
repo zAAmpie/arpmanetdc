@@ -106,11 +106,14 @@ public:
     QString downloadPath();
     QueueStruct queueEntry(QByteArray tth);
 
-    //HTML link converters
+    //Link and nick converters
     void convertHTMLLinks(QString &msg);
     void convertMagnetLinks(QString &msg);
     void convertNickname(QString nick, QString &msg);
     void convertOPName(QString &msg);
+
+    //Get nick match list
+    QStringList nickMatchList(QString partialNick);
 
     //Windows only implementation to get Winamp song title - anything more requires a lot of work ;)
     QString getWinampSongTitle();
@@ -288,6 +291,9 @@ private slots:
 
     //Userlist keypresses
     void userListKeyPressed(Qt::Key key, QString keyStr);
+    
+    //Chat line edit keypresses
+    void chatLineEditKeyPressed(Qt::Key key, QString keyStr);
 
     //-----===== SYSTEM TRAY ICON =====-----
     void systemTrayActivated(QSystemTrayIcon::ActivationReason reason);
@@ -440,6 +446,10 @@ private:
     QList<QString> *pAdditionalInfoHistoryList;
     QStandardItemModel *searchWordList;
 
+    QStringList pCurrentMatchList;
+    QString pCurrentMatchChatString;
+    int tabCyclingIndex;
+
     //-----===== Main GUI parameters =====-----
 
     //Determines if sorting should be done
@@ -500,7 +510,7 @@ private:
     QStatusBar *statusBar, *infoStatusBar;
 
     //Chat
-    QLineEdit *chatLineEdit;
+    KeyLineEdit *chatLineEdit;
     QTextBrowser *mainChatTextEdit;
 
     //Tables and models

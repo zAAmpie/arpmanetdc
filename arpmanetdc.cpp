@@ -405,7 +405,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     //GUI setup
     createWidgets();
     placeWidgets();
-    connectWidgets();    
+    connectWidgets();  
 
     pStatusHistoryList = new QList<QString>();
     pAdditionalInfoHistoryList = new QList<QString>();
@@ -835,7 +835,7 @@ void ArpmanetDC::createWidgets()
     mainChatTextEdit->setOpenLinks(false);
     mainChatTextEdit->setContextMenuPolicy(Qt::CustomContextMenu);
     
-    chatLineEdit = new QLineEdit(this);
+    chatLineEdit = new KeyLineEdit(this);
     chatLineEdit->setPlaceholderText(tr("Type here to chat"));
 
     quickSearchLineEdit = new QLineEdit(this);
@@ -1049,6 +1049,7 @@ void ArpmanetDC::connectWidgets()
 
     //Send chat message when enter is pressed
     connect(chatLineEdit, SIGNAL(returnPressed()), this, SLOT(chatLineEditReturnPressed()));
+    connect(chatLineEdit, SIGNAL(keyPressed(Qt::Key, QString)), this, SLOT(chatLineEditKeyPressed(Qt::Key, QString)));
 
     //Quick search
     connect(quickSearchLineEdit, SIGNAL(returnPressed()), this, SLOT(quickSearchPressed()));
@@ -1596,6 +1597,66 @@ void ArpmanetDC::userListKeyPressed(Qt::Key key, QString keyStr)
 
         //QList<QModelIndex> selectedList = userListTable->selectionModel()->selectedRows();
         userListTable->scrollTo(userSortProxy->index(index.row(), 0), QAbstractItemView::PositionAtCenter);
+    }
+}
+
+//Chat line edit keypresses
+void ArpmanetDC::chatLineEditKeyPressed(Qt::Key key, QString keyStr)
+{
+    if (key == Qt::Key_Tab)
+    {
+        //Get word we are cycling for
+        QString word = pCurrentMatchChatString;
+        QString chatWithoutWord = "";
+        int index = pCurrentMatchChatString.lastIndexOf(" ");
+        if (index >= 0)
+        {
+            //If a space was found -> get last word. Otherwise, use the whole text
+            word = pCurrentMatchChatString.mid(index + 1);
+            chatWithoutWord = pCurrentMatchChatString.left(index + 1);
+        }
+
+        //Respond to tab pressing
+        if (tabCyclingIndex >= 0)
+        {
+            //Busy cycling through options
+            if (!pCurrentMatchList.isEmpty())
+            {
+                if (++tabCyclingIndex == pCurrentMatchList.size())
+                {
+                    //Reset the counter if we've reached the end
+                    tabCyclingIndex = 0;
+                }
+
+                //Set chat
+                chatLineEdit->setText(chatWithoutWord + pCurrentMatchList.at(tabCyclingIndex));
+            }
+        }
+        else
+        {
+            //First time we pressed tab
+            pCurrentMatchList = nickMatchList(word);
+
+            //We're using the first index
+            tabCyclingIndex = 0;
+
+            if (pCurrentMatchList.isEmpty())
+            {
+                tabCyclingIndex = -1;
+                return;
+            }
+
+            //Set the appropriate chat
+            chatLineEdit->setText(chatWithoutWord + pCurrentMatchList.first());
+        }
+    }
+    else
+    {
+        //Save chat string for future use
+        pCurrentMatchChatString = chatLineEdit->text();
+        
+        //Set that we're not busy cycling through options
+        tabCyclingIndex = -1;
     }
 }
 
@@ -2993,6 +3054,35 @@ void ArpmanetDC::convertMagnetLinks(QString &msg)
 
         pos += hrefLink.size();
     }
+}
+
+//Get nick match list
+QStringList ArpmanetDC::nickMatchList(QString partialNick)
+{
+    QMap<QString, QString> sortingMap;
+    QStringList matchesUpper;
+
+    //Iterate through all nicks and match
+    QHashIterator<QString, QPair<QStandardItem *, quint64> > i(pUserList);
+    while (i.hasNext())
+    {
+        i.next();
+        if (i.key().toUpper().startsWith(partialNick.toUpper()))
+        {
+            sortingMap.insert(i.key().toUpper(), i.key());
+            matchesUpper.append(i.key().toUpper());
+        }
+    }
+
+    //Sort case insensitively
+    matchesUpper.sort();
+
+    //Map back into string list
+    QStringList matchesSorted;
+    foreach (QString upperStr, matchesUpper)
+        matchesSorted.append(sortingMap.value(upperStr));
+
+    return matchesSorted;
 }
 
 QString ArpmanetDC::getWinampSongTitle()

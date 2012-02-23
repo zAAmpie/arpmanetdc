@@ -546,3 +546,29 @@ void CKeyTableView::keyPressEvent(QKeyEvent *event)
         emit keyPressed((Qt::Key)event->key(), event->text());
     QTableView::keyPressEvent(event);
 }
+
+void KeyLineEdit::keyPressEvent(QKeyEvent *event)
+{
+    //Don't handle tab keypresses for the lineedit as this will be handled by the GUI itself
+    if (((Qt::Key)event->key()) != Qt::Key_Tab)
+        QLineEdit::keyPressEvent(event);
+
+    emit keyPressed((Qt::Key)event->key(), event->text());
+}
+
+bool KeyLineEdit::event(QEvent *event)
+{
+    if (event->type() == QEvent::KeyPress)
+    {
+        QKeyEvent *keyEvent = (QKeyEvent *)event;
+        Qt::Key key = (Qt::Key)keyEvent->key();
+        if (key == Qt::Key_Tab)
+        {
+            KeyLineEdit::keyPressEvent((QKeyEvent *)event);
+            event->accept();
+            return true;
+        }
+    }
+
+    return QLineEdit::event(event);
+}

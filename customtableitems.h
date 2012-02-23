@@ -29,6 +29,7 @@
 #include <QDateTime>
 #include <QTreeView>
 #include <QListView>
+#include <QLineEdit>
 #include <QUrl>
 #include <QRgb>
 #include "transfer.h"
@@ -155,7 +156,6 @@ private:
     QString pText;
 };
 
-
 //TableView that emits keypresses
 class CKeyTableView : public QTableView
 {
@@ -218,6 +218,20 @@ public:
 
 signals:
     void droppedURLList(QList<QUrl> list);
+};
+
+//QLineEdit that emits keypresses
+class KeyLineEdit : public QLineEdit
+{
+    Q_OBJECT
+public:
+    KeyLineEdit(QWidget *parent = 0) : QLineEdit(parent) {}
+    KeyLineEdit(const QString &text, QWidget *parent = 0) : QLineEdit(text, parent) {}
+
+    bool event(QEvent *event);
+    void keyPressEvent(QKeyEvent *event);
+signals:
+    void keyPressed(Qt::Key key, QString keyStr);
 };
 
 
