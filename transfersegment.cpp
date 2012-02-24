@@ -109,8 +109,8 @@ void TransferSegment::checkSendDownloadRequest(quint8 protocol, QHostAddress pee
             requestingLength = segmentEnd - requestingOffset;
         if (requestingLength > 0)
         {
-            qDebug() << "TransferSegment::checkSendDownloadRequest() emit sendDownloadRequest() peer tth offset length segmentid "
-                     << peer << TTH.toBase64() << requestingOffset << requestingLength << segmentId;
+            //qDebug() << "TransferSegment::checkSendDownloadRequest() emit sendDownloadRequest() peer tth offset length segmentid "
+            //         << peer << TTH.toBase64() << requestingOffset << requestingLength << segmentId;
             emit sendDownloadRequest(protocol, peer, TTH, requestingOffset, requestingLength, segmentId);
         }
     }

@@ -608,6 +608,16 @@ void Dispatcher::handleReceivedSearchQuestion(QHostAddress &fromHost, QByteArray
 
 bool Dispatcher::initiateTTHSearch(QByteArray tth)
 {
+    // Dispatch to forwarding peers
+    QList<QHostAddress> forwardingPeers = networkTopology->getForwardingPeers(3);
+    QListIterator<QHostAddress> it(forwardingPeers);
+    while(it.hasNext())
+    {
+        QHostAddress h = it.next();
+        sendTTHSearchForwardRequest(h, tth);
+    }
+
+    // Dispatch in own bucket if bootstrapped broadcast or multicast
     QByteArray datagram;
     datagram.reserve(26);
     if (networkBootstrap->getBootstrapStatus() == NETWORK_MCAST)
@@ -624,13 +634,6 @@ bool Dispatcher::initiateTTHSearch(QByteArray tth)
     else if (networkBootstrap->getBootstrapStatus() == NETWORK_BCAST)
         sendBroadcastRawDatagram(datagram);
 
-    QList<QHostAddress> forwardingPeers = networkTopology->getForwardingPeers(3);
-    QListIterator<QHostAddress> it(forwardingPeers);
-    while(it.hasNext())
-    {
-        QHostAddress h = it.next();
-        sendTTHSearchForwardRequest(h, tth);
-    }
     return true;
 }
 
@@ -676,6 +679,7 @@ void Dispatcher::sendTTHSearchForwardRequest(QHostAddress &forwardingNode, QByte
     datagram->append(toQByteArray(dispatchIP.toIPv4Address()));
     datagram->append(tth);
     sendUnicastRawDatagram(forwardingNode, datagram);
+    qDebug() << "Dispatcher::sendTTHSearchForwardRequest() forwardingNode tth" << forwardingNode << tth.toBase64();
 }
 
 void Dispatcher::handleReceivedTTHSearchForwardRequest(QHostAddress &fromAddr, QByteArray &datagram)
@@ -703,6 +707,7 @@ void Dispatcher::handleReceivedTTHSearchForwardRequest(QHostAddress &fromAddr, Q
     handleReceivedTTHSearchQuestion(fromAddr, datagram);
 
     emit searchForwardReceived(); // stats
+    qDebug() << "Dispatcher::handleReceivedTTHSearchForwardRequest() from alleged datagram" << fromAddr << allegedFromHost << datagram.toBase64();
 }
 
 void Dispatcher::handleArrivedTTHSearchResult(QHostAddress &fromAddr, QByteArray &datagram)
@@ -714,6 +719,7 @@ void Dispatcher::handleArrivedTTHSearchResult(QHostAddress &fromAddr, QByteArray
 
     QByteArray tth(datagram.mid(6));
     emit TTHSearchResultsReceived(tth, fromAddr);
+    qDebug() << "Dispatcher::handleArrivedTTHSearchResult() fromAddr tth" << fromAddr << tth.toBase64();
 }
 
 void Dispatcher::handleReceivedTTHSearchQuestion(QHostAddress &fromAddr, QByteArray &datagram)
@@ -730,6 +736,7 @@ void Dispatcher::handleReceivedTTHSearchQuestion(QHostAddress &fromAddr, QByteAr
     datagram.remove(0, 2);
     QHostAddress sendToHost = QHostAddress(getQuint32FromByteArray(&datagram));
     emit TTHSearchQuestionReceived(datagram, sendToHost);
+    //qDebug() << "Dispatcher::handleReceivedTTHSearchQuestion() fromAddr sendToHost datagram" << fromAddr << sendToHost << datagram.toBase64();
 }
 
 // ------------------=====================   Data transfer functions   =====================----------------------

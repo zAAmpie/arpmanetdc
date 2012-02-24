@@ -770,7 +770,7 @@ void DownloadTransfer::bucketFlushFailed(int bucketNo)
 
 void DownloadTransfer::congestionTest()
 {
-    qDebug() << "DownloadTransfer::congestionTest(): hash queue : bucket queue " << bucketHashQueueLength << bucketFlushQueueLength;
+    //qDebug() << "DownloadTransfer::congestionTest(): hash queue : bucket queue " << bucketHashQueueLength << bucketFlushQueueLength;
     QHashIterator<QHostAddress, RemotePeerInfoStruct> i(remotePeerInfoTable);
     if (!iowait && (bucketFlushQueueLength + bucketHashQueueLength > HASH_BUCKET_QUEUE_CONGESTION_THRESHOLD))
     {
