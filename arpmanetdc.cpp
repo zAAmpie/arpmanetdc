@@ -2124,6 +2124,9 @@ void ArpmanetDC::appendChatLine(QString msg)
     mainChatTextEdit->append(tr("<b>[%1]</b> %2").arg(QTime::currentTime().toString()).arg(msg));
     mainChatBlocks++;
 
+    //Replace text with emoticons
+    insertEmoticonsInLastBlock();
+
     //If not on mainchat, notify tab
     if (tabs->currentIndex() != 0)
     {
@@ -3054,6 +3057,63 @@ void ArpmanetDC::convertMagnetLinks(QString &msg)
 
         pos += hrefLink.size();
     }
+}
+
+//Replace text emoticons with images
+void ArpmanetDC::insertEmoticonsInLastBlock()
+{
+    //Iterate through the last block
+    QTextCursor originalTextCursor = mainChatTextEdit->textCursor();
+    originalTextCursor.movePosition(QTextCursor::End);
+    originalTextCursor.movePosition(QTextCursor::StartOfBlock);
+    
+    QHashIterator<QString, QString> i(pEmoticonList);
+    while (i.hasNext())
+    {
+        i.next();
+        QTextCursor matchedCursor;
+        while (!(matchedCursor = mainChatTextEdit->document()->find(i.key(), originalTextCursor)).isNull())
+        {
+            //matchedCursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, i.key().size());
+
+            //Remove the text emoticon
+            matchedCursor.removeSelectedText();
+
+            //Load image
+            QTextImageFormat image;
+            image.setName(i.value());
+            image.setHeight(18);
+            image.setWidth(18);
+            image.setToolTip(i.key());
+
+            //Insert image at text cursor location
+            matchedCursor.insertImage(image);
+        }
+    }
+    //mainChatTextEdit->setTextCursor(originalTextCursor);
+    /*while (!textCursor.atBlockEnd())
+    {
+        //Iterate through all words
+        textCursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor);
+        QString word = textCursor.selectedText();
+        
+        if (pEmoticonList.contains(word))
+        {
+            //Remove the text emoticon
+            textCursor.removeSelectedText();
+
+            //Load image
+            QTextImageFormat image;
+            image.setName(pEmoticonList.value(word));
+            image.setHeight(18);
+            image.setWidth(18);
+
+            //Insert image at text cursor location
+            textCursor.insertImage(image);
+        }
+        textCursor.movePosition(QTextCursor::NextWord);
+        //textCursor.movePosition(QTextCursor::StartOfWord);
+    }*/
 }
 
 //Get nick match list

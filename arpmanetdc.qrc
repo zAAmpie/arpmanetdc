@@ -38,5 +38,6 @@
         <file>Resources/EnvelopeIcon.png</file>
         <file>Resources/Logo128x128Notify.png</file>
         <file>Resources/CopyIcon.png</file>
+        <file>Resources/CoolUserIcon18x18.png</file>
     </qresource>
 </RCC>

@@ -8,7 +8,7 @@ ResourceExtractor::ResourceExtractor(QObject *parent) : QObject(parent)
 
     initIconList(pPath, pIconSize);
 
-    //Icons: file | audio | archive | doc | application | image | video | folder | unknown | pdf | excel
+    //Icons: file | audio | archive | doc | application | image | video | folder | unknown | pdf | excel | cd images | containers
     QList<QStringList> typeList;
     QStringList list;
     list << "txt" << "cfg"; //Text Files
@@ -44,7 +44,7 @@ ResourceExtractor::ResourceExtractor(QObject *parent) : QObject(parent)
     list << "xls" << "xlsm" << "xlsx" << "csv"; //Excel
     typeList.append(list);
     list.clear();
-    list << "iso" << "bin" << "mdf" << "nrg" << "img"; //Images
+    list << "iso" << "bin" << "mdf" << "nrg" << "img"; //CD Images
     typeList.append(list);
     list.clear();
     list << "adcc"; //ArpmanetDC containers

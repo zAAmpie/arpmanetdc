@@ -112,6 +112,9 @@ public:
     void convertNickname(QString nick, QString &msg);
     void convertOPName(QString &msg);
 
+    //Replace text emoticons with images
+    void insertEmoticonsInLastBlock();
+
     //Get nick match list
     QStringList nickMatchList(QString partialNick);
 
@@ -445,6 +448,9 @@ private:
     QList<QString> *pStatusHistoryList;
     QList<QString> *pAdditionalInfoHistoryList;
     QStandardItemModel *searchWordList;
+
+    QHash<QString, QString> pEmoticonList;
+    QImage pEmoticon;
 
     QStringList pCurrentMatchList;
     QString pCurrentMatchChatString;
