@@ -280,8 +280,10 @@ void DownloadTransfer::abortTransfer()
 // Not to be confused with newPeer(), which adds the peer and its capabilities to remotePeerInfoTable
 void DownloadTransfer::addPeer(QHostAddress peer)
 {
+    qDebug() << "DownloadTransfer::addPeer() peer" << peer;
     if (peer.toIPv4Address() > 0 && !remotePeerInfoRequestPool.contains(peer))
     {
+        qDebug() << "DownloadTransfer::addPeer() not yet in request pool, added, emit requestProtocolCapability()";
         remotePeerInfoRequestPool.insert(peer, 1);
         emit requestProtocolCapability(peer, this);
         if (!protocolCapabilityRequestTimer->isActive())
@@ -486,6 +488,7 @@ void DownloadTransfer::receivedPeerProtocolCapability(QHostAddress peer, quint8 
 {
     newPeer(peer, protocols);
     remotePeerInfoRequestPool.remove(peer);
+    qDebug() << "DownloadTransfer::receivedPeerProtocolCapability() peer protocols" << peer << protocols;
     if (remotePeerInfoRequestPool.isEmpty())
         protocolCapabilityRequestTimer->stop();
 
@@ -822,6 +825,7 @@ void DownloadTransfer::protocolCapabilityRequestTimerEvent()
     while(i.hasNext())
     {
         emit requestProtocolCapability(i.peekNext().key(), this);
+        qDebug() << "DownloadTransfer::protocolCapabilityRequestTimerEvent() request protocol capability" << i.peekNext().key(), i.peekNext().value();
         i.next().value()++;
         if (i.peekPrevious().value() <= 5)
             i.remove();

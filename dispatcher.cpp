@@ -707,7 +707,7 @@ void Dispatcher::handleReceivedTTHSearchForwardRequest(QHostAddress &fromAddr, Q
     handleReceivedTTHSearchQuestion(fromAddr, datagram);
 
     emit searchForwardReceived(); // stats
-    qDebug() << "Dispatcher::handleReceivedTTHSearchForwardRequest() from alleged datagram" << fromAddr << allegedFromHost << datagram.toBase64();
+    //qDebug() << "Dispatcher::handleReceivedTTHSearchForwardRequest() from alleged datagram" << fromAddr << allegedFromHost << datagram.toBase64();
 }
 
 void Dispatcher::handleArrivedTTHSearchResult(QHostAddress &fromAddr, QByteArray &datagram)
