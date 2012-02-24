@@ -45,12 +45,14 @@ public:
     QIcon getIconFromIndex(int index);
     //Get an icon from a mapped list
     QIcon getIconFromName(QString &name);
+    //Get pixmap from a mapped list
+    QPixmap getPixmapFromName(QString &name);
 
     int numIcons();
  
 private:
-    QList<QIcon *> pIconList;
-    QHash<QString, QIcon *> pMappedIconList;
+    QList<QPixmap> pIconList;
+    QHash<QString, QPixmap> pMappedIconList;
 
     QString pPath;
     quint16 pIconSize;

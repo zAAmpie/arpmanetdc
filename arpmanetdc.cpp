@@ -473,6 +473,9 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     //Init type icon list with resource extractor class
     pTypeIconList = new ResourceExtractor();
 
+    //Load emoticons
+    loadEmoticonsFromFile();
+
     //Set up shared memory timer
     QTimer *sharedMemoryTimer = new QTimer(this);
     connect(sharedMemoryTimer, SIGNAL(timeout()), this, SLOT(checkSharedMemory()));
@@ -3067,53 +3070,31 @@ void ArpmanetDC::insertEmoticonsInLastBlock()
     originalTextCursor.movePosition(QTextCursor::End);
     originalTextCursor.movePosition(QTextCursor::StartOfBlock);
     
-    QHashIterator<QString, QString> i(pEmoticonList);
-    while (i.hasNext())
+    foreach (QString entry, pEmoticonList)
     {
-        i.next();
         QTextCursor matchedCursor;
-        while (!(matchedCursor = mainChatTextEdit->document()->find(i.key(), originalTextCursor)).isNull())
+        while (!(matchedCursor = mainChatTextEdit->document()->find(entry, originalTextCursor)).isNull())
         {
-            //matchedCursor.movePosition(QTextCursor::NextCharacter, QTextCursor::KeepAnchor, i.key().size());
-
             //Remove the text emoticon
             matchedCursor.removeSelectedText();
 
-            //Load image
-            QTextImageFormat image;
-            image.setName(i.value());
-            image.setHeight(18);
-            image.setWidth(18);
-            image.setToolTip(i.key());
-
+            //Insert a space
+            matchedCursor.insertText(" ");
+                                    
             //Insert image at text cursor location
-            matchedCursor.insertImage(image);
+            matchedCursor.insertImage(pEmoticonResourceList->getPixmapFromName(entry).toImage(), entry);
         }
     }
-    //mainChatTextEdit->setTextCursor(originalTextCursor);
-    /*while (!textCursor.atBlockEnd())
-    {
-        //Iterate through all words
-        textCursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor);
-        QString word = textCursor.selectedText();
-        
-        if (pEmoticonList.contains(word))
-        {
-            //Remove the text emoticon
-            textCursor.removeSelectedText();
+}
 
-            //Load image
-            QTextImageFormat image;
-            image.setName(pEmoticonList.value(word));
-            image.setHeight(18);
-            image.setWidth(18);
+//Load emoticons into icon database
+void ArpmanetDC::loadEmoticonsFromFile()
+{
+    QString path = tr(":/ArpmanetDC/Resources/Emoticons.png");
+    pEmoticonList.clear();
+    pEmoticonList << "" << "" << " ;)" << " :)" << " :D" << "" << " 8)" << " x|" << " :-)" << " :!:" << " o)" << " 8p" << " ^^" << " :love:" << " xD" << "" << " :o" << " 8|" << "" << " :p" << "" << " :gross:" << " :-)" << "" << " :shutup:" << " ;D" << " :ninja:";
 
-            //Insert image at text cursor location
-            textCursor.insertImage(image);
-        }
-        textCursor.movePosition(QTextCursor::NextWord);
-        //textCursor.movePosition(QTextCursor::StartOfWord);
-    }*/
+    pEmoticonResourceList = new ResourceExtractor(path, pEmoticonList, 18, this);
 }
 
 //Get nick match list

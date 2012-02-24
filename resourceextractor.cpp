@@ -113,7 +113,7 @@ bool ResourceExtractor::initIconList(const QString &path, quint16 iconSize)
     //Iterate and load all icons
     for (int i = 0; i < numIcons; i++)
     {
-        pIconList.append(new QIcon(QPixmap::fromImage(image.copy(i*iconSize, 0, iconSize, iconSize))));
+        pIconList.append(QPixmap::fromImage(image.copy(i*iconSize, 0, iconSize, iconSize)));
     }
 
     return true;
@@ -165,7 +165,7 @@ bool ResourceExtractor::mapToIconList(const QList<QStringList> &list)
 QIcon ResourceExtractor::getIconFromIndex(int index)
 {
     if (index >= 0 && index < pIconList.size())
-        return *pIconList.at(index);
+        return QIcon(pIconList.at(index));
     return QIcon();
 }
 
@@ -173,11 +173,22 @@ QIcon ResourceExtractor::getIconFromIndex(int index)
 QIcon ResourceExtractor::getIconFromName(QString &name)
 {
     if (pMappedIconList.contains(name.toLower()))
-        return *pMappedIconList.value(name.toLower());
+        return QIcon(pMappedIconList.value(name.toLower()));
 
     if (pMappedIconList.contains("unknown"))
-        return *pMappedIconList.value("unknown");
+        return QIcon(pMappedIconList.value("unknown"));
     return QIcon();
+}
+
+//Get pixmap from a mapped list
+QPixmap ResourceExtractor::getPixmapFromName(QString &name)
+{
+    if (pMappedIconList.contains(name.toLower()))
+        return pMappedIconList.value(name.toLower());
+
+    if (pMappedIconList.contains("unknown"))
+        return pMappedIconList.value("unknown");
+    return QPixmap();
 }
 
 int ResourceExtractor::numIcons()
