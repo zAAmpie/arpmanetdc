@@ -389,6 +389,9 @@ private:
     //Used to determine if an icon change should be done for notifications
     void updateNotify(int count);
 
+    //Load emoticons into icon database
+    void loadEmoticonsFromFile();
+
     //Objects
     sqlite3 *db; //SQLite database
     HubConnection *pHub;
@@ -397,6 +400,7 @@ private:
     ShareSearch *pShare;
     BucketFlushThread *pBucketFlushThread;
     ResourceExtractor *pTypeIconList;
+    ResourceExtractor *pEmoticonResourceList;
     FTPUpdate *pFtpUpdate;
 
     //Threads
@@ -449,7 +453,7 @@ private:
     QList<QString> *pAdditionalInfoHistoryList;
     QStandardItemModel *searchWordList;
 
-    QHash<QString, QString> pEmoticonList;
+    QStringList pEmoticonList;
     QImage pEmoticon;
 
     QStringList pCurrentMatchList;
