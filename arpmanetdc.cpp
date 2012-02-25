@@ -1859,7 +1859,7 @@ void ArpmanetDC::fileHashed(QString fileName, quint64 fileSize, quint64 totalSha
     shareSizeLabel->setText(tr("Share: %1").arg(bytesToSize(totalShare)));
    
     pFilesHashedSinceUpdate++;
-    pFileSizeHashedSinceUpdate += fileSize;
+    //pFileSizeHashedSinceUpdate += fileSize;
 
     pHub->setTotalShareSize(pFileSizeHashedSinceUpdate);
     //QApplication::processEvents();
@@ -2611,6 +2611,12 @@ void ArpmanetDC::setAdditionalInfo(QString msg)
     //Elide text to avoid stupid looking shifting of permanent widgets in the status bar
     QFontMetrics fm(additionalInfoLabel->font());
     additionalInfoLabel->setText(fm.elidedText(msg, Qt::ElideMiddle, additionalInfoLabel->width()));
+}
+
+//Get the current hashing progress
+void ArpmanetDC::hashingProgress(qint64 bytesThisSecond, qint64 fileProgressBytes, qint64 fileSize)
+{
+    pFileSizeHashedSinceUpdate += bytesThisSecond;
 }
 
 //Get the queue from the database

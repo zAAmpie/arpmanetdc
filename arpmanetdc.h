@@ -138,6 +138,10 @@ public slots:
     //Sets the additional info label to msg
     void setAdditionalInfo(QString msg);
 
+    //-----------========== SHARE SEARCH ==========----------
+
+    void hashingProgress(qint64 bytesThisSecond, qint64 fileProgressBytes, qint64 fileSize);
+
     //-----------========== QUEUED DOWNLOADS ==========----------
 
     //Add a download to the queue

@@ -39,6 +39,7 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
     //connect(this, SIGNAL(runHashBucket(QByteArray, int, QByteArray, ReturnEncoding)), pHashFileThread, SLOT(processBucket(QByteArray, int, QByteArray, ReturnEncoding)), Qt::QueuedConnection);
     connect(this, SIGNAL(stopHashingThread(bool)), pHashFileThread, SLOT(stopHashing(bool)));
     connect(this, SIGNAL(calculateTTHFromPath(quint8, QString)), pHashFileThread, SLOT(hashFile(quint8, QString)), Qt::QueuedConnection);
+    connect(pHashFileThread, SIGNAL(hashingProgress(qint64, qint64, qint64)), pParent, SLOT(hashingProgress(qint64, qint64, qint64)), Qt::QueuedConnection);
 
     pHashFileThread->moveToThread(hashThread);
 
