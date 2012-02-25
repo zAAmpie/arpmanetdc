@@ -53,6 +53,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 #ifdef Q_OS_LINUX
         pSharedMemory->detach();
 #endif
+
+        sqlite3_close(db);
         
         //Close this instance
         return;
@@ -585,15 +587,6 @@ ArpmanetDC::~ArpmanetDC()
             delete bucketFlushThread;
         }
 
-        dbThread->quit();
-        if (dbThread->wait(5000))
-            delete dbThread;
-        else
-        {
-            dbThread->terminate();
-            delete dbThread;
-        }
-
         dispatcherThread->quit();
         if (dispatcherThread->wait(5000))
             delete dispatcherThread;
@@ -604,14 +597,21 @@ ArpmanetDC::~ArpmanetDC()
         }
 
         sqlite3_close(db);
+        dbThread->quit();
+        if (dbThread->wait(5000))
+            delete dbThread;
+        else
+        {
+            dbThread->terminate();
+            delete dbThread;
+        }
     }
 
     //Destroy and detach the shared memory sector
-    pSharedMemory->deleteLater();
-
 #ifdef Q_OS_LINUX
     pSharedMemory->detach();
 #endif
+    pSharedMemory->deleteLater();
 }
 
 bool ArpmanetDC::setupDatabase()
