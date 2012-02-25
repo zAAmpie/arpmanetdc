@@ -42,7 +42,7 @@ void SettingsWidget::createWidgets()
     //========== MISC ==========
     saveButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/CheckIcon.png"), tr("Save changes"), pWidget);
     toggleAdvancedCheckBox = new QCheckBox(tr("Show advanced settings"), pWidget);
-    if (ArpmanetDC::settingsManager().getSetting(SettingsManager::SHOW_ADVANCED_MENU))
+    if (ArpmanetDC::settingsManager()->getSetting(SettingsManager::SHOW_ADVANCED_MENU))
         toggleAdvancedCheckBox->setChecked(true);
     else
         toggleAdvancedCheckBox->setChecked(false);
@@ -57,9 +57,9 @@ QWidget *SettingsWidget::createGeneralSettingsPage()
     //User settings
     QGroupBox *userGroup = new QGroupBox(tr("User settings"));
     
-    nickLineEdit = new QLineEdit(ArpmanetDC::settingsManager().getSetting(SettingsManager::NICKNAME), pWidget);
+    nickLineEdit = new QLineEdit(ArpmanetDC::settingsManager()->getSetting(SettingsManager::NICKNAME), pWidget);
     
-    passwordLineEdit = new QLineEdit(ArpmanetDC::settingsManager().getSetting(SettingsManager::PASSWORD), pWidget);
+    passwordLineEdit = new QLineEdit(ArpmanetDC::settingsManager()->getSetting(SettingsManager::PASSWORD), pWidget);
     passwordLineEdit->setEchoMode(QLineEdit::Password);
 
     QFormLayout *userLayout = new QFormLayout;
@@ -70,9 +70,9 @@ QWidget *SettingsWidget::createGeneralSettingsPage()
     //Hub settings
     QGroupBox *hubGroup = new QGroupBox(tr("Hub settings"));
     
-    hubAddressLineEdit = new QLineEdit(ArpmanetDC::settingsManager().getSetting(SettingsManager::HUB_ADDRESS),pWidget);
+    hubAddressLineEdit = new QLineEdit(ArpmanetDC::settingsManager()->getSetting(SettingsManager::HUB_ADDRESS),pWidget);
     
-    hubPortLineEdit = new QLineEdit(ArpmanetDC::settingsManager().getSetting((int)SettingsManager::HUB_PORT).toString(), pWidget);
+    hubPortLineEdit = new QLineEdit(ArpmanetDC::settingsManager()->getSetting((int)SettingsManager::HUB_PORT).toString(), pWidget);
     hubPortLineEdit->setValidator(new QIntValidator(0, 65535, this));
 
     QFormLayout *hubLayout = new QFormLayout;
@@ -83,13 +83,13 @@ QWidget *SettingsWidget::createGeneralSettingsPage()
     //Sharing/Download settings    
     QGroupBox *sharingGroup = new QGroupBox(tr("Sharing/Download settings"));
 
-    downloadPathLineEdit = new QLineEdit(ArpmanetDC::settingsManager().getSetting(SettingsManager::DOWNLOAD_PATH), pWidget);
+    downloadPathLineEdit = new QLineEdit(ArpmanetDC::settingsManager()->getSetting(SettingsManager::DOWNLOAD_PATH), pWidget);
 
     browseDownloadPathButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/FolderIcon.png"), tr("Browse"), pWidget);
 
     shareUpdateIntervalSpinBox = new QSpinBox(pWidget);
     shareUpdateIntervalSpinBox->setRange(0, 10080); //Maximum is every week
-    int value = ArpmanetDC::settingsManager().getSetting(SettingsManager::AUTO_UPDATE_SHARE_INTERVAL)/60000;
+    int value = ArpmanetDC::settingsManager()->getSetting(SettingsManager::AUTO_UPDATE_SHARE_INTERVAL)/60000;
     shareUpdateIntervalSpinBox->setValue(value);
     if (value != 1)
         shareUpdateIntervalSpinBox->setSuffix(" minutes");
@@ -126,12 +126,12 @@ QWidget *SettingsWidget::createAdvancedSettingsPage()
     //Dispatcher settings
     QGroupBox *dispatchGroup = new QGroupBox(tr("Dispatcher settings"));
 
-    ipLineEdit = new QLineEdit(ArpmanetDC::settingsManager().getSetting(SettingsManager::EXTERNAL_IP), pWidget);
+    ipLineEdit = new QLineEdit(ArpmanetDC::settingsManager()->getSetting(SettingsManager::EXTERNAL_IP), pWidget);
     ipLineEdit->setValidator(new IPValidator(this));
     
     guessIPButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/GuessIcon.png"), tr("Guess External IP"), pWidget);
 
-    externalPortLineEdit = new QLineEdit(ArpmanetDC::settingsManager().getSetting((int)SettingsManager::EXTERNAL_PORT).toString(), pWidget);
+    externalPortLineEdit = new QLineEdit(ArpmanetDC::settingsManager()->getSetting((int)SettingsManager::EXTERNAL_PORT).toString(), pWidget);
     externalPortLineEdit->setValidator(new QIntValidator(0, 65535, this));
     
     QHBoxLayout *guessLayout = new QHBoxLayout();
@@ -167,7 +167,7 @@ QWidget *SettingsWidget::createAdvancedSettingsPage()
     protocolGroup->setLayout(protocolLayout);
 
     //Enqueue supported protocols
-    QString protocolHint = ArpmanetDC::settingsManager().getSetting(SettingsManager::PROTOCOL_HINT);
+    QString protocolHint = ArpmanetDC::settingsManager()->getSetting(SettingsManager::PROTOCOL_HINT);
     QStringList unsupportedProtocols = QString(UNSUPPORTED_TRANSFER_PROTOCOLS).split(";");
     foreach (QChar prot, protocolHint)
     {
@@ -437,14 +437,14 @@ void SettingsWidget::savePressed()
         QMessageBox::warning((QWidget *)pParent, tr("ArpmanetDC"), tr("<p><b>Information missing:</b></p><p>%1</p><p>Please enter the above fields and try again.</p>").arg(missingStr));
     else
     {
-        ArpmanetDC::settingsManager().setSetting(SettingsManager::HUB_ADDRESS, hubAddressLineEdit->text());
-        ArpmanetDC::settingsManager().setSetting(SettingsManager::HUB_PORT, hubPortLineEdit->text().toInt());
-        ArpmanetDC::settingsManager().setSetting(SettingsManager::NICKNAME, nickLineEdit->text());
-        ArpmanetDC::settingsManager().setSetting(SettingsManager::PASSWORD, passwordLineEdit->text());
-        ArpmanetDC::settingsManager().setSetting(SettingsManager::EXTERNAL_IP, ipLineEdit->text());
-        ArpmanetDC::settingsManager().setSetting(SettingsManager::EXTERNAL_PORT, externalPortLineEdit->text().toInt());
-        ArpmanetDC::settingsManager().setSetting(SettingsManager::DOWNLOAD_PATH, downloadPathLineEdit->text().replace("\\","/"));
-        ArpmanetDC::settingsManager().setSetting(SettingsManager::AUTO_UPDATE_SHARE_INTERVAL, shareUpdateIntervalSpinBox->value() * 60000);
+        ArpmanetDC::settingsManager()->setSetting(SettingsManager::HUB_ADDRESS, hubAddressLineEdit->text());
+        ArpmanetDC::settingsManager()->setSetting(SettingsManager::HUB_PORT, hubPortLineEdit->text().toInt());
+        ArpmanetDC::settingsManager()->setSetting(SettingsManager::NICKNAME, nickLineEdit->text());
+        ArpmanetDC::settingsManager()->setSetting(SettingsManager::PASSWORD, passwordLineEdit->text());
+        ArpmanetDC::settingsManager()->setSetting(SettingsManager::EXTERNAL_IP, ipLineEdit->text());
+        ArpmanetDC::settingsManager()->setSetting(SettingsManager::EXTERNAL_PORT, externalPortLineEdit->text().toInt());
+        ArpmanetDC::settingsManager()->setSetting(SettingsManager::DOWNLOAD_PATH, downloadPathLineEdit->text().replace("\\","/"));
+        ArpmanetDC::settingsManager()->setSetting(SettingsManager::AUTO_UPDATE_SHARE_INTERVAL, shareUpdateIntervalSpinBox->value() * 60000);
 
         //Build protocols string
         QString protocolHint;
@@ -454,10 +454,10 @@ void SettingsWidget::savePressed()
             QString itemText = protocolList->item(i)->text();
             protocolHint.append(PROTOCOL_MAP.value(itemText));
         }
-        ArpmanetDC::settingsManager().setSetting(SettingsManager::PROTOCOL_HINT, protocolHint);
+        ArpmanetDC::settingsManager()->setSetting(SettingsManager::PROTOCOL_HINT, protocolHint);
 
         //Save checkbox state
-        ArpmanetDC::settingsManager().setSetting(SettingsManager::SHOW_ADVANCED_MENU, toggleAdvancedCheckBox->isChecked());
+        ArpmanetDC::settingsManager()->setSetting(SettingsManager::SHOW_ADVANCED_MENU, toggleAdvancedCheckBox->isChecked());
 
         //Save user commands
         emit saveUserCommands(pUserCommands);

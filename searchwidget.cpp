@@ -190,7 +190,7 @@ void SearchWidget::connectWidgets()
 void SearchWidget::downloadActionPressed()
 {
     //Get default path from parent
-    QString path = ArpmanetDC::settingsManager().getSetting(SettingsManager::DOWNLOAD_PATH);
+    QString path = ArpmanetDC::settingsManager()->getSetting(SettingsManager::DOWNLOAD_PATH);
     if (path.right(1).compare("/") != 0)
         path.append("/");
 
@@ -237,7 +237,7 @@ void SearchWidget::downloadActionPressed()
 void SearchWidget::downloadToActionPressed()
 {
     //Get last folder from settings as starting point
-    QString startingPath = ArpmanetDC::settingsManager().getSetting(SettingsManager::LAST_DOWNLOAD_FOLDER);
+    QString startingPath = ArpmanetDC::settingsManager()->getSetting(SettingsManager::LAST_DOWNLOAD_FOLDER);
     
     //Make sure the starting path exists, otherwise go to parent directory until valid
     QDir dirCheck(startingPath);
@@ -254,10 +254,10 @@ void SearchWidget::downloadToActionPressed()
         path.append("/");
 
     //Set last download to folder
-    ArpmanetDC::settingsManager().setSetting(SettingsManager::LAST_DOWNLOAD_FOLDER, path);
+    ArpmanetDC::settingsManager()->setSetting(SettingsManager::LAST_DOWNLOAD_FOLDER, path);
     //(*pSettings)["lastDownloadToFolder"] = path;
     //Save last download to folder to the DB - well actually we're saving everything but anyway
-    ArpmanetDC::settingsManager().saveSettings();   
+    ArpmanetDC::settingsManager()->saveSettings();
 
     for (int i = 0; i < resultsTable->selectionModel()->selectedRows().size(); i++)
     {
@@ -302,7 +302,7 @@ void SearchWidget::downloadToActionPressed()
 void SearchWidget::downloadToLastFolderActionPressed()
 {
     //Get last folder from settings
-    QString path = ArpmanetDC::settingsManager().getSetting(SettingsManager::LAST_DOWNLOAD_FOLDER);
+    QString path = ArpmanetDC::settingsManager()->getSetting(SettingsManager::LAST_DOWNLOAD_FOLDER);
     if (path.isEmpty())
         return;
 
@@ -374,7 +374,7 @@ void SearchWidget::calculateMagnetActionPressed()
 QByteArray SearchWidget::idGenerator()
 {
     //Generate hash from nick/password/time
-    QByteArray hash = QByteArray().append(ArpmanetDC::settingsManager().getSetting(SettingsManager::NICKNAME) + ArpmanetDC::settingsManager().getSetting(SettingsManager::PASSWORD) + QDateTime::currentDateTime().toString("dd/MM/yyyy hh:mm:ss:zzz"));
+    QByteArray hash = QByteArray().append(ArpmanetDC::settingsManager()->getSetting(SettingsManager::NICKNAME) + ArpmanetDC::settingsManager()->getSetting(SettingsManager::PASSWORD) + QDateTime::currentDateTime().toString("dd/MM/yyyy hh:mm:ss:zzz"));
 
     QCryptographicHash *cryptHash = new QCryptographicHash(QCryptographicHash::Sha1);
     cryptHash->addData(hash);
@@ -596,7 +596,7 @@ void SearchWidget::showContextMenu(const QPoint &pos)
         calculateMagnetAction->setVisible(false);
 
     //Fill context menu with the last download to folder
-    QString startingFolder = ArpmanetDC::settingsManager().getSetting(SettingsManager::LAST_DOWNLOAD_FOLDER);
+    QString startingFolder = ArpmanetDC::settingsManager()->getSetting(SettingsManager::LAST_DOWNLOAD_FOLDER);
     downloadToLastFolderAction->setText(tr("Download to %1").arg(startingFolder));
 
     QPoint globalPos = resultsTable->viewport()->mapToGlobal(pos);

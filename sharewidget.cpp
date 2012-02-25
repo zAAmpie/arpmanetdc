@@ -35,7 +35,7 @@ ShareWidget::ShareWidget(ShareSearch *share, ArpmanetDC *parent)
     pContainerDirectory = QDir::currentPath();
     if (pContainerDirectory.endsWith("/"))
         pContainerDirectory.chop(1);
-    pContainerDirectory.append(ArpmanetDC::settingsManager().getSetting(SettingsManager::CONTAINER_DIRECTORY));
+    pContainerDirectory.append(ArpmanetDC::settingsManager()->getSetting(SettingsManager::CONTAINER_DIRECTORY));
 
     //Populate container list
     emit requestContainers(pContainerDirectory);

@@ -3,12 +3,12 @@
 #include "Windows.h"
 #endif
 
-SettingsManager ArpmanetDC::settingsManager()
+SettingsManager* ArpmanetDC::settingsManager()
 {
     return pSettingsManager;
 }
 
-SettingsManager ArpmanetDC::pSettingsManager;
+SettingsManager* ArpmanetDC::pSettingsManager;
 
 ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     : QMainWindow(parent, flags)
@@ -30,12 +30,12 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 
     //Load settings from database or initialize settings from defaults
     QString ipString = getIPGuess().toString();
-    pSettingsManager = SettingsManager(db, this);
-    pSettingsManager.loadSettings();
+    pSettingsManager = new SettingsManager(db, this);
+    pSettingsManager->loadSettings();
 
     createdGUI = false;
     pArguments = arguments;
-    pSharedMemory = new QSharedMemory(pSettingsManager.getSetting(SettingsManager::SHARED_MEMORY_KEY));
+    pSharedMemory = new QSharedMemory(pSettingsManager->getSetting(SettingsManager::SHARED_MEMORY_KEY));
     QByteArray magnetArg;
     if (pArguments.size() >= 2)
         magnetArg.append(pArguments.at(1));
@@ -53,6 +53,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 #ifdef Q_OS_LINUX
         pSharedMemory->detach();
 #endif
+
+        sqlite3_close(db);
         
         //Close this instance
         return;
@@ -125,21 +127,21 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     }*/
 
     //Check current IP setting with previous setting
-    if (pSettingsManager.getSetting(SettingsManager::LAST_SEEN_IP) != ipString)
+    if (pSettingsManager->getSetting(SettingsManager::LAST_SEEN_IP) != ipString)
     {
         if (QMessageBox::question(this, tr("ArpmanetDC v%1").arg(VERSION_STRING), tr("<p>IP has changed from last value seen.</p>"
             "<p><table border=1 cellpadding=3 cellspacing=0><tr><td><b>Name</b></td><td><b>IP</b></td></tr><tr><td width=\"200\">Current</td><td>%1</td></tr>"
             "<tr><td width=\"200\">Previously seen</td><td>%2</td></tr><tr><td width=\"200\">External as set in Settings</td><td>%3</td></tr></table></p>"
-            "<p>Do you want to use the current IP?</p>").arg(ipString).arg(pSettingsManager.getSetting(SettingsManager::LAST_SEEN_IP)).arg(pSettingsManager.getSetting(SettingsManager::EXTERNAL_IP)),
+            "<p>Do you want to use the current IP?</p>").arg(ipString).arg(pSettingsManager->getSetting(SettingsManager::LAST_SEEN_IP)).arg(pSettingsManager->getSetting(SettingsManager::EXTERNAL_IP)),
             QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes)
         {
-            pSettingsManager.setSetting(SettingsManager::EXTERNAL_IP, ipString);
+            pSettingsManager->setSetting(SettingsManager::EXTERNAL_IP, ipString);
             //pSettings->insert("externalIP", ipString);
         }
     }
 
     //Save new IP
-    pSettingsManager.setSetting(SettingsManager::LAST_SEEN_IP, ipString);
+    pSettingsManager->setSetting(SettingsManager::LAST_SEEN_IP, ipString);
     //pSettings->insert("lastSeenIP", ipString);
     
     mainChatBlocks = 0;
@@ -150,7 +152,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     setWindowTitle(tr("ArpmanetDC v%1").arg(VERSION_STRING));
 
     //Create Hub Connection
-    pHub = new HubConnection(pSettingsManager.getSetting(SettingsManager::HUB_ADDRESS), pSettingsManager.getSetting(SettingsManager::HUB_PORT), pSettingsManager.getSetting(SettingsManager::NICKNAME), pSettingsManager.getSetting(SettingsManager::PASSWORD), VERSION_STRING, this);
+    pHub = new HubConnection(pSettingsManager->getSetting(SettingsManager::HUB_ADDRESS), pSettingsManager->getSetting(SettingsManager::HUB_PORT), pSettingsManager->getSetting(SettingsManager::NICKNAME), pSettingsManager->getSetting(SettingsManager::PASSWORD), VERSION_STRING, this);
 
     //Connect HubConnection to GUI
     connect(pHub, SIGNAL(receivedChatMessage(QString)), this, SLOT(appendChatLine(QString)));
@@ -167,13 +169,13 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 
     //Create Dispatcher connection
     dispatcherThread = new ExecThread();
-    pDispatcher = new Dispatcher(QHostAddress(pSettingsManager.getSetting(SettingsManager::EXTERNAL_IP)), pSettingsManager.getSetting(SettingsManager::EXTERNAL_PORT));
+    pDispatcher = new Dispatcher(QHostAddress(pSettingsManager->getSetting(SettingsManager::EXTERNAL_IP)), pSettingsManager->getSetting(SettingsManager::EXTERNAL_PORT));
 
     // conjure up something unique here and save it for every subsequent client invocation
     //Maybe make a SHA1 hash of the Nick + Password - unique and consistent? Except if you have two clients open with the same login details? Meh
     QCryptographicHash hash(QCryptographicHash::Sha1);
-    hash.addData(QByteArray().append(pSettingsManager.getSetting(SettingsManager::NICKNAME)));
-    hash.addData(QByteArray().append(pSettingsManager.getSetting(SettingsManager::PASSWORD)));
+    hash.addData(QByteArray().append(pSettingsManager->getSetting(SettingsManager::NICKNAME)));
+    hash.addData(QByteArray().append(pSettingsManager->getSetting(SettingsManager::PASSWORD)));
     QByteArray cid = hash.result();
 
     //QByteArray cid = "012345678901234567890123";
@@ -196,8 +198,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     // Create Transfer manager
     transferThread = new ExecThread();
     pTransferManager = new TransferManager();
-    pTransferManager->setMaximumSimultaneousDownloads(pSettingsManager.getSetting(SettingsManager::MAX_SIMULTANEOUS_DOWNLOADS));
-    pTransferManager->setMaximumSimultaneousUploads(pSettingsManager.getSetting(SettingsManager::MAX_SIMULTANEOUS_UPLOADS));
+    pTransferManager->setMaximumSimultaneousDownloads(pSettingsManager->getSetting(SettingsManager::MAX_SIMULTANEOUS_DOWNLOADS));
+    pTransferManager->setMaximumSimultaneousUploads(pSettingsManager->getSetting(SettingsManager::MAX_SIMULTANEOUS_UPLOADS));
 
     //Connect Dispatcher to TransferManager - handles upload/download requests and transfers
     connect(pDispatcher, SIGNAL(incomingUploadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)),
@@ -279,7 +281,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 
     //Set up thread for database / ShareSearch
     dbThread = new ExecThread();
-    pShare = new ShareSearch(pSettingsManager.getSetting(SettingsManager::MAX_SEARCH_RESULTS), this);
+    pShare = new ShareSearch(pSettingsManager->getSetting(SettingsManager::MAX_SEARCH_RESULTS), this);
 
     //Connect ShareSearch to GUI - share files on this computer and hash them
     connect(pShare, SIGNAL(fileHashed(QString, quint64, quint64)), this, SLOT(fileHashed(QString, quint64, quint64)), Qt::QueuedConnection);
@@ -385,7 +387,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
             this, SLOT(fileAssemblyComplete(QString)), Qt::QueuedConnection);
 
     //Construct the auto update object
-    pFtpUpdate = new FTPUpdate(pSettingsManager.getSetting(SettingsManager::FTP_UPDATE_HOST), pSettingsManager.getSetting(SettingsManager::FTP_UPDATE_DIRECTORY), this);
+    pFtpUpdate = new FTPUpdate(pSettingsManager->getSetting(SettingsManager::FTP_UPDATE_HOST), pSettingsManager->getSetting(SettingsManager::FTP_UPDATE_DIRECTORY), this);
 
     connect(pFtpUpdate, SIGNAL(returnUpdateResults(bool, QString)),
         this, SLOT(ftpReturnUpdateResults(bool, QString)));
@@ -511,7 +513,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     //Set up timer to auto update shares
     updateSharesTimer = new QTimer(this);
     connect(updateSharesTimer, SIGNAL(timeout()), this, SIGNAL(updateShares()));
-    int interval = pSettingsManager.getSetting(SettingsManager::AUTO_UPDATE_SHARE_INTERVAL);
+    int interval = pSettingsManager->getSetting(SettingsManager::AUTO_UPDATE_SHARE_INTERVAL);
     if (interval > 0)
         updateSharesTimer->start(interval);
 
@@ -519,7 +521,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     //Set up timer to check for client updates
     checkForFTPUpdatesTimer = new QTimer(this);
     connect(checkForFTPUpdatesTimer, SIGNAL(timeout()), this, SIGNAL(ftpCheckForUpdate()));
-    checkForFTPUpdatesTimer->start(pSettingsManager.getSetting(SettingsManager::CHECK_FOR_NEW_VERSION_INTERVAL_MS));
+    checkForFTPUpdatesTimer->start(pSettingsManager->getSetting(SettingsManager::CHECK_FOR_NEW_VERSION_INTERVAL_MS));
 #endif
 
     //Save uptime
@@ -530,7 +532,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
         mainChatLinkClicked(QUrl(QString(magnetArg)));
 
     //Show settings window if nick is still default
-    if (pSettingsManager.isDefault(SettingsManager::NICKNAME) && pSettingsManager.isDefault(SettingsManager::PASSWORD))
+    if (pSettingsManager->isDefault(SettingsManager::NICKNAME) && pSettingsManager->isDefault(SettingsManager::PASSWORD))
     {
         if (QMessageBox::information(this, tr("ArpmanetDC"), tr("Please change your nickname and password and click ""Save changes"" to start using ArpmanetDC")) == QMessageBox::Ok)
             settingsAction->trigger();
@@ -585,15 +587,6 @@ ArpmanetDC::~ArpmanetDC()
             delete bucketFlushThread;
         }
 
-        dbThread->quit();
-        if (dbThread->wait(5000))
-            delete dbThread;
-        else
-        {
-            dbThread->terminate();
-            delete dbThread;
-        }
-
         dispatcherThread->quit();
         if (dispatcherThread->wait(5000))
             delete dispatcherThread;
@@ -604,14 +597,21 @@ ArpmanetDC::~ArpmanetDC()
         }
 
         sqlite3_close(db);
+        dbThread->quit();
+        if (dbThread->wait(5000))
+            delete dbThread;
+        else
+        {
+            dbThread->terminate();
+            delete dbThread;
+        }
     }
 
     //Destroy and detach the shared memory sector
-    pSharedMemory->deleteLater();
-
 #ifdef Q_OS_LINUX
     pSharedMemory->detach();
 #endif
+    pSharedMemory->deleteLater();
 }
 
 bool ArpmanetDC::setupDatabase()
@@ -1129,7 +1129,7 @@ void ArpmanetDC::chatLineEditReturnPressed()
     //Display link to update DC - since EVERYONE is CONSTANTLY asking for this... sheesh
     else if (chatLineEdit->text().compare("/dclink") == 0)
     {
-        pHub->sendChatMessage(tr("DC Link: %1%2").arg(pSettingsManager.getSetting(SettingsManager::FTP_UPDATE_HOST)).arg(pSettingsManager.getSetting(SettingsManager::FTP_UPDATE_DIRECTORY)));
+        pHub->sendChatMessage(tr("DC Link: %1%2").arg(pSettingsManager->getSetting(SettingsManager::FTP_UPDATE_HOST)).arg(pSettingsManager->getSetting(SettingsManager::FTP_UPDATE_DIRECTORY)));
         chatLineEdit->setText("");
     }
     else if (chatLineEdit->text().compare("/w") == 0)
@@ -1278,16 +1278,16 @@ void ArpmanetDC::reconnectActionPressed()
     userListModel->removeRows(0, userListModel->rowCount());
     
     //Set parameters and reconnect hub
-    pHub->setHubAddress(pSettingsManager.getSetting(SettingsManager::HUB_ADDRESS));
-    pHub->setHubPort(pSettingsManager.getSetting(SettingsManager::HUB_PORT));
-    pHub->setNick(pSettingsManager.getSetting(SettingsManager::NICKNAME));
-    pHub->setPassword(pSettingsManager.getSetting(SettingsManager::PASSWORD));
+    pHub->setHubAddress(pSettingsManager->getSetting(SettingsManager::HUB_ADDRESS));
+    pHub->setHubPort(pSettingsManager->getSetting(SettingsManager::HUB_PORT));
+    pHub->setNick(pSettingsManager->getSetting(SettingsManager::NICKNAME));
+    pHub->setPassword(pSettingsManager->getSetting(SettingsManager::PASSWORD));
     pHub->connectHub();
 }
 
 void ArpmanetDC::openDownloadDirActionPressed()
 {
-    QString path = QDir::toNativeSeparators(pSettingsManager.getSetting(SettingsManager::DOWNLOAD_PATH));
+    QString path = QDir::toNativeSeparators(pSettingsManager->getSetting(SettingsManager::DOWNLOAD_PATH));
     QDesktopServices::openUrl(QUrl("file:///" + path));
 }
 
@@ -1805,29 +1805,29 @@ void ArpmanetDC::shareSaveButtonPressed()
 void ArpmanetDC::settingsSaved()
 {
     //Save settings to database
-    pSettingsManager.saveSettings();
+    pSettingsManager->saveSettings();
 
     //Reconnect hub if necessary
-    if (pSettingsManager.getSetting(SettingsManager::HUB_ADDRESS) != pHub->getHubAddress() || pSettingsManager.getSetting(SettingsManager::HUB_PORT) != pHub->getHubPort() 
-        || pSettingsManager.getSetting(SettingsManager::NICKNAME) != pHub->getNick() || pSettingsManager.getSetting(SettingsManager::PASSWORD) != pHub->getPassword())
+    if (pSettingsManager->getSetting(SettingsManager::HUB_ADDRESS) != pHub->getHubAddress() || pSettingsManager->getSetting(SettingsManager::HUB_PORT) != pHub->getHubPort()
+        || pSettingsManager->getSetting(SettingsManager::NICKNAME) != pHub->getNick() || pSettingsManager->getSetting(SettingsManager::PASSWORD) != pHub->getPassword())
         reconnectActionPressed();
 
     //Reconnect dispatcher if necessary
-    QString externalIP = pSettingsManager.getSetting(SettingsManager::EXTERNAL_IP);
-    quint16 externalPort = pSettingsManager.getSetting(SettingsManager::EXTERNAL_PORT);
+    QString externalIP = pSettingsManager->getSetting(SettingsManager::EXTERNAL_IP);
+    quint16 externalPort = pSettingsManager->getSetting(SettingsManager::EXTERNAL_PORT);
     
     if (externalIP != pDispatcher->getDispatchIP().toString() || externalPort != pDispatcher->getDispatchPort())
         pDispatcher->reconfigureDispatchHostPort(QHostAddress(externalIP), externalPort);
 
     //Reset CID from nick/password
     QCryptographicHash hash(QCryptographicHash::Sha1);
-    hash.addData(QByteArray().append(pSettingsManager.getSetting(SettingsManager::NICKNAME)));
-    hash.addData(QByteArray().append(pSettingsManager.getSetting(SettingsManager::PASSWORD)));
+    hash.addData(QByteArray().append(pSettingsManager->getSetting(SettingsManager::NICKNAME)));
+    hash.addData(QByteArray().append(pSettingsManager->getSetting(SettingsManager::PASSWORD)));
     QByteArray cid = hash.result();
     pDispatcher->setCID(cid);
 
     //Reset the auto update timer if necessary
-    int interval = pSettingsManager.getSetting(SettingsManager::AUTO_UPDATE_SHARE_INTERVAL);
+    int interval = pSettingsManager->getSetting(SettingsManager::AUTO_UPDATE_SHARE_INTERVAL);
     if (interval == 0) //Disabled
         updateSharesTimer->stop();
     else if (interval != updateSharesTimer->interval())
@@ -2113,7 +2113,7 @@ void ArpmanetDC::appendChatLine(QString msg)
 
     //===== Replace nicknames in order (highest order first) =====
     //Replace nick with red text
-    convertNickname(pSettingsManager.getSetting(SettingsManager::NICKNAME), msg);
+    convertNickname(pSettingsManager->getSetting(SettingsManager::NICKNAME), msg);
     
     //Replace OP names with green text
     convertOPName(msg);
@@ -2128,7 +2128,7 @@ void ArpmanetDC::appendChatLine(QString msg)
     convertMagnetLinks(msg);
 
     //Delete the first line if buffer is full
-    while (mainChatBlocks > pSettingsManager.getSetting(SettingsManager::MAX_MAINCHAT_BLOCKS))
+    while (mainChatBlocks > pSettingsManager->getSetting(SettingsManager::MAX_MAINCHAT_BLOCKS))
     {
         QTextCursor tcOriginal = mainChatTextEdit->textCursor();
         QTextCursor tc = mainChatTextEdit->textCursor();
@@ -2569,7 +2569,7 @@ void ArpmanetDC::setStatus(QString msg)
 {
     //Save history
     pStatusHistoryList->append(tr("[%1]: %2").arg(QTime::currentTime().toString()).arg(msg));
-    if (pStatusHistoryList->size() > pSettingsManager.getSetting(SettingsManager::MAX_LABEL_HISTORY_ENTRIES))
+    if (pStatusHistoryList->size() > pSettingsManager->getSetting(SettingsManager::MAX_LABEL_HISTORY_ENTRIES))
         pStatusHistoryList->removeFirst();
 
     QString history;
@@ -2592,7 +2592,7 @@ void ArpmanetDC::setAdditionalInfo(QString msg)
 {
     //Save history
     pAdditionalInfoHistoryList->append(tr("[%1]: %2").arg(QTime::currentTime().toString()).arg(msg));
-    if (pAdditionalInfoHistoryList->size() > pSettingsManager.getSetting(SettingsManager::MAX_LABEL_HISTORY_ENTRIES))
+    if (pAdditionalInfoHistoryList->size() > pSettingsManager->getSetting(SettingsManager::MAX_LABEL_HISTORY_ENTRIES))
         pAdditionalInfoHistoryList->removeFirst();
 
     QString history;
