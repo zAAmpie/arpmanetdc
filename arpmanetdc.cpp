@@ -1822,8 +1822,8 @@ void ArpmanetDC::settingsSaved()
     
     QHostAddress oldExternalIP;
     quint16 oldExternalPort;
-    QMetaObject::invokeMethod(pDispatcher, "getDispatchIP", Qt::QueuedConnection, Q_RETURN_ARG(QHostAddress, oldExternalIP));
-    QMetaObject::invokeMethod(pDispatcher, "getDispatchPort", Qt::QueuedConnection, Q_RETURN_ARG(quint16, oldExternalPort));
+    QMetaObject::invokeMethod(pDispatcher, "getDispatchIP", Qt::BlockingQueuedConnection, Q_RETURN_ARG(QHostAddress, oldExternalIP));
+    QMetaObject::invokeMethod(pDispatcher, "getDispatchPort", Qt::BlockingQueuedConnection, Q_RETURN_ARG(quint16, oldExternalPort));
     if (externalIP != oldExternalIP.toString() || externalPort != oldExternalPort)
         QMetaObject::invokeMethod(pDispatcher, "reconfigureDispatchHostPort", Qt::QueuedConnection, Q_ARG(QHostAddress, QHostAddress(externalIP)), Q_ARG(quint16, externalPort));
 

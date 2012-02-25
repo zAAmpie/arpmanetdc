@@ -1226,7 +1226,7 @@ void Dispatcher::sendMulticastRawDatagram(QByteArray &datagram)
 
 // ------------------=====================   Misc functions   =====================----------------------
 
-void Dispatcher::setCID(QByteArray &cid)
+void Dispatcher::setCID(QByteArray cid)
 {
     CID.clear();
     CID.append(fixedCIDLength(cid));

@@ -96,7 +96,7 @@ signals:
     void returnHostCount(int count);
 
 public slots:
-    void setCID(QByteArray &cid);
+    void setCID(QByteArray cid);
     //void setDispatchIP(QHostAddress &dispatchIP);
     void setProtocolCapabilityBitmask(char protocols);
     void reconfigureDispatchHostPort(QHostAddress dispatchIP, quint16 dispatchPort);
