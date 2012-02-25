@@ -103,7 +103,7 @@ public:
     ~ArpmanetDC();
 
     //Settings
-    static SettingsManager settingsManager();
+    static SettingsManager* settingsManager();
 
     //Get functions
     QueueStruct queueEntry(QByteArray tth);
@@ -405,7 +405,7 @@ private:
     ResourceExtractor *pTypeIconList;
     ResourceExtractor *pEmoticonResourceList;
     FTPUpdate *pFtpUpdate;
-    static SettingsManager pSettingsManager;
+    static SettingsManager *pSettingsManager;
 
     //Threads
     ExecThread *dispatcherThread;
