@@ -8,7 +8,7 @@ SettingsManager* ArpmanetDC::settingsManager()
     return pSettingsManager;
 }
 
-SettingsManager* ArpmanetDC::pSettingsManager;
+SettingsManager* ArpmanetDC::pSettingsManager = new SettingsManager();
 
 ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     : QMainWindow(parent, flags)
@@ -30,6 +30,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 
     //Load settings from database or initialize settings from defaults
     QString ipString = getIPGuess().toString();
+    delete pSettingsManager;
     pSettingsManager = new SettingsManager(db, this);
     pSettingsManager->loadSettings();
 
@@ -606,6 +607,8 @@ ArpmanetDC::~ArpmanetDC()
             delete dbThread;
         }
     }
+
+    delete pSettingsManager;
 
     //Destroy and detach the shared memory sector
 #ifdef Q_OS_LINUX
