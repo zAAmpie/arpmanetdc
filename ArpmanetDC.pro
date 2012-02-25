@@ -57,7 +57,8 @@ SOURCES += main.cpp\
     bucketflushthread.cpp \
     utptransfersegment.cpp \
     containerthread.cpp \
-    ftpupdate.cpp
+    ftpupdate.cpp\
+    settingsmanager.cpp
 
 HEADERS  += arpmanetdc.h \
     hubconnection.h \
@@ -92,7 +93,8 @@ HEADERS  += arpmanetdc.h \
     bucketflushthread.h \
     utptransfersegment.h \
     containerthread.h \
-    ftpupdate.h
+    ftpupdate.h\
+    settingsmanager.h
 
 #FORMS    += arpmanetdc.ui
 

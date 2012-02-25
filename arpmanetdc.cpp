@@ -13,6 +13,23 @@ SettingsManager ArpmanetDC::pSettingsManager;
 ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     : QMainWindow(parent, flags)
 {
+    //Get database path
+    //TODO: Check command line arguments for specified database path
+    shareDatabasePath = DEFAULT_SHARE_DATABASE_PATH;
+#ifdef Q_OS_LINUX
+    if (!QFileInfo(shareDatabasePath).exists())
+        shareDatabasePath = QDir::homePath() + "/.arpmanetdc.sqlite";
+    qDebug() << shareDatabasePath;
+#endif
+
+    setupDatabase();
+    //pSettings = new QHash<QString, QString>();
+
+    //Load settings from database or initialize settings from defaults
+    QString ipString = getIPGuess().toString();
+    pSettingsManager = SettingsManager(db, this);
+    pSettingsManager.loadSettings();
+
     createdGUI = false;
     pArguments = arguments;
     pSharedMemory = new QSharedMemory(pSettingsManager.getSetting(SettingsManager::SHARED_MEMORY_KEY));
@@ -76,23 +93,6 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 
     //Set database pointer to zero at start
     db = 0;
-
-    //Get database path
-    //TODO: Check command line arguments for specified database path
-    shareDatabasePath = DEFAULT_SHARE_DATABASE_PATH;
-#ifdef Q_OS_LINUX
-    if (!QFileInfo(shareDatabasePath).exists())
-        shareDatabasePath = QDir::homePath() + "/.arpmanetdc.sqlite";
-    qDebug() << shareDatabasePath;
-#endif
-
-    setupDatabase();
-    //pSettings = new QHash<QString, QString>();
-
-    //Load settings from database or initialize settings from defaults
-    QString ipString = getIPGuess().toString();
-    pSettingsManager = SettingsManager(db, this);
-    pSettingsManager.loadSettings();
 
     /*if (!pSettings->contains("nick"))
         pSettings->insert("nick", DEFAULT_NICK);
