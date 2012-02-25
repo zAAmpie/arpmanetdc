@@ -153,6 +153,7 @@ public slots:
     // Set functions
     void setMaximumSimultaneousDownloads(int n);
     void setMaximumSimultaneousUploads(int n);
+    void setProtocolOrderPreference(QByteArray p);
 
     // Transfer segment pointers for direct dispatch
     void setTransferSegmentPointer(quint32 segmentId, TransferSegment *segment);
@@ -173,6 +174,7 @@ private:
     int currentUploadCount;
     quint32 nextSegmentId;
     QHostAddress zeroHostAddress;
+    QByteArray protocolOrderPreference;
 
     // Transfer segment pointers for direct dispatch
     TransferSegment *getTransferSegmentPointer(quint32 segmentId);

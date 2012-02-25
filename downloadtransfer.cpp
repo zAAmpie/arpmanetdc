@@ -39,6 +39,11 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
     connect(protocolCapabilityRequestTimer, SIGNAL(timeout()), this, SLOT(protocolCapabilityRequestTimerEvent()));
     protocolCapabilityRequestTimer->setSingleShot(false);
     protocolCapabilityRequestTimer->setInterval(3000);
+
+    newSegmentTimer = new QTimer(this);
+    connect(newSegmentTimer, SIGNAL(timeout()), this, SLOT(newSegmentTimerEvent()));
+    newSegmentTimer->setSingleShot(false);
+    newSegmentTimer->setInterval(10000);
 }
 
 DownloadTransfer::~DownloadTransfer()
@@ -46,8 +51,6 @@ DownloadTransfer::~DownloadTransfer()
     // save bucketFlushStateBitmap to db
     saveBucketStateBitmap();
 
-    transferRateCalculationTimer->deleteLater();
-    transferTimer->deleteLater();
     QHashIterator<int, QByteArray*> itdb(*downloadBucketTable);
     while (itdb.hasNext())
     {
@@ -73,6 +76,7 @@ DownloadTransfer::~DownloadTransfer()
     transferTimer->deleteLater();
     transferRateCalculationTimer->deleteLater();
     protocolCapabilityRequestTimer->deleteLater();
+    newSegmentTimer->deleteLater();
 }
 
 // Data packets that are related to our TTH gets dispatched to this entry point.
@@ -403,12 +407,14 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
     //       : Rational: If a single host shares an object and becomes unavailable mid transfer, the transfer
     //       : stalls indefinitely after the segment fails, even after the host comes back online again.
     QHostAddress h = segment->getSegmentRemotePeer();
-    segment->deleteLater();
     
     //Remove offending peer
     //remotePeerInfoTable.remove(h); // TODO: flag, don't remove
     remotePeerInfoTable[h].transferSegment = 0;
     remotePeerInfoTable[h].failureCount++;
+    remotePeerInfoTable[h].bytesTransferred += segment->getBytesTransferred();
+
+    segment->deleteLater();
 
     //Update the alternates
     emit searchTTHAlternateSources(TTH);
@@ -608,9 +614,15 @@ void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int
     }
     else if (remotePeerInfoTable.contains(download->getSegmentRemotePeer()))
     {
+        QHostAddress h = download->getSegmentRemotePeer();
+        remotePeerInfoTable[h].transferSegment = 0;
+        remotePeerInfoTable[h].bytesTransferred = download->getBytesTransferred();
         download->deleteLater();
-        remotePeerInfoTable[download->getSegmentRemotePeer()].transferSegment = 0;
         currentActiveSegments--;
+    }
+    else
+    {
+        qDebug() << "DownloadTransfer::downloadNextAvailableChunk(): else reached that should not be reached." << currentActiveSegments;
     }
 }
 
@@ -871,4 +883,22 @@ void DownloadTransfer::saveBucketStateBitmap()
 void DownloadTransfer::updateDirectBytesStats(int bytes)
 {
     bytesWrittenSinceUpdate += bytes;
+}
+
+void DownloadTransfer::newSegmentTimerEvent()
+{
+    if ((currentActiveSegments > MAXIMUM_SIMULTANEOUS_SEGMENTS) || (!(status & (TRANSFER_STATE_RUNNING | TRANSFER_STATE_STALLED))))
+        return;
+
+    QHostAddress nextPeer = getBestIdlePeer();
+    if (!nextPeer.isNull())
+    {
+        TransferSegment *download = createTransferSegment(nextPeer);
+        if (download)
+        {
+            remotePeerInfoTable[nextPeer].transferSegment = download;
+            currentActiveSegments++;
+            downloadNextAvailableChunk(download);
+        }
+    }
 }

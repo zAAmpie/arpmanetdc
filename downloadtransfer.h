@@ -80,6 +80,7 @@ public slots:
 private slots:
     void transferTimerEvent();
     void TTHSearchTimerEvent();
+    void newSegmentTimerEvent();
     void protocolCapabilityRequestTimerEvent();
     void segmentCompleted(TransferSegment *segment);
     void segmentFailed(TransferSegment *segment);
@@ -108,6 +109,7 @@ private:
     QTimer *transferTimer;
     QTimer *TTHSearchTimer;
     QTimer *protocolCapabilityRequestTimer;
+    QTimer *newSegmentTimer;
 
     int lastBucketNumber;
     int lastBucketSize;

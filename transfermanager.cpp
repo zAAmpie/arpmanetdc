@@ -6,6 +6,7 @@ TransferManager::TransferManager(QObject *parent) :
     currentDownloadCount = 0;
     currentUploadCount = 0;
     zeroHostAddress = QHostAddress("0.0.0.0");
+    protocolOrderPreference = QByteArray();
     qsrand(QDateTime::currentMSecsSinceEpoch());
     nextSegmentId = qrand();
     if (nextSegmentId == 0)
@@ -234,7 +235,7 @@ void TransferManager::startNextDownload()
     t->setFileName(i.filePathName);
     t->setTTH(i.tth);
     t->setFileSize(i.fileSize);
-    t->setProtocolOrderPreference(pSettings->value("protocolHint").toAscii());
+    t->setProtocolOrderPreference(protocolOrderPreference);
     t->addPeer(i.fileHost);
     transferObjectTable.insertMulti(i.tth, t);
     emit loadBucketFlushStateBitmap(i.tth);
@@ -481,6 +482,11 @@ void TransferManager::setMaximumSimultaneousDownloads(int n)
 void TransferManager::setMaximumSimultaneousUploads(int n)
 {
     maximumSimultaneousUploads = n;
+}
+
+void TransferManager::setProtocolOrderPreference(QByteArray p)
+{
+    protocolOrderPreference = p;
 }
 
 void TransferManager::requestNextSegmentId(TransferSegment *segment)

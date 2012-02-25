@@ -67,6 +67,7 @@ public slots:
     virtual void unpauseDownload() = 0;
     void setDownloadBucketTablePointer(QHash<int, QByteArray*> *dbt);
     void setSegmentId(quint32 id);
+    quint64 getBytesTransferred();
 
     virtual qint64 getBytesReceivedNotFlushed();
     virtual qint64 getMaxUploadRequestOffset();
@@ -89,6 +90,7 @@ protected:
     int lastBucketSize;
 
     quint32 segmentId;
+    quint64 bytesTransferred;
 
     QFile inputFile;
     QHash<int, QByteArray*> *pDownloadBucketTable;

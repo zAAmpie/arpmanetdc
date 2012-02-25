@@ -161,6 +161,9 @@ void uTPTransferSegment::uTPRead(const byte *bytes, size_t count)
         qDebug() << "uTPTransferSegment emit hashBucketRequest() on finish " << bucketNumber << pDownloadBucketTable->value(bucketNumber)->length();
         emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber));
     }
+    segmentOffset += count;
+    bytesTransferred += count;
+    emit updateDirectBytesStats(count);
 }
 
 void uTPTransferSegment::uTPWrite(byte *bytes, size_t count)

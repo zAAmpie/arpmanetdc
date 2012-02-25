@@ -201,6 +201,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     pTransferManager = new TransferManager();
     pTransferManager->setMaximumSimultaneousDownloads(pSettingsManager->getSetting(SettingsManager::MAX_SIMULTANEOUS_DOWNLOADS));
     pTransferManager->setMaximumSimultaneousUploads(pSettingsManager->getSetting(SettingsManager::MAX_SIMULTANEOUS_UPLOADS));
+    pTransferManager->setProtocolOrderPreference(pSettingsManager->getSetting(SettingsManager::PROTOCOL_HINT).toAscii());
 
     //Connect Dispatcher to TransferManager - handles upload/download requests and transfers
     connect(pDispatcher, SIGNAL(incomingUploadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)),

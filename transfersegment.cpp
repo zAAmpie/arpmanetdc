@@ -8,6 +8,7 @@ TransferSegment::TransferSegment(QObject *parent) :
     segmentStart = 0;
     segmentLength = 0;
     segmentEnd = 0;
+    bytesTransferred = 0;
 }
 
 TransferSegment::~TransferSegment()
@@ -78,6 +79,11 @@ int TransferSegment::getSegmentStatus()
 quint32 TransferSegment::getSegmentId()
 {
     return segmentId;
+}
+
+quint64 TransferSegment::getBytesTransferred()
+{
+    return bytesTransferred;
 }
 
 void TransferSegment::setTTH(QByteArray tth)

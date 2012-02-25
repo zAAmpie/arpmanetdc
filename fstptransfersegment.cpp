@@ -129,7 +129,6 @@ void FSTPTransferSegment::unpauseDownload()
 
 void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
 {
-    emit updateDirectBytesStats(data.length());
     //Ignore packet if transfer has failed and has not been restarted
     if (status == TRANSFER_STATE_FAILED && offset != segmentStart)
         return;
@@ -141,6 +140,10 @@ void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
     }
     if (offset < requestingOffset)
         return;
+
+    int b = data.length();
+    emit updateDirectBytesStats(b);
+    bytesTransferred += b;
 
     status = TRANSFER_STATE_RUNNING;
     packetsSinceUpdate++;
