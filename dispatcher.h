@@ -41,18 +41,7 @@ class Dispatcher : public QObject
 
 public:
     explicit Dispatcher(QHostAddress dispatchIP, quint16 dispatchPort, QObject *parent = 0);
-    void setCID(QByteArray &cid);
-    void setDispatchIP(QHostAddress &dispatchIP);
-    void setProtocolCapabilityBitmask(char protocols);
-    void reconfigureDispatchHostPort(QHostAddress dispatchIP, quint16 dispatchPort);
     ~Dispatcher();
-
-    //Get functions to avoid reconfiguration if no change was made
-    QHostAddress getDispatchIP();
-    quint16 getDispatchPort();
-    int getNumberOfCIDHosts();
-    int getNumberOfHosts();
-    QByteArray getCID();
 
 signals:
     // Bootstrap signals
@@ -107,6 +96,18 @@ signals:
     void returnHostCount(int count);
 
 public slots:
+    void setCID(QByteArray &cid);
+    //void setDispatchIP(QHostAddress &dispatchIP);
+    void setProtocolCapabilityBitmask(char protocols);
+    void reconfigureDispatchHostPort(QHostAddress dispatchIP, quint16 dispatchPort);
+
+    //Get functions to avoid reconfiguration if no change was made
+    QHostAddress getDispatchIP();
+    quint16 getDispatchPort();
+    int getNumberOfCIDHosts();
+    int getNumberOfHosts();
+    QByteArray getCID();
+
     // Bootstrapping
     void sendMulticastAnnounce();
     void sendBroadcastAnnounce();

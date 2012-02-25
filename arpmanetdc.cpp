@@ -1820,15 +1820,19 @@ void ArpmanetDC::settingsSaved()
     QString externalIP = pSettingsManager->getSetting(SettingsManager::EXTERNAL_IP);
     quint16 externalPort = pSettingsManager->getSetting(SettingsManager::EXTERNAL_PORT);
     
-    if (externalIP != pDispatcher->getDispatchIP().toString() || externalPort != pDispatcher->getDispatchPort())
-        pDispatcher->reconfigureDispatchHostPort(QHostAddress(externalIP), externalPort);
+    QHostAddress oldExternalIP;
+    quint16 oldExternalPort;
+    QMetaObject::invokeMethod(pDispatcher, "getDispatchIP", Qt::QueuedConnection, Q_RETURN_ARG(QHostAddress, oldExternalIP));
+    QMetaObject::invokeMethod(pDispatcher, "getDispatchPort", Qt::QueuedConnection, Q_RETURN_ARG(quint16, oldExternalPort));
+    if (externalIP != oldExternalIP.toString() || externalPort != oldExternalPort)
+        QMetaObject::invokeMethod(pDispatcher, "reconfigureDispatchHostPort", Qt::QueuedConnection, Q_ARG(QHostAddress, QHostAddress(externalIP)), Q_ARG(quint16, externalPort));
 
     //Reset CID from nick/password
     QCryptographicHash hash(QCryptographicHash::Sha1);
     hash.addData(QByteArray().append(pSettingsManager->getSetting(SettingsManager::NICKNAME)));
     hash.addData(QByteArray().append(pSettingsManager->getSetting(SettingsManager::PASSWORD)));
     QByteArray cid = hash.result();
-    pDispatcher->setCID(cid);
+    QMetaObject::invokeMethod(pDispatcher, "setCID", Qt::QueuedConnection, Q_ARG(QByteArray, cid));
 
     //Reset the auto update timer if necessary
     int interval = pSettingsManager->getSetting(SettingsManager::AUTO_UPDATE_SHARE_INTERVAL);
@@ -1836,6 +1840,9 @@ void ArpmanetDC::settingsSaved()
         updateSharesTimer->stop();
     else if (interval != updateSharesTimer->interval())
         updateSharesTimer->start(interval);
+
+    //Reconfigure protocol preference order in transfer manager
+    QMetaObject::invokeMethod(pTransferManager, "setProtocolOrderPreference", Qt::QueuedConnection, Q_ARG(QByteArray, pSettingsManager->getSetting(SettingsManager::PROTOCOL_HINT).toAscii()));
 
     //Delete settings tab
     if (settingsWidget)
