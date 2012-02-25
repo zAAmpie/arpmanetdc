@@ -13,6 +13,9 @@ SettingsManager ArpmanetDC::pSettingsManager;
 ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     : QMainWindow(parent, flags)
 {
+    //Set database pointer to zero at start
+    db = 0;
+
     //Get database path
     //TODO: Check command line arguments for specified database path
     shareDatabasePath = DEFAULT_SHARE_DATABASE_PATH;
@@ -90,9 +93,6 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     qRegisterMetaType<QList<QDir> >("QList<QDir>");
     qRegisterMetaType<QByteArray>("QByteArray");
     qRegisterMetaType<QHash<QString, UserCommandStruct> >("QHash<QString, UserCommandStruct>");
-
-    //Set database pointer to zero at start
-    db = 0;
 
     /*if (!pSettings->contains("nick"))
         pSettings->insert("nick", DEFAULT_NICK);
