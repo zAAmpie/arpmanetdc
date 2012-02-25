@@ -211,10 +211,10 @@ void uTPTransferSegment::uTPOverhead(bool send, size_t count, int type)
 void uTPTransferSegment::uTPSendTo(const byte *p, size_t len, const struct sockaddr *to, socklen_t tolen)
 {
     QByteArray *packet = new QByteArray;
-    packet->append(DataPacket);
+    packet->append(DirectDataPacket);
     packet->append(uTPProtocol);
-    packet->append(toQByteArray((quint64)segmentStart));
-    packet->append(TTH);
+    packet->append(quint64ToByteArray((quint64)segmentStart));
+    packet->append(quint32ToByteArray(segmentId));
     packet->append((const char *)p, len);
     qDebug() << "uTPTransferSegment::uTPSendTo()" << len << packet->length() << remoteHost;
     emit transmitDatagram(remoteHost, packet);
