@@ -100,6 +100,7 @@ private:
 
     qint64 getHostAge(QByteArray &bucket, QHostAddress &host);
     QByteArray getBucket(QByteArray bucketID);
+    void calculateOwnBucketId();
 
     QHash<QByteArray, int> ownBucketId;
     bool unbootstrapped;
@@ -112,6 +113,8 @@ private:
     QHash<QHostAddress, qint64> announceToHostTimestamps;
     QHash<QHostAddress, qint64> requestAllBucketsTimestamps;
     qint64 lastBucketUpdate;
+    QByteArray cachedOwnBucketId;
+    qint64 lastBucketIdCalcTime;
 };
 
 #endif // NETWORKTOPOLOGY_H

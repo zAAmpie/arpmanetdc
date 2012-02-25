@@ -7,6 +7,8 @@ NetworkTopology::NetworkTopology(QObject *parent) :
     not_multicast = true;
     incomingAnnouncementCount = 0;
     startupTime = QDateTime::currentMSecsSinceEpoch();
+    lastBucketIdCalcTime = 0;
+    cachedOwnBucketId = QByteArray();
 
     bootstrapTimeoutTimer = new QTimer(this);
     bootstrapTimeoutTimer->setSingleShot(true);
@@ -356,6 +358,17 @@ qint64 NetworkTopology::getHostAge(QByteArray &bucket, QHostAddress &host)
 
 QByteArray NetworkTopology::getOwnBucketId()
 {
+    qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
+    if ((bootstrapStatus <= 0) ||(currentTime - startupTime < 60000) || (currentTime - lastBucketIdCalcTime > 60000))
+    {
+        calculateOwnBucketId();
+        lastBucketIdCalcTime = currentTime;
+    }
+    return cachedOwnBucketId;
+}
+
+void NetworkTopology::calculateOwnBucketId()
+{
     QByteArray bucketId;
     int maxcount = 0;
     QHashIterator<QByteArray, int> it(ownBucketId);
@@ -363,12 +376,11 @@ QByteArray NetworkTopology::getOwnBucketId()
     {
         if (it.next().value() > maxcount)
         {
-            // QByteArray is COW, hierdie assignment behels net 'n pointer, so dis OK.
             bucketId = it.key();
             maxcount = it.value();
         }
     }
-    return bucketId;
+    cachedOwnBucketId = bucketId;
 }
 
 void NetworkTopology::bootstrapTimeoutEvent()
