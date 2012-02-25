@@ -1,9 +1,8 @@
 #include "transfermanager.h"
 
-TransferManager::TransferManager(QHash<QString, QString> *settings, QObject *parent) :
+TransferManager::TransferManager(QObject *parent) :
     QObject(parent)
 {
-    pSettings = settings;
     currentDownloadCount = 0;
     currentUploadCount = 0;
     zeroHostAddress = QHostAddress("0.0.0.0");

@@ -62,7 +62,7 @@ class TransferManager : public QObject
 {
     Q_OBJECT
 public:
-    explicit TransferManager(QHash<QString, QString> *settings, QObject *parent = 0);
+    explicit TransferManager(QObject *parent = 0);
     ~TransferManager();
 
 signals:

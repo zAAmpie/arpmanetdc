@@ -70,7 +70,7 @@ void PMWidget::receivePrivateMessage(QString msg)
         pParent->convertOPName(msg);
 
         //Replace nick with red text
-        pParent->convertNickname(pParent->nick(), msg);
+        pParent->convertNickname(ArpmanetDC::settingsManager().getSetting(SettingsManager::NICKNAME), msg);
         
         //Convert plain text links to HTML links
         pParent->convertHTMLLinks(msg);
@@ -125,7 +125,7 @@ void PMWidget::sendMessage()
     msg.replace("<", "&lt;");
     msg.replace(">", "&gt;");
     msg.replace('"', "&quot;");
-    receivePrivateMessage(tr("&lt;%1&gt; %2").arg(pParent->nick()).arg(msg));
+    receivePrivateMessage(tr("&lt;%1&gt; %2").arg(ArpmanetDC::settingsManager().getSetting(SettingsManager::NICKNAME)).arg(msg));
 }
 
 QWidget *PMWidget::widget()

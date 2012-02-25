@@ -43,9 +43,9 @@ class SearchWidget : public QObject
     Q_OBJECT
 
 public:
-    SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconList, TransferManager *transferManager, QHash<QString, QString> *settings, ArpmanetDC *parent);
+    SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconList, TransferManager *transferManager, ArpmanetDC *parent);
     //Overloaded constructor to automatically search for a string
-    SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconList, TransferManager *transferManager, QHash<QString, QString> *settings, QString startupSearchString, ArpmanetDC *parent);
+    SearchWidget(QCompleter *completer, ResourceExtractor *mappedIconList, TransferManager *transferManager, QString startupSearchString, ArpmanetDC *parent);
     ~SearchWidget();
 
     //Get the encapsulating widget
@@ -87,9 +87,6 @@ signals:
     //Queue download
     void queueDownload(int priority, QByteArray tth, QString finalPath, quint64 fileSize, QHostAddress senderIP);
 
-    //Save settings to save lastDownloadToFolder
-    void saveSettings();
-
 private:
     //Functions
     void createWidgets();
@@ -105,8 +102,6 @@ private:
     TransferManager *pTransferManager;
     QCompleter *pCompleter;
 
-    QHash<QString, QString> *pSettings;
-    
     QTimer *sortTimer;
     bool sortDue;
 

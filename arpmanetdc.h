@@ -41,11 +41,12 @@
 #include "util.h"
 #include <sqlite/sqlite3.h>
 #include "protocoldef.h"
+#include "settingsmanager.h"
 
 //#define QT_NO_DEBUG
 //#define QT_NO_DEBUG_OUTPUT
 
-#define SHARED_MEMORY_KEY "ArpmanetDCv0.1"
+/*#define SHARED_MEMORY_KEY "ArpmanetDCv0.1"
 
 #define DEFAULT_EXTERNAL_PORT "4012"
 
@@ -58,7 +59,7 @@
 #define DEFAULT_SHARE_UPDATE_INTERVAL "3600000" //Default 60min
 
 #define DEFAULT_SHOW_ADVANCED "0" //By default don't show advanced settings
-
+*/
 #define DEFAULT_SHARE_DATABASE_PATH "arpmanetdc.sqlite"
 static QString shareDatabasePath;
 
@@ -76,7 +77,7 @@ static QMap<QString, char> initMapValues() {
 }
 static const QMap<QString, char> PROTOCOL_MAP = initMapValues();
 
-#define MAX_SEARCH_RESULTS 100 //Max to give a query, not max to display
+/*#define MAX_SEARCH_RESULTS 100 //Max to give a query, not max to display
 #define MAX_SIMULTANEOUS_DOWNLOADS 3 //Max to download from queue at a time
 #define MAX_SIMULTANEOUS_UPLOADS 20 //Max to upload to user users at a time - basically like slots to avoid locking up a client with uploads
 
@@ -88,6 +89,7 @@ static const QMap<QString, char> PROTOCOL_MAP = initMapValues();
 #define FTP_UPDATE_HOST "ftp://fskbhe2.puk.ac.za"
 #define FTP_UPDATE_DIRECTORY "/pub/Windows/Network/DC/ArpmanetDC/"
 #define CHECK_FOR_NEW_VERSION_INTERVAL_MS 1800000 //Every 30min
+*/
 
 #define VERSION_STRING "0.1.8"
 
@@ -100,17 +102,18 @@ public:
     ArpmanetDC(QStringList arguments, QWidget *parent = 0, Qt::WFlags flags = 0);
     ~ArpmanetDC();
 
+    //Settings
+    static SettingsManager settingsManager();
+
     //Get functions
-    QString nick();
-    QString password();
-    QString downloadPath();
     QueueStruct queueEntry(QByteArray tth);
 
     //Link and nick converters
-    void convertHTMLLinks(QString &msg);
-    void convertMagnetLinks(QString &msg);
-    void convertNickname(QString nick, QString &msg);
-    void convertOPName(QString &msg);
+    void convertHTMLLinks(QString &msg); //Replace links with hrefs
+    void convertMagnetLinks(QString &msg); //Replace magnets with links
+    void convertNickname(QString nick, QString &msg); //Replace own nickname with coloured text
+    void convertOPName(QString &msg); //Replace OP nicks with coloured text
+    void convertAllNicks(QString &msg); //Replace online nicknames with escaped versions
 
     //Replace text emoticons with images
     void insertEmoticonsInLastBlock();
@@ -129,10 +132,13 @@ public:
     QString databasePath();
 
     //Save settings to database
-    bool saveSettings();
+    //bool saveSettings();
 
     //Guess the computer's IP
     QHostAddress getIPGuess();
+
+    //Get path for downloads
+    QString getDefaultDownloadPath();
 
     //Get the bootstrap node number
     quint32 getBootstrapNodeNumber();
@@ -380,9 +386,6 @@ private:
     //Load settings from database
     bool loadSettings();
     
-    //Get path for downloads
-    QString getDefaultDownloadPath();
-
     //Calculate total share size
     quint64 calculateTotalShareSize();
 
@@ -402,6 +405,7 @@ private:
     ResourceExtractor *pTypeIconList;
     ResourceExtractor *pEmoticonResourceList;
     FTPUpdate *pFtpUpdate;
+    static SettingsManager pSettingsManager;
 
     //Threads
     ExecThread *dispatcherThread;
@@ -411,7 +415,7 @@ private:
 
     //Parameters
     //SettingsStruct pSettings;
-    QHash<QString, QString> *pSettings;
+    //QHash<QString, QString> *pSettings;
     QHash<QString, UserCommandStruct> *pUserCommands;
 
     //Containers

@@ -199,7 +199,7 @@ void TransferWidget::returnGlobalTransferStatus(QList<TransferItemStatus> status
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, typeString(s.transferType)));
             row.append(new CStandardItem(CStandardItem::BitmapType, bitmapString(transferID, currentUpdateID++, s.transferProgress, s.segmentBitmap)));
             row.append(new CStandardItem(CStandardItem::RateType, bytesToRate(s.transferRate)));
-            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, s.filePathName.remove(pParent->downloadPath(), Qt::CaseInsensitive)));
+            row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, s.filePathName.remove(ArpmanetDC::settingsManager().getSetting(SettingsManager::DOWNLOAD_PATH), Qt::CaseInsensitive)));
             row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(q.fileSize)));
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, stateString(s.transferStatus)));
             row.append(new CStandardItem(CStandardItem::TimeDurationType, timeFromInt(s.uptime)));
@@ -215,7 +215,7 @@ void TransferWidget::returnGlobalTransferStatus(QList<TransferItemStatus> status
             //transferListModel->itemFromIndex(transferListModel->index(row, 1))->setText(progressString(s.transferType, s.transferProgress));
             transferListModel->itemFromIndex(transferListModel->index(row, 1))->setText(bitmapString(pIDHash.value(s.TTH), currentUpdateID++, s.transferProgress, s.segmentBitmap));
             transferListModel->itemFromIndex(transferListModel->index(row, 2))->setText(bytesToRate(s.transferRate));
-            transferListModel->itemFromIndex(transferListModel->index(row, 3))->setText(s.filePathName.remove(pParent->downloadPath(), Qt::CaseInsensitive));
+            transferListModel->itemFromIndex(transferListModel->index(row, 3))->setText(s.filePathName.remove(ArpmanetDC::settingsManager().getSetting(SettingsManager::DOWNLOAD_PATH), Qt::CaseInsensitive));
             transferListModel->itemFromIndex(transferListModel->index(row, 4))->setText(bytesToSize(q.fileSize));
             transferListModel->itemFromIndex(transferListModel->index(row, 5))->setText(stateString(s.transferStatus));
             transferListModel->itemFromIndex(transferListModel->index(row, 6))->setText(timeFromInt(s.uptime));

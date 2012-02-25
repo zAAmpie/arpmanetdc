@@ -3,12 +3,19 @@
 #include "Windows.h"
 #endif
 
+SettingsManager ArpmanetDC::settingsManager()
+{
+    return pSettingsManager;
+}
+
+SettingsManager ArpmanetDC::pSettingsManager;
+
 ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     : QMainWindow(parent, flags)
 {
     createdGUI = false;
     pArguments = arguments;
-    pSharedMemory = new QSharedMemory(SHARED_MEMORY_KEY);
+    pSharedMemory = new QSharedMemory(pSettingsManager.getSetting(SettingsManager::SHARED_MEMORY_KEY));
     QByteArray magnetArg;
     if (pArguments.size() >= 2)
         magnetArg.append(pArguments.at(1));
@@ -80,12 +87,14 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 #endif
 
     setupDatabase();
-    pSettings = new QHash<QString, QString>();
+    //pSettings = new QHash<QString, QString>();
 
     //Load settings from database or initialize settings from defaults
     QString ipString = getIPGuess().toString();
-       loadSettings();
-    if (!pSettings->contains("nick"))
+    pSettingsManager = SettingsManager(db, this);
+    pSettingsManager.loadSettings();
+
+    /*if (!pSettings->contains("nick"))
         pSettings->insert("nick", DEFAULT_NICK);
     if (!pSettings->contains("password"))
         pSettings->insert("password", DEFAULT_PASSWORD);
@@ -113,23 +122,25 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
         foreach (char val, PROTOCOL_MAP)
             protocolHint.append(val);
         pSettings->insert("protocolHint", protocolHint.data());
-    }
+    }*/
 
     //Check current IP setting with previous setting
-    if (pSettings->value("lastSeenIP") != ipString)
+    if (pSettingsManager.getSetting(SettingsManager::LAST_SEEN_IP) != ipString)
     {
         if (QMessageBox::question(this, tr("ArpmanetDC v%1").arg(VERSION_STRING), tr("<p>IP has changed from last value seen.</p>"
             "<p><table border=1 cellpadding=3 cellspacing=0><tr><td><b>Name</b></td><td><b>IP</b></td></tr><tr><td width=\"200\">Current</td><td>%1</td></tr>"
             "<tr><td width=\"200\">Previously seen</td><td>%2</td></tr><tr><td width=\"200\">External as set in Settings</td><td>%3</td></tr></table></p>"
-            "<p>Do you want to use the current IP?</p>").arg(ipString).arg(pSettings->value("lastSeenIP")).arg(pSettings->value("externalIP")),
+            "<p>Do you want to use the current IP?</p>").arg(ipString).arg(pSettingsManager.getSetting(SettingsManager::LAST_SEEN_IP)).arg(pSettingsManager.getSetting(SettingsManager::EXTERNAL_IP)),
             QMessageBox::Yes | QMessageBox::No) == QMessageBox::Yes)
         {
-            pSettings->insert("externalIP", ipString);
+            pSettingsManager.setSetting(SettingsManager::EXTERNAL_IP, ipString);
+            //pSettings->insert("externalIP", ipString);
         }
     }
 
     //Save new IP
-    pSettings->insert("lastSeenIP", ipString);
+    pSettingsManager.setSetting(SettingsManager::LAST_SEEN_IP, ipString);
+    //pSettings->insert("lastSeenIP", ipString);
     
     mainChatBlocks = 0;
     pFilesHashedSinceUpdate = 0;
@@ -139,7 +150,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     setWindowTitle(tr("ArpmanetDC v%1").arg(VERSION_STRING));
 
     //Create Hub Connection
-    pHub = new HubConnection(pSettings->value("hubAddress"), pSettings->value("hubPort").toShort(), pSettings->value("nick"), pSettings->value("password"), VERSION_STRING, this);
+    pHub = new HubConnection(pSettingsManager.getSetting(SettingsManager::HUB_ADDRESS), pSettingsManager.getSetting(SettingsManager::HUB_PORT), pSettingsManager.getSetting(SettingsManager::NICKNAME), pSettingsManager.getSetting(SettingsManager::PASSWORD), VERSION_STRING, this);
 
     //Connect HubConnection to GUI
     connect(pHub, SIGNAL(receivedChatMessage(QString)), this, SLOT(appendChatLine(QString)));
@@ -156,13 +167,13 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 
     //Create Dispatcher connection
     dispatcherThread = new ExecThread();
-    pDispatcher = new Dispatcher(QHostAddress(pSettings->value("externalIP")), pSettings->value("externalPort").toShort());
+    pDispatcher = new Dispatcher(QHostAddress(pSettingsManager.getSetting(SettingsManager::EXTERNAL_IP)), pSettingsManager.getSetting(SettingsManager::EXTERNAL_PORT));
 
     // conjure up something unique here and save it for every subsequent client invocation
     //Maybe make a SHA1 hash of the Nick + Password - unique and consistent? Except if you have two clients open with the same login details? Meh
     QCryptographicHash hash(QCryptographicHash::Sha1);
-    hash.addData(QByteArray().append(pSettings->value("nick")));
-    hash.addData(QByteArray().append(pSettings->value("password")));
+    hash.addData(QByteArray().append(pSettingsManager.getSetting(SettingsManager::NICKNAME)));
+    hash.addData(QByteArray().append(pSettingsManager.getSetting(SettingsManager::PASSWORD)));
     QByteArray cid = hash.result();
 
     //QByteArray cid = "012345678901234567890123";
@@ -184,9 +195,9 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 
     // Create Transfer manager
     transferThread = new ExecThread();
-    pTransferManager = new TransferManager(pSettings);
-    pTransferManager->setMaximumSimultaneousDownloads(MAX_SIMULTANEOUS_DOWNLOADS);
-    pTransferManager->setMaximumSimultaneousUploads(MAX_SIMULTANEOUS_UPLOADS);
+    pTransferManager = new TransferManager();
+    pTransferManager->setMaximumSimultaneousDownloads(pSettingsManager.getSetting(SettingsManager::MAX_SIMULTANEOUS_DOWNLOADS));
+    pTransferManager->setMaximumSimultaneousUploads(pSettingsManager.getSetting(SettingsManager::MAX_SIMULTANEOUS_UPLOADS));
 
     //Connect Dispatcher to TransferManager - handles upload/download requests and transfers
     connect(pDispatcher, SIGNAL(incomingUploadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)),
@@ -268,7 +279,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
 
     //Set up thread for database / ShareSearch
     dbThread = new ExecThread();
-    pShare = new ShareSearch(MAX_SEARCH_RESULTS, this);
+    pShare = new ShareSearch(pSettingsManager.getSetting(SettingsManager::MAX_SEARCH_RESULTS), this);
 
     //Connect ShareSearch to GUI - share files on this computer and hash them
     connect(pShare, SIGNAL(fileHashed(QString, quint64, quint64)), this, SLOT(fileHashed(QString, quint64, quint64)), Qt::QueuedConnection);
@@ -374,7 +385,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
             this, SLOT(fileAssemblyComplete(QString)), Qt::QueuedConnection);
 
     //Construct the auto update object
-    pFtpUpdate = new FTPUpdate(FTP_UPDATE_HOST, FTP_UPDATE_DIRECTORY, this);
+    pFtpUpdate = new FTPUpdate(pSettingsManager.getSetting(SettingsManager::FTP_UPDATE_HOST), pSettingsManager.getSetting(SettingsManager::FTP_UPDATE_DIRECTORY), this);
 
     connect(pFtpUpdate, SIGNAL(returnUpdateResults(bool, QString)),
         this, SLOT(ftpReturnUpdateResults(bool, QString)));
@@ -500,7 +511,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     //Set up timer to auto update shares
     updateSharesTimer = new QTimer(this);
     connect(updateSharesTimer, SIGNAL(timeout()), this, SIGNAL(updateShares()));
-    int interval = pSettings->value("autoUpdateShareInterval").toInt();
+    int interval = pSettingsManager.getSetting(SettingsManager::AUTO_UPDATE_SHARE_INTERVAL);
     if (interval > 0)
         updateSharesTimer->start(interval);
 
@@ -508,7 +519,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     //Set up timer to check for client updates
     checkForFTPUpdatesTimer = new QTimer(this);
     connect(checkForFTPUpdatesTimer, SIGNAL(timeout()), this, SIGNAL(ftpCheckForUpdate()));
-    checkForFTPUpdatesTimer->start(CHECK_FOR_NEW_VERSION_INTERVAL_MS);
+    checkForFTPUpdatesTimer->start(pSettingsManager.getSetting(SettingsManager::CHECK_FOR_NEW_VERSION_INTERVAL_MS));
 #endif
 
     //Save uptime
@@ -519,7 +530,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
         mainChatLinkClicked(QUrl(QString(magnetArg)));
 
     //Show settings window if nick is still default
-    if (pSettings->value("nick") == DEFAULT_NICK && pSettings->value("password") == DEFAULT_PASSWORD)
+    if (pSettingsManager.isDefault(SettingsManager::NICKNAME) && pSettingsManager.isDefault(SettingsManager::PASSWORD))
     {
         if (QMessageBox::information(this, tr("ArpmanetDC"), tr("Please change your nickname and password and click ""Save changes"" to start using ArpmanetDC")) == QMessageBox::Ok)
             settingsAction->trigger();
@@ -553,7 +564,7 @@ ArpmanetDC::~ArpmanetDC()
         delete pTypeIconList;
         
         //saveSettings();
-        delete pSettings;
+        //delete pSettings;
 
         transferThread->quit();
         if (transferThread->wait(5000))
@@ -693,7 +704,7 @@ bool ArpmanetDC::setupDatabase()
     return true;
 }
 
-bool ArpmanetDC::loadSettings()
+/*bool ArpmanetDC::loadSettings()
 {
     QList<QString> queries;
     pSettings->clear();
@@ -786,7 +797,7 @@ bool ArpmanetDC::saveSettings()
     }
 
     return result;
-}
+}*/
 
 void ArpmanetDC::createWidgets()
 {
@@ -1118,7 +1129,7 @@ void ArpmanetDC::chatLineEditReturnPressed()
     //Display link to update DC - since EVERYONE is CONSTANTLY asking for this... sheesh
     else if (chatLineEdit->text().compare("/dclink") == 0)
     {
-        pHub->sendChatMessage(tr("DC Link: %1%2").arg(FTP_UPDATE_HOST).arg(FTP_UPDATE_DIRECTORY));
+        pHub->sendChatMessage(tr("DC Link: %1%2").arg(pSettingsManager.getSetting(SettingsManager::FTP_UPDATE_HOST)).arg(pSettingsManager.getSetting(SettingsManager::FTP_UPDATE_DIRECTORY)));
         chatLineEdit->setText("");
     }
     else if (chatLineEdit->text().compare("/w") == 0)
@@ -1158,7 +1169,7 @@ void ArpmanetDC::sendChatMessage()
 void ArpmanetDC::quickSearchPressed()
 {
     //Search for text
-    SearchWidget *sWidget = new SearchWidget(searchCompleter, pTypeIconList, pTransferManager, pSettings, quickSearchLineEdit->text(), this);
+    SearchWidget *sWidget = new SearchWidget(searchCompleter, pTypeIconList, pTransferManager, quickSearchLineEdit->text(), this);
     quickSearchLineEdit->clear();  
 
     connect(sWidget, SIGNAL(search(quint64, QString, QByteArray, SearchWidget *)), this, SLOT(searchButtonPressed(quint64, QString, QByteArray, SearchWidget *)));
@@ -1180,7 +1191,7 @@ void ArpmanetDC::quickSearchPressed()
 
 void ArpmanetDC::searchActionPressed()
 {
-    SearchWidget *sWidget = new SearchWidget(searchCompleter, pTypeIconList, pTransferManager, pSettings, this);
+    SearchWidget *sWidget = new SearchWidget(searchCompleter, pTypeIconList, pTransferManager, this);
     
     connect(sWidget, SIGNAL(search(quint64, QString, QByteArray, SearchWidget *)), this, SLOT(searchButtonPressed(quint64, QString, QByteArray, SearchWidget *)));
     connect(sWidget, SIGNAL(queueDownload(int, QByteArray, QString, quint64, QHostAddress)), pTransferManager, SLOT(queueDownload(int, QByteArray, QString, quint64, QHostAddress)));
@@ -1267,16 +1278,16 @@ void ArpmanetDC::reconnectActionPressed()
     userListModel->removeRows(0, userListModel->rowCount());
     
     //Set parameters and reconnect hub
-    pHub->setHubAddress(pSettings->value("hubAddress"));
-    pHub->setHubPort(pSettings->value("hubPort").toShort());
-    pHub->setNick(pSettings->value("nick"));
-    pHub->setPassword(pSettings->value("password"));
+    pHub->setHubAddress(pSettingsManager.getSetting(SettingsManager::HUB_ADDRESS));
+    pHub->setHubPort(pSettingsManager.getSetting(SettingsManager::HUB_PORT));
+    pHub->setNick(pSettingsManager.getSetting(SettingsManager::NICKNAME));
+    pHub->setPassword(pSettingsManager.getSetting(SettingsManager::PASSWORD));
     pHub->connectHub();
 }
 
 void ArpmanetDC::openDownloadDirActionPressed()
 {
-    QString path = QDir::toNativeSeparators(pSettings->value("downloadPath"));
+    QString path = QDir::toNativeSeparators(pSettingsManager.getSetting(SettingsManager::DOWNLOAD_PATH));
     QDesktopServices::openUrl(QUrl("file:///" + path));
 }
 
@@ -1351,7 +1362,7 @@ void ArpmanetDC::settingsActionPressed()
     }
 
     //Otherwise, create it
-    settingsWidget = new SettingsWidget(pSettings, pUserCommands, this);
+    settingsWidget = new SettingsWidget(pUserCommands, this);
     connect(settingsWidget, SIGNAL(settingsSaved()), this, SLOT(settingsSaved()));
         
     tabs->addTab(settingsWidget->widget(), QIcon(":/ArpmanetDC/Resources/SettingsIcon.png"), tr("Settings"));
@@ -1461,65 +1472,67 @@ void ArpmanetDC::showMainChatContextMenu(const QPoint &pos)
     textCursor.select(QTextCursor::WordUnderCursor);
     QString selectedWord = textCursor.selection().toPlainText();
 
-    //Get the 3 words under the current cursor
-    QTextCursor textCursorMore = mainChatTextEdit->cursorForPosition(pos);
-    QString moreWords;
-    textCursorMore = textCursor;
-    moreWords = textCursorMore.selection().toPlainText();
-    textCursorMore.movePosition(QTextCursor::StartOfWord, QTextCursor::MoveAnchor);
-    moreWords = textCursorMore.selection().toPlainText();
-    textCursorMore.movePosition(QTextCursor::PreviousWord, QTextCursor::MoveAnchor, 2);
-    moreWords = textCursorMore.selection().toPlainText();
-    textCursorMore.movePosition(QTextCursor::NextWord, QTextCursor::KeepAnchor, 2);
-    moreWords = textCursorMore.selection().toPlainText();
-    textCursorMore.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor);
-    moreWords = textCursorMore.selection().toPlainText();
-    moreWords.remove(" ");
+    //Check for bounded word
+    QTextCursor boundedTextCursor = mainChatTextEdit->cursorForPosition(pos); //Points to the cursor position under the mouse
+    
+    QTextCursor cursorPreviousSpace = mainChatTextEdit->document()->find(QRegExp("(?:\\s|\n)", Qt::CaseInsensitive), boundedTextCursor, QTextDocument::FindBackward);
+    QTextCursor cursorNextSpace = mainChatTextEdit->document()->find(QRegExp("(?:\\s|\n)", Qt::CaseInsensitive), boundedTextCursor);
 
-    //Get the space-delimited word below the cursor
-    QTextCursor tcSpace = mainChatTextEdit->cursorForPosition(pos);
-    tcSpace.movePosition(QTextCursor::EndOfLine, QTextCursor::KeepAnchor);
-    QString untilEndOfLine = tcSpace.selectedText();
-    QString fromStartOfLine = tcSpace.selectedText();
-    tcSpace.movePosition(QTextCursor::StartOfLine, QTextCursor::KeepAnchor);
-    tcSpace.select(QTextCursor::LineUnderCursor);
-    QString line = tcSpace.selectedText();
-
-    //Get index of cursor in line
-    int cursorIndexInLine = -1;
-    if (untilEndOfLine.isEmpty())
+    //Check if matches are in the same block
+    if (cursorPreviousSpace.block() != boundedTextCursor.block())
+        cursorPreviousSpace = QTextCursor();
+    if (cursorNextSpace.block() != boundedTextCursor.block())
+        cursorNextSpace = QTextCursor();
+    
+    QString boundedWord;
+    if (cursorPreviousSpace.isNull() && cursorNextSpace.isNull())
+        //No spaces were found in the entire document - thus boundedWord is entire document
+        boundedWord = boundedTextCursor.block().text();
+    else if (cursorPreviousSpace.isNull())
     {
-        cursorIndexInLine = line.indexOf(fromStartOfLine);
-        if (cursorIndexInLine != -1)
-            cursorIndexInLine += fromStartOfLine.size();
+        //No previous space was found - start from beginning
+        boundedTextCursor.movePosition(QTextCursor::StartOfBlock);
+        boundedTextCursor.setPosition(cursorNextSpace.selectionStart(), QTextCursor::KeepAnchor);
+        boundedWord = boundedTextCursor.selectedText();
+    }
+    else if (cursorNextSpace.isNull())
+    {
+        //No next space was found - end at end of document
+        boundedTextCursor.setPosition(cursorPreviousSpace.selectionEnd());
+        boundedTextCursor.movePosition(QTextCursor::EndOfBlock, QTextCursor::KeepAnchor);
+        boundedWord = boundedTextCursor.selectedText();
     }
     else
-        cursorIndexInLine = line.indexOf(untilEndOfLine);
+    {
+        //Both previous and next space was found - get word between
+        boundedTextCursor.setPosition(cursorPreviousSpace.selectionEnd());
+        boundedTextCursor.setPosition(cursorNextSpace.selectionStart(), QTextCursor::KeepAnchor);
+        boundedWord = boundedTextCursor.selectedText();
+    }
 
-    QString boundedWord;
-    if (cursorIndexInLine == 0)
+    //Check for nick in line - this isn't active right now since HTML isn't matched in the document - sigh
+    /*QTextCursor nickTextCursor = mainChatTextEdit->cursorForPosition(pos); //Points to the cursor position under the mouse
+    
+    QString startNickHTML = tr("<font color=\"black\">");
+    QString endNickHTML = tr("</font>");
+    QTextCursor cursorBackwardStart = mainChatTextEdit->document()->find(startNickHTML, QTextDocument::FindBackward);
+    QTextCursor cursorBackwardEnd = mainChatTextEdit->document()->find(endNickHTML, QTextDocument::FindBackward);
+    QTextCursor cursorForwardStart = mainChatTextEdit->document()->find(startNickHTML);
+    QTextCursor cursorForwardEnd = mainChatTextEdit->document()->find(endNickHTML);
+
+    QString nick;
+    if (!cursorBackwardStart.isNull() && !cursorForwardEnd.isNull()) //Check if cursors are valid
     {
-        //If word is the start of the line
-        boundedWord = line.left(untilEndOfLine.indexOf(" "));
-    }
-    else if (cursorIndexInLine == line.size())
-    {
-        //If word is at end of line
-        boundedWord = line.mid(line.lastIndexOf(" ") + 1);
-    }
-    else if (cursorIndexInLine > 0)
-    {
-        //If in middle of line
-        int firstIndex = fromStartOfLine.lastIndexOf(" ");
-        int lastIndex = untilEndOfLine.indexOf(" ");
-        if (lastIndex == -1)
-            lastIndex = line.size();
-        else
-            lastIndex += cursorIndexInLine - 1;
-        boundedWord = line.mid(firstIndex + 1, lastIndex - firstIndex);
-    }
+        if ((cursorBackwardEnd.isNull() || (cursorBackwardEnd.position() < cursorBackwardStart.position())) 
+            && (cursorForwardStart.isNull() || (cursorForwardStart.position() > cursorForwardEnd.position())))
+        {
+            nickTextCursor.setPosition(cursorBackwardStart.selectionEnd());
+            nickTextCursor.setPosition(cursorForwardEnd.selectionStart(), QTextCursor::KeepAnchor);
+            nick = nickTextCursor.selectedText();
+        }
+    }*/
                 
-    //Test if the word is a user nick
+    //Test if the word is a user nick*/
     QString selectedText;
     if (pUserList.contains(selectedWord))
     {
@@ -1527,17 +1540,18 @@ void ArpmanetDC::showMainChatContextMenu(const QPoint &pos)
         mainChatTextEdit->setTextCursor(textCursor);
         selectedText = selectedWord;
     }
-    else if (pUserList.contains(moreWords))
-    {
-        //Multiple words matched - set selection to words
-        mainChatTextEdit->setTextCursor(textCursorMore);
-        selectedText = moreWords;
-    }
     else if (pUserList.contains(boundedWord))
     {
-        //Space delimited word matched - don't have selection for it though so just use the word
+        //Space delimited word matched
         selectedText = boundedWord;
+        mainChatTextEdit->setTextCursor(boundedTextCursor);
     }
+    /*else if (pUserList.contains(nick))
+    {
+        //Nick matched with delimiters - set selection to nick
+        selectedText = nick;
+        mainChatTextEdit->setTextCursor(nickTextCursor);
+    }*/
     else if (previouslySelectedText.isEmpty())
     {
         //No words matched and nothing was selected beforehand - just use the current word under the cursor
@@ -1791,28 +1805,29 @@ void ArpmanetDC::shareSaveButtonPressed()
 void ArpmanetDC::settingsSaved()
 {
     //Save settings to database
-    saveSettings();
+    pSettingsManager.saveSettings();
 
     //Reconnect hub if necessary
-    if (pSettings->value("hubAddress") != pHub->getHubAddress() || pSettings->value("hubPort").toShort() != pHub->getHubPort() || pSettings->value("nick") != pHub->getNick() || pSettings->value("password") != pHub->getPassword())
+    if (pSettingsManager.getSetting(SettingsManager::HUB_ADDRESS) != pHub->getHubAddress() || pSettingsManager.getSetting(SettingsManager::HUB_PORT) != pHub->getHubPort() 
+        || pSettingsManager.getSetting(SettingsManager::NICKNAME) != pHub->getNick() || pSettingsManager.getSetting(SettingsManager::PASSWORD) != pHub->getPassword())
         reconnectActionPressed();
 
     //Reconnect dispatcher if necessary
-    QString externalIP = pSettings->value("externalIP");
-    quint16 externalPort = pSettings->value("externalPort").toShort();
+    QString externalIP = pSettingsManager.getSetting(SettingsManager::EXTERNAL_IP);
+    quint16 externalPort = pSettingsManager.getSetting(SettingsManager::EXTERNAL_PORT);
     
     if (externalIP != pDispatcher->getDispatchIP().toString() || externalPort != pDispatcher->getDispatchPort())
         pDispatcher->reconfigureDispatchHostPort(QHostAddress(externalIP), externalPort);
 
     //Reset CID from nick/password
     QCryptographicHash hash(QCryptographicHash::Sha1);
-    hash.addData(QByteArray().append(pSettings->value("nick")));
-    hash.addData(QByteArray().append(pSettings->value("password")));
+    hash.addData(QByteArray().append(pSettingsManager.getSetting(SettingsManager::NICKNAME)));
+    hash.addData(QByteArray().append(pSettingsManager.getSetting(SettingsManager::PASSWORD)));
     QByteArray cid = hash.result();
     pDispatcher->setCID(cid);
 
     //Reset the auto update timer if necessary
-    int interval = pSettings->value("autoUpdateShareInterval").toInt();
+    int interval = pSettingsManager.getSetting(SettingsManager::AUTO_UPDATE_SHARE_INTERVAL);
     if (interval == 0) //Disabled
         updateSharesTimer->stop();
     else if (interval != updateSharesTimer->interval())
@@ -2096,13 +2111,16 @@ void ArpmanetDC::appendChatLine(QString msg)
     msg.replace("\n"," <br/>");
     msg.replace("\r","");
 
+    //===== Replace nicknames in order (highest order first) =====
+    //Replace nick with red text
+    convertNickname(pSettingsManager.getSetting(SettingsManager::NICKNAME), msg);
+    
     //Replace OP names with green text
     convertOPName(msg);
-
-    //Replace nick with red text
-    convertNickname(pSettings->value("nick"), msg);
-    //msg.replace(pSettings->value("nick"), tr("<font color=\"red\">%1</font>").arg(pSettings->value("nick")));
     
+    //Convert all remaining nicks
+    //convertAllNicks(msg);
+
     //Convert plain text links to HTML links
     convertHTMLLinks(msg);
 
@@ -2110,7 +2128,7 @@ void ArpmanetDC::appendChatLine(QString msg)
     convertMagnetLinks(msg);
 
     //Delete the first line if buffer is full
-    while (mainChatBlocks > MAX_MAINCHAT_BLOCKS)
+    while (mainChatBlocks > pSettingsManager.getSetting(SettingsManager::MAX_MAINCHAT_BLOCKS))
     {
         QTextCursor tcOriginal = mainChatTextEdit->textCursor();
         QTextCursor tc = mainChatTextEdit->textCursor();
@@ -2551,7 +2569,7 @@ void ArpmanetDC::setStatus(QString msg)
 {
     //Save history
     pStatusHistoryList->append(tr("[%1]: %2").arg(QTime::currentTime().toString()).arg(msg));
-    if (pStatusHistoryList->size() > MAX_LABEL_HISTORY_ENTRIES)
+    if (pStatusHistoryList->size() > pSettingsManager.getSetting(SettingsManager::MAX_LABEL_HISTORY_ENTRIES))
         pStatusHistoryList->removeFirst();
 
     QString history;
@@ -2574,7 +2592,7 @@ void ArpmanetDC::setAdditionalInfo(QString msg)
 {
     //Save history
     pAdditionalInfoHistoryList->append(tr("[%1]: %2").arg(QTime::currentTime().toString()).arg(msg));
-    if (pAdditionalInfoHistoryList->size() > MAX_LABEL_HISTORY_ENTRIES)
+    if (pAdditionalInfoHistoryList->size() > pSettingsManager.getSetting(SettingsManager::MAX_LABEL_HISTORY_ENTRIES))
         pAdditionalInfoHistoryList->removeFirst();
 
     QString history;
@@ -2848,7 +2866,7 @@ void ArpmanetDC::mainChatLinkClicked(const QUrl &link)
         QString tth = strLink.mid(pos + type.size(), 39);
 
         //Search for tth
-        SearchWidget *sWidget = new SearchWidget(searchCompleter, pTypeIconList, pTransferManager, pSettings, tth, this);
+        SearchWidget *sWidget = new SearchWidget(searchCompleter, pTypeIconList, pTransferManager, tth, this);
  
         connect(sWidget, SIGNAL(search(quint64, QString, QByteArray, SearchWidget *)), this, SLOT(searchButtonPressed(quint64, QString, QByteArray, SearchWidget *)));
         connect(sWidget, SIGNAL(queueDownload(int, QByteArray, QString, quint64, QHostAddress)), pTransferManager, SLOT(queueDownload(int, QByteArray, QString, quint64, QHostAddress)));
@@ -2916,7 +2934,7 @@ void ArpmanetDC::convertNickname(QString nick, QString &msg)
 {
     //Replace nick with coloured text
     int currentIndex = 0;
-    QString regex = tr("(%1)").arg(nick);
+    QString regex = tr("(%1)").arg(QRegExp::escape(nick));
     QRegExp rx(regex, Qt::CaseInsensitive);
 
     int pos = 0;
@@ -2945,7 +2963,7 @@ void ArpmanetDC::convertOPName(QString &msg)
 
     foreach (QString nick, pOPList)
     {
-        regex = tr("(%1)").arg(nick);
+        regex = tr("(%1)(?!</font>)").arg(QRegExp::escape(nick));
         rx.setPattern(regex);
 
         int pos = 0;
@@ -2965,6 +2983,41 @@ void ArpmanetDC::convertOPName(QString &msg)
             pos += nickColoured.size();
         }
     }
+}
+
+void ArpmanetDC::convertAllNicks(QString &msg)
+{
+    //Replace all nicks with escaped versions
+    QString regex;
+    QRegExp rx(regex, Qt::CaseInsensitive);
+
+    QHashIterator<QString, QPair<QStandardItem *, quint64> > i(pUserList);
+    while (i.hasNext())
+    {
+        i.next();
+
+        //Match nicknames that don't have a colour specified yet
+        regex = tr("(%1)(?!</font>)").arg(QRegExp::escape(i.key()));
+        rx.setPattern(regex);
+
+        int pos = 0;
+        //Check for regex's and replace
+        while ((pos = rx.indexIn(msg, pos)) != -1)
+        {
+            //Extract link
+            QString nickExtracted = rx.cap(1);
+        
+            //Construct coloured OP name string
+            QString nickColoured = tr("<font color=\"black\">%1</font>").arg(nickExtracted);
+
+            //Replace link
+            msg.remove(pos, nickExtracted.size());
+            msg.insert(pos, nickColoured);
+
+            pos += nickColoured.size();
+        }
+    }
+
 }
 
 void ArpmanetDC::convertHTMLLinks(QString &msg)
@@ -3092,7 +3145,8 @@ void ArpmanetDC::loadEmoticonsFromFile()
 {
     QString path = tr(":/ArpmanetDC/Resources/Emoticons.png");
     pEmoticonList.clear();
-    pEmoticonList << "" << "" << " ;)" << " :)" << " :D" << "" << " 8)" << " x|" << " :-)" << " :!:" << " o)" << " 8p" << " ^^" << " :love:" << " xD" << "" << " :o" << " 8|" << "" << " :p" << "" << " :gross:" << " :-)" << "" << " :shutup:" << " ;D" << " :ninja:";
+    pEmoticonList << ":(" << " :crazy:" << " ;)" << " :)" << " :D" << " :wut:" << " 8)" << " x|" << " :-)" << " :!:" << " o)" << " :geek:" << " ^^" << " :love:" << " xD" << "";
+    pEmoticonList << " :o" << " 8|" << "" << " :p" << "" << " :gross:" << " :-)" << "" << " :shutup:" << " ;D" << " :ninja:" << "" << "" << "";
 
     pEmoticonResourceList = new ResourceExtractor(path, pEmoticonList, 18, this);
 }
@@ -3221,21 +3275,6 @@ void ArpmanetDC::updateNotify(int count)
         setWindowIcon(QIcon(*arpmanetDCLogoNotify));
         systemTrayIcon->setIcon(QIcon(*arpmanetDCLogoNotify));
     }
-}
-
-QString ArpmanetDC::downloadPath()
-{
-    return pSettings->value("downloadPath");
-}
-
-QString ArpmanetDC::nick()
-{
-    return pSettings->value("nick");
-}
-
-QString ArpmanetDC::password()
-{
-    return pSettings->value("password");
 }
 
 //User commands

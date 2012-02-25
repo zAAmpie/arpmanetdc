@@ -35,13 +35,11 @@ class SettingsWidget : public QObject
     Q_OBJECT
 
 public:
-    SettingsWidget(QHash<QString, QString> *settings, QHash<QString, UserCommandStruct> *commands, ArpmanetDC *parent);
+    SettingsWidget(QHash<QString, UserCommandStruct> *commands, ArpmanetDC *parent);
     ~SettingsWidget();
 
     //Get the encapsulating widget
     QWidget *widget();
-
-    QHash<QString, QString> *settings() const;
 
 public slots:
     //Slots
@@ -110,7 +108,6 @@ private:
     QWidget *pWidget;
     ArpmanetDC *pParent;
 
-    QHash<QString, QString> *pSettings;
     QHash<QString, UserCommandStruct> *pUserCommands;
 
     //GUI pages
