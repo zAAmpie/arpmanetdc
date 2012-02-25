@@ -329,6 +329,9 @@ signals:
     //Signal to show all parsing is done
     void parsingDone(int msecs);
 
+    //Signal to show hashing has stopped
+    void hashingStopped();
+
     //----------========== PRIVATE SIGNALS ==========----------
 
     //Signals to interface with hashing thread objects
@@ -341,7 +344,7 @@ signals:
     void procContainer(QHostAddress host, QString containerPath, QString downloadPath);
 
     //Signals to stop processing
-    void stopHashingThread();
+    void stopHashingThread(bool value);
     void stopParsingThread();
 
 private:
@@ -395,7 +398,8 @@ private:
     //Measure the time taken to update the share db
     QTime *updateTime;
     
-    bool pStopHashing, pStopParsing;
+    bool pStopHashing;
+    bool pBusyHashing;
 
     ExecThread *hashThread, *hashBucketThread, *containerThread;
 

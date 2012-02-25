@@ -4,8 +4,21 @@
 #include <QObject>
 #include <QHash>
 #include <QVariant>
+#include <QMutex>
 
-#define ENSURE_INITIALIZED() {if (!initialized) return;}
+//Macro to check if object was initialized
+#define ENSURE_INITIALIZED \
+    do { \
+        if (!initialized) \
+            return; \
+    } while (0)
+
+//Macro to check if object was initialized that returns a value specified by a
+#define ENSURE_INITIALIZED_RET(a) \
+    do { \
+        if (!initialized) \
+            return a; \
+    } while (0)
 
 class ArpmanetDC;
 struct sqlite3;
@@ -13,8 +26,11 @@ struct sqlite3;
 class SettingsManager
 {
 public:
+    //Constructor for uninitialized object
     SettingsManager();
+    //Constructor for initialized object
     SettingsManager(sqlite3 *db, ArpmanetDC *parent);
+    //Destructor - doh
     ~SettingsManager();
 
     //All types
@@ -39,18 +55,18 @@ public:
     enum StringTypeSetting
     {
         STRTYPE_FIRST = 0x00,
-        NICKNAME = STRTYPE_FIRST,
-        PASSWORD,
-        HUB_ADDRESS,
-        EXTERNAL_IP,
-        DOWNLOAD_PATH,
-        LAST_DOWNLOAD_FOLDER,
-        PROTOCOL_HINT,
-        LAST_SEEN_IP,
-        CONTAINER_DIRECTORY,
-        FTP_UPDATE_HOST,
-        FTP_UPDATE_DIRECTORY,
-        SHARED_MEMORY_KEY,
+        NICKNAME = STRTYPE_FIRST,                       //Nickname
+        PASSWORD,                                       //Password
+        HUB_ADDRESS,                                    //The hub address to connect to chat
+        EXTERNAL_IP,                                    //The external IP used for searches
+        DOWNLOAD_PATH,                                  //The default download path
+        LAST_DOWNLOAD_FOLDER,                           //The last folder downloaded to
+        PROTOCOL_HINT,                                  //A string containing a map of the supported protocols in order
+        LAST_SEEN_IP,                                   //The last IP the program used
+        CONTAINER_DIRECTORY,                            //The directory used to store containers
+        FTP_UPDATE_HOST,                                //The FTP host where program updates are stored
+        FTP_UPDATE_DIRECTORY,                           //The directory in the FTP host where the application is located
+        SHARED_MEMORY_KEY,                              //The key used to identify the shared memory region
         STRTYPE_LAST
     };
 
@@ -58,12 +74,14 @@ public:
     enum IntTypeSetting
     {
         INTTYPE_FIRST = STRTYPE_LAST + 1,
-        HUB_PORT,
-        EXTERNAL_PORT,
-        MAX_SEARCH_RESULTS,
-        MAX_SIMULTANEOUS_DOWNLOADS,
-        MAX_SIMULTANEOUS_UPLOADS,
-        MAX_LABEL_HISTORY_ENTRIES,
+        HUB_PORT = INTTYPE_FIRST,                       //The port used to connect to the hub for chat
+        EXTERNAL_PORT,                                  //The external port used for searches
+        MAX_SEARCH_RESULTS,                             //The amount of search results contained within a search reply
+        MAX_SIMULTANEOUS_DOWNLOADS,                     //The amount of simultaneous downloads
+        MAX_SIMULTANEOUS_UPLOADS,                       //The amount of simultaneous uploads
+        MAX_LABEL_HISTORY_ENTRIES,                      //The amount of lines kept in history in the status and additional info labels
+        MAX_MAINCHAT_BLOCKS,                            //The amount of blocks contained in the chat before older blocks are deleted
+        MAX_HASH_SPEED_MB,                              //The maximum speed in megabytes that files should be hashed at
         INTTYPE_LAST
     };
 
@@ -71,9 +89,10 @@ public:
     enum Int64TypeSetting
     {
         INT64TYPE_FIRST = INTTYPE_LAST + 1,
-        AUTO_UPDATE_SHARE_INTERVAL,
-        CHECK_FOR_NEW_VERSION_INTERVAL_MS,
-        MAX_MAINCHAT_BLOCKS,
+        AUTO_UPDATE_SHARE_INTERVAL = INT64TYPE_FIRST,   //The interval for checking if shares have changed
+        CHECK_FOR_NEW_VERSION_INTERVAL_MS,              //The interval for checking if a client upgrade is available
+        TOTAL_UPLOAD,                                   //The total amount in bytes that the client has uploaded
+        TOTAL_DOWNLOAD,                                 //The total amount in bytes that the client has downloaded
         INT64TYPE_LAST
     };
 
@@ -81,9 +100,9 @@ public:
     enum BoolTypeSetting
     {
         BOOLTYPE_FIRST = INT64TYPE_LAST + 1,
-        SHOW_ADVANCED_MENU,
-        SHOW_EMOTICONS,
-        FOCUS_PM_ON_NOTIFY,
+        SHOW_ADVANCED_MENU = BOOLTYPE_FIRST,            //Should the advanced menu be shown
+        SHOW_EMOTICONS,                                 //Should emoticons be used in main chat
+        FOCUS_PM_ON_NOTIFY,                             //Should PM widget be automatically focussed when a new message arrives
         BOOLTYPE_LAST
     };
 
@@ -141,6 +160,7 @@ private:
     //Objects
     sqlite3 *pDB;
     ArpmanetDC *pParent;
+    static QMutex mutex;
 };
 
 #endif

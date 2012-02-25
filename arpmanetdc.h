@@ -46,20 +46,6 @@
 //#define QT_NO_DEBUG
 //#define QT_NO_DEBUG_OUTPUT
 
-/*#define SHARED_MEMORY_KEY "ArpmanetDCv0.1"
-
-#define DEFAULT_EXTERNAL_PORT "4012"
-
-#define DEFAULT_HUB_ADDRESS "arpmanet.ath.cx"
-#define DEFAULT_HUB_PORT "4012"
-
-#define DEFAULT_NICK "Testnick"
-#define DEFAULT_PASSWORD "test123"
-
-#define DEFAULT_SHARE_UPDATE_INTERVAL "3600000" //Default 60min
-
-#define DEFAULT_SHOW_ADVANCED "0" //By default don't show advanced settings
-*/
 #define DEFAULT_SHARE_DATABASE_PATH "arpmanetdc.sqlite"
 static QString shareDatabasePath;
 
@@ -76,20 +62,6 @@ static QMap<QString, char> initMapValues() {
     return map;
 }
 static const QMap<QString, char> PROTOCOL_MAP = initMapValues();
-
-/*#define MAX_SEARCH_RESULTS 100 //Max to give a query, not max to display
-#define MAX_SIMULTANEOUS_DOWNLOADS 3 //Max to download from queue at a time
-#define MAX_SIMULTANEOUS_UPLOADS 20 //Max to upload to user users at a time - basically like slots to avoid locking up a client with uploads
-
-#define MAX_MAINCHAT_BLOCKS 1000
-#define MAX_LABEL_HISTORY_ENTRIES 20 //Tooltip of status and additional info label
-
-#define CONTAINER_DIRECTORY "/Containers/" //The directory in which the containers are stored
-
-#define FTP_UPDATE_HOST "ftp://fskbhe2.puk.ac.za"
-#define FTP_UPDATE_DIRECTORY "/pub/Windows/Network/DC/ArpmanetDC/"
-#define CHECK_FOR_NEW_VERSION_INTERVAL_MS 1800000 //Every 30min
-*/
 
 #define VERSION_STRING "0.1.8"
 

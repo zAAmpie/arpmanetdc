@@ -1,6 +1,8 @@
 #include "settingsmanager.h"
 #include "arpmanetdc.h"
 
+QMutex SettingsManager::mutex;
+
 //Constructor
 SettingsManager::SettingsManager()
 {
@@ -10,6 +12,9 @@ SettingsManager::SettingsManager()
 
 SettingsManager::SettingsManager(sqlite3 *db, ArpmanetDC *parent)
 {
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
     //Set objects
     pDB = db;
     pParent = parent;
@@ -34,22 +39,31 @@ SettingsManager::SettingsManager(sqlite3 *db, ArpmanetDC *parent)
 
     setDefault(PROTOCOL_HINT, protocolHint.data(), "protocolHint");
     setDefault(LAST_SEEN_IP, ipString, "lastSeenIP");
-    setDefault(HUB_PORT, 4012, "hubPort");
-    setDefault(EXTERNAL_PORT, 4012, "externalPort");
-    setDefault(AUTO_UPDATE_SHARE_INTERVAL, 3600000, "autoUpdateShareInterval");
+    setDefault(CONTAINER_DIRECTORY, "/Containers/", "containerDirectory");
+    setDefault(FTP_UPDATE_HOST, "ftp://fskbhe2.puk.ac.za", "ftpUpdateHost");
+    setDefault(FTP_UPDATE_DIRECTORY, "/pub/Windows/Network/DC/ArpmanetDC/", "ftpUpdateDirectory");
+    setDefault(SHARED_MEMORY_KEY, "ArpmanetDCv0.1", "sharedMemoryKey");
+    
+    //Boolean
     setDefault(SHOW_ADVANCED_MENU, false, "showAdvanced");
     setDefault(SHOW_EMOTICONS, true, "showEmoticons");
     setDefault(FOCUS_PM_ON_NOTIFY, true, "focusPMOnNotify");
-    setDefault(MAX_SEARCH_RESULTS, 100, "maxSearchResults"); //Max to give a query, not max to display
-    setDefault(MAX_SIMULTANEOUS_DOWNLOADS, 3, "maxSimultaneousDownloads"); //Max to download from queue at a time
-    setDefault(MAX_SIMULTANEOUS_UPLOADS, 20, "maxSimultaneousUploads"); //Max to upload to user users at a time - basically like slots to avoid locking up a client with uploads
-    setDefault(MAX_MAINCHAT_BLOCKS, 1000, "maxMainchatBlocks"); //Max blocks to display in mainchat
-    setDefault(MAX_LABEL_HISTORY_ENTRIES, 20, "maxLabelHistoryEntries"); //Tooltip of status and additional info label
-    setDefault(CONTAINER_DIRECTORY, "/Containers/", "containerDirectory"); //The directory in which the containers are stored
-    setDefault(FTP_UPDATE_HOST, "ftp://fskbhe2.puk.ac.za", "ftpUpdateHost");
-    setDefault(FTP_UPDATE_DIRECTORY, "/pub/Windows/Network/DC/ArpmanetDC/", "ftpUpdateDirectory");
+
+    //Integer
+    setDefault(HUB_PORT, 4012, "hubPort");
+    setDefault(EXTERNAL_PORT, 4012, "externalPort");
+    setDefault(MAX_SEARCH_RESULTS, 100, "maxSearchResults");
+    setDefault(MAX_SIMULTANEOUS_DOWNLOADS, 3, "maxSimultaneousDownloads");
+    setDefault(MAX_SIMULTANEOUS_UPLOADS, 20, "maxSimultaneousUploads");
+    setDefault(MAX_MAINCHAT_BLOCKS, 1000, "maxMainchatBlocks");
+    setDefault(MAX_LABEL_HISTORY_ENTRIES, 20, "maxLabelHistoryEntries");
+    setDefault(MAX_HASH_SPEED_MB, 50, "maxHashSpeedMB");
+
+    //Int64
+    setDefault(AUTO_UPDATE_SHARE_INTERVAL, 3600000, "autoUpdateShareInterval");
     setDefault(CHECK_FOR_NEW_VERSION_INTERVAL_MS, 1800000, "checkForNewVersionIntervalMS"); //Every 30min
-    setDefault(SHARED_MEMORY_KEY, "ArpmanetDCv0.1", "sharedMemoryKey");
+    setDefault(TOTAL_UPLOAD, 0, "totalUpload");
+    setDefault(TOTAL_DOWNLOAD, 0, "totalDownload");
 
     //Set initialization status
     initialized = true;
@@ -65,35 +79,50 @@ SettingsManager::~SettingsManager()
 
 void SettingsManager::setSetting(StringTypeSetting setting, const QString &value)
 {
-    ENSURE_INITIALIZED()
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED;
 
     pSettings[setting].value = value;
 }
 
 void SettingsManager::setSetting(IntTypeSetting setting, int value)
 {
-    ENSURE_INITIALIZED()
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED;
 
     pSettings[setting].value = value;
 }
 
 void SettingsManager::setSetting(Int64TypeSetting setting, qint64 value)
 {
-    ENSURE_INITIALIZED()
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED;
 
     pSettings[setting].value = value;
 }
 
 void SettingsManager::setSetting(BoolTypeSetting setting, bool value)
 {
-    ENSURE_INITIALIZED()
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED;
 
     pSettings[setting].value = value;
 }
 
 void SettingsManager::setSetting(int setting, QVariant value)
 {
-    ENSURE_INITIALIZED()
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED;
 
     pSettings[setting].value = value;
 }
@@ -103,77 +132,101 @@ void SettingsManager::setSetting(int setting, QVariant value)
 //===== Settings =====
 const QString SettingsManager::getSetting(StringTypeSetting setting)    
 {
-    if (!initialized)
-        return QString();
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED_RET(QString());
 
     return pSettings.value(setting).value.toString();
 }
 
 int SettingsManager::getSetting(IntTypeSetting setting)
 {
-    if (!initialized)
-        return -1;
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED_RET(-1);
+
     return pSettings.value(setting).value.toInt();
 }
 
 qint64 SettingsManager::getSetting(Int64TypeSetting setting)
 {
-    if (!initialized)
-        return -1;
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED_RET(-1);
+
     return pSettings.value(setting).value.toLongLong();
 }
 
 bool SettingsManager::getSetting(BoolTypeSetting setting)
 {
-    if (!initialized)
-        return false;
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED_RET(false);
+
     return pSettings.value(setting).value.toBool();
 }
 
 QVariant SettingsManager::getSetting(int setting)
 {
-    if (!initialized)
-        return QVariant();
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED_RET(QVariant());
+
     return pSettings.value(setting).value;
 }
 
 //===== Tags =====
 const QString SettingsManager::getTag(StringTypeSetting setting)
 {
-    if (!initialized)
-        return QString();
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED_RET(QString());
 
     return pSettings.value(setting).tag;
 }
 
 const QString SettingsManager::getTag(IntTypeSetting setting)
 {
-    if (!initialized)
-        return QString();
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED_RET(QString());
 
     return pSettings.value(setting).tag;
 }
 
 const QString SettingsManager::getTag(Int64TypeSetting setting)
 {
-    if (!initialized)
-        return QString();
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED_RET(QString());
 
     return pSettings.value(setting).tag;
 }
 
 const QString SettingsManager::getTag(BoolTypeSetting setting)
 {
-    if (!initialized)
-        return QString();
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED_RET(QString());
 
     return pSettings.value(setting).tag;
 }
 
 const QString SettingsManager::getTag(int setting)
 {
-    if (!initialized)
-        return QString();
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED_RET(QString());
 
     return pSettings.value(setting).tag;
 }
@@ -181,40 +234,50 @@ const QString SettingsManager::getTag(int setting)
 //===== TYPE =====
 SettingsManager::SettingType SettingsManager::getType(StringTypeSetting setting)
 {
-    if (!initialized)
-        return SettingUninitialized;
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED_RET(SettingUninitialized);
 
     return pSettings.value(setting).type;
 }
 
 SettingsManager::SettingType SettingsManager::getType(IntTypeSetting setting)
 {
-    if (!initialized)
-        return SettingUninitialized;
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED_RET(SettingUninitialized);
 
     return pSettings.value(setting).type;
 }
 
 SettingsManager::SettingType SettingsManager::getType(Int64TypeSetting setting)
 {
-    if (!initialized)
-        return SettingUninitialized;
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED_RET(SettingUninitialized);
 
     return pSettings.value(setting).type;
 }
 
 SettingsManager::SettingType SettingsManager::getType(BoolTypeSetting setting)
 {
-    if (!initialized)
-        return SettingUninitialized;
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED_RET(SettingUninitialized);
 
     return pSettings.value(setting).type;
 }
 
 SettingsManager::SettingType SettingsManager::getType(int setting)
 {
-    if (!initialized)
-        return SettingUninitialized;
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED_RET(SettingUninitialized);
 
     return pSettings.value(setting).type;
 }
@@ -222,6 +285,11 @@ SettingsManager::SettingType SettingsManager::getType(int setting)
 //===== DEFAULTS =====
 bool SettingsManager::isDefault(int setting)
 {
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED_RET(false);
+
     return pSettings.value(setting).value == pSettings.value(setting).defaultValue;
 }
 
@@ -229,35 +297,50 @@ bool SettingsManager::isDefault(int setting)
 
 void SettingsManager::setToDefault(StringTypeSetting setting)
 {
-    ENSURE_INITIALIZED()
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED;
 
     pSettings[setting].value = pSettings.value(setting).defaultValue;
 }
 
 void SettingsManager::setToDefault(IntTypeSetting setting)
 {
-    ENSURE_INITIALIZED()
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED;
 
     pSettings[setting].value = pSettings.value(setting).defaultValue;
 }
 
 void SettingsManager::setToDefault(Int64TypeSetting setting)
 {
-    ENSURE_INITIALIZED()
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED;
 
     pSettings[setting].value = pSettings.value(setting).defaultValue;
 }
 
 void SettingsManager::setToDefault(BoolTypeSetting setting)
 {
-    ENSURE_INITIALIZED()
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED;
 
     pSettings[setting].value = pSettings.value(setting).defaultValue;
 }
 
 void SettingsManager::setToDefault(int setting)
 {
-    ENSURE_INITIALIZED()
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED;
 
     pSettings[setting].value = pSettings.value(setting).defaultValue;
 }
@@ -268,8 +351,10 @@ void SettingsManager::setToDefault(int setting)
 //Load settings from database
 bool SettingsManager::loadSettings()
 {
-    if (!initialized)
-        return false;
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED_RET(false);
 
     QList<QString> queries;
         
@@ -300,7 +385,7 @@ bool SettingsManager::loadSettings()
                     {
                         int settingInt = getSettingFromTag(tag);
                         if (settingInt != -1)
-                            setSetting(settingInt, value);
+                            pSettings[settingInt].value = value;
                     }
                 }
             };
@@ -319,8 +404,10 @@ bool SettingsManager::loadSettings()
 //Save settings to database
 bool SettingsManager::saveSettings()
 {
-    if (!initialized)
-        return false;
+    //Lock mutex to avoid threads accessing the object while initializating
+    QMutexLocker locker(&mutex);
+
+    ENSURE_INITIALIZED_RET(false);
 
     QList<QString> queries;
     queries.append("DELETE FROM Settings;");

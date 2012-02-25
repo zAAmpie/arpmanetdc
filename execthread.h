@@ -30,6 +30,13 @@ public:
     //Constructor
     ExecThread(QObject *parent = 0);
 
+    void usleep(unsigned long time){
+        QThread::usleep(time);}
+    void sleep(unsigned long time){
+        QThread::sleep(time);}
+    void msleep(unsigned long time){
+        QThread::msleep(time);}
+
 protected:
     //Main EXEC function
     void run();

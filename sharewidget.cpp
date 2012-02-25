@@ -364,8 +364,9 @@ void ShareWidget::saveSharePressed()
     foreach (QString str, finalList)
         dirList->append(QDir(str));
 
-       pShare->stopParsing();
+    pShare->stopParsing();
     pShare->stopHashing();
+
     //Update shares
     emit updateShares(dirList);
     //Save containers

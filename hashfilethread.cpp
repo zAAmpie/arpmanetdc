@@ -1,11 +1,19 @@
 #include "hashfilethread.h"
 #include <QtGui>
+#include "arpmanetdc.h"
 
 //Constructor
 HashFileThread::HashFileThread(ReturnEncoding encoding, QObject *parent) : QObject(parent)
 {
     pEncoding = encoding;
     pStopHashing = false;
+
+    hashTimer = new QTimer(this);
+    hashTimer->setInterval(1000); //Every second
+    connect(hashTimer, SIGNAL(timeout()), this, SLOT(hashTimerTimeout()));
+    hashTimer->start();
+
+    pBytesHashedThisSecond = 0;
 }
 
 //Destructor
@@ -17,18 +25,15 @@ HashFileThread::~HashFileThread()
 //Main exec function
 void HashFileThread::processFile(QString filePath, QString rootDir)
 {
-    //Reset hashing to be able to stop tasks individually.
-    //Comment this out to enable a single use stop for all hashing
-    pStopHashing = false;
-
-    //if (pStopHashing)
-    //    return;
+    pFileProgressBytes = 0;
 
     //Get file info
     QFileInfo fi(filePath);
     qint64 fileSize = fi.size();
     QString fileName = fi.fileName();
     QString modifiedDate = fi.lastModified().toString("dd-MM-yyyy HH:mm:ss:zzz");
+
+    pCurrentFileSize = fileSize;
 
     //Start hashing
     QFile file(filePath);
@@ -43,18 +48,29 @@ void HashFileThread::processFile(QString filePath, QString rootDir)
         while (!file.atEnd())
         {
             //Stop hashing if variable is set
-            //if (pStopHashing)
-            //{
-            //    file.close();
-            //    return;
-            // }
-            //else
+            if (pStopHashing)
+            {
+                pStopHashing = false;
+                file.close();
+                return;
+             }
+            else
                 //Process events to allow variable to be set
-            //    QApplication::processEvents();
-                
+                QApplication::processEvents();
+            
+            while (pBytesHashedThisSecond >= ArpmanetDC::settingsManager().getSetting(SettingsManager::MAX_HASH_SPEED_MB)*1048576)
+            {
+                ((ExecThread *)thread())->msleep(10);
+
+                //Process events to allow variable to be set
+                QApplication::processEvents();
+            }
 
             //Read file in 1MB chunks
             QByteArray iochunk = file.read(1*1048576);
+
+            pBytesHashedThisSecond += iochunk.size();
+            pFileProgressBytes += iochunk.size();
 
             //Add to total TTH
             totalTTH.Update((byte *)iochunk.data(), iochunk.size());
@@ -171,7 +187,16 @@ void HashFileThread::hashFile(quint8 type, QString filePath)
         emit doneFile(type, filePath, QByteArray(), fileSize);
 }
 
-void HashFileThread::stopHashing()
+void HashFileThread::stopHashing(bool value)
 {
-    pStopHashing = true;
+    pStopHashing = value;
+}
+
+void HashFileThread::hashTimerTimeout()
+{
+    //Emit hashing progress
+    emit hashingProgress(pBytesHashedThisSecond, pFileProgressBytes, pCurrentFileSize);
+
+    //Reset amount
+    pBytesHashedThisSecond = 0;
 }

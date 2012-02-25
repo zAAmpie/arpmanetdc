@@ -50,7 +50,10 @@ public slots:
     void hashFile(quint8 type, QString filePath);
 
     //Stops hashing
-    void stopHashing();
+    void stopHashing(bool value);
+
+private slots:
+    void hashTimerTimeout();
 
 signals:
     //Done hashing the file - return the data
@@ -63,10 +66,18 @@ signals:
     //Done hashing the bucket
     void doneBucket(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH);
 
+    //Emit hashing progress
+    void hashingProgress(qint64 bytesThisSecond, qint64 fileProgressBytes, qint64 fileSize);
+
 private:
     //QString base32Encode(byte *input, int inputLength);
 
     bool pStopHashing;
+
+    qint64 pBytesHashedThisSecond;
+    qint64 pFileProgressBytes;
+    qint64 pCurrentFileSize;
+    QTimer *hashTimer;
 
     ReturnEncoding pEncoding;
 };

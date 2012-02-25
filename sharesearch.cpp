@@ -14,7 +14,6 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
     pTotalShare = 0;
 
     pStopHashing = false;
-    pStopParsing = false;
 
     //Commit transactions every minute
     commitTimer = new QTimer(this);
@@ -38,7 +37,7 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
     connect(pHashFileThread, SIGNAL(doneFile(quint8, QString, QByteArray, quint64)), this, SIGNAL(returnTTHFromPath(quint8, QString, QByteArray, quint64)), Qt::QueuedConnection);
     connect(this, SIGNAL(runHashThread(QString, QString)), pHashFileThread, SLOT(processFile(QString, QString)), Qt::QueuedConnection);
     //connect(this, SIGNAL(runHashBucket(QByteArray, int, QByteArray, ReturnEncoding)), pHashFileThread, SLOT(processBucket(QByteArray, int, QByteArray, ReturnEncoding)), Qt::QueuedConnection);
-    connect(this, SIGNAL(stopHashingThread()), pHashFileThread, SLOT(stopHashing()));
+    connect(this, SIGNAL(stopHashingThread(bool)), pHashFileThread, SLOT(stopHashing(bool)));
     connect(this, SIGNAL(calculateTTHFromPath(quint8, QString)), pHashFileThread, SLOT(hashFile(quint8, QString)), Qt::QueuedConnection);
 
     pHashFileThread->moveToThread(hashThread);
@@ -97,8 +96,14 @@ ShareSearch::~ShareSearch()
     delete pDirList;
     delete pFileList;
 
+    pHashFileThread->stopHashing(true);
+    pParseDirectoryThread->stopParsing();
+
+    //Wait for hashing and parsing threads to close
+    ((ExecThread *)thread())->msleep(1000);
+    
     pHashFileThread->deleteLater();
-    pParseDirectoryThread->deleteLater();
+    pParseDirectoryThread->deleteLater();    
     pContainerThread->deleteLater();
 
     hashThread->quit();
@@ -109,6 +114,7 @@ ShareSearch::~ShareSearch()
         hashThread->terminate();
         delete hashThread;
     }
+
     hashBucketThread->quit();
     if (hashBucketThread->wait(5000))
         delete hashBucketThread;
@@ -154,6 +160,10 @@ void ShareSearch::updateShares(QList<QDir> *dirList) //500 msecs to update Share
 {
     updateTime->start();
     pDirList = dirList;
+    pFileList->clear();
+    pStopHashing = false;
+    pBusyHashing = true;
+    emit stopHashingThread(false);
 
     //Construct a directory list insert query
     QList<QByteArray> queries;
@@ -237,8 +247,10 @@ void ShareSearch::updateShares(QList<QDir> *dirList) //500 msecs to update Share
     }
 
     if (!dirList->isEmpty())
+    {
         //Start parsing
         startDirectoryParsing();
+    }
     else
     {
         //Flag all files as inactive when everything is unshared
@@ -530,6 +542,16 @@ void ShareSearch::startFileHashing()
 
     do
     {
+        //Check if hashing should stop
+        if (pStopHashing)
+        {
+            commitTimer->stop();
+            commitTransaction(false);
+            pBusyHashing = false;
+            emit hashingStopped();
+            return;
+        }
+
         if (!pFileList->isEmpty())
         {
             //QApplication::processEvents();
@@ -556,6 +578,7 @@ void ShareSearch::startFileHashing()
         commitTimer->stop();
         commitTransaction(false);
         int totalUpdateTime = updateTime->elapsed();
+        pBusyHashing = false;
         emit hashingDone(totalUpdateTime, numberOfFilesShared);
     }
 }
@@ -564,7 +587,8 @@ void ShareSearch::startFileHashing()
 //Stop hashing
 void ShareSearch::stopHashing()
 {
-    emit stopHashingThread();
+    pStopHashing = true;
+    emit stopHashingThread(true);
 }
 
 //------------------------------============================== DIRECTORY PARSING (FILE LIST EXTRACTION) ==============================------------------------------
@@ -602,6 +626,15 @@ void ShareSearch::parseDirectoryThreadFailed(QString rootDir, ParseDirectoryThre
 
 void ShareSearch::startDirectoryParsing()
 {
+    //Check if hashing should stop
+    if (pStopHashing)
+    {
+        commitTimer->stop();
+        commitTransaction(false);
+        emit hashingStopped();
+        return;
+    }
+
     //Start directory parsing and start new thread
     if (!pDirList->isEmpty())
     {
@@ -621,6 +654,7 @@ void ShareSearch::startDirectoryParsing()
 //Stop parsing
 void ShareSearch::stopParsing()
 {
+    pStopHashing = true;
     emit stopParsingThread();
 }
 
