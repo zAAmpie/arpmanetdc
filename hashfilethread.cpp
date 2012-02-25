@@ -58,7 +58,7 @@ void HashFileThread::processFile(QString filePath, QString rootDir)
                 //Process events to allow variable to be set
                 QApplication::processEvents();
             
-            while (pBytesHashedThisSecond >= ArpmanetDC::settingsManager().getSetting(SettingsManager::MAX_HASH_SPEED_MB)*1048576)
+            while (pBytesHashedThisSecond >= ArpmanetDC::settingsManager()->getSetting(SettingsManager::MAX_HASH_SPEED_MB)*1048576)
             {
                 ((ExecThread *)thread())->msleep(10);
 
