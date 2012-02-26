@@ -888,7 +888,7 @@ void DownloadTransfer::updateDirectBytesStats(int bytes)
 
 void DownloadTransfer::newSegmentTimerEvent()
 {
-    if ((currentActiveSegments > MAXIMUM_SIMULTANEOUS_SEGMENTS) || (!(status & (TRANSFER_STATE_RUNNING | TRANSFER_STATE_STALLED))))
+    if ((currentActiveSegments >= MAXIMUM_SIMULTANEOUS_SEGMENTS) || (!(status & (TRANSFER_STATE_RUNNING | TRANSFER_STATE_STALLED))))
         return;
 
     QHostAddress nextPeer = getBestIdlePeer();
