@@ -413,7 +413,7 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
     //       : Rational: If a single host shares an object and becomes unavailable mid transfer, the transfer
     //       : stalls indefinitely after the segment fails, even after the host comes back online again.
     QHostAddress h = segment->getSegmentRemotePeer();
-    
+    QString s = h.toString();
     //Remove offending peer
     //remotePeerInfoTable.remove(h); // TODO: flag, don't remove
     remotePeerInfoTable[h].transferSegment = 0;
@@ -673,6 +673,11 @@ int DownloadTransfer::getTransferProgress()
     int segmentsActive = 0;
 
     //Go through all active segments and check the amount of data received
+    //UPDATE: actually, we only need to iterate downloadBucketTable - otherwise every segment ends up doing it and counting n * bytesReceivedNotFlushed.
+    foreach (QByteArray *data, *downloadBucketTable)
+        dataReceivedNotFlushed += data->size();
+
+    // Count data inside segments not yet tipped into buckets. (FECTP et al)
     foreach (TransferSegmentTableStruct t, transferSegmentTable)
     {
         if (t.transferSegment)
