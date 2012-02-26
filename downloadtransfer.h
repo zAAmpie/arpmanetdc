@@ -46,6 +46,7 @@ typedef struct
     TransferSegment *transferSegment;
     QByteArray triedProtocols;
     int failureCount;
+    bool blacklisted;
 } RemotePeerInfoStruct;
 
 class DownloadTransfer : public Transfer

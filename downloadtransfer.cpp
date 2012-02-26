@@ -421,8 +421,9 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment, quint8 error)
     //remotePeerInfoTable.remove(h); // TODO: flag, don't remove
     remotePeerInfoTable[h].transferSegment = 0;
     if (error & (FileIOError | InvalidOffsetError | FileNotSharedError))
-        remotePeerInfoTable[h].failureCount++;
+        remotePeerInfoTable[h].blacklisted = true;
 
+    remotePeerInfoTable[h].failureCount++;
     remotePeerInfoTable[h].bytesTransferred += segment->getBytesTransferred();
     emit unflagDownloadPeer(h);
 
@@ -542,6 +543,7 @@ void DownloadTransfer::newPeer(QHostAddress peer, quint8 protocols)
         rpis.protocolCapability = protocols;
         rpis.transferSegment = 0;
         rpis.failureCount = 0;
+        rpis.blacklisted = false;
         remotePeerInfoTable.insert(peer, rpis);
     }
 }
@@ -886,7 +888,7 @@ QHostAddress DownloadTransfer::getBestIdlePeer()
     {
         QHostAddress h = i.peekNext().key();
         RemotePeerInfoStruct s = i.next().value();
-        if (s.transferSegment == 0)
+        if ((s.transferSegment == 0) && (!s.blacklisted))
         {
             double weight = log10((double)s.bytesTransferred + 1) - s.failureCount;
             if (weight > bestWeight)
