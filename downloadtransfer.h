@@ -102,7 +102,7 @@ private:
     void requestHashTree(int lastHashBucketReceived, bool timerRequest = false);
     QHostAddress getBestIdlePeer();
     void saveBucketStateBitmap();
-    bool isDispatchedProtocol(TransferProtocol protocol);
+    bool isNonDispatchedProtocol(TransferProtocol protocol);
 
     QHash<int, QByteArray*> *downloadBucketTable;
     QMap<int, QByteArray*> downloadBucketHashLookupTable;

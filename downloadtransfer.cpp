@@ -546,7 +546,7 @@ TransferSegment* DownloadTransfer::createTransferSegment(QHostAddress peer)
         if (protocolOrderPreference.at(i) & remotePeerInfoTable.value(peer).protocolCapability)
         {
             TransferProtocol p = (TransferProtocol)protocolOrderPreference.at(i);
-            if (isDispatchedProtocol(p))
+            if (isNonDispatchedProtocol(p))
                 remotePeerInfoTable[peer].triedProtocols.append(p);
             download  = newConnectedTransferSegment(p);
             if (!download)
@@ -919,7 +919,7 @@ void DownloadTransfer::newSegmentTimerEvent()
         emit abort(this);  // fail the segment without removing it from queue.
 }
 
-bool DownloadTransfer::isDispatchedProtocol(TransferProtocol protocol)
+bool DownloadTransfer::isNonDispatchedProtocol(TransferProtocol protocol)
 {
     // If we ever add a transfer protocol that does not run over DispatchIP:DispatchPort/udp, this function must return true for it, so that protocol negotiation can permanently fail for
     // it in case its path is blocked between two peers.
