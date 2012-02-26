@@ -427,6 +427,7 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
         currentActiveSegments--;
     else
     {
+        remotePeerInfoTable[nextPeer].triedProtocols.clear();
         TransferSegment *download = createTransferSegment(nextPeer);
         if (download)
         {

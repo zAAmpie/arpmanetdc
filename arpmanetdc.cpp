@@ -1953,7 +1953,19 @@ void ArpmanetDC::downloadCompleted(QByteArray tth)
         //Insert the file into the hash for processing
         QueueStruct s(file);
         s.tthRoot = file.tthRoot;
-        pContainerProcessHash.insert(file.filePath/* + file.fileName*/, s);
+        pContainerProcessHash.insert(file.filePath, s);
+
+        //Check if already assembled
+        if (pContainerAssembledHash.contains(file.filePath))
+        {
+            QString filePath = file.filePath;
+            filePath.remove(file.fileName);
+            emit processContainer(file.fileHost, file.filePath, filePath);
+
+            //Remove container from hashes
+            pContainerProcessHash.remove(file.filePath);
+            pContainerAssembledHash.remove(file.filePath);
+        }
     }
     
     //Delete from queue
@@ -2138,6 +2150,9 @@ void ArpmanetDC::appendChatLine(QString msg)
     //Convert plain text magnet links
     convertMagnetLinks(msg);
 
+    //Replace text with emoticons
+    insertEmoticonsInLastBlock();
+
     //Delete the first line if buffer is full
     while (mainChatBlocks > pSettingsManager->getSetting(SettingsManager::MAX_MAINCHAT_BLOCKS))
     {
@@ -2155,9 +2170,6 @@ void ArpmanetDC::appendChatLine(QString msg)
     //Output chat line with current time
     mainChatTextEdit->append(tr("<b>[%1]</b> %2").arg(QTime::currentTime().toString()).arg(msg));
     mainChatBlocks++;
-
-    //Replace text with emoticons
-    insertEmoticonsInLastBlock();
 
     //If not on mainchat, notify tab
     if (tabs->currentIndex() != 0)
@@ -2839,7 +2851,14 @@ void ArpmanetDC::fileAssemblyComplete(QString fileName)
             QString filePath = file.filePath;
             filePath.remove(file.fileName);
             emit processContainer(file.fileHost, file.filePath/* + file.fileName*/, filePath);
+
+            //Remove container from hashes
+            pContainerProcessHash.remove(file.filePath);
+            pContainerAssembledHash.remove(file.filePath);
         }
+        else
+            //If not completed yet, add to assembled hash for later processing
+            pContainerAssembledHash.insert(fileName);
     }
 
 }

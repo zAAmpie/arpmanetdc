@@ -397,6 +397,7 @@ private:
     //Containers
     QHash<QString, ContainerContentsType> pContainerHash;
     QHash<QString, QueueStruct> pContainerProcessHash;
+    QSet<QString> pContainerAssembledHash;
     QString pContainerDirectory;
 
     //Hub connection - userlist and OP list
