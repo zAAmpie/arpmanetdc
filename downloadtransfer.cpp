@@ -392,8 +392,9 @@ void DownloadTransfer::segmentCompleted(TransferSegment *segment)
 }
 
 // This gets called when a segment fails and we need to perform some cleaning duties.
-void DownloadTransfer::segmentFailed(TransferSegment *segment)
+void DownloadTransfer::segmentFailed(TransferSegment *segment, quint8 error)
 {
+    qDebug() << "DownloadTransfer::segmentFailed() peer segmentid error" << segment->getSegmentRemotePeer() << segment->getSegmentId() << error;
     // remote end dead, segment given up hope. mark everything not downloaded as not downloaded, so that
     // the block allocator can give them to other segments that do work.
     // do not worry if this is the last working segment, if it breaks, it can resume on successful TTH search reply.
@@ -419,7 +420,9 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
     //Remove offending peer
     //remotePeerInfoTable.remove(h); // TODO: flag, don't remove
     remotePeerInfoTable[h].transferSegment = 0;
-    remotePeerInfoTable[h].failureCount++;
+    if (error & (FileIOError | InvalidOffsetError | FileNotSharedError))
+        remotePeerInfoTable[h].failureCount++;
+
     remotePeerInfoTable[h].bytesTransferred += segment->getBytesTransferred();
     emit unflagDownloadPeer(h);
 
@@ -773,7 +776,7 @@ void DownloadTransfer::incomingTransferError(quint64 offset, quint8 error)
             t = i.value().transferSegment;
     }
     if (t)
-        segmentFailed(t);
+        segmentFailed(t, error);
 }
 
 void DownloadTransfer::bucketFlushed(int bucketNo)

@@ -83,7 +83,7 @@ private slots:
     void newSegmentTimerEvent();
     void protocolCapabilityRequestTimerEvent();
     void segmentCompleted(TransferSegment *segment);
-    void segmentFailed(TransferSegment *segment);
+    void segmentFailed(TransferSegment *segment, quint8 error=0);
     void requestHashBucket(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
     void updateDirectBytesStats(int bytes);
 
