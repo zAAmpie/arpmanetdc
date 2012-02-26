@@ -66,12 +66,14 @@ DownloadTransfer::~DownloadTransfer()
 
     QHashIterator<QHostAddress, RemotePeerInfoStruct> r(remotePeerInfoTable);
     while (r.hasNext())
+    {
         r.next();
         if (r.value().transferSegment)
         {
             emit removeTransferSegmentPointer(r.value().transferSegment->getSegmentId());
-            r.value().transferSegment->deleteLater();            
+            //r.value().transferSegment->deleteLater();
         }
+    }
     
     TTHSearchTimer->deleteLater();
     transferTimer->deleteLater();
@@ -390,8 +392,9 @@ void DownloadTransfer::segmentCompleted(TransferSegment *segment)
 }
 
 // This gets called when a segment fails and we need to perform some cleaning duties.
-void DownloadTransfer::segmentFailed(TransferSegment *segment)
+void DownloadTransfer::segmentFailed(TransferSegment *segment, quint8 error)
 {
+    qDebug() << "DownloadTransfer::segmentFailed() peer segmentid error" << segment->getSegmentRemotePeer() << segment->getSegmentId() << error;
     // remote end dead, segment given up hope. mark everything not downloaded as not downloaded, so that
     // the block allocator can give them to other segments that do work.
     // do not worry if this is the last working segment, if it breaks, it can resume on successful TTH search reply.
@@ -413,13 +416,19 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
     //       : Rational: If a single host shares an object and becomes unavailable mid transfer, the transfer
     //       : stalls indefinitely after the segment fails, even after the host comes back online again.
     QHostAddress h = segment->getSegmentRemotePeer();
-    
+    QString s = h.toString();
     //Remove offending peer
     //remotePeerInfoTable.remove(h); // TODO: flag, don't remove
     remotePeerInfoTable[h].transferSegment = 0;
+    if (error & (FileIOError | InvalidOffsetError | FileNotSharedError))
+        remotePeerInfoTable[h].blacklisted = true;
+
     remotePeerInfoTable[h].failureCount++;
     remotePeerInfoTable[h].bytesTransferred += segment->getBytesTransferred();
     emit unflagDownloadPeer(h);
+
+    quint32 segmentId = segment->getSegmentId();
+    emit removeTransferSegmentPointer(segmentId);
 
     segment->deleteLater();
 
@@ -534,6 +543,7 @@ void DownloadTransfer::newPeer(QHostAddress peer, quint8 protocols)
         rpis.protocolCapability = protocols;
         rpis.transferSegment = 0;
         rpis.failureCount = 0;
+        rpis.blacklisted = false;
         remotePeerInfoTable.insert(peer, rpis);
     }
 }
@@ -633,6 +643,8 @@ void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int
         remotePeerInfoTable[h].transferSegment = 0;
         remotePeerInfoTable[h].bytesTransferred = download->getBytesTransferred();
         emit unflagDownloadPeer(h);
+        quint32 segmentId = download->getSegmentId();
+        emit removeTransferSegmentPointer(segmentId);
         download->deleteLater();
         currentActiveSegments--;
     }
@@ -673,6 +685,11 @@ int DownloadTransfer::getTransferProgress()
     int segmentsActive = 0;
 
     //Go through all active segments and check the amount of data received
+    //UPDATE: actually, we only need to iterate downloadBucketTable - otherwise every segment ends up doing it and counting n * bytesReceivedNotFlushed.
+    foreach (QByteArray *data, *downloadBucketTable)
+        dataReceivedNotFlushed += data->size();
+
+    // Count data inside segments not yet tipped into buckets. (FECTP et al)
     foreach (TransferSegmentTableStruct t, transferSegmentTable)
     {
         if (t.transferSegment)
@@ -761,7 +778,7 @@ void DownloadTransfer::incomingTransferError(quint64 offset, quint8 error)
             t = i.value().transferSegment;
     }
     if (t)
-        segmentFailed(t);
+        segmentFailed(t, error);
 }
 
 void DownloadTransfer::bucketFlushed(int bucketNo)
@@ -871,7 +888,7 @@ QHostAddress DownloadTransfer::getBestIdlePeer()
     {
         QHostAddress h = i.peekNext().key();
         RemotePeerInfoStruct s = i.next().value();
-        if (s.transferSegment == 0)
+        if ((s.transferSegment == 0) && (!s.blacklisted))
         {
             double weight = log10((double)s.bytesTransferred + 1) - s.failureCount;
             if (weight > bestWeight)
