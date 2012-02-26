@@ -102,6 +102,7 @@ private:
     void requestHashTree(int lastHashBucketReceived, bool timerRequest = false);
     QHostAddress getBestIdlePeer();
     void saveBucketStateBitmap();
+    bool isDispatchedProtocol(TransferProtocol protocol);
 
     QHash<int, QByteArray*> *downloadBucketTable;
     QMap<int, QByteArray*> downloadBucketHashLookupTable;
@@ -124,6 +125,7 @@ private:
     int treeUpdatesSinceTimer;
     bool iowait;
     QHostAddress treeRequestHost;
+    int zeroSegmentTimeoutCount;
 
     QMap<quint64, TransferSegmentTableStruct> transferSegmentTable;
     QByteArray transferSegmentStateBitmap;

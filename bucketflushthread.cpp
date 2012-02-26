@@ -23,6 +23,8 @@ void BucketFlushThread::flushBucket(QString filename, QByteArray *bucket)
     bucket = 0;
 }
 
+// IMPORTANT: this function is deprecated.
+// If it finds use again, it should be modified to receive TTH and emit bucketFlushed() and bucketFlushFailed().
 void BucketFlushThread::assembleOutputFile(QString tmpfilebase, QString outfile, int startbucket, int lastbucket)
 {
     int bucket = startbucket;
@@ -121,9 +123,15 @@ void BucketFlushThread::flushBucketDirect(QString filename, int bucketno, QByteA
             
     //Write to memory if map succeeded
     if (f != 0)
+    {
         memmove(f, (const uchar *)bucket->constData(), bucket->size());
+        outf.flush();
+    }
     else
+    {
         qWarning() << "BucketFlushThread::flushBucketDirect: Big booboo for map! Could not map file. bucket : size" << bucketno << bucket->size();
+        emit bucketFlushFailed(tth, bucketno);
+    }
 
     if (!outf.unmap(f))
         qWarning() << "BucketFlushThread::flushBucketDirect: Big booboo for map! Could not unmap file. bucket : size" << bucketno << bucket->size();

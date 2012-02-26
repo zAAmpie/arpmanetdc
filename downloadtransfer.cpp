@@ -3,7 +3,6 @@
 
 DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
 {
-    //TODO: load transferSegmentStateBitmap from db
     downloadBucketTable = new QHash<int, QByteArray *>();
     transferRate = 0;
     transferProgress = 0;
@@ -18,6 +17,7 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
     bucketFlushQueueLength = 0;
     iowait = false;
     treeUpdatesSinceTimer = 0;
+    zeroSegmentTimeoutCount = 0;
 
     transferRateCalculationTimer = new QTimer(this);
     connect(transferRateCalculationTimer, SIGNAL(timeout()), this, SLOT(transferRateCalculation()));
@@ -224,6 +224,11 @@ int DownloadTransfer::getTransferType()
 // Restore transfer segment block state bitmaps if the database knows about them
 void DownloadTransfer::setBucketFlushStateBitmap(QByteArray bitmap)
 {
+    // if file does not exist (.incomplete file moved or deleted), do not restore bitmap
+    // setFileName() should have been called by now, otherwise fileExists == false.
+    if (!fileExists)
+        return;
+
     if (bucketFlushStateBitmap.length() == 0)
     {
         bucketFlushStateBitmap = bitmap;
@@ -427,7 +432,7 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
         currentActiveSegments--;
     else
     {
-        remotePeerInfoTable[nextPeer].triedProtocols.clear();
+        //remotePeerInfoTable[nextPeer].triedProtocols.clear();
         TransferSegment *download = createTransferSegment(nextPeer);
         if (download)
         {
@@ -541,7 +546,8 @@ TransferSegment* DownloadTransfer::createTransferSegment(QHostAddress peer)
         if (protocolOrderPreference.at(i) & remotePeerInfoTable.value(peer).protocolCapability)
         {
             TransferProtocol p = (TransferProtocol)protocolOrderPreference.at(i);
-            remotePeerInfoTable[peer].triedProtocols.append(p);
+            if (isDispatchedProtocol(p))
+                remotePeerInfoTable[peer].triedProtocols.append(p);
             download  = newConnectedTransferSegment(p);
             if (!download)
                 return download;
@@ -895,7 +901,7 @@ void DownloadTransfer::newSegmentTimerEvent()
     QHostAddress nextPeer = getBestIdlePeer();
     if (!nextPeer.isNull())
     {
-        remotePeerInfoTable[nextPeer].triedProtocols.clear();
+        //remotePeerInfoTable[nextPeer].triedProtocols.clear();
         TransferSegment *download = createTransferSegment(nextPeer);
         if (download)
         {
@@ -904,4 +910,18 @@ void DownloadTransfer::newSegmentTimerEvent()
             downloadNextAvailableChunk(download);
         }
     }
+    if (currentActiveSegments == 0)
+        zeroSegmentTimeoutCount++;
+    else
+        zeroSegmentTimeoutCount = 0;
+
+    if (zeroSegmentTimeoutCount >= 6)
+        emit abort(this);  // fail the segment without removing it from queue.
+}
+
+bool DownloadTransfer::isDispatchedProtocol(TransferProtocol protocol)
+{
+    // If we ever add a transfer protocol that does not run over DispatchIP:DispatchPort/udp, this function must return true for it, so that protocol negotiation can permanently fail for
+    // it in case its path is blocked between two peers.
+    return false;
 }
