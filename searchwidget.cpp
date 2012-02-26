@@ -345,12 +345,15 @@ void SearchWidget::downloadToLastFolderActionPressed()
         item.filePath = path + fileName;
         item.fileSize = fileSize;
         item.fileHost = senderIP;
-        item.priority = NormalQueuePriority;
+        if (fileName.endsWith("." + QString(CONTAINER_EXTENSION)))
+            item.priority = HighQueuePriority;
+        else
+            item.priority = NormalQueuePriority;
         item.tthRoot = tthRoot;
         pParent->addDownloadToQueue(item);
 
         QString finalPath = item.filePath;
-        emit queueDownload((int)NormalQueuePriority, tthRoot, finalPath, fileSize, senderIP);
+        emit queueDownload((int)item.priority, tthRoot, finalPath, fileSize, senderIP);
     }
 }
 
