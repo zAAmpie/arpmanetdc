@@ -16,6 +16,10 @@ DisplayContainerWidget::DisplayContainerWidget(QHostAddress host, ContainerConte
     placeWidgets();
     connectWidgets();
 
+    //Instantiate lists
+    pPathItemHash = new QHash<QString, QStandardItem *>();
+    pDownloadList = new QHash<QString, QueueStruct>();
+
     //Populate the tree with container data
     populateTree();
 }
@@ -35,7 +39,8 @@ DisplayContainerWidget::DisplayContainerWidget(ArpmanetDC *parent)
 //Destructor
 DisplayContainerWidget::~DisplayContainerWidget()
 {
-
+    delete pPathItemHash;
+    //pDownloadList will be deleted after the items are queued!
 }
 
 //Functions to generate GUI
@@ -76,6 +81,8 @@ void DisplayContainerWidget::createWidgets()
     containerSizeLabel = new QLabel(tr("Size: %1").arg(bytesToSize(pIndex.first)), pWidget);
     selectedFileSizeLabel = new QLabel(tr("Selected file size: 0.00 bytes"), pWidget);
     selectedFileCountLabel = new QLabel(tr("Selected files: 0"), pWidget);
+    busyLabel = new QLabel(tr("<font color=\"red\">Please wait while your files are selected...</font>"), pWidget);
+    busyLabel->setVisible(false);
 
     //Buttons
     openContainerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/FolderIcon.png"), tr("Open container"), pWidget);
@@ -94,6 +101,8 @@ void DisplayContainerWidget::placeWidgets()
     topLayout->addSpacing(5);
 
     QHBoxLayout *bottomLayout = new QHBoxLayout;
+    bottomLayout->addSpacing(5);
+    bottomLayout->addWidget(busyLabel, 1);
     bottomLayout->addStretch(1);
     bottomLayout->addWidget(selectedFileSizeLabel, 0);
     bottomLayout->addWidget(selectedFileCountLabel, 0);
@@ -111,13 +120,97 @@ void DisplayContainerWidget::placeWidgets()
 void DisplayContainerWidget::connectWidgets()
 {
     //Connect widgets...
+
+    //Connect checkable proxy model
+    connect(checkProxyModel, SIGNAL(checkedNodesChanged()), this, SLOT(checkedNodesChanged()));
+}
+
+//Checked values were changed
+void DisplayContainerWidget::checkedNodesChanged()
+{
+    busyLabel->setVisible(true);
+    pWidget->repaint();
+
+    pDownloadList->clear();
+    pSelectedFileSize = 0;
+    pSelectedFileCount = 0;
+
+    QModelIndexList selectedFiles;
+    QModelIndexList selectedDirectories;
+
+    //Extract selected files and directories
+    CheckableProxyModelState *state = checkProxyModel->checkedState();
+    state->checkedLeafSourceModelIndexes(selectedFiles);
+    state->checkedBranchSourceModelIndexes(selectedDirectories);
+    delete state;
+
+    QStringList items = pPathItemHash->keys();
+
+    //Construct list of selected directory paths
+    foreach (const QModelIndex index, selectedDirectories)
+    {
+        QString filePath = containerModel->itemFromIndex(containerModel->index(index.row(), 1, index.parent()))->text();
+
+        //Iterate through all "children"
+        QStringList children = items.filter(QRegExp(tr("^(?:%1).+[^/]$").arg(QRegExp::escape(filePath))));
+        foreach (QString path, children)
+        {
+            QStandardItem *currentItem = pPathItemHash->value(path);
+            QModelIndex currentIndex = currentItem->index();
+            //Construct queue struct for item
+            QueueStruct q;
+            q.fileHost = pHost;
+            q.fileName = containerModel->itemFromIndex(containerModel->index(currentIndex.row(), 0, currentIndex.parent()))->text();
+            q.filePath = containerModel->itemFromIndex(containerModel->index(currentIndex.row(), 1, currentIndex.parent()))->text();
+            q.fileSize = containerModel->itemFromIndex(containerModel->index(currentIndex.row(), 3, currentIndex.parent()))->text().toULongLong();
+            q.tthRoot.append(containerModel->itemFromIndex(containerModel->index(currentIndex.row(), 4, currentIndex.parent()))->text());
+            base32Decode(q.tthRoot);
+
+            //Insert into selected list if this is an item
+            if (!q.tthRoot.isEmpty() && !pDownloadList->contains(q.filePath))
+            {
+                pDownloadList->insert(q.filePath, q);
+
+                //Update counters
+                pSelectedFileCount++;
+                pSelectedFileSize += q.fileSize;
+            }
+        }        
+    }
+
+    //Construct list of selected file paths
+    foreach (const QModelIndex index, selectedFiles)
+    {
+        QueueStruct q;
+        q.fileHost = pHost;
+        q.fileName = containerModel->itemFromIndex(containerModel->index(index.row(), 0, index.parent()))->text();
+        q.filePath = containerModel->itemFromIndex(containerModel->index(index.row(), 1, index.parent()))->text();
+        q.fileSize = containerModel->itemFromIndex(containerModel->index(index.row(), 3, index.parent()))->text().toULongLong();
+        q.tthRoot.append(containerModel->itemFromIndex(containerModel->index(index.row(), 4, index.parent()))->text());
+        base32Decode(q.tthRoot);
+
+        //Insert into selected list if this is an item
+        if (!q.tthRoot.isEmpty() && !pDownloadList->contains(q.filePath))
+        {
+            pDownloadList->insert(q.filePath, q);
+
+            //Update counters
+            pSelectedFileCount++;
+            pSelectedFileSize += q.fileSize;
+        }
+    }
+
+    selectedFileSizeLabel->setText(tr("Selected file size: %1").arg(bytesToSize(pSelectedFileSize)));
+    selectedFileCountLabel->setText(tr("Selected files: %1").arg(pSelectedFileCount));
+
+    busyLabel->setVisible(false);
 }
 
 //Populate tree with contents
 void DisplayContainerWidget::populateTree()
 {
     //Associate the root folder with the invisible parent item
-    pPathItemHash.insert("/", pParentItem);
+    pPathItemHash->insert("/", pParentItem);
 
     QListIterator<ContainerLookupReturnStruct> i(pContents);
     while (i.hasNext())
@@ -152,7 +245,7 @@ void DisplayContainerWidget::populateTree()
 
         while (isDirectory)
         {
-            if (!pPathItemHash.contains(dirPath))
+            if (!pPathItemHash->contains(dirPath))
             {
                 //Insert the directory path into the hash along with its respective item
                 QList<QStandardItem *> row;
@@ -162,10 +255,10 @@ void DisplayContainerWidget::populateTree()
                 row.append(new CStandardItem(CStandardItem::IntegerType, ""));
                 row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, ""));
             
-                pPathItemHash.insert(dirPath, row.first());
+                pPathItemHash->insert(dirPath, row.first());
             
                 //Add the row to parent item
-                pPathItemHash.value(parentPath)->appendRow(row);
+                pPathItemHash->value(parentPath)->appendRow(row);
             }
 
             //Go down one directory
@@ -197,8 +290,8 @@ void DisplayContainerWidget::populateTree()
         
         row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, base32TTH.data()));
 
-        pPathItemHash.insert(c.filePath, row.first());
-        pPathItemHash.value(totalPath)->appendRow(row);
+        pPathItemHash->insert(c.filePath, row.first());
+        pPathItemHash->value(totalPath)->appendRow(row);
     }
 
     containerModel->sort(1);

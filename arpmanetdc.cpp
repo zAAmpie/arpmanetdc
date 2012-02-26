@@ -2828,7 +2828,7 @@ void ArpmanetDC::returnProcessedContainer(QHostAddress host, ContainerContentsTy
     
     displayContainerWidgetHash.insert(cWidget->widget(), cWidget);
     
-    tabs->addTab(cWidget->widget(), QIcon(":/ArpmanetDC/Resources/SearchIcon.png"), tr("Container - %1").arg(containerName));
+    tabs->addTab(cWidget->widget(), QIcon(":/ArpmanetDC/Resources/ContainerIcon.png"), tr("Container - %1").arg(containerName));
 
     tabs->setCurrentIndex(tabs->indexOf(cWidget->widget()));
 

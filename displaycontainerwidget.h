@@ -25,6 +25,7 @@
 #include "customtableitems.h"
 
 class ArpmanetDC;
+struct QueueStruct;
 
 class DisplayContainerWidget : public QObject
 {
@@ -40,6 +41,11 @@ public:
     //Get the encapsulating widget
     QWidget *widget();
 
+public slots:
+
+private slots://Checked values were changed
+    void checkedNodesChanged();
+
 private:
     //Functions
     void createWidgets();
@@ -54,16 +60,19 @@ private:
     ArpmanetDC *pParent;
 
     //Lists
-    QHash<QString, QStandardItem *> pPathItemHash;
+    QHash<QString, QStandardItem *> *pPathItemHash;
+    QHash<QString, QueueStruct> *pDownloadList;
     
     //Container data
     ContainerContentsType pIndex;
     QList<ContainerLookupReturnStruct> pContents;
     QHostAddress pHost;
     QString pName;
+    qint64 pSelectedFileSize;
+    quint32 pSelectedFileCount;
 
     //GUI
-    QLabel *containerNameLabel, *containerSizeLabel;
+    QLabel *containerNameLabel, *containerSizeLabel, *busyLabel;
     QPushButton *openContainerButton;
     
     //Selected
