@@ -15,8 +15,8 @@
  * along with ArpmanetDC.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DownloadFinishedWidget_H
-#define DownloadFinishedWidget_H
+#ifndef DOWNLOADFINISHEDWIDGET_H
+#define DOWNLOADFINISHEDWIDGET_H
 
 #include <QtGui>
 

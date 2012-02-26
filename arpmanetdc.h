@@ -27,6 +27,7 @@
 #include "searchwidget.h"
 #include "downloadqueuewidget.h"
 #include "downloadfinishedwidget.h"
+#include "displaycontainerwidget.h"
 #include "pmwidget.h"
 #include "settingswidget.h"
 #include "sharewidget.h"
@@ -175,7 +176,7 @@ public slots:
     void queueSaveContainers(QHash<QString, ContainerContentsType> containerHash, QString containerDirectory);
 
     //Return the contents of a container downloaded
-    void returnProcessedContainer(QHostAddress host, ContainerContentsType index, QList<ContainerLookupReturnStruct> data, QString downloadPath);
+    void returnProcessedContainer(QHostAddress host, ContainerContentsType index, QList<ContainerLookupReturnStruct> data, QString downloadPath, QString containerName);
 
     //Called when a file has been assembled correctly
     void fileAssemblyComplete(QString fileName);
@@ -516,6 +517,7 @@ private:
     QHash<QWidget *, SearchWidget *> searchWidgetHash;
     QHash<quint64, SearchWidget *> searchWidgetIDHash;
     QHash<QWidget *, PMWidget *> pmWidgetHash;
+    QHash<QWidget *, DisplayContainerWidget *> displayContainerWidgetHash;
     DownloadQueueWidget *downloadQueueWidget;
     ShareWidget *shareWidget;
     DownloadQueueWidget *queueWidget;

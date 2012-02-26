@@ -83,8 +83,8 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
     connect(this, SIGNAL(procContainer(QHostAddress, QString, QString)),
         pContainerThread, SLOT(processContainer(QHostAddress, QString, QString)), Qt::QueuedConnection);
     
-    connect(pContainerThread, SIGNAL(returnProcessedContainer(QHostAddress, ContainerContentsType, QList<ContainerLookupReturnStruct>, QString)),
-        pParent, SLOT(returnProcessedContainer(QHostAddress, ContainerContentsType, QList<ContainerLookupReturnStruct>, QString)), Qt::QueuedConnection);
+    connect(pContainerThread, SIGNAL(returnProcessedContainer(QHostAddress, ContainerContentsType, QList<ContainerLookupReturnStruct>, QString, QString)),
+        pParent, SLOT(returnProcessedContainer(QHostAddress, ContainerContentsType, QList<ContainerLookupReturnStruct>, QString, QString)), Qt::QueuedConnection);
 
     pContainerThread->moveToThread(containerThread);
 
