@@ -117,6 +117,10 @@ void TransferManager::incomingUploadRequest(quint8 protocol, QHostAddress fromHo
             uploadTransferQueue.insertMulti(tth, i);
             emit filePathNameRequest(tth);
         }
+        else
+        {
+            emit sendTransferError(fromHost, NoSlotsAvailable, tth, offset);
+        }
     }
 }
 
