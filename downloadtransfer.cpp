@@ -421,6 +421,9 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
     remotePeerInfoTable[h].bytesTransferred += segment->getBytesTransferred();
     emit unflagDownloadPeer(h);
 
+    quint32 segmentId = segment->getSegmentId();
+    emit removeTransferSegmentPointer(segmentId);
+
     segment->deleteLater();
 
     //Update the alternates
@@ -633,6 +636,8 @@ void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int
         remotePeerInfoTable[h].transferSegment = 0;
         remotePeerInfoTable[h].bytesTransferred = download->getBytesTransferred();
         emit unflagDownloadPeer(h);
+        quint32 segmentId = download->getSegmentId();
+        emit removeTransferSegmentPointer(segmentId);
         download->deleteLater();
         currentActiveSegments--;
     }
