@@ -61,10 +61,12 @@ void BucketFlushThread::assembleOutputFile(QString tmpfilebase, QString outfile,
             if (outf.size() < (quint64)bucket * HASH_BUCKET_SIZE + buf.size())
                 outf.resize((quint64)bucket * HASH_BUCKET_SIZE + buf.size());
             
-            //Disable MM files due to excessive memory consumption till we figure out how to force release modified memory to disk - to fix lockups
-            //outf.seek((quint64)bucket * HASH_BUCKET_SIZE);
-            //outf.write(buf);
+#ifndef USE_MMAPFILES_FOR_DOWNLOAD
+            outf.seek((quint64)bucket * HASH_BUCKET_SIZE);
+            outf.write(buf);
+#endif
 
+#ifdef USE_MMAPFILES_FOR_DOWNLOAD
             //Map file to memory
             uchar *f = outf.map((quint64)bucket * HASH_BUCKET_SIZE, buf.size());
             
@@ -74,11 +76,12 @@ void BucketFlushThread::assembleOutputFile(QString tmpfilebase, QString outfile,
             else
                 qDebug() << "BucketFlushThread::assembleOutputFile: Big booboo for map! bucket : size" << bucket << buf.size();
                 
-            inf.close();
-            inf.remove();
             if (!outf.unmap(f))
                 qDebug() << "BucketFlushThread::assembleOutputFile: Could not unmap file! bucket : size" << bucket << buf.size();
+#endif
 
+            inf.close();
+            inf.remove();
         }
         bucket++;
     }
@@ -107,10 +110,12 @@ void BucketFlushThread::flushBucketDirect(QString filename, int bucketno, QByteA
     if (outf.size() < (quint64)bucketno * HASH_BUCKET_SIZE + bucket->size())
         outf.resize((quint64)bucketno * HASH_BUCKET_SIZE + bucket->size());
 
-    //Disable MM files due to excessive memory consumption till we figure out how to force release modified memory to disk - to fix lockups
-    //outf.seek((quint64)bucketno * HASH_BUCKET_SIZE);
-    //outf.write(*bucket);
+#ifndef USE_MMAPFILES_FOR_DOWNLOAD
+    outf.seek((quint64)bucketno * HASH_BUCKET_SIZE);
+    outf.write(*bucket);
+#endif
 
+#ifdef USE_MMAPFILES_FOR_DOWNLOAD
     //Map file to memory
     uchar *f = outf.map((quint64)bucketno * HASH_BUCKET_SIZE, bucket->size());
             
@@ -118,10 +123,11 @@ void BucketFlushThread::flushBucketDirect(QString filename, int bucketno, QByteA
     if (f != 0)
         memmove(f, (const uchar *)bucket->constData(), bucket->size());
     else
-        qDebug() << "BucketFlushThread::flushBucketDirect: Big booboo for map! bucket : size" << bucketno << bucket->size();
+        qWarning() << "BucketFlushThread::flushBucketDirect: Big booboo for map! Could not map file. bucket : size" << bucketno << bucket->size();
 
     if (!outf.unmap(f))
-        qDebug() << "BucketFlushThread::flushBucketDirect: Could not unmap file! bucket : size" << bucketno << bucket->size();
+        qWarning() << "BucketFlushThread::flushBucketDirect: Big booboo for map! Could not unmap file. bucket : size" << bucketno << bucket->size();
+#endif
 
     if (outf.isOpen())
         outf.close();

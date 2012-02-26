@@ -2150,9 +2150,6 @@ void ArpmanetDC::appendChatLine(QString msg)
     //Convert plain text magnet links
     convertMagnetLinks(msg);
 
-    //Replace text with emoticons
-    insertEmoticonsInLastBlock();
-
     //Delete the first line if buffer is full
     while (mainChatBlocks > pSettingsManager->getSetting(SettingsManager::MAX_MAINCHAT_BLOCKS))
     {
@@ -2170,6 +2167,9 @@ void ArpmanetDC::appendChatLine(QString msg)
     //Output chat line with current time
     mainChatTextEdit->append(tr("<b>[%1]</b> %2").arg(QTime::currentTime().toString()).arg(msg));
     mainChatBlocks++;
+
+    //Replace text with emoticons
+    insertEmoticonsInLastBlock();
 
     //If not on mainchat, notify tab
     if (tabs->currentIndex() != 0)

@@ -15,6 +15,9 @@
  * along with ArpmanetDC.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+//Comment this out to use normal seek/writes
+//#define USE_MMAPFILES_FOR_DOWNLOAD 1
+
 #ifndef BUCKETFLUSHTHREAD_H
 #define BUCKETFLUSHTHREAD_H
 
