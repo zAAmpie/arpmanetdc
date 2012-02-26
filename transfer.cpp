@@ -4,6 +4,7 @@ Transfer::Transfer(QObject *parent) :
     QObject(parent)
 {
     upTime = QDateTime::currentDateTime();
+    fileExists = false;
 }
 
 Transfer::~Transfer()
@@ -30,6 +31,12 @@ SegmentStatusStruct Transfer::getSegmentStatuses() {SegmentStatusStruct s = {0,0
 void Transfer::setFileName(QString filename)
 {
     filePathName = filename;
+    QFile f(filePathName);
+    if (f.open(QFile::ReadOnly))
+    {
+        fileExists = true;
+        f.close();
+    }
 }
 
 void Transfer::setTTH(QByteArray tth)

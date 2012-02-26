@@ -22,7 +22,7 @@
 #include "utptransfersegment.h"
 #include "protocoldef.h"
 
-#define TIMER_INACTIVITY_MSECS 60000 //Remove upload transfer if inactive for this period of time
+#define TIMER_INACTIVITY_MSECS 30000 //Remove upload transfer if inactive for this period of time
 
 class UploadTransfer : public Transfer
 {

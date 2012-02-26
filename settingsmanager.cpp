@@ -54,7 +54,7 @@ SettingsManager::SettingsManager(sqlite3 *db, ArpmanetDC *parent)
     setDefault(EXTERNAL_PORT, 4012, "externalPort");
     setDefault(MAX_SEARCH_RESULTS, 100, "maxSearchResults");
     setDefault(MAX_SIMULTANEOUS_DOWNLOADS, 3, "maxSimultaneousDownloads");
-    setDefault(MAX_SIMULTANEOUS_UPLOADS, 20, "maxSimultaneousUploads");
+    setDefault(MAX_SIMULTANEOUS_UPLOADS, 15, "maxSimultaneousUploads");
     setDefault(MAX_MAINCHAT_BLOCKS, 1000, "maxMainchatBlocks");
     setDefault(MAX_LABEL_HISTORY_ENTRIES, 20, "maxLabelHistoryEntries");
     setDefault(MAX_HASH_SPEED_MB, 300, "maxHashSpeedMB");

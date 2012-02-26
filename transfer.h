@@ -148,6 +148,7 @@ protected:
     quint64 fileSize;
     QByteArray protocolOrderPreference;
     QDateTime upTime;
+    bool fileExists;
 };
 
 #endif // TRANSFER_H
