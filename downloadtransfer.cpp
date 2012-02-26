@@ -70,7 +70,7 @@ DownloadTransfer::~DownloadTransfer()
         if (r.value().transferSegment)
         {
             emit removeTransferSegmentPointer(r.value().transferSegment->getSegmentId());
-            r.value().transferSegment->deleteLater();            
+            //r.value().transferSegment->deleteLater();
         }
     
     TTHSearchTimer->deleteLater();

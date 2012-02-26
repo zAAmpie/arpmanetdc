@@ -51,6 +51,9 @@ void TransferManager::destroyTransferObject(Transfer* transferObject)
         }
     }
     transferObject->deleteLater();
+
+    if (currentDownloadCount < maximumSimultaneousDownloads)
+        startNextDownload();
 }
 
 // incoming data packets

@@ -156,7 +156,8 @@ void DisplayContainerWidget::populateTree()
             {
                 //Insert the directory path into the hash along with its respective item
                 QList<QStandardItem *> row;
-                row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, dirName, pParent->resourceExtractorObject()->getIconFromName(tr("folder"))));
+                QString iconName = tr("folder");
+                row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, dirName, pParent->resourceExtractorObject()->getIconFromName(iconName)));
                 row.append(new CStandardItem(CStandardItem::PathType, dirPath));
                 row.append(new CStandardItem(CStandardItem::SizeType, ""));
                 row.append(new CStandardItem(CStandardItem::IntegerType, ""));
