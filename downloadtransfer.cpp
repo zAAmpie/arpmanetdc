@@ -43,7 +43,7 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
     newSegmentTimer = new QTimer(this);
     connect(newSegmentTimer, SIGNAL(timeout()), this, SLOT(newSegmentTimerEvent()));
     newSegmentTimer->setSingleShot(false);
-    newSegmentTimer->setInterval(10000);
+    newSegmentTimer->start(10000);
 }
 
 DownloadTransfer::~DownloadTransfer()
@@ -500,10 +500,10 @@ void DownloadTransfer::receivedPeerProtocolCapability(QHostAddress peer, quint8 
 
     if (currentActiveSegments < MAXIMUM_SIMULTANEOUS_SEGMENTS)
     {
-        currentActiveSegments++;
         TransferSegment *download = createTransferSegment(peer);
         if (download)
         {
+            currentActiveSegments++;
             remotePeerInfoTable[peer].transferSegment = download;
             downloadNextAvailableChunk(download);
         }
@@ -893,6 +893,7 @@ void DownloadTransfer::newSegmentTimerEvent()
     QHostAddress nextPeer = getBestIdlePeer();
     if (!nextPeer.isNull())
     {
+        remotePeerInfoTable[nextPeer].triedProtocols.clear();
         TransferSegment *download = createTransferSegment(nextPeer);
         if (download)
         {

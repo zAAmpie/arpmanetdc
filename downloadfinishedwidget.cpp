@@ -144,11 +144,11 @@ void DownloadFinishedWidget::openActionPressed()
         //Get filename
         QString fileName = finishedModel->itemFromIndex(finishedModel->index(selectedIndex.row(), 0))->text();
 
-        QFileInfo fi(filePath + fileName);
+        QFileInfo fi(filePath);
         if (fi.exists() && fi.isFile())
         {
             //"Start" the file
-            QDesktopServices::openUrl(QUrl(filePath + fileName));
+            QDesktopServices::openUrl(QUrl(filePath));
 
             //Deselect to avoid infinite loop
             finishedTable->selectionModel()->select(QItemSelection(selectedIndex, finishedModel->index(selectedIndex.row(), 4)), QItemSelectionModel::Deselect);
