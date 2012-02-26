@@ -767,7 +767,7 @@ void Dispatcher::handleIncomingUploadRequest(QHostAddress &fromHost, QByteArray 
 void Dispatcher::sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId)
 {
     QByteArray *datagram = new QByteArray;
-    datagram->reserve(43);
+    datagram->reserve(47);
     datagram->append(UnicastPacket);
     datagram->append(DownloadRequestPacket);
     datagram->append(protocol);

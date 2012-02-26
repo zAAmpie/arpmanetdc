@@ -194,10 +194,17 @@ void TransferWidget::returnGlobalTransferStatus(QList<TransferItemStatus> status
         //If new transfer - add
         if (row == -1)
         {
+            QString progressTooltip;
+            if (s.transferType == TRANSFER_TYPE_DOWNLOAD)
+                progressTooltip = tr("<b>Progress bar colours - downloads</b><br/><br/><font color=\"#FFFFFF\">&#x2588;</font> (White) - Not downloaded<br/><font color=\"lightGreen\">&#x2588;</font> (Light green) - Allocated for download<br/><font color=\"#4FBD36\">&#x2588;</font> (Green) - Finished downloading<br/><font color=\"magenta\">&#x2588;</font> (Magenta) - Busy hashing segment<br/><font color=\"#FFF000\">&#x2588;</font> (Yellow) - Busy writing to disk");
+            else
+                progressTooltip = tr("<b>Progress bar colours - uploads</b><br/><br/><font color=\"#FFFFFF\">&#x2588;</font> (White) - Not uploaded<br/><font color=\"#2595D6\">&#x2588;</font> (Blue) - Uploaded<br/>");
+
             pIDHash.insert(s.TTH, transferID++);
             QList<QStandardItem *> row;
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, typeString(s.transferType)));
             row.append(new CStandardItem(CStandardItem::BitmapType, bitmapString(transferID, currentUpdateID++, s.transferProgress, s.segmentBitmap)));
+            row.last()->setToolTip(progressTooltip);
             row.append(new CStandardItem(CStandardItem::RateType, bytesToRate(s.transferRate)));
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, s.filePathName.remove(ArpmanetDC::settingsManager()->getSetting(SettingsManager::DOWNLOAD_PATH), Qt::CaseInsensitive)));
             row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(q.fileSize)));

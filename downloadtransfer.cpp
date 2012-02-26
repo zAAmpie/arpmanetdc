@@ -865,6 +865,7 @@ QHostAddress DownloadTransfer::getBestIdlePeer()
             bestPeer = h;
         }
     }
+
     return bestPeer;
 }
 
