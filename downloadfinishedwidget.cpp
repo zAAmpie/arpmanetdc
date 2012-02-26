@@ -250,6 +250,6 @@ void DownloadFinishedWidget::downloadDoubleClicked(QModelIndex index)
 
 QWidget *DownloadFinishedWidget::widget()
 {
-    //TODO: Return widget containing all search widgets
+    //Return widget containing all search widgets
     return pWidget;
 }

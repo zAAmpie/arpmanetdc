@@ -213,7 +213,7 @@ void ContainerThread::processContainer(QHostAddress host, QString containerPath,
     }
     
     //Return results
-    emit returnProcessedContainer(host, c, containerData, downloadPath);
+    emit returnProcessedContainer(host, c, containerData, downloadPath, containerName);
 }
 
 //Return hashes from DB

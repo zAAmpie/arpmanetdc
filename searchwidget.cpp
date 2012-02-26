@@ -161,6 +161,7 @@ void SearchWidget::placeWidgets()
     hlayout->addWidget(resultNumberLabel);
     hlayout->addStretch(1);
     hlayout->addWidget(searchProgress);
+    hlayout->addSpacing(5);
 
     QVBoxLayout *vlayout = new QVBoxLayout;
     vlayout->addLayout(hlayout);

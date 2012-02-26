@@ -1697,12 +1697,20 @@ void ArpmanetDC::tabDeleted(int index)
         searchWidgetHash.remove(tabs->widget(index));
     }
 
+    //Delete display container tab
+    if (displayContainerWidgetHash.contains(tabs->widget(index)))
+    {
+        displayContainerWidgetHash.value(tabs->widget(index))->deleteLater();
+        displayContainerWidgetHash.remove(tabs->widget(index));
+    }
+
     //Delete PM tab
     if (pmWidgetHash.contains(tabs->widget(index)))
     {
         pmWidgetHash.value(tabs->widget(index))->deleteLater();
         pmWidgetHash.remove(tabs->widget(index));
     }
+
     //Delete share tab
     if (shareWidget)
     {
@@ -1712,6 +1720,7 @@ void ArpmanetDC::tabDeleted(int index)
             shareWidget = 0;
         }
     }
+
     //Delete share tab
     if (queueWidget)
     {
@@ -1721,6 +1730,7 @@ void ArpmanetDC::tabDeleted(int index)
             queueWidget = 0;
         }
     }
+
     //Delete share tab
     if (settingsWidget)
     {
@@ -2812,9 +2822,17 @@ void ArpmanetDC::queueSaveContainers(QHash<QString, ContainerContentsType> conta
 }
 
 //Return the contents of a container downloaded
-void ArpmanetDC::returnProcessedContainer(QHostAddress host, ContainerContentsType index, QList<ContainerLookupReturnStruct> data, QString downloadPath)
+void ArpmanetDC::returnProcessedContainer(QHostAddress host, ContainerContentsType index, QList<ContainerLookupReturnStruct> data, QString downloadPath, QString containerName)
 {
-    for (int i = 0; i < data.size(); ++i)
+    DisplayContainerWidget *cWidget = new DisplayContainerWidget(host, index, data, containerName, this);
+    
+    displayContainerWidgetHash.insert(cWidget->widget(), cWidget);
+    
+    tabs->addTab(cWidget->widget(), QIcon(":/ArpmanetDC/Resources/SearchIcon.png"), tr("Container - %1").arg(containerName));
+
+    tabs->setCurrentIndex(tabs->indexOf(cWidget->widget()));
+
+    /*for (int i = 0; i < data.size(); ++i)
     {
         ContainerLookupReturnStruct c = data.at(i);
                 
@@ -2833,7 +2851,7 @@ void ArpmanetDC::returnProcessedContainer(QHostAddress host, ContainerContentsTy
 
         //Add to transfer manager queue for download
         emit queueDownload((int)q.priority, q.tthRoot, q.filePath, q.fileSize, q.fileHost);
-    }
+    }*/
 }
 
 //Called when a file has been assembled correctly

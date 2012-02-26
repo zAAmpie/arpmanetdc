@@ -382,6 +382,24 @@ bool CStandardItem::operator<(const QStandardItem &other) const
             return timesThis.at(0).toInt() < timesThat.at(0).toInt();
         }
     }
+    else if (pType == PathType)
+    {
+        QString thisStr = text().toUpper();
+        QString thatStr = other.text().toUpper();
+
+        //Check if both are directories
+        if (thisStr.endsWith("/") && thatStr.endsWith("/"))
+            return thisStr < thatStr;
+        //If this is a directory
+        else if (thisStr.endsWith("/"))
+            return true;
+        //If that is a directory
+        else if (thatStr.endsWith("/"))
+            return false;       
+        //If none of them is a directory
+        else
+            return thisStr < thatStr;
+    }
 
     return text() < other.text();
 }
