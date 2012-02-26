@@ -27,6 +27,7 @@
 #include <QDateTime>
 #include "util.h"
 #include "transfersegment.h"
+#include <math.h>
 class TransferSegment;
 
 enum transferSegmentState
@@ -53,7 +54,8 @@ enum transferErrors
     InvalidOffsetError=0x02,
     PeerAlreadyTransferring=0x04,
     NoSlotsAvailable=0x08,
-    TransferAbortingError=0x10
+    TransferAbortingError=0x10,
+    FileNotSharedError=0x20
 };
 
 struct SegmentStatusStruct
@@ -91,6 +93,8 @@ signals:
     void saveBucketFlushStateBitmap(QByteArray tth, QByteArray bitmap);
     void setTransferSegmentPointer(quint32 segmentId, TransferSegment *segment);
     void removeTransferSegmentPointer(quint32 segmentId);
+    void flagDownloadPeer(QHostAddress peer);
+    void unflagDownloadPeer(QHostAddress peer);
 
 public slots:
     virtual void setFileName(QString filename);
@@ -100,6 +104,7 @@ public slots:
     void setRemoteHost(QHostAddress remote);
     virtual TransferSegment* createUploadObject(quint8 protocol, quint32 segmentId);
     void setFileSize(quint64 size);
+    void setCurrentlyDownloadingPeers(QSet<QHostAddress> *dh);
     QByteArray* getTTH();
     QString* getFileName();
     QHostAddress* getRemoteHost();
@@ -132,6 +137,7 @@ public slots:
     virtual void bucketFlushFailed(int bucketNo);
 
 protected:
+    QSet<QHostAddress> *pCurrentDownloadingPeers;
     QByteArray TTH;
     QByteArray TTHBase32;
     QString filePathName;
@@ -149,6 +155,7 @@ protected:
     QByteArray protocolOrderPreference;
     QDateTime upTime;
     bool fileExists;
+    QSet<QHostAddress> *currentlyDownloadingHosts;
 };
 
 #endif // TRANSFER_H

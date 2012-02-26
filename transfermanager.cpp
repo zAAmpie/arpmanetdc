@@ -37,7 +37,10 @@ void TransferManager::destroyTransferObject(Transfer* transferObject)
         if (type == TRANSFER_TYPE_DOWNLOAD)
             currentDownloadCount--;
         else if (type == TRANSFER_TYPE_UPLOAD)
+        {
             currentUploadCount--;
+            currentUploadingHosts.remove(*transferObject->getRemoteHost());
+        }
 
         QMutableHashIterator<QHostAddress, Transfer *> i(peerProtocolDiscoveryWaitingPool);
         while (i.hasNext())
@@ -46,9 +49,7 @@ void TransferManager::destroyTransferObject(Transfer* transferObject)
             if (i.value() == transferObject)
                 i.remove();
         }
-            
     }
-
     transferObject->deleteLater();
 }
 
@@ -94,7 +95,7 @@ void TransferManager::incomingTransferError(QHostAddress fromHost, QByteArray tt
 // incoming requests for files we share
 void TransferManager::incomingUploadRequest(quint8 protocol, QHostAddress fromHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId)
 {
-    qDebug() << "TransferManager::incomingUploadRequest(): Data request offset " << offset << " length " << length;
+    //qDebug() << "TransferManager::incomingUploadRequest(): Data request offset " << offset << " length " << length;
     Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_UPLOAD, &fromHost);
     if (t)
     {
@@ -104,6 +105,13 @@ void TransferManager::incomingUploadRequest(quint8 protocol, QHostAddress fromHo
     }
     else
     {
+        // Only allow one file transfer per host
+        if (currentUploadingHosts.contains(fromHost))
+        {
+            emit sendTransferError(fromHost, PeerAlreadyTransferring, tth, offset);
+            return;
+        }
+
         //Only queue the item if there are "slots" open
         if (currentUploadCount < maximumSimultaneousUploads)
         {
@@ -115,6 +123,7 @@ void TransferManager::incomingUploadRequest(quint8 protocol, QHostAddress fromHo
             i->requestLength = length;
             i->segmentId = segmentId;
             uploadTransferQueue.insertMulti(tth, i);
+            currentUploadingHosts.insert(fromHost);
             emit filePathNameRequest(tth);
         }
         else
@@ -132,7 +141,14 @@ void TransferManager::filePathNameReply(QByteArray tth, QString filename, quint6
     if (filename == "" || !uploadTransferQueue.contains(tth))
     {
         uploadTransferQueue.remove(tth);
-        return; // TODO: stuur error terug na requesting host
+        currentUploadCount--;
+        if (uploadTransferQueue.contains(tth))
+        {
+            currentUploadingHosts.remove(uploadTransferQueue.value(tth)->requestingHost);
+            emit sendTransferError(uploadTransferQueue.value(tth)->requestingHost, FileNotSharedError, tth, uploadTransferQueue.value(tth)->fileOffset);
+        }
+
+        return;
     }
     Transfer *t = new UploadTransfer(this);
     TransferSegment *s = t->createUploadObject(uploadTransferQueue.value(tth)->protocol, uploadTransferQueue.value(tth)->segmentId);
@@ -216,6 +232,7 @@ void TransferManager::startNextDownload()
 
     currentDownloadCount++;
     Transfer *t = new DownloadTransfer(this);
+    t->setCurrentlyDownloadingPeers(&currentDownloadingHosts);
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
     connect(t, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray)), this, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray)));
     connect(t, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray,quint32,quint32)),
@@ -235,6 +252,8 @@ void TransferManager::startNextDownload()
     connect(t, SIGNAL(saveBucketFlushStateBitmap(QByteArray,QByteArray)), this, SIGNAL(saveBucketFlushStateBitmap(QByteArray,QByteArray)));
     connect(t, SIGNAL(setTransferSegmentPointer(quint32,TransferSegment*)), this, SLOT(setTransferSegmentPointer(quint32,TransferSegment*)));
     connect(t, SIGNAL(removeTransferSegmentPointer(quint32)), this, SLOT(removeTransferSegmentPointer(quint32)));
+    connect(t, SIGNAL(flagDownloadPeer(QHostAddress)), this, SLOT(addDownloadPeer(QHostAddress)));
+    connect(t, SIGNAL(unflagDownloadPeer(QHostAddress)), this, SLOT(removeDownloadPeer(QHostAddress)));
 
     t->setFileName(i.filePathName);
     t->setTTH(i.tth);
@@ -523,6 +542,24 @@ void TransferManager::setTransferSegmentPointer(quint32 segmentId, TransferSegme
 void TransferManager::removeTransferSegmentPointer(quint32 segmentId)
 {
     transferSegmentPointers.remove(segmentId);
+}
+
+void TransferManager::addDownloadPeer(QHostAddress peer)
+{
+    currentDownloadingHosts.insert(peer);
+}
+
+void TransferManager::removeDownloadPeer(QHostAddress peer)
+{
+    currentDownloadingHosts.remove(peer);
+}
+
+bool TransferManager::checkDownloadPeer(QHostAddress peer)
+{
+    if (currentDownloadingHosts.contains(peer))
+        return false;
+    else
+        return true;
 }
 
 void TransferManager::closeClientEvent()

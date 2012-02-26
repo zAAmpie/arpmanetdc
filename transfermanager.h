@@ -17,7 +17,6 @@
 
 #ifndef TRANSFERMANAGER_H
 #define TRANSFERMANAGER_H
-
 #include <QObject>
 #include <QList>
 #include <QHostAddress>
@@ -159,6 +158,11 @@ public slots:
     void setTransferSegmentPointer(quint32 segmentId, TransferSegment *segment);
     void removeTransferSegmentPointer(quint32 segmentId);
 
+    // One download per peer checking
+    void addDownloadPeer(QHostAddress peer);
+    void removeDownloadPeer(QHostAddress peer);
+    bool checkDownloadPeer(QHostAddress peer);
+
 private:
     Transfer* getTransferObjectPointer(QByteArray &tth, int transferType, QHostAddress *hostAddr = 0);
     DownloadTransferQueueItem getNextQueuedDownload();
@@ -179,6 +183,8 @@ private:
     // Transfer segment pointers for direct dispatch
     TransferSegment *getTransferSegmentPointer(quint32 segmentId);
     QHash<quint32, TransferSegment*> transferSegmentPointers;
+    QSet<QHostAddress> currentUploadingHosts;
+    QSet<QHostAddress> currentDownloadingHosts;
 
     const QHash<QString, QString> *pSettings;
 };

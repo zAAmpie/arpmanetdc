@@ -1,7 +1,6 @@
 #include "transfer.h"
 
-Transfer::Transfer(QObject *parent) :
-    QObject(parent)
+Transfer::Transfer(QObject *parent) : QObject(parent)
 {
     upTime = QDateTime::currentDateTime();
     fileExists = false;
@@ -77,6 +76,11 @@ void Transfer::setFileSize(quint64 size)
 void Transfer::setProtocolOrderPreference(QByteArray p)
 {
     protocolOrderPreference = p;
+}
+
+void Transfer::setCurrentlyDownloadingPeers(QSet<QHostAddress> *dh)
+{
+    pCurrentDownloadingPeers = dh;
 }
 
 QByteArray* Transfer::getTTH()

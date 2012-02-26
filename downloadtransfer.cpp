@@ -66,7 +66,8 @@ DownloadTransfer::~DownloadTransfer()
 
     QHashIterator<QHostAddress, RemotePeerInfoStruct> r(remotePeerInfoTable);
     while (r.hasNext())
-        if (r.next().value().transferSegment)
+        r.next();
+        if (r.value().transferSegment)
         {
             emit removeTransferSegmentPointer(r.value().transferSegment->getSegmentId());
             r.value().transferSegment->deleteLater();            
@@ -418,6 +419,7 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment)
     remotePeerInfoTable[h].transferSegment = 0;
     remotePeerInfoTable[h].failureCount++;
     remotePeerInfoTable[h].bytesTransferred += segment->getBytesTransferred();
+    emit unflagDownloadPeer(h);
 
     segment->deleteLater();
 
@@ -506,7 +508,12 @@ void DownloadTransfer::receivedPeerProtocolCapability(QHostAddress peer, quint8 
 
     if (currentActiveSegments < MAXIMUM_SIMULTANEOUS_SEGMENTS)
     {
-        TransferSegment *download = createTransferSegment(peer);
+        // Do not necessarily use this peer for the next segment, rather ask getBestIdlePeer() in case this one is already busy in another segment.
+        QHostAddress nextPeer = getBestIdlePeer();
+        TransferSegment *download = 0;
+        if (!nextPeer.isNull())
+            download = createTransferSegment(nextPeer);
+
         if (download)
         {
             currentActiveSegments++;
@@ -560,6 +567,7 @@ TransferSegment* DownloadTransfer::createTransferSegment(QHostAddress peer)
             break;
         }
     }
+    emit flagDownloadPeer(peer);
     return download;
 }
 
@@ -624,6 +632,7 @@ void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int
         QHostAddress h = download->getSegmentRemotePeer();
         remotePeerInfoTable[h].transferSegment = 0;
         remotePeerInfoTable[h].bytesTransferred = download->getBytesTransferred();
+        emit unflagDownloadPeer(h);
         download->deleteLater();
         currentActiveSegments--;
     }
@@ -856,19 +865,23 @@ void DownloadTransfer::protocolCapabilityRequestTimerEvent()
 QHostAddress DownloadTransfer::getBestIdlePeer()
 {
     QHostAddress bestPeer = QHostAddress();
-    int leastFails = 1000;
+    double bestWeight = -1000;
     QHashIterator<QHostAddress, RemotePeerInfoStruct> i(remotePeerInfoTable);
     while (i.hasNext())
     {
         QHostAddress h = i.peekNext().key();
         RemotePeerInfoStruct s = i.next().value();
-        if ((s.transferSegment == 0) && (s.failureCount < leastFails))
+        if (s.transferSegment == 0)
         {
-            leastFails = s.failureCount;
-            if (leastFails == 0)
-                return h;
-
-            bestPeer = h;
+            double weight = log10((double)s.bytesTransferred + 1) - s.failureCount;
+            if (weight > bestWeight)
+            {
+                if (!pCurrentDownloadingPeers->contains(h))
+                {
+                    bestWeight = weight;
+                    bestPeer = h;
+                }
+            }
         }
     }
 
@@ -916,7 +929,7 @@ void DownloadTransfer::newSegmentTimerEvent()
         zeroSegmentTimeoutCount = 0;
 
     if (zeroSegmentTimeoutCount >= 6)
-        emit abort(this);  // fail the segment without removing it from queue.
+        emit abort(this);  // fail the download without removing it from queue.
 }
 
 bool DownloadTransfer::isNonDispatchedProtocol(TransferProtocol protocol)
