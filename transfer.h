@@ -55,7 +55,8 @@ enum transferErrors
     PeerAlreadyTransferring=0x04,
     NoSlotsAvailable=0x08,
     TransferAbortingError=0x10,
-    FileNotSharedError=0x20
+    FileNotSharedError=0x20,
+    SlowSegmentHostileTakeover=0x40
 };
 
 struct SegmentStatusStruct
