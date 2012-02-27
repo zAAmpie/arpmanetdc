@@ -47,6 +47,9 @@ typedef struct
     QByteArray triedProtocols;
     int failureCount;
     bool blacklisted;
+    qint64 lastStartTime;
+    quint64 lastBytesQueued;
+    qint64 lastTransferRate;
 } RemotePeerInfoStruct;
 
 class DownloadTransfer : public Transfer
@@ -84,7 +87,7 @@ private slots:
     void newSegmentTimerEvent();
     void protocolCapabilityRequestTimerEvent();
     void segmentCompleted(TransferSegment *segment);
-    void segmentFailed(TransferSegment *segment, quint8 error=0);
+    void segmentFailed(TransferSegment *segment, quint8 error=0, bool startIdleSegment = true);
     void requestHashBucket(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
     void updateDirectBytesStats(int bytes);
 
@@ -104,6 +107,7 @@ private:
     QHostAddress getBestIdlePeer();
     void saveBucketStateBitmap();
     bool isNonDispatchedProtocol(TransferProtocol protocol);
+    TransferSegment* getSlowestActivePeer();
 
     QHash<int, QByteArray*> *downloadBucketTable;
     QMap<int, QByteArray*> downloadBucketHashLookupTable;

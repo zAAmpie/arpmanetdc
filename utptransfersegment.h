@@ -43,7 +43,6 @@ public slots:
     void startDownloading();
     void pauseDownload();
     void unpauseDownload();
-    qint64 getBytesReceivedNotFlushed();
 
 private:
     UTPSocket *utpSocket;
