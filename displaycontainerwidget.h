@@ -73,7 +73,7 @@ private:
 
     //GUI
     QLabel *containerNameLabel, *containerSizeLabel, *busyLabel;
-    QPushButton *openContainerButton;
+    QPushButton *openContainerButton, *downloadAllFilesButton;
     
     //Selected
     QPushButton *downloadSelectedFilesButton;

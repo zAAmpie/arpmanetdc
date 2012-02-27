@@ -89,6 +89,8 @@ void DisplayContainerWidget::createWidgets()
     openContainerButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     downloadSelectedFilesButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/DownloadIcon.png"), tr("Download selected files"), pWidget);
     downloadSelectedFilesButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    downloadAllFilesButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/DownloadIcon.png"), tr("Download all files"), pWidget);
+    downloadAllFilesButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 }
 
 void DisplayContainerWidget::placeWidgets()
@@ -107,6 +109,7 @@ void DisplayContainerWidget::placeWidgets()
     bottomLayout->addWidget(selectedFileSizeLabel, 0);
     bottomLayout->addWidget(selectedFileCountLabel, 0);
     bottomLayout->addWidget(downloadSelectedFilesButton, 0);
+    bottomLayout->addWidget(downloadAllFilesButton, 0);
 
     QVBoxLayout *layout = new QVBoxLayout;
     layout->addLayout(topLayout, 0);
