@@ -248,9 +248,3 @@ void FSTPTransferSegment::transferTimerEvent()
         }
     }
 }
-
-qint64 FSTPTransferSegment::getBytesReceivedNotFlushed()
-{
-    // FSTP tips straight into parent buckets, no additional data is breeding around in the segment.
-    return 0;
-}

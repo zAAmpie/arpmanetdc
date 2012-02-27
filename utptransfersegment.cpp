@@ -113,11 +113,6 @@ void uTPTransferSegment::unpauseDownload()
 
 }
 
-qint64 uTPTransferSegment::getBytesReceivedNotFlushed()
-{
-    return 0;
-}
-
 // --------------============= uTP callback functions =============--------------
 void uTPTransferSegment::uTPRead(const byte *bytes, size_t count)
 {
