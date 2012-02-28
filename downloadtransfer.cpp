@@ -72,6 +72,7 @@ DownloadTransfer::~DownloadTransfer()
         {
             emit removeTransferSegmentPointer(r.value().transferSegment->getSegmentId());
             //r.value().transferSegment->deleteLater();
+            qDebug() << "DownloadTransfer Destructor: " << r.value().transferSegment;
         }
     }
     
@@ -292,10 +293,10 @@ void DownloadTransfer::abortTransfer()
 // Not to be confused with newPeer(), which adds the peer and its capabilities to remotePeerInfoTable
 void DownloadTransfer::addPeer(QHostAddress peer)
 {
-    qDebug() << "DownloadTransfer::addPeer() peer" << peer;
+    //qDebug() << "DownloadTransfer::addPeer() peer" << peer;
     if (peer.toIPv4Address() > 0 && !remotePeerInfoRequestPool.contains(peer) && !remotePeerInfoTable.contains(peer))
     {
-        qDebug() << "DownloadTransfer::addPeer() not yet in request pool or peer info table, added, emit requestProtocolCapability()";
+        //qDebug() << "DownloadTransfer::addPeer() not yet in request pool or peer info table, added, emit requestProtocolCapability()";
         remotePeerInfoRequestPool.insert(peer, 1);
         emit requestProtocolCapability(peer, this);
         if (!protocolCapabilityRequestTimer->isActive())
@@ -394,6 +395,7 @@ void DownloadTransfer::segmentCompleted(TransferSegment *segment)
 // This gets called when a segment fails and we need to perform some cleaning duties.
 void DownloadTransfer::segmentFailed(TransferSegment *segment, quint8 error, bool startIdleSegment)
 {
+    qDebug() << "DownloadTransfer::segmentFailed() " << segment;
     qDebug() << "DownloadTransfer::segmentFailed() peer segmentid error" << segment->getSegmentRemotePeer() << segment->getSegmentId() << error;
     // remote end dead, segment given up hope. mark everything not downloaded as not downloaded, so that
     // the block allocator can give them to other segments that do work.
@@ -420,6 +422,7 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment, quint8 error, boo
     //Remove offending peer
     //remotePeerInfoTable.remove(h); // TODO: flag, don't remove
     remotePeerInfoTable[h].transferSegment = 0;
+    qDebug() << "DownloadTransfer::segmentFailed() " << segment << remotePeerInfoTable[h].transferSegment << h;
     if (error & (FileIOError | InvalidOffsetError | FileNotSharedError))
         remotePeerInfoTable[h].blacklisted = true;
 
@@ -514,7 +517,7 @@ void DownloadTransfer::receivedPeerProtocolCapability(QHostAddress peer, quint8 
 {
     newPeer(peer, protocols);
     remotePeerInfoRequestPool.remove(peer);
-    qDebug() << "DownloadTransfer::receivedPeerProtocolCapability() peer protocols" << peer << protocols;
+    //qDebug() << "DownloadTransfer::receivedPeerProtocolCapability() peer protocols" << peer << protocols;
     if (remotePeerInfoRequestPool.isEmpty())
         protocolCapabilityRequestTimer->stop();
 
@@ -584,6 +587,7 @@ TransferSegment* DownloadTransfer::createTransferSegment(QHostAddress peer)
         }
     }
     emit flagDownloadPeer(peer);
+    qDebug() << "DownloadTransfer::createTransferSegment()" << download->getSegmentRemotePeer() << download;
     return download;
 }
 
@@ -591,7 +595,7 @@ TransferSegment* DownloadTransfer::createTransferSegment(QHostAddress peer)
 // Returns 0 if specified protocol is not supported.
 TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol p)
 {
-    TransferSegment* download = 0;
+    QPointer<TransferSegment> download = 0;
     switch(p)
     {
     case FailsafeTransferProtocol:
@@ -662,6 +666,7 @@ void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int
         {
             QHostAddress h = download->getSegmentRemotePeer();
             remotePeerInfoTable[h].transferSegment = 0;
+            qDebug() << "DownloadTransfer::downloadNextAvailableChunk() no more blocks to download, destroying:" << download << remotePeerInfoTable[h].transferSegment << h;
             remotePeerInfoTable[h].bytesTransferred = download->getBytesTransferred();
             emit unflagDownloadPeer(h);
             quint32 segmentId = download->getSegmentId();
@@ -892,7 +897,7 @@ void DownloadTransfer::protocolCapabilityRequestTimerEvent()
     while(i.hasNext())
     {
         emit requestProtocolCapability(i.peekNext().key(), this);
-        qDebug() << "DownloadTransfer::protocolCapabilityRequestTimerEvent() request protocol capability" << i.peekNext().key(), i.peekNext().value();
+        //qDebug() << "DownloadTransfer::protocolCapabilityRequestTimerEvent() request protocol capability" << i.peekNext().key(), i.peekNext().value();
         i.next().value()++;
         if (i.peekPrevious().value() <= 5)
             i.remove();

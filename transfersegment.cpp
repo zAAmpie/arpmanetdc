@@ -14,6 +14,7 @@ TransferSegment::TransferSegment(QObject *parent) :
 TransferSegment::~TransferSegment()
 {
     emit removeTransferSegmentPointer(segmentId);
+    //qDebug() << "TransferSegment DESTROYING: " << this;
 }
 
 void TransferSegment::transferTimerEvent(){}

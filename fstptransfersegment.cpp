@@ -1,6 +1,6 @@
 #include "fstptransfersegment.h"
 
-FSTPTransferSegment::FSTPTransferSegment(Transfer *parent)
+FSTPTransferSegment::FSTPTransferSegment(Transfer *parent) : TransferSegment(parent)
 {
     status = TRANSFER_STATE_INITIALIZING;
     prev_status = -1;
@@ -19,6 +19,8 @@ FSTPTransferSegment::~FSTPTransferSegment()
 {
     if (inputFile.isOpen())
         inputFile.close();
+
+    qDebug() << "FSTPTransferSegment DESTROYING: " << this;
 }
 
 void FSTPTransferSegment::setFileName(QString filename)
