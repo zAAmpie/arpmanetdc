@@ -22,7 +22,7 @@
 #include "fstptransfersegment.h"
 #include "utptransfersegment.h"
 
-#define MAXIMUM_SIMULTANEOUS_SEGMENTS 5//10 When downloading a ton of segments, the sheer number of ACKs and stalls actually slow down the transfer
+#define MAXIMUM_SIMULTANEOUS_SEGMENTS 5// When downloading a ton of segments, the sheer number of ACKs and stalls actually slow down the transfer
 
 #define HASH_TREE_WINDOW_LENGTH 184 // 8 datagrams
 
@@ -100,7 +100,7 @@ private:
     //void updateTransferSegmentTableRange(TransferSegment *segment, quint64 newStart, quint64 newEnd);
     void newPeer(QHostAddress peer, quint8 protocols);
     TransferSegment* createTransferSegment(QHostAddress peer);
-    void downloadNextAvailableChunk(TransferSegment *download, int length = 1);
+    void downloadNextAvailableChunk(TransferSegment *download, int length = 1, bool allowRecurse = true);
     int getLastHashBucketNumberReceived();
     void congestionTest();
     void requestHashTree(int lastHashBucketReceived, bool timerRequest = false);

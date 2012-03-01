@@ -430,7 +430,8 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment, quint8 error, boo
     quint32 segmentId = segment->getSegmentId();
     emit removeTransferSegmentPointer(segmentId);
 
-    segment->deleteLater();
+    //segment->deleteLater();
+    delete segment;
 
     //Update the alternates
     emit searchTTHAlternateSources(TTH);
@@ -625,7 +626,7 @@ TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol 
 // Get next chunk from block allocator
 // Update incoming packet dispatch segment map
 // Call startDownloading() in segment
-void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int length)
+void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int length, bool allowRecurse)
 {
     TransferSegmentTableStruct t;
     SegmentOffsetLengthStruct s = getSegmentForDownloading(length);
@@ -649,14 +650,14 @@ void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int
         remotePeerInfoTable[h].lastBytesQueued = t.segmentEnd - segmentStart;
         download->startDownloading();
     }
-    else if (remotePeerInfoTable.contains(download->getSegmentRemotePeer()))
+    else if (allowRecurse && remotePeerInfoTable.contains(download->getSegmentRemotePeer()))
     {
         // first we identify a slow segment for hostile takeover
         TransferSegment *slowSegment = getSlowestActivePeer();
         if (slowSegment && slowSegment != download)
         {
             segmentFailed(slowSegment, SlowSegmentHostileTakeover, false);
-            downloadNextAvailableChunk(download);
+            downloadNextAvailableChunk(download, 1, false);
         }
         else // if unsuccessful, we are done here.
         {
@@ -666,11 +667,12 @@ void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int
             emit unflagDownloadPeer(h);
             quint32 segmentId = download->getSegmentId();
             emit removeTransferSegmentPointer(segmentId);
-            download->deleteLater();
+            //download->deleteLater();
+            delete download;
             currentActiveSegments--;
         }
     }
-    else
+    else if (allowRecurse)
     {
         qDebug() << "DownloadTransfer::downloadNextAvailableChunk(): else reached that should not be reached." << currentActiveSegments;
     }

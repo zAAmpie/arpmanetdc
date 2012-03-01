@@ -230,6 +230,32 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
             pTransferManager, SLOT(incomingTransferError(QHostAddress,QByteArray,quint64,quint8)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)),
             pDispatcher, SLOT(sendTransferError(QHostAddress,quint8,QByteArray,quint64)), Qt::QueuedConnection);
+    /*connect(pDispatcher, SIGNAL(incomingUploadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)),
+            pTransferManager, SLOT(incomingUploadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)));
+    connect(pDispatcher, SIGNAL(incomingDataPacket(quint8,QHostAddress,QByteArray)),
+            pTransferManager, SLOT(incomingDataPacket(quint8,QHostAddress,QByteArray)));
+    connect(pDispatcher, SIGNAL(incomingDirectDataPacket(quint32,quint64,QByteArray)),
+            pTransferManager, SLOT(incomingDirectDataPacket(quint32,quint64,QByteArray)));
+    connect(pTransferManager, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)),
+            pDispatcher, SLOT(sendUnicastRawDatagram(QHostAddress,QByteArray*)));
+    connect(pDispatcher, SIGNAL(receivedTTHTree(QByteArray,QByteArray)),
+            pTransferManager, SLOT(incomingTTHTree(QByteArray,QByteArray)));
+    connect(pTransferManager, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray,quint32,quint32)),
+            pDispatcher, SLOT(sendTTHTreeRequest(QHostAddress,QByteArray,quint32,quint32)));
+    connect(pDispatcher, SIGNAL(TTHSearchResultsReceived(QByteArray,QHostAddress)),
+            pTransferManager, SLOT(incomingTTHSource(QByteArray,QHostAddress)));
+    connect(pTransferManager, SIGNAL(searchTTHAlternateSources(QByteArray)),
+            pDispatcher, SLOT(initiateTTHSearch(QByteArray)));
+    connect(pTransferManager, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)),
+            pDispatcher, SLOT(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)));
+    connect(pDispatcher, SIGNAL(incomingProtocolCapabilityResponse(QHostAddress,char)),
+            pTransferManager, SLOT(incomingProtocolCapabilityResponse(QHostAddress,char)));
+    connect(pTransferManager, SIGNAL(requestProtocolCapability(QHostAddress)),
+            pDispatcher, SLOT(sendProtocolCapabilityQuery(QHostAddress)));
+    connect(pDispatcher, SIGNAL(incomingTransferError(QHostAddress,QByteArray,quint64,quint8)),
+            pTransferManager, SLOT(incomingTransferError(QHostAddress,QByteArray,quint64,quint8)));
+    connect(pTransferManager, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)),
+            pDispatcher, SLOT(sendTransferError(QHostAddress,quint8,QByteArray,quint64)));*/
 
     //Connect TransferManager to GUI - notify of started/completed transfers
     connect(pTransferManager, SIGNAL(downloadStarted(QByteArray)), 
@@ -402,8 +428,9 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(this, SIGNAL(ftpDownloadNewestVersion()),
         pFtpUpdate, SLOT(downloadNewestVersion()));
     
+    //pDispatcher->moveToThread(transferThread);
     pDispatcher->moveToThread(dispatcherThread);
-    dispatcherThread->start();
+    dispatcherThread->start(QThread::HighPriority);
 
     pShare->moveToThread(dbThread);
     dbThread->start();
@@ -2824,34 +2851,16 @@ void ArpmanetDC::queueSaveContainers(QHash<QString, ContainerContentsType> conta
 //Return the contents of a container downloaded
 void ArpmanetDC::returnProcessedContainer(QHostAddress host, ContainerContentsType index, QList<ContainerLookupReturnStruct> data, QString downloadPath, QString containerName)
 {
-    DisplayContainerWidget *cWidget = new DisplayContainerWidget(host, index, data, containerName, this);
-    
+    //Create a display container widget and connect it
+    DisplayContainerWidget *cWidget = new DisplayContainerWidget(host, index, data, containerName, downloadPath, this);
+    connect(cWidget, SIGNAL(queueDownload(int, QByteArray, QString, quint64, QHostAddress)), this, SIGNAL(queueDownload(int, QByteArray, QString, quint64, QHostAddress)));
+
+    //Keep track of it
     displayContainerWidgetHash.insert(cWidget->widget(), cWidget);
     
+    //Create a tab for it
     tabs->addTab(cWidget->widget(), QIcon(":/ArpmanetDC/Resources/ContainerIcon.png"), tr("Container - %1").arg(containerName));
-
     tabs->setCurrentIndex(tabs->indexOf(cWidget->widget()));
-
-    /*for (int i = 0; i < data.size(); ++i)
-    {
-        ContainerLookupReturnStruct c = data.at(i);
-                
-        //Construct queue item
-        QFileInfo fi(c.filePath);
-        QueueStruct q;
-        q.fileHost = host;
-        q.fileName = fi.fileName();
-        q.filePath = downloadPath + c.filePath;
-        q.fileSize = c.fileSize;
-        q.priority = NormalQueuePriority;
-        q.tthRoot = c.rootTTH;
-
-        //Add to queue
-        addDownloadToQueue(q);
-
-        //Add to transfer manager queue for download
-        emit queueDownload((int)q.priority, q.tthRoot, q.filePath, q.fileSize, q.fileHost);
-    }*/
 }
 
 //Called when a file has been assembled correctly

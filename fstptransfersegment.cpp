@@ -1,6 +1,6 @@
 #include "fstptransfersegment.h"
 
-FSTPTransferSegment::FSTPTransferSegment(Transfer *parent)
+FSTPTransferSegment::FSTPTransferSegment(Transfer *parent) : TransferSegment(parent)
 {
     status = TRANSFER_STATE_INITIALIZING;
     prev_status = -1;
