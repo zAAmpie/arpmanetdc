@@ -62,6 +62,9 @@ public slots:
     //Set a download busy (i.e. the download started)
     void setQueuedDownloadBusy(QByteArray tth);
 
+    //Requeue a download that was busy
+    void requeueDownload(QByteArray tth);
+
 private slots:
     //Slots
     void showQueueTableContextMenu(const QPoint &);

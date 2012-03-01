@@ -202,6 +202,7 @@ private slots:
     void downloadStarted(QByteArray tth);
     void downloadCompleted(QByteArray tth);
     void closeClientEventReturn(); //Return when everything is saved
+    void requeueDownload(QByteArray tth);
 
     //Dispatcher slots
     void bootstrapStatusChanged(int status);

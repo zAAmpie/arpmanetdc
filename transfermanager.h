@@ -86,6 +86,7 @@ signals:
     // GUI updates
     void downloadStarted(QByteArray tth);
     void downloadCompleted(QByteArray tth);
+    void requeueDownload(QByteArray tth);
 
     //Transfer status
     void returnGlobalTransferStatus(QList<TransferItemStatus> status);
@@ -112,6 +113,9 @@ public slots:
     void queueDownload(int priority, QByteArray tth, QString filePathName, quint64 fileSize, QHostAddress fileHost);
     void changeQueuedDownloadPriority(int oldPriority, int newPriority, QByteArray tth);
     void removeQueuedDownload(int priority, QByteArray tth);
+
+    //Requeue a download that "failed"
+    void requeueDownload(Transfer *transfer);
 
     //Stop a transfer already running
     void stopTransfer(QByteArray tth, int type, QHostAddress host);

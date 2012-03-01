@@ -262,6 +262,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
             this, SLOT(downloadStarted(QByteArray)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(downloadCompleted(QByteArray)), 
             this, SLOT(downloadCompleted(QByteArray)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(requeueDownload(QByteArray)),
+            this, SLOT(requeueDownload(QByteArray)), Qt::QueuedConnection);
     connect(this, SIGNAL(removeQueuedDownload(int, QByteArray)), 
             pTransferManager, SLOT(removeQueuedDownload(int, QByteArray)), Qt::QueuedConnection);
     connect(this, SIGNAL(queueDownload(int, QByteArray, QString, quint64, QHostAddress)), 
@@ -2019,6 +2021,22 @@ void ArpmanetDC::downloadStarted(QByteArray tth)
 
     if (queueWidget)
         queueWidget->setQueuedDownloadBusy(tth);
+}
+
+//Requeue the download when it "failed"
+void ArpmanetDC::requeueDownload(QByteArray tth)
+{
+    //Change the priority to low when requeued
+    if (pQueueList->contains(tth))
+    {
+        (*pQueueList)[tth].priority = LowQueuePriority;
+    }
+    else
+        return;
+
+    //Notify the queueWidget
+    if (queueWidget)
+        queueWidget->requeueDownload(tth);
 }
 
 void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)

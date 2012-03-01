@@ -328,6 +328,27 @@ void DownloadQueueWidget::setQueuedDownloadBusy(QByteArray tth)
     queueModel->item(row, 2)->setText("Busy");
 }
 
+//Requeue a download that was busy
+void DownloadQueueWidget::requeueDownload(QByteArray tth)
+{
+    QByteArray base32TTH(tth);
+    base32Encode(base32TTH);
+
+    QList<QStandardItem *> findResults = queueModel->findItems(base32TTH.data(), Qt::MatchExactly, 5);
+
+    if (findResults.isEmpty())
+        return;
+    
+    int row = findResults.first()->row();
+    //Set status
+    queueModel->item(row, 2)->setIcon(QIcon());
+    queueModel->item(row, 2)->setText("Requeued");
+
+    //Set priority
+    queueModel->item(row, 4)->setIcon(lowPriorityIcon);
+    queueModel->item(row, 4)->setText(tr("Low"));
+}
+
 QWidget *DownloadQueueWidget::widget()
 {
     return pWidget;
