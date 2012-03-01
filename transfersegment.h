@@ -47,7 +47,7 @@ signals:
     void updateDirectBytesStats(int bytes);
 
 public slots:
-    virtual void incomingDataPacket(quint64 offset, QByteArray data) = 0;
+    virtual void incomingDataPacket(qint64 offset, QByteArray data) = 0;
     virtual void transferTimerEvent();
     virtual void setFileName(QString filename) = 0;
     virtual void setFileSize(quint64 size);
@@ -77,7 +77,7 @@ protected:
     void calculateLastBucketParams();
     QByteArray TTH;
     QString filePathName;
-    quint64 fileSize;
+    qint64 fileSize;
     QHostAddress remoteHost;
     qint64 segmentStart;
     qint64 segmentLength;

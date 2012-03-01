@@ -420,8 +420,6 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment, quint8 error, boo
     QHostAddress h = segment->getSegmentRemotePeer();
     QString s = h.toString();
     //Remove offending peer
-    //remotePeerInfoTable.remove(h); // TODO: flag, don't remove
-    //remotePeerInfoTable[h].transferSegment = 0;
 
     //Check if removed correctly
     int count = 0;
@@ -461,12 +459,11 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment, quint8 error, boo
         QHostAddress nextPeer = getBestIdlePeer();
         if (!nextPeer.isNull())
         {
-            //remotePeerInfoTable[nextPeer].triedProtocols.clear();
             TransferSegment *download = createTransferSegment(nextPeer);
             if (download)
             {
                 currentActiveSegments++;
-                remotePeerInfoTable[nextPeer].transferSegment = download;
+                //remotePeerInfoTable[nextPeer].transferSegment = download;
                 downloadNextAvailableChunk(download);
             }
         }
@@ -544,7 +541,7 @@ void DownloadTransfer::receivedPeerProtocolCapability(QHostAddress peer, quint8 
         if (download)
         {
             currentActiveSegments++;
-            remotePeerInfoTable[peer].transferSegment = download;
+            //remotePeerInfoTable[peer].transferSegment = download;
             downloadNextAvailableChunk(download);
         }
     }
@@ -694,8 +691,8 @@ void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int
                     count++;
                 }
             }
-
             //remotePeerInfoTable[h].transferSegment = 0;
+
             qDebug() << "DownloadTransfer::downloadNextAvailableChunk() no more blocks to download, destroying:" << download << remotePeerInfoTable[h].transferSegment << h;
             remotePeerInfoTable[h].bytesTransferred = download->getBytesTransferred();
             emit unflagDownloadPeer(h);
@@ -1000,11 +997,10 @@ void DownloadTransfer::newSegmentTimerEvent()
     QHostAddress nextPeer = getBestIdlePeer();
     if (!nextPeer.isNull())
     {
-        //remotePeerInfoTable[nextPeer].triedProtocols.clear();
         TransferSegment *download = createTransferSegment(nextPeer);
         if (download)
         {
-            remotePeerInfoTable[nextPeer].transferSegment = download;
+            //remotePeerInfoTable[nextPeer].transferSegment = download;
             currentActiveSegments++;
             downloadNextAvailableChunk(download, 1);
         }

@@ -61,7 +61,7 @@ void FSTPTransferSegment::startUploading()
         return;
     }
 
-    quint64 wptr = 0;
+    qint64 wptr = 0;
     QByteArray header;
     header.reserve(2);
     if (segmentId > 0)
@@ -134,7 +134,7 @@ void FSTPTransferSegment::abortTransfer()
     emit transferRequestFailed(this, 0, false);
 }
 
-void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
+void FSTPTransferSegment::incomingDataPacket(qint64 offset, QByteArray data)
 {
     //Ignore packet if transfer has failed and has not been restarted
     if (status == TRANSFER_STATE_FAILED && offset != segmentStart)
@@ -149,6 +149,11 @@ void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
         return;
 
     int b = data.length();
+
+    // Broken segments from old clients that do not support error reporting stop here, they can then time out and fail.
+    if (b == 0)
+        return;
+
     emit updateDirectBytesStats(b);
     bytesTransferred += b;
 

@@ -53,7 +53,7 @@ void uTPTransferSegment::transferTimerEvent()
 }
 
 // not interested in offset here, for uTP it only denotes the relevant segment start
-void uTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)
+void uTPTransferSegment::incomingDataPacket(qint64 offset, QByteArray data)
 {
     qDebug() << "uTPTransferSegment::incomingDataPacket()" << offset;
     UTP_IsIncomingUTP(uTPTransferSegment::utp_incoming, uTPTransferSegment::utp_sendto, this,

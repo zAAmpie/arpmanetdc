@@ -35,7 +35,7 @@ public:
     ~uTPTransferSegment();
 
 public slots:
-    void incomingDataPacket(quint64 offset, QByteArray data);
+    void incomingDataPacket(qint64 offset, QByteArray data);
     void transferTimerEvent();
     void setFileName(QString filename);
     void setFileSize(quint64 size);
