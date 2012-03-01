@@ -39,6 +39,7 @@ public slots:
     void startDownloading();
     void pauseDownload();
     void unpauseDownload();
+    void abortTransfer();
 
 private:
     qint64 requestingOffset;

@@ -14,11 +14,11 @@ TransferSegment::TransferSegment(QObject *parent) :
 TransferSegment::~TransferSegment()
 {
     emit removeTransferSegmentPointer(segmentId);
+    //qDebug() << "TransferSegment DESTROYING: " << this;
 }
 
 void TransferSegment::transferTimerEvent(){}
 void TransferSegment::setFileSize(quint64){}
-//void TransferSegment::receivedPeerProtocolCapability(char){}
 qint64 TransferSegment::getBytesReceivedNotFlushed(){return 0;}
 qint64 TransferSegment::getMaxUploadRequestOffset(){return maxUploadRequestOffset;}
 

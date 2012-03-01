@@ -43,6 +43,7 @@ public slots:
     void startDownloading();
     void pauseDownload();
     void unpauseDownload();
+    void abortTransfer();
 
 private:
     UTPSocket *utpSocket;

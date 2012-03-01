@@ -679,7 +679,7 @@ void Dispatcher::sendTTHSearchForwardRequest(QHostAddress &forwardingNode, QByte
     datagram->append(toQByteArray(dispatchIP.toIPv4Address()));
     datagram->append(tth);
     sendUnicastRawDatagram(forwardingNode, datagram);
-    qDebug() << "Dispatcher::sendTTHSearchForwardRequest() forwardingNode tth" << forwardingNode << tth.toBase64();
+    //qDebug() << "Dispatcher::sendTTHSearchForwardRequest() forwardingNode tth" << forwardingNode << tth.toBase64();
 }
 
 void Dispatcher::handleReceivedTTHSearchForwardRequest(QHostAddress &fromAddr, QByteArray &datagram)
@@ -719,7 +719,7 @@ void Dispatcher::handleArrivedTTHSearchResult(QHostAddress &fromAddr, QByteArray
 
     QByteArray tth(datagram.mid(6));
     emit TTHSearchResultsReceived(tth, fromAddr);
-    qDebug() << "Dispatcher::handleArrivedTTHSearchResult() fromAddr tth" << fromAddr << tth.toBase64();
+    //qDebug() << "Dispatcher::handleArrivedTTHSearchResult() fromAddr tth" << fromAddr << tth.toBase64();
 }
 
 void Dispatcher::handleReceivedTTHSearchQuestion(QHostAddress &fromAddr, QByteArray &datagram)
@@ -819,7 +819,7 @@ void Dispatcher::handleReceivedTTHTreeRequest(QHostAddress &senderHost, QByteArr
     quint32 startOffset = getQuint32FromByteArray(&datagram);
     quint32 numberOfBuckets = getQuint32FromByteArray(&datagram);
     emit incomingTTHTreeRequest(senderHost, tth, startOffset, numberOfBuckets);
-    qDebug() << "Dispatcher::handleReceivedTTHTreeRequest: Tree request TTH:offset:number" << tth.toBase64() << startOffset << numberOfBuckets;
+    //qDebug() << "Dispatcher::handleReceivedTTHTreeRequest: Tree request TTH:offset:number" << tth.toBase64() << startOffset << numberOfBuckets;
 }
 
 void Dispatcher::handleReceivedTTHTree(QByteArray &datagram)
