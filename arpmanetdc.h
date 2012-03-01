@@ -264,6 +264,7 @@ private slots:
     void privateMessageActionPressed();
     void reconnectActionPressed();
     void openDownloadDirActionPressed();
+    void openContainerActionPressed();
     void pmActionPressed();
 
     void userCommandMenuPressed(QAction *action);
@@ -462,7 +463,7 @@ private:
     QMenu *userCommandListMenu;
 
     //Actions
-    QAction *reconnectAction, *shareAction, *searchAction, *queueAction, *downloadFinishedAction, *settingsAction, *helpAction, *privateMessageAction, *openDownloadDirAction, *pmAction;
+    QAction *reconnectAction, *shareAction, *searchAction, *queueAction, *downloadFinishedAction, *settingsAction, *helpAction, *privateMessageAction, *openDownloadDirAction, *pmAction, *openContainerAction;
 
     //-----===== System tray =====-----
 

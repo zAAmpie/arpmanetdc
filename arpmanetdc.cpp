@@ -969,15 +969,25 @@ void ArpmanetDC::createWidgets()
     
     //===== Actions =====
     queueAction = new QAction(QIcon(":/ArpmanetDC/Resources/QueueIcon.png"), tr("Download queue"), this);
+    queueAction->setToolTip(tr("Displays a list of all downloads currently in the queue"));
     downloadFinishedAction = new QAction(QIcon(":/ArpmanetDC/Resources/DownloadFinishedIcon.png"), tr("Finished downloads"), this);
+    downloadFinishedAction->setToolTip(tr("Displays a list of all finished downloads"));
     searchAction = new QAction(QIcon(":/ArpmanetDC/Resources/SearchIcon.png"), tr("Search"), this);
+    searchAction->setToolTip(tr("Search for files"));
     shareAction = new QAction(QIcon(":/ArpmanetDC/Resources/ShareIcon.png"), tr("Share"), this);
+    shareAction->setToolTip(tr("Select the files you want to share with other users"));
     settingsAction = new QAction(QIcon(":/ArpmanetDC/Resources/SettingsIcon.png"), tr("Settings"), this);
+    settingsAction->setToolTip(tr("Displays the client settings page"));
     helpAction = new QAction(QIcon(":/ArpmanetDC/Resources/HelpIcon.png"), tr("Help"), this);
+    helpAction->setToolTip(tr("Go here if you feel lost or confused..."));
     privateMessageAction = new QAction(QIcon(":/ArpmanetDC/Resources/EnvelopeIcon.png"), tr("Send PM"), this);
     reconnectAction = new QAction(QIcon(":/ArpmanetDC/Resources/ServerIcon.png"), tr("Reconnect"), this);
+    reconnectAction->setToolTip(tr("Reconnect the hub connection"));
     openDownloadDirAction = new QAction(QIcon(":/ArpmanetDC/Resources/FolderIcon.png"), tr("Download directory"), this);
+    openDownloadDirAction->setToolTip(tr("Opens the current download folder to view downloaded files"));
     pmAction = new QAction(QIcon(":/ArpmanetDC/Resources/EnvelopeIcon.png"), tr("Send PM"), this);
+    openContainerAction = new QAction(QIcon(":/ArpmanetDC/Resources/ContainerIcon.png"), tr("Open container"), this);
+    openContainerAction->setToolTip(tr("Open a downloaded container to view and enqueue files from it"));
 
     //===== Menus =====
     userListMenu = new QMenu(this);
@@ -1014,7 +1024,8 @@ void ArpmanetDC::placeWidgets()
     toolBar->addSeparator();
     toolBar->addAction(queueAction);
     toolBar->addAction(downloadFinishedAction);
-        toolBar->addAction(openDownloadDirAction);
+    toolBar->addAction(openDownloadDirAction);
+    toolBar->addAction(openContainerAction);
     toolBar->addSeparator();
     toolBar->addAction(settingsAction);
     toolBar->addAction(helpAction);
@@ -1115,6 +1126,7 @@ void ArpmanetDC::connectWidgets()
     connect(reconnectAction, SIGNAL(triggered()), this, SLOT(reconnectActionPressed()));
     connect(openDownloadDirAction, SIGNAL(triggered()), this, SLOT(openDownloadDirActionPressed()));
     connect(pmAction, SIGNAL(triggered()), this, SLOT(pmActionPressed()));
+    connect(openContainerAction, SIGNAL(triggered()), this, SLOT(openContainerActionPressed()));
 
     connect(restoreAction, SIGNAL(triggered()), this, SLOT(showNormal()));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
@@ -1322,6 +1334,23 @@ void ArpmanetDC::openDownloadDirActionPressed()
 {
     QString path = QDir::toNativeSeparators(pSettingsManager->getSetting(SettingsManager::DOWNLOAD_PATH));
     QDesktopServices::openUrl(QUrl("file:///" + path));
+}
+
+//Open a downloaded container
+void ArpmanetDC::openContainerActionPressed()
+{
+    //Get the container path
+    QString containerPath;
+    containerPath = QFileDialog::getOpenFileName(this, tr("Open container"), pSettingsManager->getSetting(SettingsManager::DOWNLOAD_PATH), tr("Containers (*.adcc)"));
+    containerPath.replace("\\", "/");
+
+    if (!containerPath.isEmpty())
+    {
+        //Process the container
+        QFileInfo fi(containerPath);
+        QString filePath = containerPath.left(containerPath.lastIndexOf("/")+1);
+        emit processContainer(QHostAddress(), containerPath, filePath);
+    }
 }
 
 //Shortcut PM action pressed - when right-clicking on a user name
