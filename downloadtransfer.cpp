@@ -421,7 +421,21 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment, quint8 error, boo
     QString s = h.toString();
     //Remove offending peer
     //remotePeerInfoTable.remove(h); // TODO: flag, don't remove
-    remotePeerInfoTable[h].transferSegment = 0;
+    //remotePeerInfoTable[h].transferSegment = 0;
+
+    //Check if removed correctly
+    int count = 0;
+    QMutableHashIterator<QHostAddress, RemotePeerInfoStruct> mi(remotePeerInfoTable);
+    while (mi.hasNext())
+    {
+        mi.next();
+        if (mi.value().transferSegment == segment)
+        {
+            mi.value().transferSegment = 0;
+            count++;
+        }
+    }
+    
     qDebug() << "DownloadTransfer::segmentFailed() " << segment << remotePeerInfoTable[h].transferSegment << h;
     if (error & (FileIOError | InvalidOffsetError | FileNotSharedError))
         remotePeerInfoTable[h].blacklisted = true;
@@ -627,7 +641,7 @@ TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol 
 // Get next chunk from block allocator
 // Update incoming packet dispatch segment map
 // Call startDownloading() in segment
-void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int length, bool allowRecurse)
+void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int length, int recursionLimit)
 {
     TransferSegmentTableStruct t;
     SegmentOffsetLengthStruct s = getSegmentForDownloading(length);
@@ -657,7 +671,7 @@ void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int
         // commence transfer
         download->startDownloading();
     }
-    else if (allowRecurse && remotePeerInfoTable.contains(download->getSegmentRemotePeer()))
+    else if (recursionLimit > 0 && remotePeerInfoTable.contains(download->getSegmentRemotePeer()))
     {
         // first we identify a slow segment for hostile takeover
         TransferSegment *slowSegment = getSlowestActivePeer();
@@ -665,22 +679,34 @@ void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int
         {
             qDebug() << "DownloadTransfer::downloadNextAvailableChunk() kick slow segment" << slowSegment->getSegmentId() << slowSegment;
             segmentFailed(slowSegment, SlowSegmentHostileTakeover, false);
-            downloadNextAvailableChunk(download, 1, false);
+            downloadNextAvailableChunk(download, 1, --recursionLimit);
         }
         else // if unsuccessful, we are done here.
         {
-            remotePeerInfoTable[h].transferSegment = 0;
+            QMutableHashIterator<QHostAddress, RemotePeerInfoStruct> mi(remotePeerInfoTable);
+            int count = 0;
+            while (mi.hasNext())
+            {
+                mi.next();
+                if (mi.value().transferSegment == download)
+                {
+                    mi.value().transferSegment = 0;
+                    count++;
+                }
+            }
+
+            //remotePeerInfoTable[h].transferSegment = 0;
             qDebug() << "DownloadTransfer::downloadNextAvailableChunk() no more blocks to download, destroying:" << download << remotePeerInfoTable[h].transferSegment << h;
             remotePeerInfoTable[h].bytesTransferred = download->getBytesTransferred();
             emit unflagDownloadPeer(h);
             quint32 segmentId = download->getSegmentId();
             emit removeTransferSegmentPointer(segmentId);
-            //download->deleteLater();
-            delete download;
+            download->deleteLater();
+            //delete download;
             currentActiveSegments--;
         }
     }
-    else if (allowRecurse)
+    else if (recursionLimit > 0)
     {
         qDebug() << "DownloadTransfer::downloadNextAvailableChunk(): else reached that should not be reached." << currentActiveSegments;
     }
@@ -980,8 +1006,10 @@ void DownloadTransfer::newSegmentTimerEvent()
         {
             remotePeerInfoTable[nextPeer].transferSegment = download;
             currentActiveSegments++;
-            downloadNextAvailableChunk(download);
+            downloadNextAvailableChunk(download, 1);
         }
+        else
+            remotePeerInfoTable[nextPeer].transferSegment = 0;
     }
     if (currentActiveSegments == 0)
         zeroSegmentTimeoutCount++;

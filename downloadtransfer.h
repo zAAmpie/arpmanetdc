@@ -100,7 +100,7 @@ private:
     //void updateTransferSegmentTableRange(TransferSegment *segment, quint64 newStart, quint64 newEnd);
     void newPeer(QHostAddress peer, quint8 protocols);
     TransferSegment* createTransferSegment(QHostAddress peer);
-    void downloadNextAvailableChunk(TransferSegment *download, int length = 1, bool allowRecurse = true);
+    void downloadNextAvailableChunk(TransferSegment *download, int length = 1, int recursionLimit = 5);
     int getLastHashBucketNumberReceived();
     void congestionTest();
     void requestHashTree(int lastHashBucketReceived, bool timerRequest = false);
