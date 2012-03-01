@@ -108,6 +108,8 @@ private:
     void saveBucketStateBitmap();
     bool isNonDispatchedProtocol(TransferProtocol protocol);
     TransferSegment* getSlowestActivePeer();
+    int getSegmentsDone();
+    int getTotalFileSegments();
 
     QHash<int, QByteArray*> *downloadBucketTable;
     QMap<int, QByteArray*> downloadBucketHashLookupTable;

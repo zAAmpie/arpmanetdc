@@ -41,7 +41,7 @@ signals:
     void sendTransferError(QHostAddress dstHost, quint8 error, QByteArray tth, quint64 offset);
     void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
     void requestNextSegment(TransferSegment *requestingSegmentObject);
-    void transferRequestFailed(TransferSegment *requestingSegmentObject);
+    void transferRequestFailed(TransferSegment *requestingSegmentObject, quint8 error=0, bool startIdleSegment=true);
     void requestNextSegmentId(TransferSegment *segment);
     void removeTransferSegmentPointer(quint32 segmentId);
     void updateDirectBytesStats(int bytes);
@@ -65,6 +65,7 @@ public slots:
     virtual void startDownloading() = 0;
     virtual void pauseDownload() = 0;
     virtual void unpauseDownload() = 0;
+    virtual void abortTransfer() = 0;
     void setDownloadBucketTablePointer(QHash<int, QByteArray*> *dbt);
     void setSegmentId(quint32 id);
     quint64 getBytesTransferred();

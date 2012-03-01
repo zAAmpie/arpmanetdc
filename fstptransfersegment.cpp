@@ -20,7 +20,7 @@ FSTPTransferSegment::~FSTPTransferSegment()
     if (inputFile.isOpen())
         inputFile.close();
 
-    qDebug() << "FSTPTransferSegment DESTROYING: " << this;
+    qDebug() << "FSTPTransferSegment DESTROYING: " << segmentId << this;
 }
 
 void FSTPTransferSegment::setFileName(QString filename)
@@ -127,6 +127,11 @@ void FSTPTransferSegment::unpauseDownload()
 {
     if (prev_status != -1)
         status = prev_status;
+}
+
+void FSTPTransferSegment::abortTransfer()
+{
+    emit transferRequestFailed(this, 0, false);
 }
 
 void FSTPTransferSegment::incomingDataPacket(quint64 offset, QByteArray data)

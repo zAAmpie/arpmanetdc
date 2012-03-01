@@ -113,6 +113,11 @@ void uTPTransferSegment::unpauseDownload()
 
 }
 
+void uTPTransferSegment::abortTransfer()
+{
+
+}
+
 // --------------============= uTP callback functions =============--------------
 void uTPTransferSegment::uTPRead(const byte *bytes, size_t count)
 {

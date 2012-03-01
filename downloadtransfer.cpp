@@ -395,7 +395,7 @@ void DownloadTransfer::segmentCompleted(TransferSegment *segment)
 // This gets called when a segment fails and we need to perform some cleaning duties.
 void DownloadTransfer::segmentFailed(TransferSegment *segment, quint8 error, bool startIdleSegment)
 {
-    qDebug() << "DownloadTransfer::segmentFailed() " << segment;
+    qDebug() << "DownloadTransfer::segmentFailed() " << (void *)segment;
     qDebug() << "DownloadTransfer::segmentFailed() peer segmentid error" << segment->getSegmentRemotePeer() << segment->getSegmentId() << error;
     // remote end dead, segment given up hope. mark everything not downloaded as not downloaded, so that
     // the block allocator can give them to other segments that do work.
@@ -434,6 +434,7 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment, quint8 error, boo
     emit removeTransferSegmentPointer(segmentId);
 
     segment->deleteLater();
+    currentActiveSegments--;
 
     //Update the alternates
     emit searchTTHAlternateSources(TTH);
@@ -444,19 +445,16 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment, quint8 error, boo
     if (startIdleSegment)
     {
         QHostAddress nextPeer = getBestIdlePeer();
-        if (nextPeer.isNull())
-            currentActiveSegments--;
-        else
+        if (!nextPeer.isNull())
         {
             //remotePeerInfoTable[nextPeer].triedProtocols.clear();
             TransferSegment *download = createTransferSegment(nextPeer);
             if (download)
             {
+                currentActiveSegments++;
                 remotePeerInfoTable[nextPeer].transferSegment = download;
                 downloadNextAvailableChunk(download);
             }
-            else
-                currentActiveSegments--;
         }
     }
 }
@@ -587,7 +585,7 @@ TransferSegment* DownloadTransfer::createTransferSegment(QHostAddress peer)
         }
     }
     emit flagDownloadPeer(peer);
-    qDebug() << "DownloadTransfer::createTransferSegment()" << download->getSegmentRemotePeer() << download;
+    qDebug() << "DownloadTransfer::createTransferSegment()" << download->getSegmentId() << download;
     return download;
 }
 
@@ -620,7 +618,7 @@ TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol 
     connect(download, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
     connect(transferTimer, SIGNAL(timeout()), download, SLOT(transferTimerEvent()));
     connect(download, SIGNAL(requestNextSegment(TransferSegment*)), this, SLOT(segmentCompleted(TransferSegment*)));
-    connect(download, SIGNAL(transferRequestFailed(TransferSegment*)), this, SLOT(segmentFailed(TransferSegment*)));
+    connect(download, SIGNAL(transferRequestFailed(TransferSegment*,quint8,bool)), this, SLOT(segmentFailed(TransferSegment*,quint8,bool)));
     connect(download, SIGNAL(removeTransferSegmentPointer(quint32)), this, SIGNAL(removeTransferSegmentPointer(quint32)));
     connect(download, SIGNAL(updateDirectBytesStats(int)), this, SLOT(updateDirectBytesStats(int)));
     return download;
@@ -641,16 +639,22 @@ void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int
     
     download->setSegmentStart(segmentStart);
     download->setSegmentEnd(t.segmentEnd);
+    QHostAddress h = download->getSegmentRemotePeer();
+
     if (segmentStart != t.segmentEnd) // otherwise done
     {
+        // update indirect dispatch routing table
         t.transferSegment = download;
         transferSegmentTable.insert(segmentStart, t);
-        QHostAddress h = download->getSegmentRemotePeer();
+
+        // calculate survival of the fittest stats
         qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
         int delta = currentTime - remotePeerInfoTable.value(h).lastStartTime;
         remotePeerInfoTable[h].lastTransferRate = remotePeerInfoTable.value(h).lastBytesQueued / delta;
         remotePeerInfoTable[h].lastStartTime = currentTime;
         remotePeerInfoTable[h].lastBytesQueued = t.segmentEnd - segmentStart;
+
+        // commence transfer
         download->startDownloading();
     }
     else if (remotePeerInfoTable.contains(download->getSegmentRemotePeer()))
@@ -659,12 +663,13 @@ void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int
         TransferSegment *slowSegment = getSlowestActivePeer();
         if (slowSegment && slowSegment != download)
         {
+            qDebug() << "DownloadTransfer::downloadNextAvailableChunk() kick slow segment" << slowSegment->getSegmentId() << slowSegment;
             segmentFailed(slowSegment, SlowSegmentHostileTakeover, false);
+            //slowSegment->abortTransfer();
             downloadNextAvailableChunk(download);
         }
         else // if unsuccessful, we are done here.
         {
-            QHostAddress h = download->getSegmentRemotePeer();
             remotePeerInfoTable[h].transferSegment = 0;
             qDebug() << "DownloadTransfer::downloadNextAvailableChunk() no more blocks to download, destroying:" << download << remotePeerInfoTable[h].transferSegment << h;
             remotePeerInfoTable[h].bytesTransferred = download->getBytesTransferred();
@@ -696,12 +701,7 @@ void DownloadTransfer::TTHSearchTimerEvent()
 int DownloadTransfer::getTransferProgress()
 {
     //===== 1 MB precision progress =====
-    int segmentsDone = 0;
-    for (int i = 0; i < transferSegmentStateBitmap.length(); i++)
-    {
-        if (transferSegmentStateBitmap.at(i) == SegmentDownloaded)
-            segmentsDone++;
-    }
+    int segmentsDone = getSegmentsDone();
 
     //Clause to only use byte precision for files smaller than 100 MB
     if (fileSize >= 100*(1<<20))
@@ -814,14 +814,8 @@ void DownloadTransfer::bucketFlushed(int bucketNo)
     congestionTest();
     transferSegmentStateBitmap[bucketNo] = SegmentDownloaded;
 
-    int segmentsDone = 0;
-    for (int i = 0; i < transferSegmentStateBitmap.length(); i++)
-    {
-        if (transferSegmentStateBitmap.at(i) == SegmentDownloaded)
-            segmentsDone++;
-    }
-    int fileBuckets = calculateBucketNumber(fileSize);
-    fileBuckets = fileSize % HASH_BUCKET_SIZE == 0 ? fileBuckets : fileBuckets + 1;
+    int segmentsDone = getSegmentsDone();
+    int fileBuckets = getTotalFileSegments();
     if (segmentsDone ==  fileBuckets)
     {
         status = TRANSFER_STATE_FINISHED;
@@ -972,6 +966,11 @@ void DownloadTransfer::newSegmentTimerEvent()
     if ((currentActiveSegments >= MAXIMUM_SIMULTANEOUS_SEGMENTS) || (!(status & (TRANSFER_STATE_RUNNING | TRANSFER_STATE_STALLED))))
         return;
 
+    // Do not try and create new segments when they will be destroyed directly afterwards!
+    // I believe ping-ponging segment creation can cause the segfaulting that harasses us.
+    if (getSegmentsDone() == getTotalFileSegments())
+        return;
+
     QHostAddress nextPeer = getBestIdlePeer();
     if (!nextPeer.isNull())
     {
@@ -998,4 +997,22 @@ bool DownloadTransfer::isNonDispatchedProtocol(TransferProtocol protocol)
     // If we ever add a transfer protocol that does not run over DispatchIP:DispatchPort/udp, this function must return true for it, so that protocol negotiation can permanently fail for
     // it in case its path is blocked between two peers.
     return false;
+}
+
+int DownloadTransfer::getSegmentsDone()
+{
+    int segmentsDone = 0;
+    for (int i = 0; i < transferSegmentStateBitmap.length(); i++)
+    {
+        if (transferSegmentStateBitmap.at(i) == SegmentDownloaded)
+            segmentsDone++;
+    }
+    return segmentsDone;
+}
+
+int DownloadTransfer::getTotalFileSegments()
+{
+    int fileBuckets = calculateBucketNumber(fileSize);
+    fileBuckets = fileSize % HASH_BUCKET_SIZE == 0 ? fileBuckets : fileBuckets + 1;
+    return fileBuckets;
 }
