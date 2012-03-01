@@ -208,8 +208,8 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
             pTransferManager, SLOT(incomingUploadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)), Qt::QueuedConnection);
     connect(pDispatcher, SIGNAL(incomingDataPacket(quint8,QHostAddress,QByteArray)),
             pTransferManager, SLOT(incomingDataPacket(quint8,QHostAddress,QByteArray)), Qt::QueuedConnection);
-    connect(pDispatcher, SIGNAL(incomingDirectDataPacket(quint32,quint64,QByteArray)),
-            pTransferManager, SLOT(incomingDirectDataPacket(quint32,quint64,QByteArray)), Qt::QueuedConnection);
+    connect(pDispatcher, SIGNAL(incomingDirectDataPacket(quint32,qint64,QByteArray)),
+            pTransferManager, SLOT(incomingDirectDataPacket(quint32,qint64,QByteArray)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)),
             pDispatcher, SLOT(sendUnicastRawDatagram(QHostAddress,QByteArray*)), Qt::QueuedConnection);
     connect(pDispatcher, SIGNAL(receivedTTHTree(QByteArray,QByteArray)),
@@ -226,16 +226,16 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
             pTransferManager, SLOT(incomingProtocolCapabilityResponse(QHostAddress,char)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(requestProtocolCapability(QHostAddress)),
             pDispatcher, SLOT(sendProtocolCapabilityQuery(QHostAddress)), Qt::QueuedConnection);
-    connect(pDispatcher, SIGNAL(incomingTransferError(QHostAddress,QByteArray,quint64,quint8)),
-            pTransferManager, SLOT(incomingTransferError(QHostAddress,QByteArray,quint64,quint8)), Qt::QueuedConnection);
-    connect(pTransferManager, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)),
-            pDispatcher, SLOT(sendTransferError(QHostAddress,quint8,QByteArray,quint64)), Qt::QueuedConnection);
+    connect(pDispatcher, SIGNAL(incomingTransferError(QHostAddress,QByteArray,qint64,quint8)),
+            pTransferManager, SLOT(incomingTransferError(QHostAddress,QByteArray,qint64,quint8)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,qint64)),
+            pDispatcher, SLOT(sendTransferError(QHostAddress,quint8,QByteArray,qint64)), Qt::QueuedConnection);
     /*connect(pDispatcher, SIGNAL(incomingUploadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)),
             pTransferManager, SLOT(incomingUploadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)));
     connect(pDispatcher, SIGNAL(incomingDataPacket(quint8,QHostAddress,QByteArray)),
             pTransferManager, SLOT(incomingDataPacket(quint8,QHostAddress,QByteArray)));
-    connect(pDispatcher, SIGNAL(incomingDirectDataPacket(quint32,quint64,QByteArray)),
-            pTransferManager, SLOT(incomingDirectDataPacket(quint32,quint64,QByteArray)));
+    connect(pDispatcher, SIGNAL(incomingDirectDataPacket(quint32,qint64,QByteArray)),
+            pTransferManager, SLOT(incomingDirectDataPacket(quint32,qint64,QByteArray)));
     connect(pTransferManager, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)),
             pDispatcher, SLOT(sendUnicastRawDatagram(QHostAddress,QByteArray*)));
     connect(pDispatcher, SIGNAL(receivedTTHTree(QByteArray,QByteArray)),
@@ -252,9 +252,9 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
             pTransferManager, SLOT(incomingProtocolCapabilityResponse(QHostAddress,char)));
     connect(pTransferManager, SIGNAL(requestProtocolCapability(QHostAddress)),
             pDispatcher, SLOT(sendProtocolCapabilityQuery(QHostAddress)));
-    connect(pDispatcher, SIGNAL(incomingTransferError(QHostAddress,QByteArray,quint64,quint8)),
-            pTransferManager, SLOT(incomingTransferError(QHostAddress,QByteArray,quint64,quint8)));
-    connect(pTransferManager, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)),
+    connect(pDispatcher, SIGNAL(incomingTransferError(QHostAddress,QByteArray,qint64,quint8)),
+            pTransferManager, SLOT(incomingTransferError(QHostAddress,QByteArray,qint64,quint8)));
+    connect(pTransferManager, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,qint64)),
             pDispatcher, SLOT(sendTransferError(QHostAddress,quint8,QByteArray,quint64)));*/
 
     //Connect TransferManager to GUI - notify of started/completed transfers

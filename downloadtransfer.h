@@ -64,7 +64,7 @@ public slots:
     void TTHTreeReply(QByteArray tree);
     //void setProtocolPreference(QByteArray &preference);
     void receivedPeerProtocolCapability(QHostAddress peer, quint8 protocols);
-    void incomingDataPacket(quint8 transferProtocolVersion, quint64 offset, QByteArray data);
+    void incomingDataPacket(quint8 transferProtocolVersion, qint64 offset, QByteArray data);
     int getTransferType();
     void startTransfer();
     void pauseTransfer();
@@ -74,7 +74,7 @@ public slots:
     QByteArray getTransferStateBitmap();
     int getSegmentCount();
     SegmentStatusStruct getSegmentStatuses();
-    void incomingTransferError(quint64 offset, quint8 error);
+    void incomingTransferError(qint64 offset, quint8 error);
     void setBucketFlushStateBitmap(QByteArray bitmap);
 
     // Bucket flush callbacks
@@ -134,7 +134,7 @@ private:
     QHostAddress treeRequestHost;
     int zeroSegmentTimeoutCount;
 
-    QMap<quint64, TransferSegmentTableStruct> transferSegmentTable;
+    QMap<qint64, TransferSegmentTableStruct> transferSegmentTable;
     QByteArray transferSegmentStateBitmap;
     QByteArray bucketFlushStateBitmap;
     QHash<QHostAddress, RemotePeerInfoStruct> remotePeerInfoTable;
