@@ -70,6 +70,7 @@ public slots:
     void pauseTransfer();
     void abortTransfer();
     void addPeer(QHostAddress peer);
+    qint64 getTransferRate();
     int getTransferProgress();
     QByteArray getTransferStateBitmap();
     int getSegmentCount();

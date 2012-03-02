@@ -117,6 +117,12 @@ public:
     quint32 getBootstrapNodeNumber();
     quint32 getBoostrapStatus();
 
+    //Get/set counters
+    void setDownloadPerSecond(qint64 val) {pDownloadPerSecond = val;}
+    void setUploadPerSecond(qint64 val) {pUploadPerSecond = val;}
+    qint64 getDownloadPerSecond() {return pDownloadPerSecond;}
+    qint64 getUploadPerSecond() {return pUploadPerSecond;}
+
     //Get access to the GUI's objects
     TransferManager *transferManagerObject() const;
     ShareSearch *shareSearchObject() const;
@@ -207,7 +213,7 @@ private slots:
     //Dispatcher slots
     void bootstrapStatusChanged(int status);
     void searchResultReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult);
-    void returnHostCount(int count);
+    void returnHostCount(int hostCount, int bucketCount);
 
     //ShareSearch slot
     void fileHashed(QString fileName, quint64 fileSize, quint64 totalShare);
@@ -420,9 +426,12 @@ private:
 
     QTimer *checkForFTPUpdatesTimer;
 
+    //Counters
+    qint64 pDownloadPerSecond;
+    qint64 pUploadPerSecond;
     QDateTime uptime;
-
     int arpmanetDCUsers;
+    int shareSizeUpdateCounter, bootstrapNodeCountUpdateCounter;
 
     QStringList pArguments;
     QSharedMemory *pSharedMemory;
@@ -487,7 +496,9 @@ private:
     QLabel *connectionIconLabel;
     QLabel *bootstrapStatusLabel;
     QLabel *CIDHostsLabel;
+    QLabel *bucketCountLabel;
     QLabel *totalShareSizeLabel;
+    QLabel *transferRateLabel;
 
     //Progressbar
     TextProgressBar *hashingProgressBar;

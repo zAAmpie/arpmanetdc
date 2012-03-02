@@ -95,7 +95,7 @@ QHostAddress* Transfer::getRemoteHost()
     return &remoteHost;
 }
 
-quint64 Transfer::getTransferRate()
+qint64 Transfer::getTransferRate()
 {
     return transferRate;
 }

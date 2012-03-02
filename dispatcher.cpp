@@ -1318,7 +1318,7 @@ QByteArray Dispatcher::getCID()
 //GUI user count
 void Dispatcher::getHostCount()
 {
-    emit returnHostCount(networkTopology->getNumberOfHosts());
+    emit returnHostCount(getNumberOfHosts(), getNumberOfBuckets());
 }
 
 // ------------------=====================   DEBUGGING   =====================----------------------

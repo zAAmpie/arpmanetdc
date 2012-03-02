@@ -99,6 +99,8 @@ public:
         MAX_LABEL_HISTORY_ENTRIES,                      //The amount of lines kept in history in the status and additional info labels
         MAX_MAINCHAT_BLOCKS,                            //The amount of blocks contained in the chat before older blocks are deleted
         MAX_HASH_SPEED_MB,                              //The maximum speed in megabytes that files should be hashed at
+        SHARE_SIZE_UPDATE_MULTIPLIER,                   //The update period of the total share size in the GUI
+        BOOTSTRAP_NODE_UPDATE_MULTIPLIER,               //The update period of the number of bootstrap nodes in the GUI
         INTTYPE_LAST
     };
 

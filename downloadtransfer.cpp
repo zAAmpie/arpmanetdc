@@ -20,9 +20,10 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
     zeroSegmentTimeoutCount = 0;
 
     transferRateCalculationTimer = new QTimer(this);
-    connect(transferRateCalculationTimer, SIGNAL(timeout()), this, SLOT(transferRateCalculation()));
-    transferRateCalculationTimer->setSingleShot(false);
-    transferRateCalculationTimer->start(1000);
+    //Rather use the frequency of updates from the GUI, otherwise bytes might be missing and it would be unreliable to determine total bytes sent/received
+    //connect(transferRateCalculationTimer, SIGNAL(timeout()), this, SLOT(transferRateCalculation()));
+    //transferRateCalculationTimer->setSingleShot(false);
+    //transferRateCalculationTimer->start(1000);
 
     transferTimer = new QTimer(this);
     connect(transferTimer, SIGNAL(timeout()), this, SLOT(transferTimerEvent()));
@@ -1052,4 +1053,12 @@ int DownloadTransfer::getTotalFileSegments()
     int fileBuckets = calculateBucketNumber(fileSize);
     fileBuckets = fileSize % HASH_BUCKET_SIZE == 0 ? fileBuckets : fileBuckets + 1;
     return fileBuckets;
+}
+
+qint64 DownloadTransfer::getTransferRate()
+{
+    transferRate = bytesWrittenSinceUpdate;
+    bytesWrittenSinceUpdate = 0;
+
+    return transferRate;
 }

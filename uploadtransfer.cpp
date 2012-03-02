@@ -10,9 +10,9 @@ UploadTransfer::UploadTransfer(QObject *parent) : Transfer(parent)
 
     status = TRANSFER_STATE_INITIALIZING;
     transferRateCalculationTimer = new QTimer(this);
-    connect(transferRateCalculationTimer, SIGNAL(timeout()), this, SLOT(transferRateCalculation()));
-    transferRateCalculationTimer->setSingleShot(false);
-    transferRateCalculationTimer->start(1000);
+    //connect(transferRateCalculationTimer, SIGNAL(timeout()), this, SLOT(transferRateCalculation()));
+    //transferRateCalculationTimer->setSingleShot(false);
+    //transferRateCalculationTimer->start(1000);
 
     transferInactivityTimer = new QTimer(this);
     connect(transferInactivityTimer, SIGNAL(timeout()), this, SLOT(abortTransfer()));
@@ -189,4 +189,16 @@ SegmentStatusStruct UploadTransfer::getSegmentStatuses()
     }
 
     return s;
+}
+
+qint64 UploadTransfer::getTransferRate()
+{
+    transferRate = bytesWrittenSinceUpdate;
+    if (bytesWrittenSinceUpdate > 0)
+    {
+        bytesWrittenSinceUpdate = 0;
+        transferInactivityTimer->start(TIMER_INACTIVITY_MSECS);
+    }
+
+    return transferRate;
 }
