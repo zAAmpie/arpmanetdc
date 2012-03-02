@@ -10,9 +10,9 @@ UploadTransfer::UploadTransfer(QObject *parent) : Transfer(parent)
 
     status = TRANSFER_STATE_INITIALIZING;
     transferRateCalculationTimer = new QTimer(this);
-    //connect(transferRateCalculationTimer, SIGNAL(timeout()), this, SLOT(transferRateCalculation()));
-    //transferRateCalculationTimer->setSingleShot(false);
-    //transferRateCalculationTimer->start(1000);
+    connect(transferRateCalculationTimer, SIGNAL(timeout()), this, SLOT(transferRateCalculation()));
+    transferRateCalculationTimer->setSingleShot(false);
+    transferRateCalculationTimer->start(1000);
 
     transferInactivityTimer = new QTimer(this);
     connect(transferInactivityTimer, SIGNAL(timeout()), this, SLOT(abortTransfer()));
@@ -117,12 +117,12 @@ void UploadTransfer::transferRateCalculation()
         status = TRANSFER_STATE_RUNNING;
 
     // snapshot the transfer rate as the amount of bytes written in the last second
-    transferRate = bytesWrittenSinceUpdate;
+    /*transferRate = bytesWrittenSinceUpdate;
     if (bytesWrittenSinceUpdate > 0)
     {
         bytesWrittenSinceUpdate = 0;
         transferInactivityTimer->start(TIMER_INACTIVITY_MSECS);
-    }
+    }*/
 }
 
 void UploadTransfer::dataTransmitted(QHostAddress host, QByteArray *data)
