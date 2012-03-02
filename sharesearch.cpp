@@ -933,7 +933,7 @@ void ShareSearch::querySearchString(QHostAddress senderHost, QByteArray cid, qui
         int result = 0;
         while (sqlite3_step(statement) == SQLITE_ROW)
         {
-            if (cols = 6)
+            if (cols == 6)
             {
                 SearchStruct s;
                 QByteArray tthRoot = QByteArray().append((char*)sqlite3_column_text(statement, 0));
@@ -995,7 +995,7 @@ void ShareSearch::queryTTH(QByteArray tthRoot)
         int result = 0;
         while (sqlite3_step(statement) == SQLITE_ROW)
         {
-            if (cols = 3)
+            if (cols == 3)
             {
                 QByteArray tthRoot = QByteArray().append((char*)sqlite3_column_text(statement, 0));
                 results.tthRoot = QByteArray::fromBase64(tthRoot);
@@ -1244,7 +1244,7 @@ void ShareSearch::requestTTHFromPath(quint8 type, QString filePath)
     QString queryStr = tr("SELECT DISTINCT [tth], [fileSize] FROM FileShares WHERE [active] = 1 AND [filePath] = ?;");
 
     QByteArray tthResult;
-    quint64 fileSize;
+    quint64 fileSize = 0;
     sqlite3 *db = pParent->database();    
     sqlite3_stmt *statement;
 
@@ -1320,7 +1320,7 @@ void ShareSearch::requestTTHsFromPaths(QHash<QString, QStringList> filePaths, QS
             queryStr = tr("SELECT [tth], [fileSize] FROM FileShares WHERE [filePath] = ?;");
 
             QByteArray tthResult;
-            quint64 fileSize;
+            quint64 fileSize = 0;
     
             //Prepare a query
             QByteArray query;
@@ -1483,7 +1483,7 @@ void ShareSearch::requestFilePath(QByteArray tthRoot)
     QString queryStr = tr("SELECT [filePath], [fileSize] FROM FileShares WHERE [tth] = ?;");
 
     QString filePath;
-    quint64 fileSize;
+    quint64 fileSize = 0;
     sqlite3 *db = pParent->database();    
     sqlite3_stmt *statement;
 
@@ -2261,7 +2261,7 @@ VersionStruct ShareSearch::getMajorMinorVersions(QString fileName)
     QString regex = "s?([0-9]{1,2})(?:e|ep|x|\\.|\\-)+([0-9]{1,3})";
     QRegExp rxS(regex, Qt::CaseInsensitive);
     int pos = 0;
-    if (pos = rxS.indexIn(name) != -1)
+    if ((pos = rxS.indexIn(name)) != -1)
     {
         //Don't match dates like 26-3-2006 / 23.3.2006
         if (!name.contains(QRegExp("[0-9]{1,2}(?:\\.|\\-)[0-9]{1,2}(?:\\.|\\-)[0-9]{2,4}")))
@@ -2276,7 +2276,7 @@ VersionStruct ShareSearch::getMajorMinorVersions(QString fileName)
     //Regex for normal numbers i.e. 326 / 1516 but not 15123 or 35
     regex = "(([0-1]?[0-9]{1})([0-9]{2}).?)";
     QRegExp rxN(regex, Qt::CaseInsensitive);
-    if (pos = rxN.indexIn(name) != -1)
+    if ((pos = rxN.indexIn(name)) != -1)
     {
         //Don't match large numbers greater than 4 characters and don't match 1080i/p and 720i/p
         QString totalMatch = rxN.cap(1);

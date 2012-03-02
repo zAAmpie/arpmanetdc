@@ -83,7 +83,7 @@ signals:
     void searchTTHAlternateSources(QByteArray tth);
     void loadTTHSourcesFromDatabase(QByteArray tth);
     void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId);
-    void sendTransferError(QHostAddress dstHost, quint8 error, QByteArray tth, quint64 offset);
+    void sendTransferError(QHostAddress dstHost, quint8 error, QByteArray tth, qint64 offset);
     void transmitDatagram(QHostAddress dstHost, QByteArray *datagram);
     void transferFinished(QByteArray tth);
     void flushBucket(QString filename, QByteArray *bucket);
@@ -101,8 +101,8 @@ signals:
 public slots:
     virtual void setFileName(QString filename);
     virtual void setTTH(QByteArray tth);
-    void setFileOffset(quint64 offset);
-    void setSegmentLength(quint64 length);
+    void setFileOffset(qint64 offset);
+    void setSegmentLength(qint64 length);
     void setRemoteHost(QHostAddress remote);
     virtual TransferSegment* createUploadObject(quint8 protocol, quint32 segmentId);
     void setFileSize(quint64 size);
@@ -127,7 +127,7 @@ public slots:
     virtual void setNextSegmentId(quint32 id);
     virtual void setBucketFlushStateBitmap(QByteArray bitmap);
 
-    virtual void incomingDataPacket(quint8 transferProtocolVersion, quint64 offset, QByteArray data);
+    virtual void incomingDataPacket(quint8 transferProtocolVersion, qint64 offset, QByteArray data);
     virtual int getTransferType() = 0;
     virtual void startTransfer() = 0;
     virtual void pauseTransfer() = 0;
@@ -146,8 +146,8 @@ protected:
     quint8 transferProtocol;
     //QByteArray transferProtocolHint;
     QHostAddress remoteHost;
-    quint64 fileOffset;
-    quint64 segmentLength;
+    qint64 fileOffset;
+    qint64 segmentLength;
     int status;
     //QList<QHostAddress> listOfPeers;
     QTimer *transferRateCalculationTimer;

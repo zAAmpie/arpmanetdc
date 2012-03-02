@@ -1305,6 +1305,11 @@ int Dispatcher::getNumberOfHosts()
     return networkTopology->getNumberOfHosts();
 }
 
+int Dispatcher::getNumberOfBuckets()
+{
+    return networkTopology->getNumberOfBuckets();
+}
+
 QByteArray Dispatcher::getCID()
 {
     return CID;

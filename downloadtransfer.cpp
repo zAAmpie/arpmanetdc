@@ -232,7 +232,10 @@ void DownloadTransfer::setBucketFlushStateBitmap(QByteArray bitmap)
     // if file does not exist (.incomplete file moved or deleted), do not restore bitmap
     // setFileName() should have been called by now, otherwise fileExists == false.
     if (!fileExists)
+    {
+        qDebug() << "DownloadTransfer::setBucketFlushStateBitmap(): file exists == false, aborting bitmap load.";
         return;
+    }
 
     if (bucketFlushStateBitmap.length() == 0)
     {

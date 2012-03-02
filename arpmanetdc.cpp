@@ -255,7 +255,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(pDispatcher, SIGNAL(incomingTransferError(QHostAddress,QByteArray,qint64,quint8)),
             pTransferManager, SLOT(incomingTransferError(QHostAddress,QByteArray,qint64,quint8)));
     connect(pTransferManager, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,qint64)),
-            pDispatcher, SLOT(sendTransferError(QHostAddress,quint8,QByteArray,quint64)));*/
+            pDispatcher, SLOT(sendTransferError(QHostAddress,quint8,QByteArray,qint64)));*/
 
     //Connect TransferManager to GUI - notify of started/completed transfers
     connect(pTransferManager, SIGNAL(downloadStarted(QByteArray)), 

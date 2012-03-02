@@ -11,7 +11,7 @@ Transfer::~Transfer()
 }
 
 // empty base class definitions, since these do not make sense for uploads
-void Transfer::incomingDataPacket(quint8, quint64, QByteArray){}
+void Transfer::incomingDataPacket(quint8, qint64, QByteArray){}
 void Transfer::hashBucketReply(int, QByteArray){}
 void Transfer::TTHTreeReply(QByteArray){}
 void Transfer::receivedPeerProtocolCapability(QHostAddress, quint8){}
@@ -30,12 +30,9 @@ SegmentStatusStruct Transfer::getSegmentStatuses() {SegmentStatusStruct s = {0,0
 void Transfer::setFileName(QString filename)
 {
     filePathName = filename;
-    QFile f(filePathName);
-    if (f.open(QFile::ReadOnly))
-    {
+    fileExists = false;
+    if (QFile::exists(filePathName))
         fileExists = true;
-        f.close();
-    }
 }
 
 void Transfer::setTTH(QByteArray tth)
@@ -48,12 +45,12 @@ void Transfer::setTTH(QByteArray tth)
     }
 }
 
-void Transfer::setFileOffset(quint64 offset)
+void Transfer::setFileOffset(qint64 offset)
 {
     fileOffset = offset;
 }
 
-void Transfer::setSegmentLength(quint64 length)
+void Transfer::setSegmentLength(qint64 length)
 {
     segmentLength = length;
 }
