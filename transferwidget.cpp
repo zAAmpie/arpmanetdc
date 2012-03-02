@@ -176,7 +176,7 @@ void TransferWidget::returnGlobalTransferStatus(QList<TransferItemStatus> status
 
         //Determine the transfer rate per second from the interval period
         qint64 actualTransferRate = s.transferRate;
-        actualTransferRate = (actualTransferRate * (qint64)updateStatusTimer->interval()) / 1000;
+        actualTransferRate = (actualTransferRate * 1000) /  (qint64)updateStatusTimer->interval();
 
         //Get the download host from the queue, upload hosts are contained within the struct
         if (s.transferType == TRANSFER_TYPE_DOWNLOAD)

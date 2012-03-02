@@ -752,6 +752,7 @@ void ArpmanetDC::createWidgets()
     //Labels
     userHubCountLabel = new QLabel(tr("Hub Users: 0"));
     userHubCountLabel->setContentsMargins(5,0,5,0);
+    userHubCountLabel->setToolTip(tr("The number of users connected in the following format:<br/><br/>Total users / Users running ArpmanetDC"));
     additionalInfoLabel = new QLabel(tr(""));
 
     statusLabel = new QLabel(tr("Status"));
@@ -770,6 +771,8 @@ void ArpmanetDC::createWidgets()
 
     totalShareSizeLabel = new QLabel;
     totalShareSizeLabel->setContentsMargins(5,0,5,0);
+    totalShareSizeLabel->setToolTip(tr("The total share size of all users"));
+
     transferRateLabel = new QLabel(tr("Down: 0.00 b/s - Up: 0.00 b/s"));
     transferRateLabel->setContentsMargins(5,0,5,0);
 
