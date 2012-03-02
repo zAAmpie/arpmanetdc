@@ -106,11 +106,27 @@ QWidget *SettingsWidget::createGeneralSettingsPage()
     sharingLayout->addRow(tr("Share update interval:"), shareUpdateIntervalSpinBox);
     sharingGroup->setLayout(sharingLayout);
 
+    //Misc settings
+    QGroupBox *miscGroup = new QGroupBox(tr("Miscellaneous settings"));
+
+    enableSoundsCheckBox = new QCheckBox(tr("Enable sounds"), pWidget);
+    enableSoundsCheckBox->setChecked(ArpmanetDC::settingsManager()->getSetting(SettingsManager::ENABLE_SOUNDS));
+
+    focusPMCheckBox = new QCheckBox(tr("Focus window on PM arrival"), pWidget);
+    focusPMCheckBox->setChecked(ArpmanetDC::settingsManager()->getSetting(SettingsManager::FOCUS_PM_ON_NOTIFY));
+
+    QGridLayout *miscLayout = new QGridLayout;
+    miscLayout->addWidget(enableSoundsCheckBox,0,0);
+    miscLayout->addWidget(focusPMCheckBox, 0, 1);
+
+    miscGroup->setLayout(miscLayout);
+
     //Main page layout
     QVBoxLayout *pageLayout = new QVBoxLayout;
     pageLayout->addWidget(userGroup);
     pageLayout->addWidget(hubGroup);
     pageLayout->addWidget(sharingGroup);
+    pageLayout->addWidget(miscGroup);
     pageLayout->addStretch(1);
 
     //Set widget to final layout and return
@@ -445,6 +461,8 @@ void SettingsWidget::savePressed()
         ArpmanetDC::settingsManager()->setSetting(SettingsManager::EXTERNAL_PORT, externalPortLineEdit->text().toInt());
         ArpmanetDC::settingsManager()->setSetting(SettingsManager::DOWNLOAD_PATH, downloadPathLineEdit->text().replace("\\","/"));
         ArpmanetDC::settingsManager()->setSetting(SettingsManager::AUTO_UPDATE_SHARE_INTERVAL, shareUpdateIntervalSpinBox->value() * 60000);
+        ArpmanetDC::settingsManager()->setSetting(SettingsManager::ENABLE_SOUNDS, enableSoundsCheckBox->isChecked());
+        ArpmanetDC::settingsManager()->setSetting(SettingsManager::FOCUS_PM_ON_NOTIFY, focusPMCheckBox->isChecked());
 
         //Build protocols string
         QString protocolHint;

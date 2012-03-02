@@ -122,6 +122,7 @@ public:
         SHOW_ADVANCED_MENU = BOOLTYPE_FIRST,            //Should the advanced menu be shown
         SHOW_EMOTICONS,                                 //Should emoticons be used in main chat
         FOCUS_PM_ON_NOTIFY,                             //Should PM widget be automatically focussed when a new message arrives
+        ENABLE_SOUNDS,                                  //Should sounds be played
         BOOLTYPE_LAST
     };
 

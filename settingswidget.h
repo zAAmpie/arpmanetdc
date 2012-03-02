@@ -127,6 +127,7 @@ private:
     //General settings widgets
     QSpinBox *shareUpdateIntervalSpinBox;
     QLineEdit *hubAddressLineEdit, *hubPortLineEdit, *nickLineEdit, *passwordLineEdit, *downloadPathLineEdit;
+    QCheckBox *enableSoundsCheckBox, *focusPMCheckBox;
     QPushButton *browseDownloadPathButton;
 
     //Advanced settings widgets

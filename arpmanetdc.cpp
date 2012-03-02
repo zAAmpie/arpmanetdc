@@ -2018,7 +2018,7 @@ void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)
         tabs->addTab(pmWidget->widget(), QIcon(":/ArpmanetDC/Resources/UserIcon.png"), tr("PM - %1").arg(otherNick));
         
         //If on mainchat and not typing, switch to PM
-        if (tabs->currentIndex() == 0 && chatLineEdit->text().isEmpty())
+        if (tabs->currentIndex() == 0 && chatLineEdit->text().isEmpty() && pSettingsManager->getSetting(SettingsManager::FOCUS_PM_ON_NOTIFY))
         {
             tabs->setCurrentIndex(tabs->indexOf(pmWidget->widget()));
         }
@@ -2031,6 +2031,22 @@ void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)
                 //Notify tab
                 tabs->tabBar()->setTabTextColor(tabs->indexOf(pmWidget->widget()), tabTextColorNotify);
                 updateNotify(++notifyCount);
+
+                //Play stupid sound
+                if (pSettingsManager->getSetting(SettingsManager::ENABLE_SOUNDS))
+                {
+                    QString soundPath = tr(":/ArpmanetDC/Sounds/Old School.wav");
+                    QFile sFile(soundPath);
+
+                    QTemporaryFile *tf = QTemporaryFile::createLocalFile(sFile);
+                    if (tf)
+                    {
+                        QSound sound(tf->fileName());
+                        sound.play();
+                    
+                        QTimer::singleShot(1000, tf, SLOT(deleteLater()));
+                    }
+                }
             }
         }
         //tabs->setCurrentIndex(tabs->indexOf(pmWidget->widget()));
@@ -2041,7 +2057,7 @@ void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)
     else
     {
         //If on mainchat, switch to PM
-        if (tabs->currentIndex() == 0 && chatLineEdit->text().isEmpty())
+        if (tabs->currentIndex() == 0 && chatLineEdit->text().isEmpty() && pSettingsManager->getSetting(SettingsManager::FOCUS_PM_ON_NOTIFY))
         {
             tabs->setCurrentIndex(tabs->indexOf(foundWidget));
         }
@@ -2054,6 +2070,22 @@ void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)
                 //Notify tab
                 tabs->tabBar()->setTabTextColor(tabs->indexOf(foundWidget), tabTextColorNotify);
                 updateNotify(++notifyCount);
+
+                //Play stupid sound
+                if (pSettingsManager->getSetting(SettingsManager::ENABLE_SOUNDS))
+                {
+                    QString soundPath = tr(":/ArpmanetDC/Sounds/Old School.wav");
+                    QFile sFile(soundPath);
+
+                    QTemporaryFile *tf = QTemporaryFile::createLocalFile(sFile);
+                    if (tf)
+                    {
+                        QSound sound(tf->fileName());
+                        sound.play();
+                    
+                        QTimer::singleShot(1000, tf, SLOT(deleteLater()));
+                    }
+                }
             }
         }
         //Process message

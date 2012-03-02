@@ -39,5 +39,10 @@
         <file>Resources/Logo128x128Notify.png</file>
         <file>Resources/CopyIcon.png</file>
         <file>Resources/Emoticons.png</file>
+        <file>Sounds/Angry Fairies.wav</file>
+        <file>Sounds/Comms.wav</file>
+        <file>Sounds/Old School.wav</file>
+        <file>Sounds/Ringer.wav</file>
+        <file>Sounds/Ting.wav</file>
     </qresource>
 </RCC>
