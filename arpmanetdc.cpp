@@ -3202,19 +3202,22 @@ void ArpmanetDC::insertEmoticonsInLastBlock()
     originalTextCursor.movePosition(QTextCursor::End);
     originalTextCursor.movePosition(QTextCursor::StartOfBlock);
     
-    foreach (QString entry, pEmoticonList)
+    foreach (QStringList list, pEmoticonList)
     {
-        QTextCursor matchedCursor;
-        while (!(matchedCursor = mainChatTextEdit->document()->find(entry, originalTextCursor)).isNull())
+        foreach (QString entry, list)
         {
-            //Remove the text emoticon
-            matchedCursor.removeSelectedText();
+            QTextCursor matchedCursor;
+            while (!(matchedCursor = mainChatTextEdit->document()->find(entry, originalTextCursor)).isNull())
+            {
+                //Remove the text emoticon
+                matchedCursor.removeSelectedText();
 
-            //Insert a space
-            matchedCursor.insertText(" ");
+                //Insert a space
+                matchedCursor.insertText(" ");
                                     
-            //Insert image at text cursor location
-            matchedCursor.insertImage(pEmoticonResourceList->getPixmapFromName(entry).toImage(), entry);
+                //Insert image at text cursor location
+                matchedCursor.insertImage(pEmoticonResourceList->getPixmapFromName(entry).toImage(), entry);
+            }
         }
     }
 }
@@ -3224,8 +3227,127 @@ void ArpmanetDC::loadEmoticonsFromFile()
 {
     QString path = tr(":/ArpmanetDC/Resources/Emoticons.png");
     pEmoticonList.clear();
-    pEmoticonList << ":(" << " :crazy:" << " ;)" << " :)" << " :D" << " :wut:" << " 8)" << " x|" << " :-)" << " :!:" << " o)" << " :geek:" << " ^^" << " :love:" << " xD" << "";
-    pEmoticonList << " :o" << " 8|" << "" << " :p" << "" << " :gross:" << " :-)" << "" << " :shutup:" << " ;D" << " :ninja:" << "" << "" << "";
+    
+    QStringList list;
+    list << " =(" << " :(" << " :-(";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :crazy:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " ;)" << " ;-)" << " :wink:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :grin:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :D" << " :-D" << " :biggrin:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :errm:" << " o_O" << " o_0" << " o.O" << " o.0";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " 8)" << " :cool:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " x|" << " :dead:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :)" << " :-)";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :!:" << " !!!";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " o)" << " 0)" << " :cyclops:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :geek:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " ^^" << " ^_^";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :love:" << " :heart:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " xD" << " :lol:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :sketchy:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :o" << " :O" << " :0";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " 8|" << " :sweet:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :blush:" << " :shy:" << " :embarrased" << " :$";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :p" << " :P" << " :-p" << " :-P";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :whatever:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :gross:" << " :sick:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << "";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :uhm:" << " :umm:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :shutup:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :laugh:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :fear:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :whistle:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " =|";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :crazy:" << " :w00t:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " -->" << " :rightarrow:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :x" << " :-x" << " :X" << " :-X" << " >:[" << " >:-[" << " :[";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :wtf:" << " :brow:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " xP" << " x-P" << " :tongue:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :question:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :-/" << " :why:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " >_<";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :'(" << " :'-(" << " ;(" << " ;-(";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :backwards:";
+    pEmoticonList.append(list);
+    list.clear();
+    list << " :naughty:";
+    pEmoticonList.append(list);
 
     pEmoticonResourceList = new ResourceExtractor(path, pEmoticonList, 18, this);
 }

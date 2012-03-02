@@ -766,6 +766,9 @@ int DownloadTransfer::getTransferProgress()
     }
             
     qint64 bytesDone = segmentsDone * HASH_BUCKET_SIZE + dataReceivedNotFlushed;
+    if (fileSize == 0)
+        return 0;
+
     int returnVal = bytesDone * 100 / fileSize;
     
     return returnVal > 100 ? 100 : returnVal;

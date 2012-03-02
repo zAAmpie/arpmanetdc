@@ -449,7 +449,7 @@ private:
     QList<QString> *pAdditionalInfoHistoryList;
     QStandardItemModel *searchWordList;
 
-    QStringList pEmoticonList;
+    QList<QStringList> pEmoticonList;
     QImage pEmoticon;
 
     QStringList pCurrentMatchList;
