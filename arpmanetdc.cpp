@@ -631,7 +631,6 @@ ArpmanetDC::~ArpmanetDC()
             delete dispatcherThread;
         }
 
-        sqlite3_close(db);
         dbThread->quit();
         if (dbThread->wait(5000))
             delete dbThread;
@@ -640,6 +639,7 @@ ArpmanetDC::~ArpmanetDC()
             dbThread->terminate();
             delete dbThread;
         }
+        sqlite3_close(db);
     }
 
     delete pSettingsManager;
@@ -3460,6 +3460,12 @@ void ArpmanetDC::changeEvent(QEvent *e)
 
 //Event returned when everything is saved in transferManager
 void ArpmanetDC::closeClientEventReturn()
+{
+    //Delay the closing event by 100 ms to give the database some time to save data
+    QTimer::singleShot(100, this, SLOT(closeGUI()));
+}
+
+void ArpmanetDC::closeGUI()
 {
     if (pCloseEvent)
         //Send the event to the main window

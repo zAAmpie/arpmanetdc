@@ -254,6 +254,9 @@ private slots:
     //Calculate rates
     void calculateHashRate();
 
+    //Close the GUI
+    void closeGUI();
+
     //GUI interaction
     void mainChatLinkClicked(const QUrl &link);
     void chatLineEditReturnPressed();
