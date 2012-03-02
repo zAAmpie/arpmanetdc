@@ -288,8 +288,10 @@ void Dispatcher::dispatchDirectDataPacket(QByteArray datagram)
 {
     datagram.remove(0, 2);
     quint64 offset = getQuint64FromByteArray(&datagram);
+    if (offset > LLONG_MAX)
+        return;
     quint32 segmentId = getQuint32FromByteArray(&datagram);
-    emit incomingDirectDataPacket(segmentId, offset, datagram);
+    emit incomingDirectDataPacket(segmentId, (qint64)offset, datagram);
 }
 
 // ------------------=====================   Network announcement functions   =====================----------------------
@@ -778,7 +780,7 @@ void Dispatcher::sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByt
     sendUnicastRawDatagram(dstHost, datagram);
 }
 
-void Dispatcher::sendTransferError(QHostAddress dstHost, quint8 error, QByteArray tth, quint64 offset)
+void Dispatcher::sendTransferError(QHostAddress dstHost, quint8 error, QByteArray tth, qint64 offset)
 {
     QByteArray *datagram = new QByteArray;
     datagram->reserve(35);
@@ -786,7 +788,7 @@ void Dispatcher::sendTransferError(QHostAddress dstHost, quint8 error, QByteArra
     datagram->append(TransferErrorPacket);
     datagram->append(error);
     datagram->append(tth);
-    datagram->append(quint64ToByteArray(offset));
+    datagram->append(quint64ToByteArray((quint64)offset));
     sendUnicastRawDatagram(dstHost, datagram);
 }
 
@@ -861,7 +863,9 @@ void Dispatcher::handleReceivedTransferError(QHostAddress fromHost, QByteArray d
     QByteArray tth = datagram.left(24);
     datagram.remove(0, 24);
     quint64 offset = getQuint64FromByteArray(&datagram);
-    emit incomingTransferError(fromHost, tth, offset, error);
+    if (offset > LLONG_MAX)
+        return;
+    emit incomingTransferError(fromHost, tth, (qint64)offset, error);
 }
 
 // ------------------=====================   CID functions   =====================----------------------

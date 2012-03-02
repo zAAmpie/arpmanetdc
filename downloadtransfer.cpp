@@ -86,7 +86,7 @@ DownloadTransfer::~DownloadTransfer()
 // Data packets that are related to our TTH gets dispatched to this entry point.
 // Here, we dispatch them to their relevant segments.
 // We perform binary lookups on transferSegmentTable on the offset in the datagram header and dispatch accordingly.
-void DownloadTransfer::incomingDataPacket(quint8, quint64 offset, QByteArray data)
+void DownloadTransfer::incomingDataPacket(quint8, qint64 offset, QByteArray data)
 {
     // If the segment is critically IO bound, we start dropping packets as a last resort
     if (Q_UNLIKELY(bucketHashQueueLength + bucketFlushQueueLength > HASH_BUCKET_QUEUE_CRITICAL_THRESHOLD))
@@ -98,7 +98,7 @@ void DownloadTransfer::incomingDataPacket(quint8, quint64 offset, QByteArray dat
 
     // map are sorted in key ascending order
     // QMap::lowerBound will most likely find the segment just before the one we are interested in
-    QMap<quint64, TransferSegmentTableStruct>::const_iterator i = transferSegmentTable.upperBound(offset);
+    QMap<qint64, TransferSegmentTableStruct>::const_iterator i = transferSegmentTable.upperBound(offset);
     if (Q_UNLIKELY(i == transferSegmentTable.constEnd()))
         --i;
     if (Q_UNLIKELY(i.key() <= offset && i.value().segmentEnd >= offset))
@@ -782,7 +782,7 @@ SegmentStatusStruct DownloadTransfer::getSegmentStatuses()
     SegmentStatusStruct s = {0,0,0,0,0};
         
     //Iterate through segments and test statuses
-    QMapIterator<quint64, TransferSegmentTableStruct> i(transferSegmentTable);
+    QMapIterator<qint64, TransferSegmentTableStruct> i(transferSegmentTable);
     while (i.hasNext())
     {
         i.next();
@@ -810,13 +810,13 @@ SegmentStatusStruct DownloadTransfer::getSegmentStatuses()
     return s;
 }
 
-void DownloadTransfer::incomingTransferError(quint64 offset, quint8 error)
+void DownloadTransfer::incomingTransferError(qint64 offset, quint8 error)
 {
     if (transferSegmentTable.isEmpty())
         return;
 
     TransferSegment *t =0;
-    QMap<quint64, TransferSegmentTableStruct>::const_iterator i = transferSegmentTable.upperBound(offset);
+    QMap<qint64, TransferSegmentTableStruct>::const_iterator i = transferSegmentTable.upperBound(offset);
     if (Q_UNLIKELY(i == transferSegmentTable.constEnd()))
         --i;
     if (Q_UNLIKELY(i.key() <= offset && i.value().segmentEnd >= offset))

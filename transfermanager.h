@@ -72,7 +72,7 @@ signals:
     void searchTTHAlternateSources(QByteArray tth);
     void TTHTreeRequest(QHostAddress hostAddr,QByteArray rootTTH, quint32 startBucket, quint32 bucketCount);
     void sendDownloadRequest(quint8 protocolPreference, QHostAddress dstHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId);
-    void sendTransferError(QHostAddress dstHost, quint8 error, QByteArray tth, quint64 offset);
+    void sendTransferError(QHostAddress dstHost, quint8 error, QByteArray tth, qint64 offset);
     void flushBucket(QString filename, QByteArray *bucket);
     void assembleOutputFile(QString tmpfilebase, QString outfile, int startbucket, int lastbucket);
     void flushBucketDirect(QString outfile, int bucketno, QByteArray *bucket, QByteArray tth);
@@ -103,8 +103,8 @@ signals:
 
 public slots:
     void incomingDataPacket(quint8 transferProtocolVersion, QHostAddress fromHost, QByteArray datagram);
-    void incomingDirectDataPacket(quint32 segmentId, quint64 offset, QByteArray data);
-    void incomingTransferError(QHostAddress fromHost, QByteArray tth, quint64 offset, quint8 error);
+    void incomingDirectDataPacket(quint32 segmentId, qint64 offset, QByteArray data);
+    void incomingTransferError(QHostAddress fromHost, QByteArray tth, qint64 offset, quint8 error);
 
     // Request file name for given TTH from sharing engine, reply with empty string if not found.
     void filePathNameReply(QByteArray tth, QString filename, quint64 fileSize);

@@ -81,14 +81,14 @@ void TransferManager::incomingDataPacket(quint8 transferPacket, QHostAddress fro
 }
 
 // incoming direct dispatched data packets
-void TransferManager::incomingDirectDataPacket(quint32 segmentId, quint64 offset, QByteArray data)
+void TransferManager::incomingDirectDataPacket(quint32 segmentId, qint64 offset, QByteArray data)
 {
     TransferSegment *t = getTransferSegmentPointer(segmentId);
     if (t)
         t->incomingDataPacket(offset, data);
 }
 
-void TransferManager::incomingTransferError(QHostAddress fromHost, QByteArray tth, quint64 offset, quint8 error)
+void TransferManager::incomingTransferError(QHostAddress fromHost, QByteArray tth, qint64 offset, quint8 error)
 {
     Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_DOWNLOAD);
     if (t)
