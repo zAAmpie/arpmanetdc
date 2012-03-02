@@ -11,7 +11,7 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
     status = TRANSFER_STATE_INITIALIZING;
     remoteHost = QHostAddress("0.0.0.0");
     treeRequestHost = QHostAddress();
-    currentActiveSegments = 0;
+    //currentActiveSegments = 0;
     hashTreeWindowEnd = 0;
     bucketHashQueueLength = 0;
     bucketFlushQueueLength = 0;
@@ -424,7 +424,6 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment, quint8 error, boo
         }
 
     transferSegmentTable.remove(segment->getSegmentStart());
-    //currentActiveSegments--;
     // currently the object keeps sitting in remotePeerInfoTable and gets destroyed once the download completes.
     // this can be improved (TODO)
     // UPDATE: see if this breaks anything.
@@ -459,7 +458,7 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment, quint8 error, boo
     emit removeTransferSegmentPointer(segmentId);
 
     segment->deleteLater();
-    currentActiveSegments--;
+    //currentActiveSegments--;
 
     //Update the alternates
     emit searchTTHAlternateSources(TTH);
@@ -475,7 +474,7 @@ void DownloadTransfer::segmentFailed(TransferSegment *segment, quint8 error, boo
             TransferSegment *download = createTransferSegment(nextPeer);
             if (download)
             {
-                currentActiveSegments++;
+                //currentActiveSegments++;
                 //remotePeerInfoTable[nextPeer].transferSegment = download;
                 downloadNextAvailableChunk(download);
             }
@@ -543,7 +542,7 @@ void DownloadTransfer::receivedPeerProtocolCapability(QHostAddress peer, quint8 
     if (remotePeerInfoRequestPool.isEmpty())
         protocolCapabilityRequestTimer->stop();
 
-    if (currentActiveSegments < MAXIMUM_SIMULTANEOUS_SEGMENTS)
+    if (currentActiveSegments() < MAXIMUM_SIMULTANEOUS_SEGMENTS)
     {
         // Do not necessarily use this peer for the next segment, rather ask getBestIdlePeer() in case this one is already busy in another segment.
         QHostAddress nextPeer = getBestIdlePeer();
@@ -553,7 +552,7 @@ void DownloadTransfer::receivedPeerProtocolCapability(QHostAddress peer, quint8 
 
         if (download)
         {
-            currentActiveSegments++;
+            //currentActiveSegments++;
             //remotePeerInfoTable[peer].transferSegment = download;
             downloadNextAvailableChunk(download);
         }
@@ -713,18 +712,18 @@ void DownloadTransfer::downloadNextAvailableChunk(TransferSegment *download, int
             emit removeTransferSegmentPointer(segmentId);
             download->deleteLater();
             //delete download;
-            currentActiveSegments--;
+            //currentActiveSegments--;
         }
     }
     else if (recursionLimit > 0)
     {
-        qDebug() << "DownloadTransfer::downloadNextAvailableChunk(): else reached that should not be reached." << currentActiveSegments;
+        qDebug() << "DownloadTransfer::downloadNextAvailableChunk(): else reached that should not be reached." << currentActiveSegments();
     }
 }
 
 void DownloadTransfer::TTHSearchTimerEvent()
 {
-    if (currentActiveSegments < MAXIMUM_SIMULTANEOUS_SEGMENTS)
+    if (currentActiveSegments() < MAXIMUM_SIMULTANEOUS_SEGMENTS)
         emit searchTTHAlternateSources(TTH);
     if (tthSearchInterval < 300000)  // 5 min max interval
         tthSearchInterval += tthSearchInterval;
@@ -787,7 +786,7 @@ int DownloadTransfer::getLastHashBucketNumberReceived()
 
 int DownloadTransfer::getSegmentCount()
 {
-    return currentActiveSegments;
+    return currentActiveSegments();
 }
 
 SegmentStatusStruct DownloadTransfer::getSegmentStatuses()
@@ -999,7 +998,7 @@ void DownloadTransfer::updateDirectBytesStats(int bytes)
 
 void DownloadTransfer::newSegmentTimerEvent()
 {
-    if ((currentActiveSegments >= MAXIMUM_SIMULTANEOUS_SEGMENTS) || (!(status & (TRANSFER_STATE_RUNNING | TRANSFER_STATE_STALLED))))
+    if ((currentActiveSegments() >= MAXIMUM_SIMULTANEOUS_SEGMENTS) || (!(status & (TRANSFER_STATE_RUNNING | TRANSFER_STATE_STALLED))))
         return;
 
     // Do not try and create new segments when they will be destroyed directly afterwards!
@@ -1014,13 +1013,13 @@ void DownloadTransfer::newSegmentTimerEvent()
         if (download)
         {
             //remotePeerInfoTable[nextPeer].transferSegment = download;
-            currentActiveSegments++;
+            //currentActiveSegments++;
             downloadNextAvailableChunk(download, 1);
         }
         else
             remotePeerInfoTable[nextPeer].transferSegment = 0;
     }
-    if (currentActiveSegments == 0)
+    if (currentActiveSegments() == 0)
         zeroSegmentTimeoutCount++;
     else
         zeroSegmentTimeoutCount = 0;
@@ -1061,4 +1060,9 @@ qint64 DownloadTransfer::getTransferRate()
     bytesWrittenSinceUpdate = 0;
 
     return transferRate;
+}
+
+int DownloadTransfer::currentActiveSegments()
+{
+    return transferSegmentTable.count();
 }

@@ -124,7 +124,8 @@ private:
     int lastBucketSize;
     int initializationStateTimerBrakes;
     int bytesWrittenSinceUpdate;
-    int currentActiveSegments;
+    //int currentActiveSegments;
+    int currentActiveSegments();
     int timerBrakes;
     int hashTreeWindowEnd;
     int tthSearchInterval;
