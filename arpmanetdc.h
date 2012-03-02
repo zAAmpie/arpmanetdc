@@ -213,7 +213,7 @@ private slots:
     //Dispatcher slots
     void bootstrapStatusChanged(int status);
     void searchResultReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult);
-    void returnHostCount(int count);
+    void returnHostCount(int hostCount, int bucketCount);
 
     //ShareSearch slot
     void fileHashed(QString fileName, quint64 fileSize, quint64 totalShare);
@@ -496,6 +496,7 @@ private:
     QLabel *connectionIconLabel;
     QLabel *bootstrapStatusLabel;
     QLabel *CIDHostsLabel;
+    QLabel *bucketCountLabel;
     QLabel *totalShareSizeLabel;
     QLabel *transferRateLabel;
 

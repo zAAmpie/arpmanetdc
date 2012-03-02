@@ -193,7 +193,7 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
             this, SLOT(searchResultReceived(QHostAddress, QByteArray, quint64, QByteArray)), Qt::QueuedConnection);
     connect(pDispatcher, SIGNAL(appendChatLine(QString)), this, SLOT(appendChatLine(QString)), Qt::QueuedConnection);
     connect(this, SIGNAL(getHostCount()), pDispatcher, SLOT(getHostCount()), Qt::QueuedConnection);
-    connect(pDispatcher, SIGNAL(returnHostCount(int)), this, SLOT(returnHostCount(int)), Qt::QueuedConnection);
+    connect(pDispatcher, SIGNAL(returnHostCount(int, int)), this, SLOT(returnHostCount(int, int)), Qt::QueuedConnection);
     connect(this, SIGNAL(initiateSearch(quint64, QByteArray)), pDispatcher, SLOT(initiateSearch(quint64, QByteArray)), Qt::QueuedConnection);
 
     // Create Transfer manager
@@ -741,101 +741,6 @@ bool ArpmanetDC::setupDatabase()
     return true;
 }
 
-/*bool ArpmanetDC::loadSettings()
-{
-    QList<QString> queries;
-    pSettings->clear();
-    
-     //Create Settings table - saves settings (doh)
-    queries.append("SELECT [parameter], [value]  FROM Settings;");
-
-    sqlite3_stmt *statement;
-    QList<QString> queryErrors(queries);
-
-    //Loop through all queries
-    for (int i = 0; i < queries.size(); i++)
-    {
-        //Prepare a query
-        QByteArray query;
-        query.append(queries.at(i).toUtf8());
-        if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-        {
-            int cols = sqlite3_column_count(statement);
-            int result = 0;
-            while (sqlite3_step(statement) == SQLITE_ROW)
-            {
-                //Load settings
-                if (cols == 2)
-                {
-                    QString parameter = QString::fromUtf16((const unsigned short *)sqlite3_column_text16(statement, 0));
-                    QString value = QString::fromUtf16((const unsigned short *)sqlite3_column_text16(statement, 1));
-                    if (!parameter.isEmpty())
-                        pSettings->insert(parameter, value);
-                }
-            };
-            sqlite3_finalize(statement);    
-        }
-
-        //Catch all error messages
-        QString error = sqlite3_errmsg(db);
-        if (error != "not an error")
-            queryErrors[i] = error;
-    }
-
-    return !pSettings->isEmpty();
-}
-
-bool ArpmanetDC::saveSettings()
-{
-    QList<QString> queries;
-    //queries.append("BEGIN;");
-    queries.append("DELETE FROM Settings;");
-    
-    QList<QString> parameters = pSettings->keys();
-    for (int i = 0; i < pSettings->size(); i++)
-        queries.append("INSERT INTO Settings([parameter], [value]) VALUES (?, ?);");
-
-    queries.append("COMMIT;");
-    queries.append("BEGIN;");
-
-    bool result = true;
-    QList<QString> queryErrors(queries);
-    sqlite3_stmt *statement;
-
-    //Loop through all queries
-    for (int i = 0; i < queries.size(); i++)
-    {
-        //Prepare a query
-        QByteArray query;
-        query.append(queries.at(i).toUtf8());
-        if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
-        {
-            if (query.contains("INSERT INTO Settings") && !parameters.isEmpty())
-            {
-                int res = 0;
-                QString parameter = parameters.takeFirst();
-                QString value = pSettings->value(parameter);
-                res = res | sqlite3_bind_text16(statement, 1, parameter.utf16(), parameter.size()*2, SQLITE_STATIC);
-                res = res | sqlite3_bind_text16(statement, 2, value.utf16(), value.size()*2, SQLITE_STATIC);
-                if (res != SQLITE_OK)
-                    result = false;
-            }
-
-            int cols = sqlite3_column_count(statement);
-            int result = 0;
-            while (sqlite3_step(statement) == SQLITE_ROW);
-            sqlite3_finalize(statement);    
-        }
-
-        //Catch all error messages
-        QString error = sqlite3_errmsg(db);
-        if (error != "not an error")
-            queryErrors[i] = error;
-    }
-
-    return result;
-}*/
-
 void ArpmanetDC::createWidgets()
 {
     //========== Auto completer ==========
@@ -859,6 +764,9 @@ void ArpmanetDC::createWidgets()
 
     CIDHostsLabel = new QLabel("0");
     CIDHostsLabel->setToolTip(tr("Number of hosts bootstrapped"));
+
+    bucketCountLabel = new QLabel("0");
+    bucketCountLabel->setToolTip(tr("Number of unique buckets"));
 
     totalShareSizeLabel = new QLabel;
     totalShareSizeLabel->setContentsMargins(5,0,5,0);
@@ -965,6 +873,7 @@ void ArpmanetDC::createWidgets()
     statusBar->addPermanentWidget(connectionIconLabel);
     statusBar->addPermanentWidget(bootstrapStatusLabel);
     statusBar->addPermanentWidget(CIDHostsLabel);
+    statusBar->addPermanentWidget(bucketCountLabel);
     statusBar->addPermanentWidget(transferRateLabel);
     statusBar->addPermanentWidget(hashingProgressBar);
     statusBar->addPermanentWidget(shareSizeLabel);
@@ -1860,9 +1769,10 @@ void ArpmanetDC::searchResultReceived(QHostAddress senderHost, QByteArray sender
         searchWidgetIDHash.value(searchID)->addSearchResult(senderHost, senderCID, searchResult);
 }
 
-void ArpmanetDC::returnHostCount(int count)
+void ArpmanetDC::returnHostCount(int hostCount, int bucketCount)
 {
-    CIDHostsLabel->setText(tr("%1").arg(count));
+    CIDHostsLabel->setText(tr("%1").arg(hostCount));
+    bucketCountLabel->setText(tr("%1").arg(bucketCount));
 }
 
 void ArpmanetDC::shareSaveButtonPressed()
@@ -2286,7 +2196,7 @@ void ArpmanetDC::updateGUIEverySecond()
 {
     if (bootstrapNodeCountUpdateCounter-- == 0)
     {
-        //Called every second to update the GUI
+        //Get the number of hosts
         emit getHostCount();
 
         //Reset counter

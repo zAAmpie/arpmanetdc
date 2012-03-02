@@ -93,7 +93,7 @@ signals:
     void appendChatLine(QString message);
 
     //GUI user count
-    void returnHostCount(int count);
+    void returnHostCount(int hostCount, int bucketCount);
 
 public slots:
     void setCID(QByteArray cid);
