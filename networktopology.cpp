@@ -572,3 +572,8 @@ int NetworkTopology::getNumberOfHosts()
     //return count;
     return resultSet.count();
 }
+
+int NetworkTopology::getNumberOfBuckets()
+{
+    return buckets.count();
+}

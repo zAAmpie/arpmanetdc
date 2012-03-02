@@ -56,6 +56,7 @@ public:
 
     int getNumberOfCIDHosts();
     int getNumberOfHosts();
+    int getNumberOfBuckets();
 
 signals:
     void changeBootstrapStatus(int status);

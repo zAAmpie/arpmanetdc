@@ -374,7 +374,7 @@ bool SettingsManager::loadSettings()
         {
             int cols = sqlite3_column_count(statement);
             int result = 0;
-            while (result = sqlite3_step(statement) == SQLITE_ROW)
+            while ((result = sqlite3_step(statement)) == SQLITE_ROW)
             {
                 //Load settings
                 if (cols == 2)

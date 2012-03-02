@@ -106,6 +106,7 @@ public slots:
     quint16 getDispatchPort();
     int getNumberOfCIDHosts();
     int getNumberOfHosts();
+    int getNumberOfBuckets();
     QByteArray getCID();
 
     // Bootstrapping
