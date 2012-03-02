@@ -70,8 +70,8 @@ void DisplayContainerWidget::createWidgets()
     containerNameLabel = new QLabel(tr("<b>Name:</b> %1").arg(pName), pWidget);
     containerSizeLabel = new QLabel(tr("<b>Size:</b> %1").arg(bytesToSize(pIndex.first)), pWidget);
     containerPathLabel = new QLabel(tr("<b>Path:</b> %1").arg(pContainerPath), pWidget);
-    selectedFileSizeLabel = new QLabel(tr("Selected file size: 0.00 bytes"), pWidget);
-    selectedFileCountLabel = new QLabel(tr("Selected files: 0"), pWidget);
+    selectedFileSizeLabel = new QLabel(tr("<b>Selected file size:</b> 0.00 bytes"), pWidget);
+    selectedFileCountLabel = new QLabel(tr("<b>Selected files:</b> 0"), pWidget);
     busyLabel = new QLabel(tr("<font color=\"red\">Please wait while your files are selected...</font>"), pWidget);
     busyLabel->setVisible(false);
 
@@ -287,8 +287,8 @@ void DisplayContainerWidget::checkedNodesChanged()
         }
     }
 
-    selectedFileSizeLabel->setText(tr("Selected file size: %1").arg(bytesToSize(pSelectedFileSize)));
-    selectedFileCountLabel->setText(tr("Selected files: %1").arg(pSelectedFileCount));
+    selectedFileSizeLabel->setText(tr("<b>Selected file size:</b> %1").arg(bytesToSize(pSelectedFileSize)));
+    selectedFileCountLabel->setText(tr("<b>Selected files:</b> %1").arg(pSelectedFileCount));
 
     downloadSelectedFilesButton->setEnabled(!pDownloadList->isEmpty());
 
