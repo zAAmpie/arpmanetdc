@@ -35,7 +35,7 @@ typedef struct
 // This looks like duplication, but it is for easy dispatch of incoming packets to segments.
 typedef struct
 {
-    quint64 segmentEnd;
+    qint64 segmentEnd;
     TransferSegment *transferSegment;
 } TransferSegmentTableStruct;
 
