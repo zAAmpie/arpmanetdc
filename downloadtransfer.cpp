@@ -21,9 +21,11 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
 
     transferRateCalculationTimer = new QTimer(this);
     //Rather use the frequency of updates from the GUI, otherwise bytes might be missing and it would be unreliable to determine total bytes sent/received
-    //connect(transferRateCalculationTimer, SIGNAL(timeout()), this, SLOT(transferRateCalculation()));
-    //transferRateCalculationTimer->setSingleShot(false);
-    //transferRateCalculationTimer->start(1000);
+    // OK, that is fine, but this timer switches a transfer into stalled mode when nothing is going on.
+    // If we want to spare a timer, we can kick this slot from the GUI's timer as well.
+    connect(transferRateCalculationTimer, SIGNAL(timeout()), this, SLOT(transferRateCalculation()));
+    transferRateCalculationTimer->setSingleShot(false);
+    transferRateCalculationTimer->start(1000);
 
     transferTimer = new QTimer(this);
     connect(transferTimer, SIGNAL(timeout()), this, SLOT(transferTimerEvent()));
