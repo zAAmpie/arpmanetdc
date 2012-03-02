@@ -7,6 +7,7 @@ DownloadTransfer::DownloadTransfer(QObject *parent) : Transfer(parent)
     transferRate = 0;
     transferProgress = 0;
     bytesWrittenSinceUpdate = 0;
+    bytesWrittenSinceCalculation = 0;
     initializationStateTimerBrakes = 0;
     status = TRANSFER_STATE_INITIALIZING;
     remoteHost = QHostAddress("0.0.0.0");
@@ -321,11 +322,12 @@ void DownloadTransfer::addPeer(QHostAddress peer)
 
 void DownloadTransfer::transferRateCalculation()
 {
-    if ((status == TRANSFER_STATE_RUNNING) && (bytesWrittenSinceUpdate == 0))
+    if ((status == TRANSFER_STATE_RUNNING) && (bytesWrittenSinceCalculation == 0))
         status = TRANSFER_STATE_STALLED;
-    else if ((status == TRANSFER_STATE_STALLED) && (bytesWrittenSinceUpdate > 0))
+    else if ((status == TRANSFER_STATE_STALLED) && (bytesWrittenSinceCalculation > 0))
         status = TRANSFER_STATE_RUNNING;
 
+    bytesWrittenSinceCalculation = 0;
     // snapshot the transfer rate as the amount of bytes written in the last second
     //transferRate = bytesWrittenSinceUpdate;
     //bytesWrittenSinceUpdate = 0;
@@ -996,6 +998,7 @@ void DownloadTransfer::saveBucketStateBitmap()
 void DownloadTransfer::updateDirectBytesStats(int bytes)
 {
     bytesWrittenSinceUpdate += bytes;
+    bytesWrittenSinceCalculation += bytes;
 }
 
 void DownloadTransfer::newSegmentTimerEvent()

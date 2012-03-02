@@ -4,6 +4,7 @@ UploadTransfer::UploadTransfer(QObject *parent) : Transfer(parent)
 {
     upload = 0;
     bytesWrittenSinceUpdate = 0;
+    bytesWrittenSinceCalculation = 0;
 
     // perhaps 0 is sufficient, it is anyway retarded to draw progress bars for partial upload segments...
     transferProgress = 0;
@@ -111,24 +112,25 @@ void UploadTransfer::abortTransfer()
 
 void UploadTransfer::transferRateCalculation()
 {
-    if ((status == TRANSFER_STATE_RUNNING) && (bytesWrittenSinceUpdate == 0))
+    if ((status == TRANSFER_STATE_RUNNING) && (bytesWrittenSinceCalculation == 0))
         status = TRANSFER_STATE_IDLE;
-    else if ((status == TRANSFER_STATE_IDLE) && (bytesWrittenSinceUpdate > 0))
+    else if ((status == TRANSFER_STATE_IDLE) && (bytesWrittenSinceCalculation > 0))
         status = TRANSFER_STATE_RUNNING;
 
     // snapshot the transfer rate as the amount of bytes written in the last second
-    /*transferRate = bytesWrittenSinceUpdate;
-    if (bytesWrittenSinceUpdate > 0)
+    //transferRate = bytesWrittenSinceUpdate;
+    if (bytesWrittenSinceCalculation > 0)
     {
-        bytesWrittenSinceUpdate = 0;
+        bytesWrittenSinceCalculation = 0;
         transferInactivityTimer->start(TIMER_INACTIVITY_MSECS);
-    }*/
+    }
 }
 
 void UploadTransfer::dataTransmitted(QHostAddress host, QByteArray *data)
 {
     //Measure the true amount of data sent from the segment to Dispatcher by intercepting the data and getting its size
     bytesWrittenSinceUpdate += data->size();
+    bytesWrittenSinceCalculation += bytesWrittenSinceUpdate;
 }
 
 int UploadTransfer::getTransferProgress()
@@ -194,11 +196,7 @@ SegmentStatusStruct UploadTransfer::getSegmentStatuses()
 qint64 UploadTransfer::getTransferRate()
 {
     transferRate = bytesWrittenSinceUpdate;
-    if (bytesWrittenSinceUpdate > 0)
-    {
-        bytesWrittenSinceUpdate = 0;
-        transferInactivityTimer->start(TIMER_INACTIVITY_MSECS);
-    }
-
+    bytesWrittenSinceUpdate = 0;
+    
     return transferRate;
 }

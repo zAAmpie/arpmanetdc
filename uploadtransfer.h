@@ -54,6 +54,7 @@ private:
     void transferRateCalculation();
 
     quint64 bytesWrittenSinceUpdate;
+    quint64 bytesWrittenSinceCalculation;
 
     TransferSegment *upload;
 };

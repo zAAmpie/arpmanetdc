@@ -123,7 +123,8 @@ private:
     int lastBucketNumber;
     int lastBucketSize;
     int initializationStateTimerBrakes;
-    int bytesWrittenSinceUpdate;
+    qint64 bytesWrittenSinceUpdate;
+    qint64 bytesWrittenSinceCalculation;
     //int currentActiveSegments;
     int currentActiveSegments();
     int timerBrakes;
