@@ -48,6 +48,7 @@ SettingsManager::SettingsManager(sqlite3 *db, ArpmanetDC *parent)
     setDefault(SHOW_ADVANCED_MENU, false, "showAdvanced");
     setDefault(SHOW_EMOTICONS, true, "showEmoticons");
     setDefault(FOCUS_PM_ON_NOTIFY, true, "focusPMOnNotify");
+    setDefault(ENABLE_SOUNDS, false, "enableSounds");
 
     //Integer
     setDefault(HUB_PORT, 4012, "hubPort");
