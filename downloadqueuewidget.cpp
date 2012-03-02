@@ -9,6 +9,9 @@ DownloadQueueWidget::DownloadQueueWidget(QHash<QByteArray, QueueStruct> *queueLi
     pQueueList = queueList;
     pShare = share;
 
+    pQueueCount = 0;
+    pQueueSize = 0;
+
     lowPriorityIcon = QIcon(":/ArpmanetDC/Resources/BlueArrow.png");
     normalPriorityIcon = QIcon(":/ArpmanetDC/Resources/GreenArrow.png");
     highPriorityIcon = QIcon(":/ArpmanetDC/Resources/RedArrow.png");
@@ -29,6 +32,8 @@ DownloadQueueWidget::~DownloadQueueWidget()
 
 void DownloadQueueWidget::createWidgets()
 {
+    pWidget = new QWidget((QWidget *)pParent);
+
     //Table View
     queueTable = new QTableView((QWidget *)pParent);
     queueTable->setShowGrid(false);
@@ -61,6 +66,9 @@ void DownloadQueueWidget::createWidgets()
 
     queueTable->hideColumn(6);
 
+    queueSizeLabel = new QLabel(tr("<b>Size:</b> %1").arg(bytesToSize(pQueueSize)), pWidget);
+    queueCountLabel = new QLabel(tr("<b>Files:</b> %1").arg(pQueueCount), pWidget);    
+
     //===== Actions =====
     setPriorityLowAction = new QAction(lowPriorityIcon, tr("Low priority"), this);
     setPriorityNormalAction = new QAction(normalPriorityIcon, tr("Normal priority"), this);
@@ -81,7 +89,20 @@ void DownloadQueueWidget::createWidgets()
 
 void DownloadQueueWidget::placeWidgets()
 {
-    pWidget = queueTable;
+    QHBoxLayout *bottomLayout = new QHBoxLayout;
+    bottomLayout->addStretch(1);
+    bottomLayout->addWidget(queueCountLabel);
+    bottomLayout->addSpacing(5);
+    bottomLayout->addWidget(queueSizeLabel);
+    bottomLayout->setContentsMargins(5,5,5,5);
+
+    QVBoxLayout *layout = new QVBoxLayout;
+    layout->addWidget(queueTable, 1);
+    layout->addLayout(bottomLayout, 0);
+    layout->setContentsMargins(0,0,0,0);
+    layout->setSpacing(0);
+
+    pWidget->setLayout(layout);
 }
 
 void DownloadQueueWidget::connectWidgets()
@@ -191,6 +212,9 @@ void DownloadQueueWidget::deleteActionPressed()
     {
         queueModel->removeRow(queueTable->selectionModel()->selectedRows().first().row());
     }
+
+    //Update counters and labels
+    updateCounters();
 }
 
 //Queue list has been received
@@ -205,9 +229,11 @@ void DownloadQueueWidget::loadQueueList()
 
     for (int i = 0; i < list.size(); i++)
     {
+        //Get queue item
         QueueStruct q = list.at(i);
 
-           QList<QStandardItem *> row;
+        //Construct row entry
+        QList<QStandardItem *> row;
         QFileInfo fi(q.fileName);
         QString suffix = fi.suffix();
         row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, q.fileName, pParent->resourceExtractorObject()->getIconFromName(suffix)));
@@ -239,20 +265,26 @@ void DownloadQueueWidget::loadQueueList()
         }
         row.append(new CStandardItem(CStandardItem::PriorityType, priorityStr, icon));
         
+        //Construct TTH in base32 format
         QByteArray tthBase32(q.tthRoot.data(), q.tthRoot.size());
         base32Encode(tthBase32);
         row.append(new QStandardItem(tthBase32.data()));
         row.append(new QStandardItem(q.fileHost.toString()));
         
+        //Insert row into model
         queueModel->appendRow(row);
     }
 
     resizeRowsToContents(queueTable);
     queueTable->sortByColumn(2, Qt::AscendingOrder);
+
+    //Update counters and labels
+    updateCounters();
 }
 
 void DownloadQueueWidget::addQueuedDownload(QueueStruct file)
 {
+    //Add entry into model
     QList<QStandardItem *> row;
     QFileInfo fi(file.fileName);
 
@@ -295,11 +327,15 @@ void DownloadQueueWidget::addQueuedDownload(QueueStruct file)
 
     resizeRowsToContents(queueTable);
     queueTable->sortByColumn(queueTable->horizontalHeader()->sortIndicatorSection(), queueTable->horizontalHeader()->sortIndicatorOrder());
+
+    //Update counters and labels
+    updateCounters();
 }
 
 //Remove from queue
 void DownloadQueueWidget::removeQueuedDownload(QByteArray tth)
 {
+    //Remove entry
     QByteArray base32TTH(tth);
     base32Encode(base32TTH);
 
@@ -309,7 +345,11 @@ void DownloadQueueWidget::removeQueuedDownload(QByteArray tth)
         return;
     
     int row = findResults.first()->row();
+
     queueModel->removeRow(row);
+
+    //Update counters and labels
+    updateCounters();
 }
 
 //Set a download busy (i.e. the download started)
@@ -347,6 +387,27 @@ void DownloadQueueWidget::requeueDownload(QByteArray tth)
     //Set priority
     queueModel->item(row, 4)->setIcon(lowPriorityIcon);
     queueModel->item(row, 4)->setText(tr("Low"));
+}
+
+//Update counters
+void DownloadQueueWidget::updateCounters()
+{
+    //Reset counters
+    pQueueCount = pQueueList->size();
+    pQueueSize = 0;
+
+    //Get queue list values
+    QList<QueueStruct> list = pQueueList->values();
+    
+    //Iterate to get total size
+    foreach (QueueStruct q, list)
+    {
+        pQueueSize += q.fileSize;
+    }
+
+    //Update labels
+    queueSizeLabel->setText(tr("<b>Size:</b> %1").arg(bytesToSize(pQueueSize)));
+    queueCountLabel->setText(tr("<b>Files:</b> %1").arg(pQueueCount));
 }
 
 QWidget *DownloadQueueWidget::widget()
