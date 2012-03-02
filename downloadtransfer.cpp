@@ -327,8 +327,8 @@ void DownloadTransfer::transferRateCalculation()
         status = TRANSFER_STATE_RUNNING;
 
     // snapshot the transfer rate as the amount of bytes written in the last second
-    transferRate = bytesWrittenSinceUpdate;
-    bytesWrittenSinceUpdate = 0;
+    //transferRate = bytesWrittenSinceUpdate;
+    //bytesWrittenSinceUpdate = 0;
 }
 
 // When a 1MB bucket lands from abroad, this is the beginning of its journey to disk.

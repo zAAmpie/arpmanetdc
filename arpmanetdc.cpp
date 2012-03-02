@@ -2018,7 +2018,7 @@ void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)
         tabs->addTab(pmWidget->widget(), QIcon(":/ArpmanetDC/Resources/UserIcon.png"), tr("PM - %1").arg(otherNick));
         
         //If on mainchat and not typing, switch to PM
-        if (tabs->currentIndex() == 0 && chatLineEdit->text().isEmpty() && pSettingsManager->getSetting(SettingsManager::FOCUS_PM_ON_NOTIFY))
+        if (tabs->currentIndex() == 0 && chatLineEdit->text().isEmpty() && pSettingsManager->getSetting(SettingsManager::FOCUS_PM_ON_NOTIFY) && !this->isHidden())
         {
             tabs->setCurrentIndex(tabs->indexOf(pmWidget->widget()));
         }
@@ -2026,7 +2026,7 @@ void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)
         else
         {
             //Don't notify if already in that tab
-            if (tabs->currentIndex() != tabs->indexOf(pmWidget->widget()))
+            if (tabs->currentIndex() != tabs->indexOf(pmWidget->widget()) || (this->isHidden()))
             {
                 //Notify tab
                 tabs->tabBar()->setTabTextColor(tabs->indexOf(pmWidget->widget()), tabTextColorNotify);
@@ -2057,7 +2057,7 @@ void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)
     else
     {
         //If on mainchat, switch to PM
-        if (tabs->currentIndex() == 0 && chatLineEdit->text().isEmpty() && pSettingsManager->getSetting(SettingsManager::FOCUS_PM_ON_NOTIFY))
+        if (tabs->currentIndex() == 0 && chatLineEdit->text().isEmpty() && pSettingsManager->getSetting(SettingsManager::FOCUS_PM_ON_NOTIFY) && !this->isHidden())
         {
             tabs->setCurrentIndex(tabs->indexOf(foundWidget));
         }
@@ -2065,7 +2065,7 @@ void ArpmanetDC::receivedPrivateMessage(QString otherNick, QString msg)
         else
         {
             //Don't notify if already in that tab
-            if (tabs->currentIndex() != tabs->indexOf(foundWidget))
+            if (tabs->currentIndex() != tabs->indexOf(foundWidget) || this->isHidden())
             {
                 //Notify tab
                 tabs->tabBar()->setTabTextColor(tabs->indexOf(foundWidget), tabTextColorNotify);
