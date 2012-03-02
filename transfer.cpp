@@ -30,12 +30,9 @@ SegmentStatusStruct Transfer::getSegmentStatuses() {SegmentStatusStruct s = {0,0
 void Transfer::setFileName(QString filename)
 {
     filePathName = filename;
-    QFile f(filePathName);
-    if (f.open(QFile::ReadOnly))
-    {
+    fileExists = false;
+    if (QFile::exists(filePathName))
         fileExists = true;
-        f.close();
-    }
 }
 
 void Transfer::setTTH(QByteArray tth)
