@@ -152,6 +152,12 @@ void DisplayContainerWidget::downloadSelectedFilesButtonPressed()
             else
                 q.priority = NormalQueuePriority;
 
+            //Set path
+            QString previousPath = q.filePath;
+            previousPath.remove(pDownloadPath);
+            previousPath.prepend(path);
+            q.filePath = previousPath;
+
             //Add to parent queue
             pParent->addDownloadToQueue(q);
 
