@@ -78,7 +78,7 @@ TransferSegment* UploadTransfer::createUploadObject(quint8 protocol, quint32 seg
     //Used to intercept the amount of data actually transmitted
     connect(upload, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)), this, SLOT(dataTransmitted(QHostAddress, QByteArray *)));
     connect(upload, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)), this, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)));
-    connect(upload, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)), this, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)));
+    connect(upload, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,qint64)), this, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,qint64)));
     return upload;
 }
 
