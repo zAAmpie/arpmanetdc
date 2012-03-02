@@ -594,6 +594,6 @@ void TransferManager::closeClientEvent()
     while (i.hasNext())
         i.next().value()->abortTransfer();
 
-    QTimer::singleShot(1000, this, SIGNAL(closeClientEventReturn()));
-    //emit closeClientEventReturn();
+    //QTimer::singleShot(100, this, SIGNAL(closeClientEventReturn()));
+    emit closeClientEventReturn();
 }

@@ -3481,6 +3481,8 @@ void ArpmanetDC::closeEvent(QCloseEvent *e)
     //Tell transferManager that the client is closing
     emit closeClientEvent();
 
+    pSettingsManager->saveSettings();
+
     //Will maybe later add an option to bypass the close operation and ask the user 
     //if the program should be minimized to tray rather than closed... For now it works normally
     
