@@ -61,6 +61,9 @@ void TransferManager::incomingDataPacket(quint8 transferPacket, QHostAddress fro
 {
     QByteArray tmp = datagram.mid(2, 8);
     quint64 offset = getQuint64FromByteArray(&tmp);
+    if (offset > LLONG_MAX)
+        return;
+
     QByteArray tth = datagram.mid(10, 24);
     QByteArray data = datagram.mid(34);
     if ((data.length() == datagram.length() - 34) && (transferObjectTable.contains(tth)))
@@ -74,7 +77,7 @@ void TransferManager::incomingDataPacket(quint8 transferPacket, QHostAddress fro
             if (t)
             {
                 qDebug() << "TransferManager::incomingDataPacket() for upload" << t->getFileName();
-                t->incomingDataPacket(transferPacket, offset, data);
+                t->incomingDataPacket(transferPacket, (qint64)offset, data);
             }
         }
     }
@@ -158,7 +161,7 @@ void TransferManager::filePathNameReply(QByteArray tth, QString filename, quint6
     //setTransferSegmentPointer(uploadTransferQueue.value(tth)->segmentId, s);
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
     connect(t, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
-    connect(t, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)), this, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,quint64)));
+    connect(t, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,qint64)), this, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,qint64)));
     t->setFileName(filename);
     t->setFileSize(fileSize);
     t->setTTH(tth);
