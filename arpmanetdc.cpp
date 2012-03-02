@@ -488,6 +488,10 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     arpmanetDCUsers = 0;
     notifyCount = 0;
 
+    //Used for GUI updates
+    shareSizeUpdateCounter = 0;
+    bootstrapNodeCountUpdateCounter = 0;
+
     pCloseEvent = 0;
 
     saveSharesPressed = false;
@@ -536,10 +540,10 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(hashRateTimer, SIGNAL(timeout()), this, SLOT(calculateHashRate()));
     hashRateTimer->start(1000);
 
-    //Set up timer to update the number of CID hosts currently bootstrapped to
+    //Set up timer to update the number of CID hosts currently bootstrapped to, share size and transfer rates
     updateTimer = new QTimer(this);
     connect(updateTimer, SIGNAL(timeout()), this, SLOT(updateGUIEverySecond()));
-    updateTimer->start(5000);
+    updateTimer->start(1000);
 
     //Set up timer to auto update shares
     updateSharesTimer = new QTimer(this);
@@ -842,6 +846,7 @@ void ArpmanetDC::createWidgets()
 
     //Labels
     userHubCountLabel = new QLabel(tr("Hub Users: 0"));
+    userHubCountLabel->setContentsMargins(5,0,5,0);
     additionalInfoLabel = new QLabel(tr(""));
 
     statusLabel = new QLabel(tr("Status"));
@@ -856,6 +861,9 @@ void ArpmanetDC::createWidgets()
     CIDHostsLabel->setToolTip(tr("Number of hosts bootstrapped"));
 
     totalShareSizeLabel = new QLabel;
+    totalShareSizeLabel->setContentsMargins(5,0,5,0);
+    transferRateLabel = new QLabel(tr("Down: 0.00 b/s - Up: 0.00 b/s"));
+    transferRateLabel->setContentsMargins(5,0,5,0);
 
     //Progress bar
     hashingProgressBar = new TextProgressBar(tr("Hashing"), this);
@@ -957,6 +965,7 @@ void ArpmanetDC::createWidgets()
     statusBar->addPermanentWidget(connectionIconLabel);
     statusBar->addPermanentWidget(bootstrapStatusLabel);
     statusBar->addPermanentWidget(CIDHostsLabel);
+    statusBar->addPermanentWidget(transferRateLabel);
     statusBar->addPermanentWidget(hashingProgressBar);
     statusBar->addPermanentWidget(shareSizeLabel);
 
@@ -2275,11 +2284,26 @@ void ArpmanetDC::sortUserList()
 
 void ArpmanetDC::updateGUIEverySecond()
 {
-    //Called every second to update the GUI
-    emit getHostCount();  
+    if (bootstrapNodeCountUpdateCounter-- == 0)
+    {
+        //Called every second to update the GUI
+        emit getHostCount();
 
-    //Calculate total share size
-    totalShareSizeLabel->setText(tr("Total: %1").arg(bytesToSize(calculateTotalShareSize())));
+        //Reset counter
+        bootstrapNodeCountUpdateCounter = pSettingsManager->getSetting(SettingsManager::BOOTSTRAP_NODE_UPDATE_MULTIPLIER);
+    }
+
+    if (shareSizeUpdateCounter-- == 0)
+    {
+        //Calculate total share size
+        totalShareSizeLabel->setText(tr("Total: %1").arg(bytesToSize(calculateTotalShareSize())));
+
+        //Reset counter
+        shareSizeUpdateCounter = pSettingsManager->getSetting(SettingsManager::SHARE_SIZE_UPDATE_MULTIPLIER);
+    }
+
+    //Update transfer rates
+    transferRateLabel->setText(tr("Down: %1 - Up: %2").arg(bytesToRate(pDownloadPerSecond)).arg(bytesToRate(pUploadPerSecond)));
 }
 
 //Calculate rates

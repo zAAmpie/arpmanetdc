@@ -19,7 +19,7 @@ TransferWidget::TransferWidget(TransferManager *transferManager, ArpmanetDC *par
     currentUpdateID = 0;
     transferID = 0;
 
-    //Update status every second
+    //Update status every 300ms
     updateStatusTimer = new QTimer();
     connect(updateStatusTimer, SIGNAL(timeout()), this, SLOT(updateStatus()));
     updateStatusTimer->start(300);
@@ -157,6 +157,10 @@ void TransferWidget::returnGlobalTransferStatus(QList<TransferItemStatus> status
     foreach (TransferItemStatus s, status)
         pTransferList->insert(s.TTH, s);
 
+    //Update counters
+    qint64 pTotalDownloadPerSecond = 0;
+    qint64 pTotalUploadPerSecond = 0;
+
     //Clear model
     //transferListModel->removeRows(0, transferListModel->rowCount());
 
@@ -170,9 +174,20 @@ void TransferWidget::returnGlobalTransferStatus(QList<TransferItemStatus> status
 
         QueueStruct q = pParent->queueEntry(s.TTH);
 
+        //Determine the transfer rate per second from the interval period
+        qint64 actualTransferRate = s.transferRate;
+        actualTransferRate = (actualTransferRate * (qint64)updateStatusTimer->interval()) / 1000;
+
         //Get the download host from the queue, upload hosts are contained within the struct
         if (s.transferType == TRANSFER_TYPE_DOWNLOAD)
+        {
             s.host = q.fileHost;
+            pTotalDownloadPerSecond += actualTransferRate;
+        }
+        else
+        {
+            pTotalUploadPerSecond += actualTransferRate;
+        }
         
         //Check if entry exists
         QList<QStandardItem *> findResults = transferListModel->findItems(base32TTH.data(), Qt::MatchExactly, 8);
@@ -205,7 +220,7 @@ void TransferWidget::returnGlobalTransferStatus(QList<TransferItemStatus> status
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, typeString(s.transferType)));
             row.append(new CStandardItem(CStandardItem::BitmapType, bitmapString(transferID, currentUpdateID++, s.transferProgress, s.segmentBitmap)));
             row.last()->setToolTip(progressTooltip);
-            row.append(new CStandardItem(CStandardItem::RateType, bytesToRate(s.transferRate)));
+            row.append(new CStandardItem(CStandardItem::RateType, bytesToRate(actualTransferRate)));
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, s.filePathName.remove(ArpmanetDC::settingsManager()->getSetting(SettingsManager::DOWNLOAD_PATH), Qt::CaseInsensitive)));
             row.append(new CStandardItem(CStandardItem::SizeType, bytesToSize(q.fileSize)));
             row.append(new CStandardItem(CStandardItem::CaseInsensitiveTextType, stateString(s.transferStatus)));
@@ -221,7 +236,7 @@ void TransferWidget::returnGlobalTransferStatus(QList<TransferItemStatus> status
             transferListModel->itemFromIndex(transferListModel->index(row, 0))->setText(typeString(s.transferType));
             //transferListModel->itemFromIndex(transferListModel->index(row, 1))->setText(progressString(s.transferType, s.transferProgress));
             transferListModel->itemFromIndex(transferListModel->index(row, 1))->setText(bitmapString(pIDHash.value(s.TTH), currentUpdateID++, s.transferProgress, s.segmentBitmap));
-            transferListModel->itemFromIndex(transferListModel->index(row, 2))->setText(bytesToRate(s.transferRate));
+            transferListModel->itemFromIndex(transferListModel->index(row, 2))->setText(bytesToRate(actualTransferRate));
             transferListModel->itemFromIndex(transferListModel->index(row, 3))->setText(s.filePathName.remove(ArpmanetDC::settingsManager()->getSetting(SettingsManager::DOWNLOAD_PATH), Qt::CaseInsensitive));
             transferListModel->itemFromIndex(transferListModel->index(row, 4))->setText(bytesToSize(q.fileSize));
             transferListModel->itemFromIndex(transferListModel->index(row, 5))->setText(stateString(s.transferStatus));
@@ -254,6 +269,10 @@ void TransferWidget::returnGlobalTransferStatus(QList<TransferItemStatus> status
     int column = transferListTable->horizontalHeader()->sortIndicatorSection();
     Qt::SortOrder order = transferListTable->horizontalHeader()->sortIndicatorOrder();
     transferListTable->sortByColumn(column, order);
+
+    //Set parent counters
+    pParent->setDownloadPerSecond(pTotalDownloadPerSecond);
+    pParent->setUploadPerSecond(pTotalUploadPerSecond);
 }
 
 //Remove an entry from the list

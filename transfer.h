@@ -110,7 +110,7 @@ public slots:
     QByteArray* getTTH();
     QString* getFileName();
     QHostAddress* getRemoteHost();
-    quint64 getTransferRate();
+    virtual qint64 getTransferRate();
     quint64 getFileSize();
     qint64 getUptime();
     int getTransferStatus();
@@ -151,7 +151,7 @@ protected:
     int status;
     //QList<QHostAddress> listOfPeers;
     QTimer *transferRateCalculationTimer;
-    quint64 transferRate;
+    qint64 transferRate;
     int transferProgress;
     quint64 fileSize;
     QByteArray protocolOrderPreference;

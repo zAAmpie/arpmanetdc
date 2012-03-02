@@ -58,6 +58,8 @@ SettingsManager::SettingsManager(sqlite3 *db, ArpmanetDC *parent)
     setDefault(MAX_MAINCHAT_BLOCKS, 1000, "maxMainchatBlocks");
     setDefault(MAX_LABEL_HISTORY_ENTRIES, 20, "maxLabelHistoryEntries");
     setDefault(MAX_HASH_SPEED_MB, 300, "maxHashSpeedMB");
+    setDefault(SHARE_SIZE_UPDATE_MULTIPLIER, 5, "shareSizeUpdateMultiplier");
+    setDefault(BOOTSTRAP_NODE_UPDATE_MULTIPLIER, 5, "bootstrapNodeUpdateMultiplier");
 
     //Int64
     setDefault(AUTO_UPDATE_SHARE_INTERVAL, 3600000, "autoUpdateShareInterval");
