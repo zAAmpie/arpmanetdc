@@ -62,6 +62,9 @@ public slots:
     //Set a download busy (i.e. the download started)
     void setQueuedDownloadBusy(QByteArray tth);
 
+    //Requeue a download that was busy
+    void requeueDownload(QByteArray tth);
+
 private slots:
     //Slots
     void showQueueTableContextMenu(const QPoint &);
@@ -89,18 +92,24 @@ private:
     //Queue list has been received
     void loadQueueList();
 
+    //Update counters
+    void updateCounters();
+
     //Objects
     QWidget *pWidget;
     ArpmanetDC *pParent;
     ShareSearch *pShare;
 
     QHash<QByteArray, QueueStruct> *pQueueList; //Link to main GUIs queue
+    qint64 pQueueSize;
+    quint32 pQueueCount;
 
     //Icons
     QIcon lowPriorityIcon, normalPriorityIcon, highPriorityIcon, queuedIcon, busyIcon;
     //GUI
     QTableView *queueTable;
     QStandardItemModel *queueModel;
+    QLabel *queueSizeLabel, *queueCountLabel;
 
     QMenu *queueMenu, *setPriorityMenu;
 

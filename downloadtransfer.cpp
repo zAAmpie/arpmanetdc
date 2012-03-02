@@ -1013,7 +1013,8 @@ void DownloadTransfer::newSegmentTimerEvent()
         zeroSegmentTimeoutCount = 0;
 
     if (zeroSegmentTimeoutCount >= 6)
-        emit abort(this);  // fail the download without removing it from queue.
+        //emit abort(this);  // fail the download without removing it from queue.
+        emit requeue(this);
 }
 
 bool DownloadTransfer::isNonDispatchedProtocol(TransferProtocol protocol)

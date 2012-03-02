@@ -77,6 +77,7 @@ public:
 
 signals:
     void abort(Transfer*);
+    void requeue(Transfer *);
     void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray bucket);
     void TTHTreeRequest(QHostAddress hostAddr, QByteArray rootTTH, quint32 startBucket, quint32 bucketCount);
     void searchTTHAlternateSources(QByteArray tth);

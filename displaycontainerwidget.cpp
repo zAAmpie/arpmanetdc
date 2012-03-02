@@ -11,6 +11,7 @@ DisplayContainerWidget::DisplayContainerWidget(QHostAddress host, ContainerConte
     pContents = contents;
     pName = name;
     pDownloadPath = path;
+    pContainerPath = pDownloadPath + pName;
 
     //Generate widget
     createWidgets();
@@ -23,22 +24,6 @@ DisplayContainerWidget::DisplayContainerWidget(QHostAddress host, ContainerConte
 
     //Populate the tree with container data
     populateTree();
-}
-
-//Constructor
-DisplayContainerWidget::DisplayContainerWidget(ArpmanetDC *parent)
-{
-    //Set objects
-    pParent = parent;
-    
-    //Generate widget
-    createWidgets();
-    placeWidgets();
-    connectWidgets();
-
-    //Instantiate lists
-    pPathItemHash = new QHash<QString, QStandardItem *>();
-    pDownloadList = new QHash<QString, QueueStruct>();
 }
 
 //Destructor
@@ -82,17 +67,15 @@ void DisplayContainerWidget::createWidgets()
     checkProxyModel->setDefaultCheckState(Qt::Unchecked);
 
     //Labels
-    containerNameLabel = new QLabel(tr("Name: %1").arg(pName), pWidget);
-    containerSizeLabel = new QLabel(tr("Size: %1").arg(bytesToSize(pIndex.first)), pWidget);
-    selectedFileSizeLabel = new QLabel(tr("Selected file size: 0.00 bytes"), pWidget);
-    selectedFileCountLabel = new QLabel(tr("Selected files: 0"), pWidget);
+    containerNameLabel = new QLabel(tr("<b>Name:</b> %1").arg(pName), pWidget);
+    containerSizeLabel = new QLabel(tr("<b>Size:</b> %1").arg(bytesToSize(pIndex.first)), pWidget);
+    containerPathLabel = new QLabel(tr("<b>Path:</b> %1").arg(pContainerPath), pWidget);
+    selectedFileSizeLabel = new QLabel(tr("<b>Selected file size:</b> 0.00 bytes"), pWidget);
+    selectedFileCountLabel = new QLabel(tr("<b>Selected files:</b> 0"), pWidget);
     busyLabel = new QLabel(tr("<font color=\"red\">Please wait while your files are selected...</font>"), pWidget);
     busyLabel->setVisible(false);
 
-    //Buttons
-    openContainerButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/FolderIcon.png"), tr("Open container"), pWidget);
-    openContainerButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    
+    //Buttons   
     downloadSelectedFilesButton = new QPushButton(QIcon(":/ArpmanetDC/Resources/DownloadIcon.png"), tr("Download selected files"), pWidget);
     downloadSelectedFilesButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     downloadSelectedFilesButton->setEnabled(false);
@@ -105,9 +88,9 @@ void DisplayContainerWidget::placeWidgets()
 {
     QHBoxLayout *topLayout = new QHBoxLayout;
     topLayout->addSpacing(5);
-    topLayout->addWidget(containerNameLabel, 1);
-    topLayout->addWidget(containerSizeLabel, 0);
-    topLayout->addWidget(openContainerButton, 0);
+    topLayout->addWidget(containerNameLabel, 0);
+    topLayout->addWidget(containerSizeLabel, 1);
+    topLayout->addWidget(containerPathLabel, 0);
     topLayout->addSpacing(5);
 
     QHBoxLayout *bottomLayout = new QHBoxLayout;
@@ -133,7 +116,6 @@ void DisplayContainerWidget::connectWidgets()
     //Connect widgets...
     connect(downloadSelectedFilesButton, SIGNAL(clicked()), this, SLOT(downloadSelectedFilesButtonPressed()));
     connect(downloadAllFilesButton, SIGNAL(clicked()), this, SLOT(downloadAllFilesButtonPressed()));
-    connect(openContainerButton, SIGNAL(clicked()), this, SLOT(openContainerButtonPressed()));
 
     //Connect checkable proxy model
     connect(checkProxyModel, SIGNAL(checkedNodesChanged()), this, SLOT(checkedNodesChanged()));
@@ -144,6 +126,23 @@ void DisplayContainerWidget::downloadSelectedFilesButtonPressed()
 {
     if (!pDownloadList->isEmpty())
     {
+        //Get download path as starting point
+        QString startingPath = pDownloadPath;
+    
+        //Make sure the starting path exists, otherwise go to parent directory until valid
+        QDir dirCheck(startingPath);
+        while (!dirCheck.exists() && dirCheck.cdUp()) 
+        {
+            startingPath = dirCheck.path();
+        }
+
+        QString path = QFileDialog::getExistingDirectory((QWidget *)pParent, tr("Select download path"), startingPath).replace("\\","/");
+        if (path.isEmpty())
+            return;
+
+        if (path.right(1).compare("/") != 0)
+            path.append("/");
+
         //Iterate through all selected files
         foreach (QueueStruct q, *pDownloadList)
         {
@@ -165,6 +164,23 @@ void DisplayContainerWidget::downloadSelectedFilesButtonPressed()
 //Download ALL files
 void DisplayContainerWidget::downloadAllFilesButtonPressed()
 {
+    //Get download path as starting point
+    QString startingPath = pDownloadPath;
+    
+    //Make sure the starting path exists, otherwise go to parent directory until valid
+    QDir dirCheck(startingPath);
+    while (!dirCheck.exists() && dirCheck.cdUp()) 
+    {
+        startingPath = dirCheck.path();
+    }
+
+    QString path = QFileDialog::getExistingDirectory((QWidget *)pParent, tr("Select download path"), startingPath).replace("\\","/");
+    if (path.isEmpty())
+        return;
+
+    if (path.right(1).compare("/") != 0)
+        path.append("/");
+
     if (!pContents.isEmpty())
     {
         //Iterate through the entire container and queue all files
@@ -177,7 +193,7 @@ void DisplayContainerWidget::downloadAllFilesButtonPressed()
             QueueStruct q;
             q.fileHost = pHost;
             q.fileName = fi.fileName();
-            q.filePath = pDownloadPath + c.filePath;
+            q.filePath = path + c.filePath;
             q.fileSize = c.fileSize;
             q.tthRoot = c.rootTTH;
 
@@ -193,18 +209,6 @@ void DisplayContainerWidget::downloadAllFilesButtonPressed()
             //Add to transfer manager queue for download
             emit queueDownload((int)q.priority, q.tthRoot, q.filePath, q.fileSize, q.fileHost);
         }
-    }
-}
-
-//Open an existing container
-void DisplayContainerWidget::openContainerButtonPressed()
-{
-    QString containerPath;
-    containerPath = QFileDialog::getOpenFileName((QWidget *)pParent, tr("Please select the container to open"), ArpmanetDC::settingsManager()->getSetting(SettingsManager::DOWNLOAD_PATH),
-        tr("Containers (*.adcc)"));
-    if (!containerPath.isEmpty())
-    {
-        //TODO: Process containers
     }
 }
 
@@ -283,8 +287,8 @@ void DisplayContainerWidget::checkedNodesChanged()
         }
     }
 
-    selectedFileSizeLabel->setText(tr("Selected file size: %1").arg(bytesToSize(pSelectedFileSize)));
-    selectedFileCountLabel->setText(tr("Selected files: %1").arg(pSelectedFileCount));
+    selectedFileSizeLabel->setText(tr("<b>Selected file size:</b> %1").arg(bytesToSize(pSelectedFileSize)));
+    selectedFileCountLabel->setText(tr("<b>Selected files:</b> %1").arg(pSelectedFileCount));
 
     downloadSelectedFilesButton->setEnabled(!pDownloadList->isEmpty());
 

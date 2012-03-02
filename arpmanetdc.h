@@ -202,6 +202,7 @@ private slots:
     void downloadStarted(QByteArray tth);
     void downloadCompleted(QByteArray tth);
     void closeClientEventReturn(); //Return when everything is saved
+    void requeueDownload(QByteArray tth);
 
     //Dispatcher slots
     void bootstrapStatusChanged(int status);
@@ -263,6 +264,7 @@ private slots:
     void privateMessageActionPressed();
     void reconnectActionPressed();
     void openDownloadDirActionPressed();
+    void openContainerActionPressed();
     void pmActionPressed();
 
     void userCommandMenuPressed(QAction *action);
@@ -461,7 +463,7 @@ private:
     QMenu *userCommandListMenu;
 
     //Actions
-    QAction *reconnectAction, *shareAction, *searchAction, *queueAction, *downloadFinishedAction, *settingsAction, *helpAction, *privateMessageAction, *openDownloadDirAction, *pmAction;
+    QAction *reconnectAction, *shareAction, *searchAction, *queueAction, *downloadFinishedAction, *settingsAction, *helpAction, *privateMessageAction, *openDownloadDirAction, *pmAction, *openContainerAction;
 
     //-----===== System tray =====-----
 

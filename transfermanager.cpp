@@ -207,6 +207,25 @@ void TransferManager::queueDownload(int priority, QByteArray tth, QString filePa
     }
 }
 
+// requeue a download that "failed"
+void TransferManager::requeueDownload(Transfer *transfer)
+{
+    DownloadTransferQueueItem i;
+    i.filePathName = *transfer->getFileName();
+    i.tth = *transfer->getTTH();
+    i.fileSize = transfer->getFileSize();
+    i.fileHost = *transfer->getRemoteHost();
+    
+    //Tell the GUI that you want to requeue the download
+    emit requeueDownload(i.tth);
+
+    //Destroy the object
+    destroyTransferObject(transfer);
+
+    //Requeue as low priority download
+    queueDownload(3, i.tth, i.filePathName, i.fileSize, i.fileHost);
+}
+
 // get next item to be downloaded off the queue
 DownloadTransferQueueItem TransferManager::getNextQueuedDownload()
 {
@@ -237,6 +256,7 @@ void TransferManager::startNextDownload()
     Transfer *t = new DownloadTransfer(this);
     t->setCurrentlyDownloadingPeers(&currentDownloadingHosts);
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
+    connect(t, SIGNAL(requeue(Transfer *)), this, SLOT(requeueDownload(Transfer *)));
     connect(t, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray)), this, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray)));
     connect(t, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray,quint32,quint32)),
             this, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray,quint32,quint32)));

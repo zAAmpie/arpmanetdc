@@ -33,8 +33,6 @@ class DisplayContainerWidget : public QObject
 public:
     //Constructor to open widget with data
     DisplayContainerWidget(QHostAddress host, ContainerContentsType index, QList<ContainerLookupReturnStruct> contents, QString name, QString path, ArpmanetDC *parent);
-    //Constructor to just open widget
-    DisplayContainerWidget(ArpmanetDC *parent);
     //Destructor
     ~DisplayContainerWidget();
 
@@ -49,7 +47,6 @@ private slots:
 
     void downloadSelectedFilesButtonPressed();
     void downloadAllFilesButtonPressed();
-    void openContainerButtonPressed();
 
 signals:
     //Signal to queue download
@@ -78,12 +75,13 @@ private:
     QHostAddress pHost;
     QString pName;
     QString pDownloadPath;
+    QString pContainerPath;
     qint64 pSelectedFileSize;
     quint32 pSelectedFileCount;
 
     //GUI
-    QLabel *containerNameLabel, *containerSizeLabel, *busyLabel;
-    QPushButton *openContainerButton, *downloadAllFilesButton;
+    QLabel *containerNameLabel, *containerSizeLabel, *containerPathLabel, *busyLabel;
+    QPushButton *downloadAllFilesButton;
     
     //Selected
     QPushButton *downloadSelectedFilesButton;
