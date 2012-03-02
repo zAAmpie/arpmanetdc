@@ -144,23 +144,32 @@ void DownloadTransfer::requestHashBucket(QByteArray rootTTH, int bucketNumber, Q
 // The hash thread calls this when it has finished calculating the tiger tree hash of a 1MB bucket
 void DownloadTransfer::hashBucketReply(int bucketNumber, QByteArray bucketTTH)
 {
-    // buckets can be flushed twice when aligned with a segment boundary.
-    // a race condition between two threads can cause segmentation faults
-    // here we make sure we attempt to flush the buffer only once.
     if (downloadBucketHashLookupTable.contains(bucketNumber))
     {
         if (*downloadBucketHashLookupTable.value(bucketNumber) == bucketTTH)
         {
             flushBucketToDisk(bucketNumber);
+            //qDebug() << "DownloadTransfer::hashBucketReply() checksum matched, flushing bucket" << bucketNumber;
         }
         else
         {
             transferSegmentStateBitmap[bucketNumber] = SegmentNotDownloaded;
             bucketFlushStateBitmap[bucketNumber] = BucketNotFlushed;
-            downloadBucketTable->value(bucketNumber)->clear();
-            // TODO: emit MISTAKE!
+            if (downloadBucketTable->value(bucketNumber))
+                downloadBucketTable->value(bucketNumber)->clear();
+            qDebug() << "DownloadTransfer::hashBucketReply() checksum mismatch" << bucketNumber;
         }
     }
+    else
+    {
+        transferSegmentStateBitmap[bucketNumber] = SegmentNotDownloaded;
+        bucketFlushStateBitmap[bucketNumber] = BucketNotFlushed;
+        if (downloadBucketTable->value(bucketNumber))
+            downloadBucketTable->value(bucketNumber)->clear();
+        qDebug() << "DownloadTransfer::hashBucketReply() bucket hashed not in hash tree" << bucketNumber;
+        // TODO: emit MISTAKE!
+    }
+
     // TODO: must check that tth tree item was received before requesting bucket hash.
     bucketHashQueueLength--;
     congestionTest();
