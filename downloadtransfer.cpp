@@ -1003,6 +1003,15 @@ void DownloadTransfer::updateDirectBytesStats(int bytes)
 
 void DownloadTransfer::newSegmentTimerEvent()
 {
+    if (currentActiveSegments() == 0)
+        zeroSegmentTimeoutCount++;
+    else
+        zeroSegmentTimeoutCount = 0;
+
+    if (zeroSegmentTimeoutCount >= 6)
+        //emit abort(this);  // fail the download without removing it from queue.
+        emit requeue(this);
+
     if ((currentActiveSegments() >= MAXIMUM_SIMULTANEOUS_SEGMENTS) || (!(status & (TRANSFER_STATE_RUNNING | TRANSFER_STATE_STALLED))))
         return;
 
@@ -1024,14 +1033,6 @@ void DownloadTransfer::newSegmentTimerEvent()
         else
             remotePeerInfoTable[nextPeer].transferSegment = 0;
     }
-    if (currentActiveSegments() == 0)
-        zeroSegmentTimeoutCount++;
-    else
-        zeroSegmentTimeoutCount = 0;
-
-    if (zeroSegmentTimeoutCount >= 6)
-        //emit abort(this);  // fail the download without removing it from queue.
-        emit requeue(this);
 }
 
 bool DownloadTransfer::isNonDispatchedProtocol(TransferProtocol protocol)
