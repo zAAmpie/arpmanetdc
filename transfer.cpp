@@ -31,7 +31,7 @@ void Transfer::setFileName(QString filename)
 {
     filePathName = filename;
     fileExists = false;
-    if (QFile::exists(filePathName))
+    if (QFile::exists(filePathName + ".incomplete"))
         fileExists = true;
 }
 
