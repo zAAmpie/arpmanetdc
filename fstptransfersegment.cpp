@@ -233,8 +233,8 @@ void FSTPTransferSegment::transferTimerEvent()
         //qDebug() << "FSTPTransferSegment::transferTimerEvent() call checkSendDownloadRequest()" << requestingOffset << requestingLength;
         checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength, status);
         retransmitRetryCounter++;
-        // retransmit timeout 2 seconds, 5 retransmits / 10 seconds deadness plenty enough to warrant a fail.
-        if (retransmitRetryCounter == 5)
+        // retransmit timeout 2 seconds, 15 retransmits / 30 seconds deadness plenty enough to warrant a fail.
+        if (retransmitRetryCounter == 15)
         {
             status = TRANSFER_STATE_FAILED;
             emit transferRequestFailed(this);

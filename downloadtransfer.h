@@ -110,6 +110,7 @@ private:
     bool isNonDispatchedProtocol(TransferProtocol protocol);
     TransferSegment* getSlowestActivePeer();
     int getSegmentsDone();
+    int getUnallocatedBlockCount();
     int getTotalFileSegments();
 
     QHash<int, QByteArray*> *downloadBucketTable;

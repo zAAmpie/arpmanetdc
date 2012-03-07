@@ -1020,7 +1020,7 @@ void DownloadTransfer::newSegmentTimerEvent()
 
     // Do not try and create new segments when they will be destroyed directly afterwards!
     // I believe ping-ponging segment creation can cause the segfaulting that harasses us.
-    if (getSegmentsDone() == getTotalFileSegments())
+    if (getUnallocatedBlockCount() == 0)
         return;
 
     QHostAddress nextPeer = getBestIdlePeer();
@@ -1054,6 +1054,17 @@ int DownloadTransfer::getSegmentsDone()
             segmentsDone++;
     }
     return segmentsDone;
+}
+
+int DownloadTransfer::getUnallocatedBlockCount()
+{
+    int unallocatedBlocks = 0;
+    for (int i = 0; i < transferSegmentStateBitmap.length(); i++)
+    {
+        if (transferSegmentStateBitmap.at(i) == SegmentNotDownloaded)
+            unallocatedBlocks++;
+    }
+    return unallocatedBlocks;
 }
 
 int DownloadTransfer::getTotalFileSegments()
