@@ -123,7 +123,7 @@ public slots:
     //----------========== HASH 1MB BUCKET (TRANSFER MANAGER) ==========----------
 
     //Hashes a 1MB bucket
-    void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray bucket);
+    void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray bucket, QHostAddress peer);
 
     //----------========== TRANSFERS (TRANSFER MANAGER) ==========----------
     
@@ -217,7 +217,7 @@ private slots:
     void parseDirectoryThreadFailed(QString rootDir, ParseDirectoryThread *parseObj);
 
     //Hash bucket thread done
-    void hashBucketDone(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH);
+    void hashBucketDone(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH, QHostAddress peer);
 
     //Database commands
     void commitTransaction(bool startNewTransaction = true);
@@ -272,7 +272,7 @@ signals:
     //----------========== HASH 1MB BUCKET (TRANSFER MANAGER) ==========----------
 
     //Signal the reply of the 1MB bucket hash
-    void hashBucketReply(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH);
+    void hashBucketReply(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH, QHostAddress peer);
 
     //----------========== TRANSFERS (TRANSFER MANAGER) ==========----------
     
@@ -337,7 +337,7 @@ signals:
     //Signals to interface with hashing thread objects
     void runHashThread(QString filePath, QString rootDir);
     void runParseThread(QString directoryPath);
-    void runHashBucket(QByteArray rootTTH, int bucketNumber, QByteArray bucket, ReturnEncoding encoding);
+    void runHashBucket(QByteArray rootTTH, int bucketNumber, QByteArray bucket, ReturnEncoding encoding, QHostAddress peer);
 
     //Request all containers in a directory
     void getContainers(QString containerDirectory);

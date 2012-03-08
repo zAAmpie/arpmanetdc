@@ -39,7 +39,7 @@ signals:
     void transmitDatagram(QHostAddress dstHost, QByteArray *datagram);
     void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId);
     void sendTransferError(QHostAddress dstHost, quint8 error, QByteArray tth, qint64 offset);
-    void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
+    void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray *bucket, QHostAddress peer);
     void requestNextSegment(TransferSegment *requestingSegmentObject);
     void transferRequestFailed(TransferSegment *requestingSegmentObject, quint8 error=0, bool startIdleSegment=true);
     void requestNextSegmentId(TransferSegment *segment);

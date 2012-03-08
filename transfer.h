@@ -77,8 +77,9 @@ public:
 
 signals:
     void abort(Transfer*);
-    void requeue(Transfer *);
-    void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray bucket);
+    void requeue(Transfer *, bool=false);
+    void requeueFailed(Transfer *);
+    void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray bucket, QHostAddress peer);
     void TTHTreeRequest(QHostAddress hostAddr, QByteArray rootTTH, quint32 startBucket, quint32 bucketCount);
     void searchTTHAlternateSources(QByteArray tth);
     void loadTTHSourcesFromDatabase(QByteArray tth);
@@ -120,7 +121,7 @@ public slots:
     virtual SegmentStatusStruct getSegmentStatuses();
     virtual void addPeer(QHostAddress peer);
     void setProtocolOrderPreference(QByteArray p);
-    virtual void hashBucketReply(int bucketNumber, QByteArray bucketTTH);
+    virtual void hashBucketReply(int bucketNumber, QByteArray bucketTTH, QHostAddress peer);
     virtual void TTHTreeReply(QByteArray tree);
     virtual void receivedPeerProtocolCapability(QHostAddress peer, quint8 protocols);
     virtual void incomingTransferError(quint64 offset, quint8 error);

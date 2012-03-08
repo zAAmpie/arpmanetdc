@@ -12,7 +12,7 @@ Transfer::~Transfer()
 
 // empty base class definitions, since these do not make sense for uploads
 void Transfer::incomingDataPacket(quint8, qint64, QByteArray){}
-void Transfer::hashBucketReply(int, QByteArray){}
+void Transfer::hashBucketReply(int, QByteArray, QHostAddress){}
 void Transfer::TTHTreeReply(QByteArray){}
 void Transfer::receivedPeerProtocolCapability(QHostAddress, quint8){}
 TransferSegment* Transfer::createUploadObject(quint8, quint32){return 0;}

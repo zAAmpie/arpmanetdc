@@ -211,7 +211,7 @@ void TransferManager::queueDownload(int priority, QByteArray tth, QString filePa
 }
 
 // requeue a download that "failed"
-void TransferManager::requeueDownload(Transfer *transfer)
+void TransferManager::requeueDownload(Transfer *transfer, bool failed)
 {
     DownloadTransferQueueItem i;
     i.filePathName = *transfer->getFileName();
@@ -225,6 +225,7 @@ void TransferManager::requeueDownload(Transfer *transfer)
     //Destroy the object
     destroyTransferObject(transfer);
 
+    // TODO: if failed, set priority to PAUSED or something alike.
     //Requeue as low priority download
     queueDownload(3, i.tth, i.filePathName, i.fileSize, i.fileHost);
 }
@@ -259,8 +260,8 @@ void TransferManager::startNextDownload()
     Transfer *t = new DownloadTransfer(this);
     t->setCurrentlyDownloadingPeers(&currentDownloadingHosts);
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
-    connect(t, SIGNAL(requeue(Transfer *)), this, SLOT(requeueDownload(Transfer *)));
-    connect(t, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray)), this, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray)));
+    connect(t, SIGNAL(requeue(Transfer *,bool)), this, SLOT(requeueDownload(Transfer *,bool)));
+    connect(t, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray,QHostAddress)), this, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray,QHostAddress)));
     connect(t, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray,quint32,quint32)),
             this, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray,quint32,quint32)));
     connect(t, SIGNAL(searchTTHAlternateSources(QByteArray)), this, SIGNAL(searchTTHAlternateSources(QByteArray)));
@@ -465,11 +466,11 @@ void TransferManager::incomingTTHTree(QByteArray tth, QByteArray tree)
         t->TTHTreeReply(tree);
 }
 
-void TransferManager::hashBucketReply(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH)
+void TransferManager::hashBucketReply(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH, QHostAddress peer)
 {
     Transfer *t = getTransferObjectPointer(rootTTH, TRANSFER_TYPE_DOWNLOAD);
     if (t)
-        t->hashBucketReply(bucketNumber, bucketTTH);
+        t->hashBucketReply(bucketNumber, bucketTTH, peer);
     // should be no else, if the download object mysteriously disappeared somewhere, we can just silently drop the message here.
 }
 

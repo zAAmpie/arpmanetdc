@@ -50,6 +50,7 @@ typedef struct
     qint64 lastStartTime;
     quint64 lastBytesQueued;
     qint64 lastTransferRate;
+    int checksumMismatchCount;
 } RemotePeerInfoStruct;
 
 class DownloadTransfer : public Transfer
@@ -60,7 +61,7 @@ public:
     ~DownloadTransfer();
 
 public slots:
-    void hashBucketReply(int bucketNumber, QByteArray bucketTTH);
+    void hashBucketReply(int bucketNumber, QByteArray bucketTTH, QHostAddress peer);
     void TTHTreeReply(QByteArray tree);
     //void setProtocolPreference(QByteArray &preference);
     void receivedPeerProtocolCapability(QHostAddress peer, quint8 protocols);
@@ -89,7 +90,7 @@ private slots:
     void protocolCapabilityRequestTimerEvent();
     void segmentCompleted(TransferSegment *segment);
     void segmentFailed(TransferSegment *segment, quint8 error=0, bool startIdleSegment = true);
-    void requestHashBucket(QByteArray rootTTH, int bucketNumber, QByteArray *bucket);
+    void requestHashBucket(QByteArray rootTTH, int bucketNumber, QByteArray *bucket, QHostAddress peer);
     void updateDirectBytesStats(int bytes);
 
 private:

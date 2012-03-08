@@ -125,7 +125,7 @@ void HashFileThread::processFile(QString filePath, QString rootDir)
 }
 
 //Hashes a bucket
-void HashFileThread::processBucket(QByteArray rootTTH, int bucketNumber, QByteArray bucket, ReturnEncoding encoding)
+void HashFileThread::processBucket(QByteArray rootTTH, int bucketNumber, QByteArray bucket, ReturnEncoding encoding, QHostAddress peer)
 {
     Tiger totalTTH;
     QByteArray tth;
@@ -144,7 +144,7 @@ void HashFileThread::processBucket(QByteArray rootTTH, int bucketNumber, QByteAr
         tth = base32Encode(digestTTH, totalTTH.DigestSize()); //Base32
 
     //Done hashing the bucket
-    emit doneBucket(rootTTH, bucketNumber, tth);
+    emit doneBucket(rootTTH, bucketNumber, tth, peer);
 }
 
 void HashFileThread::hashFile(quint8 type, QString filePath)

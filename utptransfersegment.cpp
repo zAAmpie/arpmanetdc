@@ -149,7 +149,7 @@ void uTPTransferSegment::uTPRead(const byte *bytes, size_t count)
 
     if (pDownloadBucketTable->value(bucketNumber)->length() == HASH_BUCKET_SIZE)
     {
-        emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber));
+        emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber), remoteHost);
         qDebug() << "uTPTransferSegment emit hashBucketRequest() " << bucketNumber << pDownloadBucketTable->value(bucketNumber)->length();
     }
 
@@ -159,7 +159,7 @@ void uTPTransferSegment::uTPRead(const byte *bytes, size_t count)
     {
         //status = TRANSFER_STATE_FINISHED;  // local segment
         qDebug() << "uTPTransferSegment emit hashBucketRequest() on finish " << bucketNumber << pDownloadBucketTable->value(bucketNumber)->length();
-        emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber));
+        emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber), remoteHost);
     }
     segmentOffset += count;
     bytesTransferred += count;

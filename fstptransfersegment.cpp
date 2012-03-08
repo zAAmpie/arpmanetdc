@@ -189,7 +189,7 @@ void FSTPTransferSegment::incomingDataPacket(qint64 offset, QByteArray data)
 
     if (pDownloadBucketTable->value(bucketNumber)->length() == HASH_BUCKET_SIZE)
     {
-        emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber));
+        emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber), remoteHost);
         //qDebug() << "FSTPTransferSegment emit hashBucketRequest() " << bucketNumber << pDownloadBucketTable->value(bucketNumber)->length();
     }
 
@@ -199,7 +199,7 @@ void FSTPTransferSegment::incomingDataPacket(qint64 offset, QByteArray data)
     {
         status = TRANSFER_STATE_FINISHED;  // local segment
         //qDebug() << "FSTPTransferSegment emit hashBucketRequest() on finish " << bucketNumber << pDownloadBucketTable->value(bucketNumber)->length();
-        emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber));
+        emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber), remoteHost);
     }
 
     requestingOffset += data.length();

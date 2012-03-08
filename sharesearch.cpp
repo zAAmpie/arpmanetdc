@@ -58,8 +58,8 @@ ShareSearch::ShareSearch(quint32 maxSearchResults, ArpmanetDC *parent)
     hashBucketThread = new ExecThread();
     pHashBucketThread = new HashFileThread();
 
-    connect(pHashBucketThread, SIGNAL(doneBucket(QByteArray, int, QByteArray)), this, SLOT(hashBucketDone(QByteArray, int, QByteArray)), Qt::QueuedConnection);
-    connect(this, SIGNAL(runHashBucket(QByteArray, int, QByteArray, ReturnEncoding)), pHashBucketThread, SLOT(processBucket(QByteArray, int, QByteArray, ReturnEncoding)), Qt::QueuedConnection);
+    connect(pHashBucketThread, SIGNAL(doneBucket(QByteArray, int, QByteArray,QHostAddress)), this, SLOT(hashBucketDone(QByteArray, int, QByteArray,QHostAddress)), Qt::QueuedConnection);
+    connect(this, SIGNAL(runHashBucket(QByteArray, int, QByteArray, ReturnEncoding,QHostAddress)), pHashBucketThread, SLOT(processBucket(QByteArray, int, QByteArray, ReturnEncoding,QHostAddress)), Qt::QueuedConnection);
 
     pHashBucketThread->moveToThread(hashBucketThread);
     hashBucketThread->start();
@@ -1383,21 +1383,21 @@ void ShareSearch::processContainer(QHostAddress host, QString containerPath, QSt
 //------------------------------============================== HASH 1MB BUCKET (TRANSFER MANAGER) ==============================------------------------------
 
 //Hashes a 1MB bucket
-void ShareSearch::hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray bucket)
+void ShareSearch::hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray bucket, QHostAddress peer)
 {
     if (!bucket.isEmpty())
         //Start hash bucket thread
-        emit runHashBucket(rootTTH, bucketNumber, bucket, BinaryEncoded);
+        emit runHashBucket(rootTTH, bucketNumber, bucket, BinaryEncoded, peer);
     else
         //Meh. Not going to hash an empty bucket
-        emit hashBucketReply(rootTTH, bucketNumber, QByteArray());
+        emit hashBucketReply(rootTTH, bucketNumber, QByteArray(), peer);
 }
 
 //Hash bucket thread done
-void ShareSearch::hashBucketDone(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH)
+void ShareSearch::hashBucketDone(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH, QHostAddress peer)
 {
     //Signal the reply of the 1MB bucket hash
-    emit hashBucketReply(rootTTH, bucketNumber, bucketTTH);
+    emit hashBucketReply(rootTTH, bucketNumber, bucketTTH, peer);
 }
 
 //------------------------------============================== TTH SOURCES FOR TRANSFERS (TRANSFER MANAGER) ==============================------------------------------
