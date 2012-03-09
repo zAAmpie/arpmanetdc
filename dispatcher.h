@@ -125,8 +125,6 @@ public slots:
     void sendSearchResult(QHostAddress toHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult);
     bool initiateTTHSearch(QByteArray tth);
     void sendTTHSearchResult(QHostAddress toHost, QByteArray tth);
-    void addSharedTTH(QByteArray tth);
-    void removeSharedTTH(QByteArray tth);
 
     // Transfers
     void sendProtocolCapabilityQuery(QHostAddress dstHost);
@@ -242,7 +240,6 @@ private:
 
     QHash<QHostAddress, qint64> announceForwardToHostTimestamps;
     QHash<quint32, qint64> searchIdTimestamps;
-    QSet<QByteArray> sharedTTHFastLookup;
 };
 
 #endif // DISPATCHER_H

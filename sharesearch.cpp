@@ -258,6 +258,7 @@ void ShareSearch::updateShares(QList<QDir> *dirList) //500 msecs to update Share
         setAllFilesInactive();
         emit hashingDone(0,0);
     }
+    updateSharedTTHCache();
 }
 
 QList<QDir> ShareSearch::getShares()
@@ -1674,48 +1675,19 @@ void ShareSearch::deleteBucketFlushStateBitmap(QByteArray tthRoot)
 void ShareSearch::TTHSearchQuestionReceived(QByteArray tth, QHostAddress host)
 {
     qDebug() << "ShareSearch::TTHSearchQuestionReceived:" << tth.toBase64() << host;
-    //Request a small parameter from an active share entry corresponding to the given TTH
-    QString queryStr = tr("SELECT [active] FROM FileShares WHERE tth = ? AND [active] = 1;");
-
-    SearchStruct results;
-    sqlite3 *db = pParent->database();    
-    sqlite3_stmt *statement;
-
-    //Prepare a query
-    QByteArray query;
-    query.append(queryStr);
-    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    if (sharedTTHCache.contains(tth))
     {
-        //Bind the TTH parameter
-        QString tthStr = tth.toBase64();
-        int res = sqlite3_bind_text16(statement, 1, tthStr.utf16(), tthStr.size()*2, SQLITE_STATIC);
-
-        int cols = sqlite3_column_count(statement);
-        int result = 0;
-        while (sqlite3_step(statement) == SQLITE_ROW)
-        {
-            //Don't care about the parameter, the fact that a row is returned shows the record exists
-            //If this signal is emitted, it means the tth is shared!
-            emit sendTTHSearchResult(host, tth);
-            qDebug() << "ShareSearch::TTHSearchQuestionReceived: result match:" << tth.toBase64() << host;
-            break; //Only emit once
-        }
-        sqlite3_finalize(statement);    
+        emit sendTTHSearchResult(host, tth);
+        qDebug() << "ShareSearch::TTHSearchQuestionReceived: result match:" << tth.toBase64() << host;
     }
-
-    //Catch all error messages
-    QString error = sqlite3_errmsg(db);
-    if (error != "not an error")
-        QString error = "error";
 }
 
 //Get complete list of hashes shared for fast lookup in Dispatcher
-void ShareSearch::getSharedHashList(QList<QByteArray> *res)
+void ShareSearch::updateSharedTTHCache()
 {
-    res->clear();
+    sharedTTHCache.clear();
     QString queryStr = tr("SELECT [tth] FROM FileShares WHERE [active] = 1;");
 
-    SearchStruct results;
     sqlite3 *db = pParent->database();
     sqlite3_stmt *statement;
 
@@ -1731,7 +1703,8 @@ void ShareSearch::getSharedHashList(QList<QByteArray> *res)
             QByteArray tth;
             tth.append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0)));
             tth = QByteArray::fromBase64(tth);
-            res->append(tth);
+            if (!sharedTTHCache.contains(tth))
+                sharedTTHCache.insert(tth);
         }
         sqlite3_finalize(statement);
     }

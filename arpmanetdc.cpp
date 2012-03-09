@@ -313,14 +313,6 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     dbThread = new ExecThread();
     pShare = new ShareSearch(pSettingsManager->getSetting(SettingsManager::MAX_SEARCH_RESULTS), this);
 
-    //Pass initial shared hashes to Dispatcher for fast lookup
-    QList<QByteArray> sharedHashes;
-    pShare->getSharedHashList(&sharedHashes);
-    QListIterator<QByteArray> i(sharedHashes);
-    while (i.hasNext())
-        pDispatcher->addSharedTTH(i.next());
-    sharedHashes.clear();
-
     //Connect ShareSearch to GUI - share files on this computer and hash them
     connect(pShare, SIGNAL(fileHashed(QString, quint64, quint64)), this, SLOT(fileHashed(QString, quint64, quint64)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(directoryParsed(QString)), this, SLOT(directoryParsed(QString)), Qt::QueuedConnection);

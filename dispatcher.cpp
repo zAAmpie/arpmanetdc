@@ -763,21 +763,8 @@ void Dispatcher::handleReceivedTTHSearchQuestion(QHostAddress &fromAddr, QByteAr
         searchIdTimestamps[searchId] = currentTime;
     }
 
-    if (sharedTTHFastLookup.contains(tth))
-        sendTTHSearchResult(sendToHost, tth);
-    //emit TTHSearchQuestionReceived(datagram, sendToHost);
+    emit TTHSearchQuestionReceived(tth, sendToHost);
     //qDebug() << "Dispatcher::handleReceivedTTHSearchQuestion() fromAddr sendToHost datagram" << fromAddr << sendToHost << datagram.toBase64();
-}
-
-void Dispatcher::addSharedTTH(QByteArray tth)
-{
-    if (!sharedTTHFastLookup.contains(tth))
-        sharedTTHFastLookup.insert(tth);
-}
-
-void Dispatcher::removeSharedTTH(QByteArray tth)
-{
-    sharedTTHFastLookup.remove(tth);
 }
 
 // ------------------=====================   Data transfer functions   =====================----------------------
