@@ -393,10 +393,10 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     connect(pTransferManager, SIGNAL(loadBucketFlushStateBitmap(QByteArray)),
         pShare, SLOT(loadBucketFlushStateBitmap(QByteArray)), Qt::QueuedConnection);
 
-    connect(pTransferManager, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray)),
-            pShare, SLOT(hashBucketRequest(QByteArray, int, QByteArray)), Qt::QueuedConnection);
-    connect(pShare, SIGNAL(hashBucketReply(QByteArray, int, QByteArray)),
-            pTransferManager, SLOT(hashBucketReply(QByteArray,int,QByteArray)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray,QHostAddress)),
+            pShare, SLOT(hashBucketRequest(QByteArray, int, QByteArray,QHostAddress)), Qt::QueuedConnection);
+    connect(pShare, SIGNAL(hashBucketReply(QByteArray, int, QByteArray,QHostAddress)),
+            pTransferManager, SLOT(hashBucketReply(QByteArray,int,QByteArray,QHostAddress)), Qt::QueuedConnection);
 
     //Temporary signal to search local database
 

@@ -130,13 +130,13 @@ void DownloadTransfer::incomingDataPacket(quint8, qint64 offset, QByteArray data
 }
 
 // Send a request to the hash thread to compute the tiger tree hash of a 1MB bucket
-void DownloadTransfer::requestHashBucket(QByteArray rootTTH, int bucketNumber, QByteArray *bucket)
+void DownloadTransfer::requestHashBucket(QByteArray rootTTH, int bucketNumber, QByteArray *bucket, QHostAddress peer)
 {
     if (bucketFlushStateBitmap.at(bucketNumber) == BucketNotFlushed)
     {
         bucketHashQueueLength++;
         congestionTest();
-        emit hashBucketRequest(rootTTH, bucketNumber, *bucket);
+        emit hashBucketRequest(rootTTH, bucketNumber, *bucket, peer);
         // This is to prevent double requests when bucket ends and segment ends coincide.
         // A failed hash check must reset this.
         bucketFlushStateBitmap[bucketNumber] = BucketFlushed;
@@ -145,7 +145,7 @@ void DownloadTransfer::requestHashBucket(QByteArray rootTTH, int bucketNumber, Q
 }
 
 // The hash thread calls this when it has finished calculating the tiger tree hash of a 1MB bucket
-void DownloadTransfer::hashBucketReply(int bucketNumber, QByteArray bucketTTH)
+void DownloadTransfer::hashBucketReply(int bucketNumber, QByteArray bucketTTH, QHostAddress peer)
 {
     if (downloadBucketHashLookupTable.contains(bucketNumber))
     {
@@ -161,6 +161,13 @@ void DownloadTransfer::hashBucketReply(int bucketNumber, QByteArray bucketTTH)
             if (downloadBucketTable->value(bucketNumber))
                 downloadBucketTable->value(bucketNumber)->clear();
             qDebug() << "DownloadTransfer::hashBucketReply() checksum mismatch" << bucketNumber;
+            remotePeerInfoTable[peer].checksumMismatchCount++;
+            if (remotePeerInfoTable.value(peer).checksumMismatchCount >= 10)
+            {
+                remotePeerInfoTable[peer].blacklisted = true;
+                if (remotePeerInfoTable.value(peer).transferSegment)
+                    segmentFailed(remotePeerInfoTable.value(peer).transferSegment);
+            }
         }
     }
     else
@@ -170,7 +177,7 @@ void DownloadTransfer::hashBucketReply(int bucketNumber, QByteArray bucketTTH)
         if (downloadBucketTable->value(bucketNumber))
             downloadBucketTable->value(bucketNumber)->clear();
         qDebug() << "DownloadTransfer::hashBucketReply() bucket hashed not in hash tree" << bucketNumber;
-        // TODO: emit MISTAKE!
+        emit requeue(this, true);
     }
 
     // TODO: must check that tth tree item was received before requesting bucket hash.
@@ -578,6 +585,7 @@ void DownloadTransfer::newPeer(QHostAddress peer, quint8 protocols)
         rpis.lastStartTime = 0;
         rpis.lastBytesQueued = 0;
         rpis.lastTransferRate = 0;
+        rpis.checksumMismatchCount = 0;
         remotePeerInfoTable.insert(peer, rpis);
     }
 }
@@ -639,7 +647,7 @@ TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol 
     emit requestNextSegmentId(download);
     emit setTransferSegmentPointer(download->getSegmentId(), download);
 
-    connect(download, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*)), this, SLOT(requestHashBucket(QByteArray,int,QByteArray*)));
+    connect(download, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*,QHostAddress)), this, SLOT(requestHashBucket(QByteArray,int,QByteArray*,QHostAddress)));
     connect(download, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)),
             this, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)));
     connect(download, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
@@ -1020,7 +1028,7 @@ void DownloadTransfer::newSegmentTimerEvent()
 
     // Do not try and create new segments when they will be destroyed directly afterwards!
     // I believe ping-ponging segment creation can cause the segfaulting that harasses us.
-    if (getSegmentsDone() == getTotalFileSegments())
+    if (getUnallocatedBlockCount() == 0)
         return;
 
     QHostAddress nextPeer = getBestIdlePeer();
@@ -1054,6 +1062,17 @@ int DownloadTransfer::getSegmentsDone()
             segmentsDone++;
     }
     return segmentsDone;
+}
+
+int DownloadTransfer::getUnallocatedBlockCount()
+{
+    int unallocatedBlocks = 0;
+    for (int i = 0; i < transferSegmentStateBitmap.length(); i++)
+    {
+        if (transferSegmentStateBitmap.at(i) == SegmentNotDownloaded)
+            unallocatedBlocks++;
+    }
+    return unallocatedBlocks;
 }
 
 int DownloadTransfer::getTotalFileSegments()

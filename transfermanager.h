@@ -79,7 +79,7 @@ signals:
     void renameIncompleteFile(QString filename);
 
     // Request hashing of a bucket that has finished downloading
-    void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray bucket);
+    void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray bucket, QHostAddress peer);
 
     void transmitDatagram(QHostAddress dstHost, QByteArray *datagram);
 
@@ -115,7 +115,7 @@ public slots:
     void removeQueuedDownload(int priority, QByteArray tth);
 
     //Requeue a download that "failed"
-    void requeueDownload(Transfer *transfer);
+    void requeueDownload(Transfer *transfer, bool failed = false);
 
     //Stop a transfer already running
     void stopTransfer(QByteArray tth, int type, QHostAddress host);
@@ -127,7 +127,7 @@ public slots:
     void requestGlobalTransferStatus();
 
     // Response from hashing engine when bucket finished hashing
-    void hashBucketReply(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH);
+    void hashBucketReply(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH, QHostAddress peer);
 
     void incomingTTHSource(QByteArray tth, QHostAddress sourcePeer);
     void incomingTTHTree(QByteArray tth, QByteArray tree);
