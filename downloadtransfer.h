@@ -51,7 +51,14 @@ typedef struct
     quint64 lastBytesQueued;
     qint64 lastTransferRate;
     int checksumMismatchCount;
+    QByteArray cid;
 } RemotePeerInfoStruct;
+
+typedef struct
+{
+    int retries;
+    QByteArray cid;
+} RemotePeerInfoRequestPoolStruct;
 
 class DownloadTransfer : public Transfer
 {
@@ -70,7 +77,7 @@ public slots:
     void startTransfer();
     void pauseTransfer();
     void abortTransfer();
-    void addPeer(QHostAddress peer);
+    void addPeer(QHostAddress peer, QByteArray cid);
     qint64 getTransferRate();
     int getTransferProgress();
     QByteArray getTransferStateBitmap();
@@ -100,7 +107,7 @@ private:
     SegmentOffsetLengthStruct getSegmentForDownloading(int segmentNumberOfBucketsHint);
     TransferSegment* newConnectedTransferSegment(TransferProtocol p);
     //void updateTransferSegmentTableRange(TransferSegment *segment, quint64 newStart, quint64 newEnd);
-    void newPeer(QHostAddress peer, quint8 protocols);
+    void newPeer(QHostAddress peer, quint8 protocols, QByteArray cid);
     TransferSegment* createTransferSegment(QHostAddress peer);
     void downloadNextAvailableChunk(TransferSegment *download, int length = 1, int recursionLimit = 5);
     int getLastHashBucketNumberReceived();
@@ -143,7 +150,7 @@ private:
     QByteArray transferSegmentStateBitmap;
     QByteArray bucketFlushStateBitmap;
     QHash<QHostAddress, RemotePeerInfoStruct> remotePeerInfoTable;
-    QHash<QHostAddress,int> remotePeerInfoRequestPool;
+    QHash<QHostAddress,RemotePeerInfoRequestPoolStruct> remotePeerInfoRequestPool;
 
     QByteArray r;
 };

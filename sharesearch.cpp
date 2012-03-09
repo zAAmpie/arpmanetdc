@@ -1674,7 +1674,7 @@ void ShareSearch::deleteBucketFlushStateBitmap(QByteArray tthRoot)
 //Request whether a file is being shared
 void ShareSearch::TTHSearchQuestionReceived(QByteArray tth, QHostAddress host)
 {
-    qDebug() << "ShareSearch::TTHSearchQuestionReceived:" << tth.toBase64() << host;
+    //qDebug() << "ShareSearch::TTHSearchQuestionReceived:" << tth.toBase64() << host;
     if (sharedTTHCache.contains(tth))
     {
         emit sendTTHSearchResult(host, tth);

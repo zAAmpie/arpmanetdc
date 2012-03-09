@@ -216,12 +216,12 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
             pTransferManager, SLOT(incomingTTHTree(QByteArray,QByteArray)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray,quint32,quint32)),
             pDispatcher, SLOT(sendTTHTreeRequest(QHostAddress,QByteArray,quint32,quint32)), Qt::QueuedConnection);
-    connect(pDispatcher, SIGNAL(TTHSearchResultsReceived(QByteArray,QHostAddress)),
-            pTransferManager, SLOT(incomingTTHSource(QByteArray,QHostAddress)), Qt::QueuedConnection);
+    connect(pDispatcher, SIGNAL(TTHSearchResultsReceived(QByteArray,QHostAddress,QByteArray)),
+            pTransferManager, SLOT(incomingTTHSource(QByteArray,QHostAddress,QByteArray)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(searchTTHAlternateSources(QByteArray)),
             pDispatcher, SLOT(initiateTTHSearch(QByteArray)), Qt::QueuedConnection);
-    connect(pTransferManager, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)),
-            pDispatcher, SLOT(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)), Qt::QueuedConnection);
+    connect(pTransferManager, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32,QByteArray)),
+            pDispatcher, SLOT(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32,QByteArray)), Qt::QueuedConnection);
     connect(pDispatcher, SIGNAL(incomingProtocolCapabilityResponse(QHostAddress,char)),
             pTransferManager, SLOT(incomingProtocolCapabilityResponse(QHostAddress,char)), Qt::QueuedConnection);
     connect(pTransferManager, SIGNAL(requestProtocolCapability(QHostAddress)),
@@ -367,16 +367,16 @@ ArpmanetDC::ArpmanetDC(QStringList arguments, QWidget *parent, Qt::WFlags flags)
     //Connect ShareSearch to TransferManager - loads and saves a set of sources to the database
     connect(pTransferManager, SIGNAL(filePathNameRequest(QByteArray)),
             pShare, SLOT(requestFilePath(QByteArray)), Qt::QueuedConnection);
-    connect(pTransferManager, SIGNAL(saveTTHSourceToDatabase(QByteArray, QHostAddress)),
-            pShare, SLOT(saveTTHSource(QByteArray, QHostAddress)), Qt::QueuedConnection);
-    connect(pTransferManager, SIGNAL(loadTTHSourcesFromDatabase(QByteArray)),
-            pShare, SLOT(loadTTHSource(QByteArray)), Qt::QueuedConnection);
-    connect(pTransferManager, SIGNAL(deleteTTHSourcesFromDatabase(QByteArray)),
-            pShare, SLOT(deleteTTHSources(QByteArray)), Qt::QueuedConnection);
+    //connect(pTransferManager, SIGNAL(saveTTHSourceToDatabase(QByteArray, QHostAddress)),
+    //        pShare, SLOT(saveTTHSource(QByteArray, QHostAddress)), Qt::QueuedConnection);
+    //connect(pTransferManager, SIGNAL(loadTTHSourcesFromDatabase(QByteArray)),
+    //        pShare, SLOT(loadTTHSource(QByteArray)), Qt::QueuedConnection);
+    //connect(pTransferManager, SIGNAL(deleteTTHSourcesFromDatabase(QByteArray)),
+    //        pShare, SLOT(deleteTTHSources(QByteArray)), Qt::QueuedConnection);
     connect(pShare, SIGNAL(filePathReply(QByteArray, QString, quint64)),
             pTransferManager, SLOT(filePathNameReply(QByteArray, QString, quint64)), Qt::QueuedConnection);
-    connect(pShare, SIGNAL(tthSourceLoaded(QByteArray, QHostAddress)),
-            pTransferManager, SLOT(incomingTTHSource(QByteArray, QHostAddress)), Qt::QueuedConnection);
+    //connect(pShare, SIGNAL(tthSourceLoaded(QByteArray, QHostAddress)),
+    //        pTransferManager, SLOT(incomingTTHSource(QByteArray, QHostAddress)), Qt::QueuedConnection);
 
     connect(pShare, SIGNAL(restoreBucketFlushStateBitmap(QByteArray, QByteArray)),
         pTransferManager, SLOT(restoreBucketFlushStateBitmap(QByteArray, QByteArray)), Qt::QueuedConnection);

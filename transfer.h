@@ -82,8 +82,8 @@ signals:
     void hashBucketRequest(QByteArray rootTTH, int bucketNumber, QByteArray bucket, QHostAddress peer);
     void TTHTreeRequest(QHostAddress hostAddr, QByteArray rootTTH, quint32 startBucket, quint32 bucketCount);
     void searchTTHAlternateSources(QByteArray tth);
-    void loadTTHSourcesFromDatabase(QByteArray tth);
-    void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId);
+    //void loadTTHSourcesFromDatabase(QByteArray tth);
+    void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId, QByteArray cid);
     void sendTransferError(QHostAddress dstHost, quint8 error, QByteArray tth, qint64 offset);
     void transmitDatagram(QHostAddress dstHost, QByteArray *datagram);
     void transferFinished(QByteArray tth);
@@ -119,7 +119,7 @@ public slots:
     virtual QByteArray getTransferStateBitmap();
     virtual int getSegmentCount();
     virtual SegmentStatusStruct getSegmentStatuses();
-    virtual void addPeer(QHostAddress peer);
+    virtual void addPeer(QHostAddress peer, QByteArray cid);
     void setProtocolOrderPreference(QByteArray p);
     virtual void hashBucketReply(int bucketNumber, QByteArray bucketTTH, QHostAddress peer);
     virtual void TTHTreeReply(QByteArray tree);

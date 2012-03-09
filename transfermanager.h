@@ -66,12 +66,12 @@ public:
 
 signals:
     void filePathNameRequest(QByteArray tth);
-    void saveTTHSourceToDatabase(QByteArray tth, QHostAddress peerAddress);
-    void loadTTHSourcesFromDatabase(QByteArray tth);
-    void deleteTTHSourcesFromDatabase(QByteArray tth);
+    //void saveTTHSourceToDatabase(QByteArray tth, QHostAddress peerAddress);
+    //void loadTTHSourcesFromDatabase(QByteArray tth);
+    //void deleteTTHSourcesFromDatabase(QByteArray tth);
     void searchTTHAlternateSources(QByteArray tth);
     void TTHTreeRequest(QHostAddress hostAddr,QByteArray rootTTH, quint32 startBucket, quint32 bucketCount);
-    void sendDownloadRequest(quint8 protocolPreference, QHostAddress dstHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId);
+    void sendDownloadRequest(quint8 protocolPreference, QHostAddress dstHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId, QByteArray cid);
     void sendTransferError(QHostAddress dstHost, quint8 error, QByteArray tth, qint64 offset);
     void flushBucket(QString filename, QByteArray *bucket);
     void assembleOutputFile(QString tmpfilebase, QString outfile, int startbucket, int lastbucket);
@@ -129,7 +129,7 @@ public slots:
     // Response from hashing engine when bucket finished hashing
     void hashBucketReply(QByteArray rootTTH, int bucketNumber, QByteArray bucketTTH, QHostAddress peer);
 
-    void incomingTTHSource(QByteArray tth, QHostAddress sourcePeer);
+    void incomingTTHSource(QByteArray tth, QHostAddress sourcePeer, QByteArray sourceCID);
     void incomingTTHTree(QByteArray tth, QByteArray tree);
 
     // Protocol capability

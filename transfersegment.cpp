@@ -96,6 +96,11 @@ void TransferSegment::setRemoteHost(QHostAddress host)
     remoteHost = host;
 }
 
+void TransferSegment::setRemoteCID(QByteArray cid)
+{
+    remoteCID = cid;
+}
+
 void TransferSegment::setDownloadBucketTablePointer(QHash<int, QByteArray *> *dbt)
 {
     pDownloadBucketTable = dbt;
@@ -117,7 +122,7 @@ void TransferSegment::checkSendDownloadRequest(quint8 protocol, QHostAddress pee
         {
             //qDebug() << "TransferSegment::checkSendDownloadRequest() emit sendDownloadRequest() peer tth offset length segmentid "
             //         << peer << TTH.toBase64() << requestingOffset << requestingLength << segmentId;
-            emit sendDownloadRequest(protocol, peer, TTH, requestingOffset, requestingLength, segmentId);
+            emit sendDownloadRequest(protocol, peer, TTH, requestingOffset, requestingLength, segmentId, remoteCID);
         }
     }
     else

@@ -265,10 +265,10 @@ void TransferManager::startNextDownload()
     connect(t, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray,quint32,quint32)),
             this, SIGNAL(TTHTreeRequest(QHostAddress,QByteArray,quint32,quint32)));
     connect(t, SIGNAL(searchTTHAlternateSources(QByteArray)), this, SIGNAL(searchTTHAlternateSources(QByteArray)));
-    connect(t, SIGNAL(loadTTHSourcesFromDatabase(QByteArray)), this, SIGNAL(loadTTHSourcesFromDatabase(QByteArray)));
+    //connect(t, SIGNAL(loadTTHSourcesFromDatabase(QByteArray)), this, SIGNAL(loadTTHSourcesFromDatabase(QByteArray)));
     connect(t, SIGNAL(requestProtocolCapability(QHostAddress,Transfer*)), this, SLOT(requestPeerProtocolCapability(QHostAddress,Transfer*)));
-    connect(t, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)),
-            this, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)));
+    connect(t, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32,QByteArray)),
+            this, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32,QByteArray)));
     connect(t, SIGNAL(flushBucket(QString,QByteArray*)), this, SIGNAL(flushBucket(QString,QByteArray*)));
     connect(t, SIGNAL(assembleOutputFile(QString,QString,int,int)), this, SIGNAL(assembleOutputFile(QString,QString,int,int)));
     connect(t, SIGNAL(flushBucketDirect(QString,int,QByteArray*,QByteArray)), this, SIGNAL(flushBucketDirect(QString,int,QByteArray*,QByteArray)));
@@ -286,10 +286,11 @@ void TransferManager::startNextDownload()
     t->setTTH(i.tth);
     t->setFileSize(i.fileSize);
     t->setProtocolOrderPreference(protocolOrderPreference);
-    t->addPeer(i.fileHost);
+    // we can lose the ip address from the queue, alternate search tells us everything we need.
+    //t->addPeer(i.fileHost);
     transferObjectTable.insertMulti(i.tth, t);
     emit loadBucketFlushStateBitmap(i.tth);
-    emit loadTTHSourcesFromDatabase(i.tth);
+    //emit loadTTHSourcesFromDatabase(i.tth);
     emit searchTTHAlternateSources(i.tth);
     t->startTransfer();
 
@@ -446,14 +447,14 @@ QList<TransferItemStatus> TransferManager::getGlobalTransferStatus()
 }
 
 // signals from db restore and incoming tth search both route here
-void TransferManager::incomingTTHSource(QByteArray tth, QHostAddress sourcePeer)
+void TransferManager::incomingTTHSource(QByteArray tth, QHostAddress sourcePeer, QByteArray sourceCID)
 {
     //qDebug() << "TransferManager::incomingTTHSource() tth sourcePeer" << tth.toBase64() << sourcePeer;
     //if (transferObjectTable.contains(tth))
     //    transferObjectTable.value(tth)->addPeer(sourcePeer);
     Transfer *t = getTransferObjectPointer(tth, TRANSFER_TYPE_DOWNLOAD);
     if (t)
-        t->addPeer(sourcePeer);
+        t->addPeer(sourcePeer, sourceCID);
 }
 
 // packet containing part of a tree

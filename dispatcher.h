@@ -57,7 +57,7 @@ signals:
     void searchResultsReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchResult);
     void searchQuestionReceived(QHostAddress senderHost, QByteArray senderCID, quint64 searchID, QByteArray searchQuery);
     void searchForwardReceived();  // for stats
-    void TTHSearchResultsReceived(QByteArray tth, QHostAddress peer);
+    void TTHSearchResultsReceived(QByteArray tth, QHostAddress peer, QByteArray cid);
     void TTHSearchQuestionReceived(QByteArray tth, QHostAddress senderHost);
 
     // P2P network control data arrival signals
@@ -128,7 +128,7 @@ public slots:
 
     // Transfers
     void sendProtocolCapabilityQuery(QHostAddress dstHost);
-    void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId=0);
+    void sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId=0, QByteArray cid = QByteArray());
     void sendTransferError(QHostAddress dstHost, quint8 error, QByteArray tth, qint64 offset);
 
     // Buckets

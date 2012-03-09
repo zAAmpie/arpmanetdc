@@ -656,6 +656,8 @@ void Dispatcher::sendTTHSearchResult(QHostAddress toHost, QByteArray tth)
     datagram->append(TTHSearchResultPacket);
     datagram->append(toQByteArray(dispatchIP.toIPv4Address()));
     datagram->append(tth);
+    //TODO: uncomment post 0.1.9
+    //datagram->append(CID);
     sendUnicastRawDatagram(toHost, datagram);
 }
 
@@ -723,13 +725,17 @@ void Dispatcher::handleReceivedTTHSearchForwardRequest(QHostAddress &fromAddr, Q
 
 void Dispatcher::handleArrivedTTHSearchResult(QHostAddress &fromAddr, QByteArray &datagram)
 {
-    QByteArray tmp = datagram.mid(2, 4);
-    QHostAddress allegedFromAddr = QHostAddress(getQuint32FromByteArray(&tmp));
-    if (fromAddr != allegedFromAddr) // mainly to catch misconfigured nodes behind NAT
+    datagram.remove(0, 2);
+    quint32 allegedFromAddr = getQuint32FromByteArray(&datagram);
+    if (fromAddr != QHostAddress(allegedFromAddr)) // mainly to catch misconfigured nodes behind NAT
         return;
 
-    QByteArray tth(datagram.mid(6));
-    emit TTHSearchResultsReceived(tth, fromAddr);
+    QByteArray tth(datagram.left(24));
+    datagram.remove(0, 24);
+    QByteArray cid;
+    if (datagram.length() >= 24)
+        cid = datagram.left(24);
+    emit TTHSearchResultsReceived(tth, fromAddr, cid);
     //qDebug() << "Dispatcher::handleArrivedTTHSearchResult() fromAddr tth" << fromAddr << tth.toBase64();
 }
 
@@ -786,13 +792,18 @@ void Dispatcher::handleIncomingUploadRequest(QHostAddress &fromHost, QByteArray 
     qint64 offset = (qint64)getQuint64FromByteArray(&datagram);
     qint64 length = (qint64)getQuint64FromByteArray(&datagram);
     quint32 segmentId = 0;
+    QByteArray cid;
     if (datagram.length() >= 4)
         segmentId = getQuint32FromByteArray(&datagram);
+    if (datagram.length() >= 24)
+        cid = datagram.left(24);
 
-    emit incomingUploadRequest(protocol, fromHost, tth, offset, length, segmentId);
+    // TODO: remove length check post 0.1.9
+    if ((cid.length() == 0) || (cid == CID))
+        emit incomingUploadRequest(protocol, fromHost, tth, offset, length, segmentId);
 }
 
-void Dispatcher::sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId)
+void Dispatcher::sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId, QByteArray cid)
 {
     QByteArray *datagram = new QByteArray;
     datagram->reserve(47);
@@ -803,6 +814,7 @@ void Dispatcher::sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByt
     datagram->append(quint64ToByteArray((quint64)offset));
     datagram->append(quint64ToByteArray((quint64)length));
     datagram->append(quint32ToByteArray(segmentId));
+    datagram->append(fixedCIDLength(cid));
     sendUnicastRawDatagram(dstHost, datagram);
 }
 

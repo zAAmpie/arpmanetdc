@@ -314,13 +314,14 @@ void DownloadTransfer::abortTransfer()
 // TransferManager sticks peers into a DownloadTransfer via this entry point.
 // It calls a request for the peer's protocol abilities, for without it, all hope is lost.
 // Not to be confused with newPeer(), which adds the peer and its capabilities to remotePeerInfoTable
-void DownloadTransfer::addPeer(QHostAddress peer)
+void DownloadTransfer::addPeer(QHostAddress peer, QByteArray cid)
 {
-    //qDebug() << "DownloadTransfer::addPeer() peer" << peer;
     if (peer.toIPv4Address() > 0 && !remotePeerInfoRequestPool.contains(peer) && !remotePeerInfoTable.contains(peer))
     {
-        //qDebug() << "DownloadTransfer::addPeer() not yet in request pool or peer info table, added, emit requestProtocolCapability()";
-        remotePeerInfoRequestPool.insert(peer, 1);
+        RemotePeerInfoRequestPoolStruct s;
+        s.retries = 1;
+        s.cid = cid;
+        remotePeerInfoRequestPool.insert(peer, s);
         emit requestProtocolCapability(peer, this);
         if (!protocolCapabilityRequestTimer->isActive())
             protocolCapabilityRequestTimer->start();
@@ -547,7 +548,9 @@ SegmentOffsetLengthStruct DownloadTransfer::getSegmentForDownloading(int segment
 // newPeer() updates remotePeerInfoTable
 void DownloadTransfer::receivedPeerProtocolCapability(QHostAddress peer, quint8 protocols)
 {
-    newPeer(peer, protocols);
+    if (remotePeerInfoRequestPool.contains(peer))
+        newPeer(peer, protocols, remotePeerInfoRequestPool.value(peer).cid);
+
     remotePeerInfoRequestPool.remove(peer);
     //qDebug() << "DownloadTransfer::receivedPeerProtocolCapability() peer protocols" << peer << protocols;
     if (remotePeerInfoRequestPool.isEmpty())
@@ -572,7 +575,7 @@ void DownloadTransfer::receivedPeerProtocolCapability(QHostAddress peer, quint8 
 
 // Add a peer to remotePeerInfoTable
 // Segment pointer is initially null, since it is not instantiated.
-void DownloadTransfer::newPeer(QHostAddress peer, quint8 protocols)
+void DownloadTransfer::newPeer(QHostAddress peer, quint8 protocols, QByteArray cid)
 {
     if (!remotePeerInfoTable.contains(peer))
     {
@@ -586,6 +589,7 @@ void DownloadTransfer::newPeer(QHostAddress peer, quint8 protocols)
         rpis.lastBytesQueued = 0;
         rpis.lastTransferRate = 0;
         rpis.checksumMismatchCount = 0;
+        rpis.cid = cid;
         remotePeerInfoTable.insert(peer, rpis);
     }
 }
@@ -616,6 +620,7 @@ TransferSegment* DownloadTransfer::createTransferSegment(QHostAddress peer)
             download->setRemoteHost(peer);
             download->setTTH(TTH);
             download->setFileSize(fileSize);
+            download->setRemoteCID(remotePeerInfoTable.value(peer).cid);
             break;
         }
     }
@@ -648,8 +653,8 @@ TransferSegment* DownloadTransfer::newConnectedTransferSegment(TransferProtocol 
     emit setTransferSegmentPointer(download->getSegmentId(), download);
 
     connect(download, SIGNAL(hashBucketRequest(QByteArray,int,QByteArray*,QHostAddress)), this, SLOT(requestHashBucket(QByteArray,int,QByteArray*,QHostAddress)));
-    connect(download, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)),
-            this, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32)));
+    connect(download, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32,QByteArray)),
+            this, SIGNAL(sendDownloadRequest(quint8,QHostAddress,QByteArray,qint64,qint64,quint32,QByteArray)));
     connect(download, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
     connect(transferTimer, SIGNAL(timeout()), download, SLOT(transferTimerEvent()));
     connect(download, SIGNAL(requestNextSegment(TransferSegment*)), this, SLOT(segmentCompleted(TransferSegment*)));
@@ -937,13 +942,13 @@ void DownloadTransfer::requestHashTree(int lastHashBucketReceived, bool timerReq
 
 void DownloadTransfer::protocolCapabilityRequestTimerEvent()
 {
-    QMutableHashIterator<QHostAddress, int> i(remotePeerInfoRequestPool);
+    QMutableHashIterator<QHostAddress, RemotePeerInfoRequestPoolStruct> i(remotePeerInfoRequestPool);
     while(i.hasNext())
     {
         emit requestProtocolCapability(i.peekNext().key(), this);
         //qDebug() << "DownloadTransfer::protocolCapabilityRequestTimerEvent() request protocol capability" << i.peekNext().key(), i.peekNext().value();
-        i.next().value()++;
-        if (i.peekPrevious().value() <= 5)
+        i.next().value().retries++;
+        if (i.peekPrevious().value().retries <= 5)
             i.remove();
     }
     if (remotePeerInfoRequestPool.isEmpty())
