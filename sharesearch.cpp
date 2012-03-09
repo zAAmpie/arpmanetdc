@@ -1512,8 +1512,6 @@ void ShareSearch::requestFilePath(QByteArray tthRoot)
     if (error != "not an error")
         QString error = "error";
 
-    // temporary short-circuit to continue debugging transfers
-    //results = "/mnt/data/iso/tinycore_2.5.iso";
     emit filePathReply(tthRoot, filePath, fileSize);
 }
 
@@ -1675,6 +1673,7 @@ void ShareSearch::deleteBucketFlushStateBitmap(QByteArray tthRoot)
 //Request whether a file is being shared
 void ShareSearch::TTHSearchQuestionReceived(QByteArray tth, QHostAddress host)
 {
+    qDebug() << "ShareSearch::TTHSearchQuestionReceived:" << tth.toBase64() << host;
     //Request a small parameter from an active share entry corresponding to the given TTH
     QString queryStr = tr("SELECT [active] FROM FileShares WHERE tth = ? AND [active] = 1;");
 
@@ -1698,9 +1697,43 @@ void ShareSearch::TTHSearchQuestionReceived(QByteArray tth, QHostAddress host)
             //Don't care about the parameter, the fact that a row is returned shows the record exists
             //If this signal is emitted, it means the tth is shared!
             emit sendTTHSearchResult(host, tth);
+            qDebug() << "ShareSearch::TTHSearchQuestionReceived: result match:" << tth.toBase64() << host;
             break; //Only emit once
         }
         sqlite3_finalize(statement);    
+    }
+
+    //Catch all error messages
+    QString error = sqlite3_errmsg(db);
+    if (error != "not an error")
+        QString error = "error";
+}
+
+//Get complete list of hashes shared for fast lookup in Dispatcher
+void ShareSearch::getSharedHashList(QList<QByteArray> *res)
+{
+    res->clear();
+    QString queryStr = tr("SELECT [tth] FROM FileShares WHERE [active] = 1;");
+
+    SearchStruct results;
+    sqlite3 *db = pParent->database();
+    sqlite3_stmt *statement;
+
+    //Prepare a query
+    QByteArray query;
+    query.append(queryStr);
+    if (sqlite3_prepare_v2(db, query.data(), -1, &statement, 0) == SQLITE_OK)
+    {
+        int cols = sqlite3_column_count(statement);
+        int result = 0;
+        while (sqlite3_step(statement) == SQLITE_ROW)
+        {
+            QByteArray tth;
+            tth.append(QString::fromUtf16((const unsigned short*)sqlite3_column_text16(statement, 0)));
+            tth = QByteArray::fromBase64(tth);
+            res->append(tth);
+        }
+        sqlite3_finalize(statement);
     }
 
     //Catch all error messages

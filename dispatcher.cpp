@@ -71,6 +71,10 @@ Dispatcher::Dispatcher(QHostAddress ip, quint16 port, QObject *parent) :
     rejoinMulticastTimer->setSingleShot(false);
     connect(rejoinMulticastTimer, SIGNAL(timeout()), this, SLOT(rejoinMulticastTimeout()));
     rejoinMulticastTimer->start();
+
+    tthSearchId = qrand();
+    if (tthSearchId == 0)
+        tthSearchId++;
 }
 
 Dispatcher::~Dispatcher()
@@ -631,6 +635,11 @@ bool Dispatcher::initiateTTHSearch(QByteArray tth)
     datagram.append(TTHSearchRequestPacket);
 
     datagram.append(tth);
+    // TODO: Uncomment in version 0.1.10, this breaks compatibility with 0.1.8 release
+    //       Parsing of this tag added in 0.1.9
+    //datagram.append(quint32ToByteArray(tthSearchId));
+    tthSearchId++;
+
     if (networkBootstrap->getBootstrapStatus() == NETWORK_MCAST)
         sendMulticastRawDatagram(datagram);
     else if (networkBootstrap->getBootstrapStatus() == NETWORK_BCAST)
@@ -737,8 +746,38 @@ void Dispatcher::handleReceivedTTHSearchQuestion(QHostAddress &fromAddr, QByteAr
     // update: results must go to address specified in packet, otherwise they end up at the forwarding node.
     datagram.remove(0, 2);
     QHostAddress sendToHost = QHostAddress(getQuint32FromByteArray(&datagram));
-    emit TTHSearchQuestionReceived(datagram, sendToHost);
+    QByteArray tth = datagram.left(24);
+    datagram.remove(0, 24);
+    quint32 searchId = 0;
+    if (datagram.length() >= 4)
+        searchId = getQuint32FromByteArray(&datagram);
+
+    if (searchId > 0)
+    {
+        qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
+        qint64 cutoffTime = currentTime - 60000; // 1 minute
+        qint64 age = searchIdTimestamps.value(searchId);
+        if ((age != 0) && (age >= cutoffTime))
+            return;
+
+        searchIdTimestamps[searchId] = currentTime;
+    }
+
+    if (sharedTTHFastLookup.contains(tth))
+        sendTTHSearchResult(sendToHost, tth);
+    //emit TTHSearchQuestionReceived(datagram, sendToHost);
     //qDebug() << "Dispatcher::handleReceivedTTHSearchQuestion() fromAddr sendToHost datagram" << fromAddr << sendToHost << datagram.toBase64();
+}
+
+void Dispatcher::addSharedTTH(QByteArray tth)
+{
+    if (!sharedTTHFastLookup.contains(tth))
+        sharedTTHFastLookup.insert(tth);
+}
+
+void Dispatcher::removeSharedTTH(QByteArray tth)
+{
+    sharedTTHFastLookup.remove(tth);
 }
 
 // ------------------=====================   Data transfer functions   =====================----------------------

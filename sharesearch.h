@@ -149,6 +149,9 @@ public slots:
     //Request whether a file is being shared
     void TTHSearchQuestionReceived(QByteArray tth, QHostAddress host);
 
+    //Request list of hashes of all files shared for fast lookup in Dispatcher
+    void getSharedHashList(QList<QByteArray>*);
+
     //----------========== TTH TREE REQUEST FOR TRANSFERS ==========----------
 
     //Request a tth tree for a file
