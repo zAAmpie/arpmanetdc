@@ -938,6 +938,10 @@ void DownloadTransfer::requestHashTree(int lastHashBucketReceived, bool timerReq
         hashTreeWindowEnd = lastHashBucketReceived + HASH_TREE_WINDOW_LENGTH;
         qDebug() << "Request TTH tree " << lastHashBucketReceived + 1 << calculateBucketNumber(fileSize);
     }
+    else
+    {
+        qDebug() << "Request TTH tree: null request host, not sent.";
+    }
 }
 
 void DownloadTransfer::protocolCapabilityRequestTimerEvent()

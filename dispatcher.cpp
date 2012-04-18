@@ -596,7 +596,7 @@ void Dispatcher::handleReceivedSearchQuestion(QHostAddress &fromHost, QByteArray
 {
     datagram.remove(0, 2);
     QHostAddress sendToHost = QHostAddress(getQuint32FromByteArray(&datagram));
-    QString q = sendToHost.toString();
+    //QString q = sendToHost.toString();
     quint64 searchID = getQuint64FromByteArray(&datagram);
     QByteArray clientCID = datagram.left(24);
     datagram.remove(0, 24);
@@ -806,7 +806,7 @@ void Dispatcher::handleIncomingUploadRequest(QHostAddress &fromHost, QByteArray 
 void Dispatcher::sendDownloadRequest(quint8 protocol, QHostAddress dstHost, QByteArray tth, qint64 offset, qint64 length, quint32 segmentId, QByteArray cid)
 {
     QByteArray *datagram = new QByteArray;
-    datagram->reserve(47);
+    datagram->reserve(71);
     datagram->append(UnicastPacket);
     datagram->append(DownloadRequestPacket);
     datagram->append(protocol);
@@ -961,14 +961,12 @@ void Dispatcher::sendCIDPingForwardRequest(QHostAddress &forwardingNode, QByteAr
 // reply to CID pings forwarded by peers
 void Dispatcher::handleCIDPingForwardedReply(QByteArray &data)
 {
-    if (data.length() < 8)
-        return;
+    data.remove(0, 2);
+    QHostAddress dst = QHostAddress(getQuint32FromByteArray(&data));
 
-    if (CID == data.mid(6))
+    if (CID == data.left(24))
     {
         QByteArray *datagram = new QByteArray;
-        QByteArray tmp = data.mid(2, 4);
-        QHostAddress dst = QHostAddress(getQuint32FromByteArray(&tmp));
         datagram->append(UnicastPacket);
         datagram->append(CIDPingReplyPacket);
         datagram->append(CID);
@@ -979,10 +977,9 @@ void Dispatcher::handleCIDPingForwardedReply(QByteArray &data)
 // reply to CID pings broadcasted or multicasted directly
 void Dispatcher::handleCIDPingReply(QByteArray &data, QHostAddress &dstHost)
 {
-    if (data.length() < 4)
-        return;
+    data.remove(0, 2);
 
-    if (CID == data.mid(2))
+    if (CID == data.left(24))
     {
         QByteArray *datagram = new QByteArray;
         datagram->reserve(26);
@@ -996,7 +993,8 @@ void Dispatcher::handleCIDPingReply(QByteArray &data, QHostAddress &dstHost)
 // forward the CID ping to own bucket on request
 void Dispatcher::handleReceivedCIDPingForwardRequest(QHostAddress &fromAddr, QByteArray &data)
 {
-    QByteArray tmp = data.mid(2, 4);
+    data.remove(0, 2);
+    QByteArray tmp = data.mid(0, 4);
     QHostAddress allegedFromHost = QHostAddress(getQuint32FromByteArray(&tmp));
     if (fromAddr != allegedFromHost)
         return;
@@ -1008,13 +1006,13 @@ void Dispatcher::handleReceivedCIDPingForwardRequest(QHostAddress &fromAddr, QBy
     case NETWORK_MCAST:
         datagram.append(MulticastPacket);
         datagram.append(CIDPingForwardedPacket);
-        datagram.append(data.mid(2));
+        datagram.append(data);
         sendMulticastRawDatagram(datagram);
         break;
     case NETWORK_BCAST:
         datagram.append(BroadcastPacket);
         datagram.append(CIDPingForwardedPacket);
-        datagram.append(data.mid(2));
+        datagram.append(data);
         sendBroadcastRawDatagram(datagram);
         break;
     }
@@ -1022,10 +1020,8 @@ void Dispatcher::handleReceivedCIDPingForwardRequest(QHostAddress &fromAddr, QBy
 
 void Dispatcher::handleReceivedCIDReply(QHostAddress &fromAddr, QByteArray &datagram)
 {
-    if (datagram.length() < 4)
-        return;
-
-    QByteArray cid = datagram.mid(2);
+    datagram.remove(0, 2);
+    QByteArray cid = datagram.left(24);
     emit CIDReplyArrived(fromAddr, cid);
 }
 
