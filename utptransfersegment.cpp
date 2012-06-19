@@ -36,6 +36,10 @@ uTPTransferSegment::uTPTransferSegment(Transfer *parent)
     };
 
     UTP_SetCallbacks(utpSocket, &utp_callbacks, this);
+
+    segmentMode = UndefinedSegment;
+    fileMap = 0;
+    segmentOffset = 0;
 }
 
 uTPTransferSegment::~uTPTransferSegment()
@@ -44,6 +48,7 @@ uTPTransferSegment::~uTPTransferSegment()
         inputFile.close();
     if (fileMap)
         inputFile.unmap((unsigned char *)fileMap);
+    UTP_Close(utpSocket);
     qDebug() << "uTPTransferSegment destroyed";
 }
 
@@ -78,6 +83,7 @@ void uTPTransferSegment::setFileSize(quint64 size)
 
 void uTPTransferSegment::startUploading()
 {
+    segmentMode = UploadingSegment;
     qDebug() << "uTPTransferSegment::startUploading()";
     if (segmentStart > fileSize)
         return;
@@ -89,15 +95,21 @@ void uTPTransferSegment::startUploading()
     if (fileMap)
         inputFile.unmap((unsigned char *)fileMap);
     fileMap = inputFile.map(segmentStart, segmentLength);
+
 }
 
 void uTPTransferSegment::startDownloading()
 {
+    segmentMode = DownloadingSegment;
+    status = TRANSFER_STATE_RUNNING;
     qDebug() << "uTPTransferSegment::startDownloading()";
     segmentOffset = 0;
-    checkSendDownloadRequest(uTPProtocol, remoteHost, TTH, segmentStart, segmentLength, status);
+    // checkSendDownloadRequest wakes up a uTPTransferSegment object we can connect to at the other side.
+    qDebug() << "uTPTransferSegment::startDownloading() checkSendDownloadRequest()" << remoteHost << segmentStart << segmentLength << status;
+    checkSendDownloadRequest(remoteHost, TTH, segmentStart, segmentLength, status, uTPProtocol);
     if (!connect_called)
     {
+        qDebug() << "uTPTransferSegment::startDownloading() call UTP_Connect()";
         UTP_Connect(utpSocket);
         connect_called = true;
     }
@@ -115,65 +127,90 @@ void uTPTransferSegment::unpauseDownload()
 
 void uTPTransferSegment::abortTransfer()
 {
+    if (utpSocket)
+        UTP_Close(utpSocket);
 
+    emit transferRequestFailed(this, 0, false);
 }
 
 // --------------============= uTP callback functions =============--------------
 void uTPTransferSegment::uTPRead(const byte *bytes, size_t count)
 {
-    qDebug() << "uTPTransferSegment::uTPRead()" << count;
-    int bucketNumber = calculateBucketNumber(segmentOffset);
-    if (!pDownloadBucketTable->contains(bucketNumber))
+    qDebug() << "uTPTransferSegment::uTPRead()" << segmentMode << count;
+    if (segmentMode == DownloadingSegment)
     {
-        QByteArray *bucket = new QByteArray();
-        pDownloadBucketTable->insert(bucketNumber, bucket);
-    }
-    QByteArray data = QByteArray((const char *)bytes, count); // TODO: optimize this to work directly with *bytes
-    if ((pDownloadBucketTable->value(bucketNumber)->length() + data.length()) > HASH_BUCKET_SIZE)
-    {
-        int bucketRemaining = HASH_BUCKET_SIZE - pDownloadBucketTable->value(bucketNumber)->length();
-        pDownloadBucketTable->value(bucketNumber)->append(data.mid(0, bucketRemaining));
-        if (!pDownloadBucketTable->contains(bucketNumber + 1))
+
+        int bucketNumber = calculateBucketNumber(segmentOffset);
+        if (!pDownloadBucketTable->contains(bucketNumber))
         {
-            QByteArray *nextBucket = new QByteArray(data.mid(bucketRemaining));
-            pDownloadBucketTable->insert(bucketNumber + 1, nextBucket);
+            QByteArray *bucket = new QByteArray();
+            pDownloadBucketTable->insert(bucketNumber, bucket);
         }
-        // there should be no else - if the next bucket exists and data is sticking over, there is an error,
-        // since we segment on bucket boundaries. tth checksumming will catch the problems.
+        QByteArray data = QByteArray((const char *)bytes, count); // TODO: optimize this to work directly with *bytes
+        if ((pDownloadBucketTable->value(bucketNumber)->length() + data.length()) > HASH_BUCKET_SIZE)
+        {
+            int bucketRemaining = HASH_BUCKET_SIZE - pDownloadBucketTable->value(bucketNumber)->length();
+            pDownloadBucketTable->value(bucketNumber)->append(data.mid(0, bucketRemaining));
+            if (!pDownloadBucketTable->contains(bucketNumber + 1))
+            {
+                QByteArray *nextBucket = new QByteArray(data.mid(bucketRemaining));
+                pDownloadBucketTable->insert(bucketNumber + 1, nextBucket);
+            }
+            // there should be no else - if the next bucket exists and data is sticking over, there is an error,
+            // since we segment on bucket boundaries. tth checksumming will catch the problems.
+        }
+        else
+        {
+            pDownloadBucketTable->value(bucketNumber)->append(data);
+            //qDebug() << "Append data " << requestingOffset << offset << pDownloadBucketTable->value(bucketNumber)->length();
+        }
+
+        if (pDownloadBucketTable->value(bucketNumber)->length() == HASH_BUCKET_SIZE)
+        {
+            emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber), remoteHost);
+            qDebug() << "uTPTransferSegment emit hashBucketRequest() " << bucketNumber << pDownloadBucketTable->value(bucketNumber)->length();
+        }
+
+        // these last bucket numbers are for the *segment*, not the file.
+        // the length check is for in case it is also the last segment of the file.
+        if ((bucketNumber == lastBucketNumber) && (lastBucketSize == pDownloadBucketTable->value(bucketNumber)->length())) // End of Segment
+        {
+            //status = TRANSFER_STATE_FINISHED;  // local segment
+            qDebug() << "uTPTransferSegment emit hashBucketRequest() on finish " << bucketNumber << pDownloadBucketTable->value(bucketNumber)->length();
+            emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber), remoteHost);
+        }
+        segmentOffset += count;
+        bytesTransferred += count;
+        emit updateDirectBytesStats(count);
+    }
+    else if (segmentMode == UploadingSegment)
+    {
+        qDebug() << "uTPTransferSegment::uTPRead() on upload segment does nothing yet";
     }
     else
     {
-        pDownloadBucketTable->value(bucketNumber)->append(data);
-        //qDebug() << "Append data " << requestingOffset << offset << pDownloadBucketTable->value(bucketNumber)->length();
+        qDebug() << "uTPTransferSegment::uTPRead() on undefined segment does nothing";
     }
-
-    if (pDownloadBucketTable->value(bucketNumber)->length() == HASH_BUCKET_SIZE)
-    {
-        emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber), remoteHost);
-        qDebug() << "uTPTransferSegment emit hashBucketRequest() " << bucketNumber << pDownloadBucketTable->value(bucketNumber)->length();
-    }
-
-    // these last bucket numbers are for the *segment*, not the file.
-    // the length check is for in case it is also the last segment of the file.
-    if ((bucketNumber == lastBucketNumber) && (lastBucketSize == pDownloadBucketTable->value(bucketNumber)->length())) // End of Segment
-    {
-        //status = TRANSFER_STATE_FINISHED;  // local segment
-        qDebug() << "uTPTransferSegment emit hashBucketRequest() on finish " << bucketNumber << pDownloadBucketTable->value(bucketNumber)->length();
-        emit hashBucketRequest(TTH, bucketNumber, pDownloadBucketTable->value(bucketNumber), remoteHost);
-    }
-    segmentOffset += count;
-    bytesTransferred += count;
-    emit updateDirectBytesStats(count);
 }
 
 void uTPTransferSegment::uTPWrite(byte *bytes, size_t count)
 {
     qDebug() << "uTPTransferSegment::uTPWrite()" << count;
-    if (segmentOffset + count > segmentLength)
-        count = segmentLength - segmentOffset;  // TODO + check
-    bytes = (unsigned char *)fileMap + segmentOffset;
-    segmentOffset += count;
-
+    if (segmentMode == UploadingSegment)
+    {
+        if (segmentOffset + count > segmentLength)
+            count = segmentLength - segmentOffset;  // TODO + check
+        memcpy(bytes, (unsigned char *)fileMap + segmentOffset, count);
+        segmentOffset += count;
+    }
+    else if (segmentMode == DownloadingSegment)
+    {
+        qDebug() << "uTPTransferSegment::uTPWrite() on download segment does nothing yet";
+    }
+    else
+    {
+        qDebug() << "uTPTransferSegment::uTPWrite() on undefined segment does nothing";
+    }
 }
 
 size_t uTPTransferSegment::uTPGetRBSize()
@@ -185,14 +222,21 @@ size_t uTPTransferSegment::uTPGetRBSize()
 void uTPTransferSegment::uTPState(int state)
 {
     qDebug() << "uTPTransferSegment::uTPState()" << state;
-    /*if (state == UTP_STATE_CONNECT || state == UTP_STATE_WRITABLE)
+    if (state == UTP_STATE_CONNECT || state == UTP_STATE_WRITABLE)
     {
-        if (UTP_Write(utpSocket, segmentLength))
+        if ((segmentMode == UploadingSegment) && UTP_Write(utpSocket, segmentLength - segmentOffset))
         {
-            // Testing only, this can really be improved, persistent connections will perform better.
-            UTP_Close(utpSocket);
+            qDebug() << "uTPTransferSegment::uTPState() UploadingSegment called UTP_Write() length offset" << segmentLength << segmentOffset;
         }
-    }*/
+        else
+        {
+            qDebug() << "uTPTransferSegment::uTPState() called UTP_Write() returned false" << segmentMode << segmentLength << segmentOffset;
+        }
+    }
+    else if (state == UTP_STATE_DESTROYING)
+    {
+        utpSocket = NULL;
+    }
 }
 
 void uTPTransferSegment::uTPError(int errcode)
@@ -201,7 +245,6 @@ void uTPTransferSegment::uTPError(int errcode)
     if (utpSocket)
     {
         UTP_Close(utpSocket);
-        utpSocket = NULL;
     }
 }
 
@@ -228,7 +271,8 @@ void uTPTransferSegment::uTPIncomingConnection(UTPSocket *s)
 {
     qDebug() << "uTPTransferSegment::uTPIncomingConnection()";
     // TODO: Call UTP_Write to tell the socket to start filling the write buffer with x number of bytes through uTPWrite?
-    UTP_Write(utpSocket, segmentLength);
+    // Calling UTP_Write() in uTPTransferSegment::uTPState()
+    //UTP_Write(utpSocket, segmentLength);
 }
 
 

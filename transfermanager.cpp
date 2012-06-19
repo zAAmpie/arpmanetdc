@@ -87,6 +87,7 @@ void TransferManager::incomingDataPacket(quint8 transferPacket, QHostAddress fro
 void TransferManager::incomingDirectDataPacket(quint32 segmentId, qint64 offset, QByteArray data)
 {
     TransferSegment *t = getTransferSegmentPointer(segmentId);
+    qDebug() << "TransferManager::incomingDirectDataPacket()" << segmentId << t << data.length();
     if (t)
         t->incomingDataPacket(offset, data);
 }
@@ -144,6 +145,7 @@ void TransferManager::incomingUploadRequest(quint8 protocol, QHostAddress fromHo
 // should more than one user try simultaneously, their requests will be deleted off the queue in .remove(tth) and they should try again. oops.
 void TransferManager::filePathNameReply(QByteArray tth, QString filename, quint64 fileSize)
 {
+    qDebug() << "TransferManager::filePathNameReply()" << filename << fileSize;
     if (filename == "" || !uploadTransferQueue.contains(tth))
     {
         uploadTransferQueue.remove(tth);
@@ -153,15 +155,18 @@ void TransferManager::filePathNameReply(QByteArray tth, QString filename, quint6
             currentUploadingHosts.remove(uploadTransferQueue.value(tth)->requestingHost);
             emit sendTransferError(uploadTransferQueue.value(tth)->requestingHost, FileNotSharedError, tth, uploadTransferQueue.value(tth)->fileOffset);
         }
-
+        qDebug() << "TransferManager::filePathNameReply() abort";
         return;
     }
     Transfer *t = new UploadTransfer(this);
-    TransferSegment *s = t->createUploadObject(uploadTransferQueue.value(tth)->protocol, uploadTransferQueue.value(tth)->segmentId);
-    //setTransferSegmentPointer(uploadTransferQueue.value(tth)->segmentId, s);
     connect(t, SIGNAL(abort(Transfer*)), this, SLOT(destroyTransferObject(Transfer*)));
     connect(t, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)), this, SIGNAL(transmitDatagram(QHostAddress,QByteArray*)));
     connect(t, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,qint64)), this, SIGNAL(sendTransferError(QHostAddress,quint8,QByteArray,qint64)));
+    connect(t, SIGNAL(setTransferSegmentPointer(quint32,TransferSegment*)), this, SLOT(setTransferSegmentPointer(quint32,TransferSegment*)));
+    connect(t, SIGNAL(removeTransferSegmentPointer(quint32)), this, SLOT(removeTransferSegmentPointer(quint32)));
+    TransferSegment *s = t->createUploadObject(uploadTransferQueue.value(tth)->protocol, uploadTransferQueue.value(tth)->segmentId);
+    //via signal
+    //setTransferSegmentPointer(uploadTransferQueue.value(tth)->segmentId, s);
     t->setFileName(filename);
     t->setFileSize(fileSize);
     t->setTTH(tth);
@@ -287,7 +292,7 @@ void TransferManager::startNextDownload()
     t->setFileSize(i.fileSize);
     t->setProtocolOrderPreference(protocolOrderPreference);
     // we can lose the ip address from the queue, alternate search tells us everything we need.
-    //t->addPeer(i.fileHost);
+    t->addPeer(i.fileHost, i.tth);
     transferObjectTable.insertMulti(i.tth, t);
     emit loadBucketFlushStateBitmap(i.tth);
     //emit loadTTHSourcesFromDatabase(i.tth);
@@ -558,17 +563,20 @@ void TransferManager::restoreBucketFlushStateBitmap(QByteArray tth, QByteArray b
 
 TransferSegment* TransferManager::getTransferSegmentPointer(quint32 segmentId)
 {
+    qDebug() << "TransferManager::getTransferSegmentPointer()" << segmentId << transferSegmentPointers;
     // QHash automatically returns 0 for TransferSegment* when key not found
     return transferSegmentPointers.value(segmentId);
 }
 
 void TransferManager::setTransferSegmentPointer(quint32 segmentId, TransferSegment *segment)
 {
+    qDebug() << "TransferManager::setTransferSegmentPointer()" << segmentId << segment;
     transferSegmentPointers.insert(segmentId, segment);
 }
 
 void TransferManager::removeTransferSegmentPointer(quint32 segmentId)
 {
+    qDebug() << "TransferManager::removeTransferSegmentPointer()" << segmentId;
     transferSegmentPointers.remove(segmentId);
 }
 

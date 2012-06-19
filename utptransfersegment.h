@@ -54,6 +54,7 @@ private:
     qint64 segmentOffset;
 
     bool connect_called;
+    SegmentMode segmentMode;
 
     // uTP callback functions
     void uTPRead(const byte *bytes, size_t count);

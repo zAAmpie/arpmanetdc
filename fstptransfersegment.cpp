@@ -113,7 +113,7 @@ void FSTPTransferSegment::startDownloading()
         retransmitRetryCounter = 0;
         //qDebug() << "FSTPTransferSegment::startDownloading() call checkSendDownloadRequest()";
         status = TRANSFER_STATE_RUNNING;
-        checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength, status);
+        checkSendDownloadRequest(remoteHost, TTH, requestingOffset, requestingLength, status, FailsafeTransferProtocol);
     }
 }
 
@@ -210,7 +210,7 @@ void FSTPTransferSegment::incomingDataPacket(qint64 offset, QByteArray data)
 
         requestingTargetOffset += requestingLength;
         //qDebug() << "FSTPTransferSegment::incomingDataPacket() call checkSendDownloadRequest()";
-        checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength, status);
+        checkSendDownloadRequest(remoteHost, TTH, requestingOffset, requestingLength, status, FailsafeTransferProtocol);
     }
 
     if (requestingOffset >= segmentEnd)
@@ -231,7 +231,7 @@ void FSTPTransferSegment::transferTimerEvent()
         status = TRANSFER_STATE_RUNNING;
         requestingTargetOffset = requestingOffset + requestingLength;
         //qDebug() << "FSTPTransferSegment::transferTimerEvent() call checkSendDownloadRequest()" << requestingOffset << requestingLength;
-        checkSendDownloadRequest(FailsafeTransferProtocol, remoteHost, TTH, requestingOffset, requestingLength, status);
+        checkSendDownloadRequest(remoteHost, TTH, requestingOffset, requestingLength, status, FailsafeTransferProtocol);
         retransmitRetryCounter++;
         // retransmit timeout 2 seconds, 15 retransmits / 30 seconds deadness plenty enough to warrant a fail.
         if (retransmitRetryCounter == 15)

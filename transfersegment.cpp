@@ -111,8 +111,8 @@ void TransferSegment::setSegmentId(quint32 id)
     segmentId = id;
 }
 
-void TransferSegment::checkSendDownloadRequest(quint8 protocol, QHostAddress peer, QByteArray TTH,
-                                                       qint64 requestingOffset, qint64 requestingLength, int status)
+void TransferSegment::checkSendDownloadRequest(QHostAddress peer, QByteArray TTH,
+                                               qint64 requestingOffset, qint64 requestingLength, int status, quint8 protocol)
 {
     if (status & (TRANSFER_STATE_RUNNING | TRANSFER_STATE_STALLED))
     {

@@ -28,6 +28,13 @@
 #include "transfer.h"
 class Transfer;
 
+enum SegmentMode
+{
+    UndefinedSegment = 0,
+    UploadingSegment = 1,
+    DownloadingSegment = 2
+};
+
 class TransferSegment : public QObject
 {
     Q_OBJECT
@@ -100,8 +107,8 @@ protected:
 
     Transfer *pParent;
 
-    virtual void checkSendDownloadRequest(quint8 protocol, QHostAddress peer, QByteArray TTH,
-                                         qint64 requestingOffset, qint64 requestingLength, int status);
+    virtual void checkSendDownloadRequest(QHostAddress peer, QByteArray TTH,
+                                         qint64 requestingOffset, qint64 requestingLength, int status, quint8 protocol);
     virtual int calculateBucketNumber(quint64 fileOffset);
 };
 

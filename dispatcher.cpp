@@ -295,6 +295,7 @@ void Dispatcher::dispatchDirectDataPacket(QByteArray datagram)
     if (offset > LLONG_MAX)
         return;
     quint32 segmentId = getQuint32FromByteArray(&datagram);
+    //qDebug() << "Dispatcher::dispatchDirectDataPacket()" << segmentId, offset, datagram.length();
     emit incomingDirectDataPacket(segmentId, (qint64)offset, datagram);
 }
 
@@ -513,8 +514,8 @@ void Dispatcher::parseArrivedSearchResult(QByteArray &datagram, QHostAddress sen
     }
     datagram.remove(0, 2);
     QHostAddress allegedSenderHost(getQuint32FromByteArray(&datagram));
-    if (senderHost != allegedSenderHost)
-        return;
+    //if (senderHost != allegedSenderHost)
+    //    return;
 
     quint64 searchID = getQuint64FromByteArray(&datagram);
     QByteArray senderCID = datagram.mid(0, 24);
@@ -798,8 +799,9 @@ void Dispatcher::handleIncomingUploadRequest(QHostAddress &fromHost, QByteArray 
     if (datagram.length() >= 24)
         cid = datagram.left(24);
 
+    qDebug() << "Dispatcher::handleIncomingUploadRequest()" << protocol << fromHost << segmentId << tth.toBase64() << cid.toBase64();
     // TODO: remove length check post 0.1.9
-    if ((cid.length() == 0) || (cid == CID))
+    //if ((cid.length() == 0) || (cid == CID))
         emit incomingUploadRequest(protocol, fromHost, tth, offset, length, segmentId);
 }
 

@@ -24,6 +24,7 @@ UploadTransfer::~UploadTransfer()
 {
     transferRateCalculationTimer->deleteLater();
     transferInactivityTimer->deleteLater();
+    emit removeTransferSegmentPointer(upload->getSegmentId());
     upload->deleteLater();
 }
 
@@ -53,8 +54,12 @@ int UploadTransfer::getTransferType()
 
 TransferSegment* UploadTransfer::createUploadObject(quint8 protocol, quint32 segmentId)
 {
+    qDebug() << "TransferSegment::createUploadObject()" << protocol << segmentId;
     if (upload)
-        delete upload;
+    {
+        emit removeTransferSegmentPointer(upload->getSegmentId());
+        upload->deleteLater();
+    }
 
     upload = 0;
 
@@ -75,6 +80,8 @@ TransferSegment* UploadTransfer::createUploadObject(quint8 protocol, quint32 seg
         return 0;
 
     upload->setSegmentId(segmentId);
+    qDebug() << "UploadTransfer::createUploadObject() setTransferSegmentPointer()" << upload->getSegmentId() << upload;
+    emit setTransferSegmentPointer(upload->getSegmentId(), upload);
 
     //Used to intercept the amount of data actually transmitted
     connect(upload, SIGNAL(transmitDatagram(QHostAddress, QByteArray *)), this, SLOT(dataTransmitted(QHostAddress, QByteArray *)));
